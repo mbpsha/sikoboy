@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Mitra;
-use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Inertia;
@@ -29,12 +28,10 @@ class RegisterController extends Controller
             'email' => 'required|email|unique:users,email',
             'password' => 'required|min:8|confirmed',
             'nama_perusahaan' => 'required|string|max:255',
-            'pic' => 'required|string|max:100',
-            'no_handphone' => 'required|string|max:15',
-            'alamat' => 'required|string',
-            'provinsi' => 'required|string',
-            'kabupaten_kota' => 'required|string',
-            'terms' => 'required|accepted'
+            'npwp' => 'nullable|string',
+            'no_handphone' => 'required|string',
+            'pic' => 'required|string',
+            'alamat' => 'required|string'
         ]);
 
         $user = User::create([
@@ -47,22 +44,12 @@ class RegisterController extends Controller
             'id_user' => $user->id_user,
             'nama_perusahaan' => $request->nama_perusahaan,
             'npwp' => $request->npwp,
-            'pic' => $request->pic,
-            'jabatan_pic' => $request->jabatan_pic,
             'no_handphone' => $request->no_handphone,
-            'no_telepon' => $request->no_telepon,
+            'pic' => $request->pic,
             'alamat' => $request->alamat,
-            'provinsi' => $request->provinsi,
-            'kabupaten_kota' => $request->kabupaten_kota,
-            'kecamatan' => $request->kecamatan,
-            'kode_pos' => $request->kode_pos,
-            'bidang_usaha' => $request->bidang_usaha,
-            'website' => $request->website
         ]);
 
-        event(new Registered($user));
-
         return redirect()->route('login', ['role' => 'mitra'])
-            ->with('success', 'Registrasi berhasil! Cek email untuk verifikasi.');
+            ->with('success', 'Registrasi berhasil! Silakan login.');
     }
 }

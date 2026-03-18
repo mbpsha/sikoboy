@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use App\Models\ActivityLog;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -17,12 +16,8 @@ class DashboardController extends Controller
     {
         $stats = [
             'total_partners' => User::where('role', 'mitra')->count(),
-            'verified_partners' => User::where('role', 'mitra')
-                ->whereNotNull('email_verified_at')
-                ->count(),
-            'active_today' => ActivityLog::whereDate('created_at', today())
-                ->distinct('user_id')
-                ->count('user_id'),
+            'verified_partners' => 0,
+            'active_today' => 0,
             'recent_registrations' => User::where('role', 'mitra')
                 ->with('mitra')
                 ->latest('created_at')
@@ -52,36 +47,12 @@ class DashboardController extends Controller
             });
         }
 
-        // Status filter
-        if ($request->filled('status')) {
-            if ($request->status === 'verified') {
-                $query->whereNotNull('email_verified_at');
-            } elseif ($request->status === 'unverified') {
-                $query->whereNull('email_verified_at');
-            } elseif ($request->status === 'active') {
-                $query->where('is_active', true);
-            } elseif ($request->status === 'inactive') {
-                $query->where('is_active', false);
-            }
-        }
-
         $partners = $query->orderBy('created_at', 'desc')->paginate(15);
 
         return Inertia::render('Admin/Partners/Index', [
             'partners' => $partners,
-            'filters' => $request->only(['search', 'status'])
+            'filters' => $request->only(['search'])
         ]);
-    }
-
-    /**
-     * Toggle partner active status.
-     */
-    public function togglePartnerStatus($id)
-    {
-        $user = User::where('role', 'mitra')->findOrFail($id);
-        $user->update(['is_active' => !$user->is_active]);
-
-        return back()->with('success', 'Status partner berhasil diperbarui.');
     }
 
     /**

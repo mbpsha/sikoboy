@@ -10,8 +10,8 @@ class Mitra extends Model
     use HasFactory;
 
     protected $table = 'mitras';
-    protected $primaryKey = 'id_user';
-    public $incrementing = false;
+    protected $primaryKey = 'id_mitra';
+    public $timestamps = false;
 
     /**
      * The attributes that are mass assignable.
@@ -22,18 +22,9 @@ class Mitra extends Model
         'id_user',
         'nama_perusahaan',
         'npwp',
-        'pic',
-        'jabatan_pic',
         'no_handphone',
-        'no_telepon',
+        'pic',
         'alamat',
-        'provinsi',
-        'kabupaten_kota',
-        'kecamatan',
-        'kode_pos',
-        'bidang_usaha',
-        'website',
-        'logo_perusahaan',
     ];
 
     /**

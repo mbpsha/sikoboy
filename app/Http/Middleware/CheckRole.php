@@ -29,18 +29,6 @@ class CheckRole
             abort(403, 'Unauthorized access.');
         }
 
-        // Check if account is active
-        if (!$user->is_active) {
-            Auth::logout();
-            return redirect()->route('login.select')
-                ->with('error', 'Akun Anda tidak aktif.');
-        }
-
-        // Check email verification for mitra
-        if ($user->role === 'mitra' && !$user->email_verified_at) {
-            return redirect()->route('verification.notice');
-        }
-
         // Check if mitra has complete profile
         if ($user->role === 'mitra' && !$user->mitra) {
             // Allow access to profile completion route

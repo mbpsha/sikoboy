@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Mitra;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
 class ProfileController extends Controller
@@ -20,7 +19,6 @@ class ProfileController extends Controller
         return Inertia::render('Mitra/Profile/Edit', [
             'user' => [
                 'email' => $user->email,
-                'email_verified_at' => $user->email_verified_at
             ],
             'mitra' => $user->mitra
         ]);
@@ -35,21 +33,19 @@ class ProfileController extends Controller
 
         $request->validate([
             'nama_perusahaan' => 'required|string|max:255',
-            'npwp' => 'nullable|string|max:20|unique:mitras,npwp,' . $mitra->id_user . ',id_user',
-            'pic' => 'required|string|max:100',
-            'jabatan_pic' => 'nullable|string|max:100',
-            'no_handphone' => 'required|string|max:15',
-            'no_telepon' => 'nullable|string|max:15',
-            'alamat' => 'required|string',
-            'provinsi' => 'nullable|string|max:100',
-            'kabupaten_kota' => 'nullable|string|max:100',
-            'kecamatan' => 'nullable|string|max:100',
-            'kode_pos' => 'nullable|string|max:10',
-            'bidang_usaha' => 'nullable|string|max:100',
-            'website' => 'nullable|url|max:255'
+            'npwp' => 'nullable|string',
+            'pic' => 'required|string',
+            'no_handphone' => 'required|string',
+            'alamat' => 'required|string'
         ]);
 
-        $mitra->update($request->all());
+        $mitra->update($request->only([
+            'nama_perusahaan',
+            'npwp',
+            'pic',
+            'no_handphone',
+            'alamat'
+        ]));
 
         return back()->with('success', 'Profil berhasil diperbarui.');
     }
@@ -71,27 +67,5 @@ class ProfileController extends Controller
         return back()->with('success', 'Password berhasil diperbarui.');
     }
 
-    /**
-     * Upload company logo.
-     */
-    public function uploadLogo(Request $request)
-    {
-        $request->validate([
-            'logo' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048'
-        ]);
-
-        $mitra = $request->user()->mitra;
-
-        // Delete old logo if exists
-        if ($mitra->logo_perusahaan) {
-            Storage::disk('public')->delete($mitra->logo_perusahaan);
-        }
-
-        // Store new logo
-        $path = $request->file('logo')->store('logos', 'public');
-
-        $mitra->update(['logo_perusahaan' => $path]);
-
-        return back()->with('success', 'Logo berhasil diunggah.');
-    }
+    // Logo upload removed: schema has no logo field.
 }

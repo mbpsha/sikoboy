@@ -22,8 +22,8 @@ class DashboardController extends Controller
             'mitra' => $mitra,
             'stats' => [
                 'member_since' => $user->created_at->format('d F Y'),
-                'last_login' => $user->last_login_at?->diffForHumans(),
-                'verification_status' => $user->email_verified_at ? 'verified' : 'unverified'
+                'last_login' => null,
+                'verification_status' => null
             ]
         ]);
     }
@@ -47,22 +47,20 @@ class DashboardController extends Controller
     {
         $request->validate([
             'nama_perusahaan' => 'required|string|max:255',
-            'pic' => 'required|string|max:100',
-            'no_handphone' => 'required|string|max:15',
+            'pic' => 'required|string',
+            'no_handphone' => 'required|string',
             'alamat' => 'required|string',
-            'provinsi' => 'required|string|max:100',
-            'kabupaten_kota' => 'required|string|max:100'
+            'npwp' => 'nullable|string',
         ]);
 
-        Mitra::create(array_merge(
-            ['id_user' => $request->user()->id],
-            $request->only([
-                'nama_perusahaan', 'npwp', 'pic', 'jabatan_pic',
-                'no_handphone', 'no_telepon', 'alamat', 'provinsi',
-                'kabupaten_kota', 'kecamatan', 'kode_pos',
-                'bidang_usaha', 'website'
-            ])
-        ));
+        Mitra::create([
+            'id_user' => $request->user()->id_user,
+            'nama_perusahaan' => $request->nama_perusahaan,
+            'npwp' => $request->npwp,
+            'no_handphone' => $request->no_handphone,
+            'pic' => $request->pic,
+            'alamat' => $request->alamat,
+        ]);
 
         return redirect()->route('mitra.dashboard')
             ->with('success', 'Profil berhasil dilengkapi.');

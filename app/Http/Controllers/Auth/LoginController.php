@@ -39,33 +39,20 @@ class LoginController extends Controller
             return back()->withErrors(['email' => 'Email atau password salah.']);
         }
 
-        if (!$user->is_active) {
-            return back()->withErrors(['email' => 'Akun tidak aktif.']);
-        }
-
         if ($user->role !== $request->role) {
             return back()->withErrors(['role' => 'Akses tidak sesuai.']);
         }
 
-        if ($user->role === 'mitra' && !$user->email_verified_at) {
-            return redirect()->route('verification.notice');
-        }
-
         Auth::login($user, $request->boolean('remember'));
-        
-        $user->update([
-            'last_login_at' => now(),
-            'last_login_ip' => $request->ip()
-        ]);
 
         if ($user->role === 'admin') {
             return redirect()->route('admin.dashboard');
         }
-        
+
         if (!$user->mitra) {
             return redirect()->route('mitra.profile.complete');
         }
-        
+
         return redirect()->route('mitra.dashboard');
     }
 

@@ -62,8 +62,6 @@ Route::middleware(['auth', 'role:mitra'])->prefix('mitra')->name('mitra.')->grou
         ->name('profile.update');
     Route::put('/profile/password', [MitraProfileController::class, 'updatePassword'])
         ->name('profile.password');
-    Route::post('/profile/logo', [MitraProfileController::class, 'uploadLogo'])
-        ->name('profile.logo');
 });
 
 // Admin Routes
@@ -75,6 +73,4 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
         ->name('partners.index');
     Route::get('/partners/{id}', [AdminDashboardController::class, 'showPartner'])
         ->name('partners.show');
-    Route::post('/partners/{id}/toggle-status', [AdminDashboardController::class, 'togglePartnerStatus'])
-        ->name('partners.toggle-status');
 });

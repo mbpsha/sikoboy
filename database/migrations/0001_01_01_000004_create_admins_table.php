@@ -12,14 +12,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('admins', function (Blueprint $table) {
-            $table->unsignedBigInteger('id_user')->primary();
-            $table->string('nip', 50)->unique()->nullable();
-            $table->string('nama_lengkap');
-            $table->string('jabatan', 100)->nullable();
-            $table->string('bagian', 100)->nullable();
-            $table->string('no_handphone', 15)->nullable();
-            $table->string('foto_profil')->nullable();
-            $table->timestamps();
+            $table->id('id_admin');
+            $table->unsignedBigInteger('id_user')->unique();
+            $table->string('nama');
+            $table->string('divisi');
 
             $table->foreign('id_user')->references('id_user')->on('users')->onDelete('cascade');
         });

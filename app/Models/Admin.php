@@ -27,12 +27,14 @@ class Admin extends Model
         'no_handphone',
         'foto_profil',
     ];
-
-    /**
+            protected $primaryKey = 'id_admin';
+            public $timestamps = false;
      * Get the user that owns the admin profile.
      */
     public function user()
     {
         return $this->belongsTo(User::class, 'id_user', 'id_user');
     }
-}
+                'id_user',
+                'nama',
+                'divisi',
