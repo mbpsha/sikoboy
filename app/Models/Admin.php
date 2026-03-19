@@ -10,31 +10,20 @@ class Admin extends Model
     use HasFactory;
 
     protected $table = 'admins';
-    protected $primaryKey = 'id_user';
-    public $incrementing = false;
+    protected $primaryKey = 'id_admin';
+    public $timestamps = false;
 
     /**
-     * The attributes that are mass assignable.
-     *
      * @var array<string>
      */
     protected $fillable = [
         'id_user',
-        'nip',
-        'nama_lengkap',
-        'jabatan',
-        'bagian',
-        'no_handphone',
-        'foto_profil',
+        'nama',
+        'divisi',
     ];
-            protected $primaryKey = 'id_admin';
-            public $timestamps = false;
-     * Get the user that owns the admin profile.
-     */
+
     public function user()
     {
         return $this->belongsTo(User::class, 'id_user', 'id_user');
     }
-                'id_user',
-                'nama',
-                'divisi',
+}
