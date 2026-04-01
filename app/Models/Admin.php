@@ -26,4 +26,12 @@ class Admin extends Model
     {
         return $this->belongsTo(User::class, 'id_user', 'id_user');
     }
+
+    /**
+     * All kerjasama records managed by this admin.
+     */
+    public function kerjasama()
+    {
+        return $this->hasMany(Kerjasama::class, 'id_admin', 'id_admin');
+    }
 }
