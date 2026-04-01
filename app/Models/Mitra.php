@@ -34,4 +34,12 @@ class Mitra extends Model
     {
         return $this->belongsTo(User::class, 'id_user', 'id_user');
     }
+
+    /**
+     * All kerjasama records belonging to this mitra.
+     */
+    public function kerjasama()
+    {
+        return $this->hasMany(Kerjasama::class, 'id_mitra', 'id_mitra');
+    }
 }

@@ -3,44 +3,111 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Dokumen;
+use App\Models\Kerjasama;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class DashboardController extends Controller
 {
     /**
-     * Display the admin dashboard.
+     * Display the admin dashboard with archive metrics and chart data.
      */
     public function index()
     {
-        $stats = [
-            'total_partners' => User::where('role', 'mitra')->count(),
-            'verified_partners' => 0,
-            'active_today' => 0,
-            'recent_registrations' => User::where('role', 'mitra')
-                ->with('mitra')
-                ->latest('created_at')
-                ->take(5)
-                ->get()
+        $today     = Carbon::today()->toDateString();
+        $threshold = Carbon::today()->addDays(30)->toDateString();
+
+        // ---------------------------------------------------------------
+        // Aggregate counters from the database in a single pass
+        // Use the latest periode (by max tanggal_berakhir) for accurate status
+        // ---------------------------------------------------------------
+        $row = DB::table('kerjasama as k')
+            ->leftJoin(
+                DB::raw('(
+                    SELECT p1.id_kerjasama,
+                           p1.tanggal_mulai    AS tgl_mulai,
+                           p1.tanggal_berakhir AS tgl_berakhir
+                    FROM periode_kerjasama p1
+                    INNER JOIN (
+                        SELECT id_kerjasama, MAX(tanggal_berakhir) AS max_end
+                        FROM periode_kerjasama
+                        GROUP BY id_kerjasama
+                    ) p2 ON p1.id_kerjasama = p2.id_kerjasama
+                       AND p1.tanggal_berakhir = p2.max_end
+                ) AS p'),
+                'k.id_kerjasama', '=', 'p.id_kerjasama'
+            )
+            ->where('k.is_finalized', true)
+            ->selectRaw("
+                COUNT(*) AS total_kerjasama,
+                SUM(CASE WHEN p.tgl_mulai <= ? AND p.tgl_berakhir >= ? THEN 1 ELSE 0 END) AS aktif,
+                SUM(CASE WHEN p.tgl_berakhir > ? AND p.tgl_berakhir <= ?  THEN 1 ELSE 0 END) AS akan_berakhir,
+                SUM(CASE WHEN p.tgl_berakhir < ?                          THEN 1 ELSE 0 END) AS berakhir
+            ", [$today, $today, $today, $threshold, $today])
+            ->first();
+
+        $metrics = [
+            'total_kerjasama' => (int) ($row->total_kerjasama ?? 0),
+            'aktif'           => (int) ($row->aktif           ?? 0),
+            'akan_berakhir'   => (int) ($row->akan_berakhir   ?? 0),
+            'berakhir'        => (int) ($row->berakhir        ?? 0),
+            'total_mitra'     => User::where('role', 'mitra')->count(),
+            'total_dokumen'   => Dokumen::count(),
         ];
 
-        return Inertia::render('Admin/Dashboard', ['stats' => $stats]);
+        // ---------------------------------------------------------------
+        // Bar-chart: total finalized kerjasama per year (from periode)
+        // ---------------------------------------------------------------
+        $kerjasamaPerTahun = DB::table('kerjasama as k')
+            ->join('periode_kerjasama as p', 'k.id_kerjasama', '=', 'p.id_kerjasama')
+            ->where('k.is_finalized', true)
+            ->selectRaw('YEAR(p.tanggal_mulai) AS tahun, COUNT(DISTINCT k.id_kerjasama) AS total')
+            ->groupBy('tahun')
+            ->orderBy('tahun')
+            ->get()
+            ->map(fn($r) => ['tahun' => (int) $r->tahun, 'total' => (int) $r->total])
+            ->values();
+
+        // ---------------------------------------------------------------
+        // Donut/Pie: jenis dokumen percentage
+        // ---------------------------------------------------------------
+        $totalFinalized = $metrics['total_kerjasama'] ?: 1; // avoid division by zero
+
+        $jenisDokumen = Kerjasama::finalized()
+            ->whereNotNull('jenis_dokumen')
+            ->selectRaw('jenis_dokumen, COUNT(*) AS total')
+            ->groupBy('jenis_dokumen')
+            ->get()
+            ->map(fn($r) => [
+                'jenis_dokumen' => $r->jenis_dokumen,
+                'total'         => (int) $r->total,
+                'persentase'    => round($r->total / $totalFinalized * 100, 1),
+            ])
+            ->values();
+
+        return Inertia::render('Admin/Dashboard', [
+            'metrics'          => $metrics,
+            'kerjasama_per_tahun' => $kerjasamaPerTahun,
+            'jenis_dokumen'    => $jenisDokumen,
+        ]);
     }
 
     /**
-     * Display list of partners.
+     * Display list of partners (kept for backward compatibility).
      */
     public function partners(Request $request)
     {
         $query = User::where('role', 'mitra')->with('mitra');
 
-        // Search filter
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('email', 'like', "%{$search}%")
-                  ->orWhereHas('mitra', function($q) use ($search) {
+                  ->orWhereHas('mitra', function ($q) use ($search) {
                       $q->where('nama_perusahaan', 'like', "%{$search}%")
                         ->orWhere('pic', 'like', "%{$search}%");
                   });
@@ -51,12 +118,12 @@ class DashboardController extends Controller
 
         return Inertia::render('Admin/Partners/Index', [
             'partners' => $partners,
-            'filters' => $request->only(['search'])
+            'filters'  => $request->only(['search']),
         ]);
     }
 
     /**
-     * Show partner detail.
+     * Show partner detail (kept for backward compatibility).
      */
     public function showPartner($id)
     {
@@ -65,7 +132,7 @@ class DashboardController extends Controller
             ->findOrFail($id);
 
         return Inertia::render('Admin/Partners/Show', [
-            'partner' => $partner
+            'partner' => $partner,
         ]);
     }
 }
