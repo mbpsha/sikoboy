@@ -2,8 +2,11 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
+use App\Enums\StatusPersetujuan;
 
 class Kerjasama extends Model
 {
@@ -25,7 +28,31 @@ class Kerjasama extends Model
         'urusan',
         'daerah',
         'status_aktif',
+        'jenis_kerjasama',
+        'jenis_dokumen',
+        'tipe',
+        'nama_pihak_luar',
+        'is_finalized',
+        'status_negosiasi',
+        'status_persetujuan',
+        'catatan_persetujuan',
     ];
+
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'is_finalized'       => 'boolean',
+            'created_at'         => 'datetime',
+            'status_persetujuan' => StatusPersetujuan::class,
+        ];
+    }
+
+    // -------------------------------------------------------------------------
+    // Relationships
+    // -------------------------------------------------------------------------
 
     public function mitra()
     {
@@ -40,5 +67,112 @@ class Kerjasama extends Model
     public function kategori()
     {
         return $this->belongsTo(KategoriKerjasama::class, 'id_kategori', 'id_kategori');
+    }
+
+    public function periodes()
+    {
+        return $this->hasMany(PeriodeKerjasama::class, 'id_kerjasama', 'id_kerjasama');
+    }
+
+    public function latestPeriode()
+    {
+        return $this->hasOne(PeriodeKerjasama::class, 'id_kerjasama', 'id_kerjasama')
+            ->latestOfMany('tanggal_berakhir');
+    }
+
+    public function dokumen()
+    {
+        return $this->hasMany(Dokumen::class, 'id_kerjasama', 'id_kerjasama');
+    }
+
+    public function finalDokumen()
+    {
+        return $this->hasOne(Dokumen::class, 'id_kerjasama', 'id_kerjasama')
+            ->latestOfMany('versi_dokumen');
+    }
+
+    public function riwayatStatus()
+    {
+        return $this->hasMany(RiwayatStatus::class, 'id_kerjasama', 'id_kerjasama');
+    }
+
+    // -------------------------------------------------------------------------
+    // Scopes
+    // -------------------------------------------------------------------------
+
+    public function scopeFinalized(Builder $query): Builder
+    {
+        return $query->where('is_finalized', true);
+    }
+
+    public function scopeMitraTipe(Builder $query): Builder
+    {
+        return $query->where('tipe', 'mitra');
+    }
+
+    public function scopePemerintahTipe(Builder $query): Builder
+    {
+        return $query->where('tipe', 'pemerintah');
+    }
+
+    public function scopeAktif(Builder $query): Builder
+    {
+        $today = Carbon::today()->toDateString();
+
+        return $query->whereHas('latestPeriode', function (Builder $q) use ($today) {
+            $q->where('tanggal_mulai', '<=', $today)
+              ->where('tanggal_berakhir', '>=', $today);
+        });
+    }
+
+    public function scopeAkanBerakhir(Builder $query, int $days = 30): Builder
+    {
+        $today       = Carbon::today()->toDateString();
+        $threshold   = Carbon::today()->addDays($days)->toDateString();
+
+        return $query->whereHas('latestPeriode', function (Builder $q) use ($today, $threshold) {
+            $q->where('tanggal_berakhir', '>', $today)
+              ->where('tanggal_berakhir', '<=', $threshold);
+        });
+    }
+
+    public function scopeBerakhir(Builder $query): Builder
+    {
+        $today = Carbon::today()->toDateString();
+
+        return $query->whereHas('latestPeriode', function (Builder $q) use ($today) {
+            $q->where('tanggal_berakhir', '<', $today);
+        });
+    }
+
+    // -------------------------------------------------------------------------
+    // Accessors
+    // -------------------------------------------------------------------------
+
+    /**
+     * Dynamically compute the active status label.
+     */
+    public function getStatusLabelAttribute(): string
+    {
+        $today     = Carbon::today();
+        $threshold = Carbon::today()->addDays(30);
+
+        $periode = $this->latestPeriode;
+
+        if (! $periode) {
+            return 'tidak diketahui';
+        }
+
+        $berakhir = Carbon::parse($periode->tanggal_berakhir);
+
+        if ($berakhir->lt($today)) {
+            return 'berakhir';
+        }
+
+        if ($berakhir->lte($threshold)) {
+            return 'akan berakhir';
+        }
+
+        return 'aktif';
     }
 }

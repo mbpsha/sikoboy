@@ -10,6 +10,10 @@ use App\Http\Controllers\Auth\VerificationController;
 use App\Http\Controllers\Mitra\DashboardController as MitraDashboardController;
 use App\Http\Controllers\Mitra\ProfileController as MitraProfileController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Admin\UserController as AdminUserController;
+use App\Http\Controllers\Admin\StatusKontrakController;
+use App\Http\Controllers\Admin\RiwayatKerjasamaController;
+use App\Http\Controllers\Admin\DataKerjasamaController;
 
 // Home / Welcome
 Route::get('/', fn() => Inertia::render('Welcome'))->name('home');
@@ -70,9 +74,44 @@ Route::middleware(['auth', 'role:mitra'])->prefix('mitra')->name('mitra.')->grou
 
 // Admin Routes
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
+
+    // Dashboard
     Route::get('/dashboard', [AdminDashboardController::class, 'index'])
         ->name('dashboard');
 
+    // Users
+    Route::get('/users', [AdminUserController::class, 'index'])
+        ->name('users.index');
+    Route::get('/users/{id}', [AdminUserController::class, 'show'])
+        ->name('users.show');
+
+    // Status Kontrak (mitra kerjasama in negotiation)
+    Route::get('/status-kontrak', [StatusKontrakController::class, 'index'])
+        ->name('status-kontrak.index');
+    Route::put('/status-kontrak/{id}', [StatusKontrakController::class, 'update'])
+        ->name('status-kontrak.update');
+    Route::put('/status-kontrak/{id}/persetujuan', [StatusKontrakController::class, 'updatePersetujuan'])
+        ->name('status-kontrak.persetujuan');
+    Route::put('/status-kontrak/{id}/finalize', [StatusKontrakController::class, 'finalize'])
+        ->name('status-kontrak.finalize');
+
+    // Riwayat Kerjasama — Mitra (finalised)
+    Route::get('/riwayat-kerjasama/mitra', [RiwayatKerjasamaController::class, 'mitra'])
+        ->name('riwayat-kerjasama.mitra');
+
+    // Riwayat Kerjasama — Pemerintah Boyolali
+    Route::get('/riwayat-kerjasama/pemerintah', [RiwayatKerjasamaController::class, 'pemerintah'])
+        ->name('riwayat-kerjasama.pemerintah');
+    Route::post('/riwayat-kerjasama/pemerintah', [RiwayatKerjasamaController::class, 'storePemerintah'])
+        ->name('riwayat-kerjasama.pemerintah.store');
+    Route::put('/riwayat-kerjasama/pemerintah/{id}', [RiwayatKerjasamaController::class, 'updatePemerintah'])
+        ->name('riwayat-kerjasama.pemerintah.update');
+
+    // Data Kerjasama (combined view)
+    Route::get('/data-kerjasama', [DataKerjasamaController::class, 'index'])
+        ->name('data-kerjasama.index');
+
+    // Legacy partner routes (kept for backward compatibility)
     Route::get('/partners', [AdminDashboardController::class, 'partners'])
         ->name('partners.index');
     Route::get('/partners/{id}', [AdminDashboardController::class, 'showPartner'])
