@@ -45,15 +45,11 @@ class LoginController extends Controller
 
         Auth::login($user, $request->boolean('remember'));
 
-        if ($user->role === 'admin') {
-            return redirect()->route('admin.dashboard');
-        }
+        // Regenerate session to prevent session fixation and ensure auth persists
+        $request->session()->regenerate();
 
-        if (!$user->mitra) {
-            return redirect()->route('mitra.profile.complete');
-        }
-
-        return redirect()->route('mitra.dashboard');
+        // Redirect to the public welcome page as requested
+        return redirect()->route('home');
     }
 
     /**

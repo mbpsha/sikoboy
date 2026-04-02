@@ -2,11 +2,19 @@
 import logo from '@/images/logo_byl.png';
 import instagram from '@/images/instagram.png';
 import youtube from '@/images/youtube.png';
+import { Link, usePage } from '@inertiajs/vue3';
+import { computed } from 'vue';
+
+const page = usePage();
+const user = computed(() => page.props.value?.auth?.user ?? null);
 </script>
 
 <template>
 <footer id="contact" class="bg-[#1f5459] text-white py-14 px-6">
-  <div class="max-w-6xl mx-auto grid grid-cols-3 gap-10 items-start">
+  <div class="max-w-6xl mx-auto">
+    </div>
+
+    <div class="grid grid-cols-3 gap-10 items-start">
 
     <!-- LEFT -->
     <div class="w-full flex flex-col items-start gap-4">
