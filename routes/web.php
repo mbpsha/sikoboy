@@ -34,6 +34,10 @@ Route::get('/reset-password/{token}', [ResetPasswordController::class, 'showRese
 Route::post('/reset-password', [ResetPasswordController::class, 'reset'])
     ->name('password.update');
 
+Route::get('/dev/verify-email', function () {
+    return Inertia::render('Auth/VerifyEmail');
+});
+    
 // Email Verification Routes
 Route::middleware('auth')->group(function () {
     Route::get('/email/verify', [VerificationController::class, 'notice'])
