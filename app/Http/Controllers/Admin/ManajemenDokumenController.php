@@ -14,6 +14,8 @@ class ManajemenDokumenController extends Controller
 
     private const PRIMARY_STORAGE_DISK = 'local';
 
+    private const FALLBACK_STORAGE_DISK = 'public';
+
     public function index()
     {
         return Inertia::render('Admin/ManajemenDokumen/Index', [
@@ -28,7 +30,7 @@ class ManajemenDokumenController extends Controller
         ]);
 
         $admin = $request->user()?->admin;
-        abort_if($admin === null, 403, 'Profil admin tidak ditemukan.');
+        abort_if($admin === null, 403, 'Akses ditolak.');
 
         $file = $validated['template_file'];
         $path = $file->store(self::STORAGE_DIRECTORY, self::PRIMARY_STORAGE_DISK);
@@ -63,7 +65,7 @@ class ManajemenDokumenController extends Controller
     {
         $template = TemplateDokumen::findOrFail($id);
 
-        foreach (['local', 'public'] as $disk) {
+        foreach ([self::PRIMARY_STORAGE_DISK, self::FALLBACK_STORAGE_DISK] as $disk) {
             if (Storage::disk($disk)->exists($template->lokasi_file)) {
                 Storage::disk($disk)->delete($template->lokasi_file);
             }
@@ -94,8 +96,8 @@ class ManajemenDokumenController extends Controller
             return self::PRIMARY_STORAGE_DISK;
         }
 
-        if (Storage::disk('public')->exists($path)) {
-            return 'public';
+        if (Storage::disk(self::FALLBACK_STORAGE_DISK)->exists($path)) {
+            return self::FALLBACK_STORAGE_DISK;
         }
 
         return null;
