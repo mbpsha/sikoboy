@@ -10,6 +10,10 @@ use Inertia\Inertia;
 
 class ManajemenDokumenController extends Controller
 {
+    private const STORAGE_DIRECTORY = 'template-dokumen';
+
+    private const PRIMARY_STORAGE_DISK = 'local';
+
     public function index()
     {
         return Inertia::render('Admin/ManajemenDokumen/Index', [
@@ -23,11 +27,14 @@ class ManajemenDokumenController extends Controller
             'template_file' => ['required', 'file', 'mimes:pdf', 'max:10240'],
         ]);
 
+        $admin = $request->user()?->admin;
+        abort_if($admin === null, 403, 'Profil admin tidak ditemukan.');
+
         $file = $validated['template_file'];
-        $path = $file->store('template-dokumen', 'public');
+        $path = $file->store(self::STORAGE_DIRECTORY, self::PRIMARY_STORAGE_DISK);
 
         TemplateDokumen::create([
-            'id_admin' => $request->user()->admin->id_admin,
+            'id_admin' => $admin->id_admin,
             'nama_file' => $file->getClientOriginalName(),
             'lokasi_file' => $path,
         ]);
@@ -45,9 +52,26 @@ class ManajemenDokumenController extends Controller
     public function download(int $id)
     {
         $template = TemplateDokumen::findOrFail($id);
-        abort_unless(Storage::disk('public')->exists($template->lokasi_file), 404);
 
-        return Storage::disk('public')->download($template->lokasi_file, $template->nama_file);
+        $disk = $this->resolveStorageDisk($template->lokasi_file);
+        abort_if($disk === null, 404);
+
+        return Storage::disk($disk)->download($template->lokasi_file, $template->nama_file);
+    }
+
+    public function destroy(int $id)
+    {
+        $template = TemplateDokumen::findOrFail($id);
+
+        foreach (['local', 'public'] as $disk) {
+            if (Storage::disk($disk)->exists($template->lokasi_file)) {
+                Storage::disk($disk)->delete($template->lokasi_file);
+            }
+        }
+
+        $template->delete();
+
+        return back()->with('success', 'Template dokumen berhasil dihapus.');
     }
 
     private function templateList()
@@ -62,5 +86,18 @@ class ManajemenDokumenController extends Controller
                 'download_url' => route('template-dokumen.download', $template->id_template_dokumen),
             ])
             ->values();
+    }
+
+    private function resolveStorageDisk(string $path): ?string
+    {
+        if (Storage::disk(self::PRIMARY_STORAGE_DISK)->exists($path)) {
+            return self::PRIMARY_STORAGE_DISK;
+        }
+
+        if (Storage::disk('public')->exists($path)) {
+            return 'public';
+        }
+
+        return null;
     }
 }
