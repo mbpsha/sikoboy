@@ -146,6 +146,8 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
         ->name('manajemen-dokumen.store');
     Route::get('/manajemen-dokumen/{id}/download', [ManajemenDokumenController::class, 'download'])
         ->name('manajemen-dokumen.download');
+    Route::delete('/manajemen-dokumen/{id}', [ManajemenDokumenController::class, 'destroy'])
+        ->name('manajemen-dokumen.destroy');
 
     // Legacy partner routes (kept for backward compatibility)
     Route::get('/partners', [AdminDashboardController::class, 'partners'])
