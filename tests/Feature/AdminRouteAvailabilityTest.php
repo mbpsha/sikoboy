@@ -14,6 +14,9 @@ class AdminRouteAvailabilityTest extends TestCase
         $this->assertTrue(Route::has('admin.data-kerjasama.index'));
         $this->assertTrue(Route::has('admin.riwayat-kerjasama.mitra'));
         $this->assertTrue(Route::has('admin.manajemen-potensi.index'));
+        $this->assertTrue(Route::has('admin.manajemen-potensi.store'));
+        $this->assertTrue(Route::has('admin.manajemen-potensi.update'));
+        $this->assertTrue(Route::has('admin.manajemen-potensi.destroy'));
         $this->assertTrue(Route::has('admin.manajemen-dokumen.index'));
     }
 
