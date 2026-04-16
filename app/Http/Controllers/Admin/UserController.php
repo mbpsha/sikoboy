@@ -3,8 +3,12 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\StoreUserRequest;
+use App\Models\Admin;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 
 class UserController extends Controller
@@ -54,6 +58,42 @@ class UserController extends Controller
             'users' => $users,
             'filters' => $request->only(['search', 'role', 'status']),
         ]);
+    }
+
+    /**
+     * Create a new user (admin or mitra).
+     *
+     * Note: For role=mitra, this only creates the User account; the mitra profile
+     * will be completed by the user via the "Complete Profile" flow.
+     */
+    public function store(StoreUserRequest $request)
+    {
+        $validated = $request->validated();
+
+        $plainPassword = $validated['password'] ?: Str::password(12);
+
+        $user = User::create([
+            'email' => $validated['email'],
+            'password' => Hash::make($plainPassword),
+            'role' => $validated['role'],
+        ]);
+
+        if ($validated['role'] === 'admin') {
+            Admin::create([
+                'id_user' => $user->id_user,
+                'nama' => $validated['username'],
+                'divisi' => $validated['instansi'],
+            ]);
+        }
+
+        $response = back()->with('success', 'Pengguna berhasil ditambahkan.');
+
+        // Only flash the generated password when admin did not provide one.
+        if (empty($validated['password'])) {
+            $response->with('generated_password', $plainPassword);
+        }
+
+        return $response;
     }
 
     /**

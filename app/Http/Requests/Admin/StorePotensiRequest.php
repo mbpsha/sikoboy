@@ -14,9 +14,15 @@ class StorePotensiRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'kategori' => ['required', 'string', 'max:50'],
             'judul' => ['required', 'string', 'max:255'],
-            'deskripsi' => ['nullable', 'string'],
+            'deskripsi' => ['required', 'string', 'max:5000'],
+            'gambar' => ['nullable', 'image', 'mimes:jpg,jpeg,png', 'max:5120'],
             'status_tampil' => ['nullable', 'boolean'],
+
+            // List of bullet points/"poin" shown under the category.
+            'poin' => ['nullable', 'array', 'max:50'],
+            'poin.*' => ['nullable', 'string', 'max:255'],
         ];
     }
 }

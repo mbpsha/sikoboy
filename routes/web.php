@@ -25,6 +25,8 @@ Route::get('/template-dokumen', [ManajemenDokumenController::class, 'listPublic'
     ->name('template-dokumen.index');
 Route::get('/template-dokumen/{id}/download', [ManajemenDokumenController::class, 'download'])
     ->name('template-dokumen.download');
+Route::get('/template-dokumen/{id}/preview', [ManajemenDokumenController::class, 'preview'])
+    ->name('template-dokumen.preview');
 
 // Role Selection & Authentication
 Route::get('/role-selection', [LoginController::class, 'showLoginForm'])->name('login.select');
@@ -88,8 +90,13 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     // Users
     Route::get('/pengguna', [AdminUserController::class, 'index'])
         ->name('pengguna.index');
+    Route::post('/pengguna', [AdminUserController::class, 'store'])
+        ->name('pengguna.store');
+
     Route::get('/users', [AdminUserController::class, 'index'])
         ->name('users.index');
+    Route::post('/users', [AdminUserController::class, 'store'])
+        ->name('users.store');
     Route::get('/users/{id}', [AdminUserController::class, 'show'])
         ->name('users.show');
 
@@ -146,6 +153,8 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
         ->name('manajemen-dokumen.store');
     Route::get('/manajemen-dokumen/{id}/download', [ManajemenDokumenController::class, 'download'])
         ->name('manajemen-dokumen.download');
+    Route::get('/manajemen-dokumen/{id}/preview', [ManajemenDokumenController::class, 'preview'])
+        ->name('manajemen-dokumen.preview');
     Route::delete('/manajemen-dokumen/{id}', [ManajemenDokumenController::class, 'destroy'])
         ->name('manajemen-dokumen.destroy');
 

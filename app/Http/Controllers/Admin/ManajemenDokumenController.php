@@ -58,7 +58,37 @@ class ManajemenDokumenController extends Controller
         $disk = $this->resolveStorageDisk($template->lokasi_file);
         abort_if($disk === null, 404);
 
-        return Storage::disk($disk)->download($template->lokasi_file, $template->nama_file);
+        /** @var \Illuminate\Filesystem\FilesystemAdapter $fs */
+        $fs = Storage::disk($disk);
+
+        return $fs->download($template->lokasi_file, $template->nama_file);
+    }
+
+    /**
+     * Display the template inline (PDF preview in browser).
+     */
+    public function preview(int $id)
+    {
+        $template = TemplateDokumen::findOrFail($id);
+
+        $disk = $this->resolveStorageDisk($template->lokasi_file);
+        abort_if($disk === null, 404);
+
+        /** @var \Illuminate\Filesystem\FilesystemAdapter $fs */
+        $fs = Storage::disk($disk);
+
+        $mime = $fs->mimeType($template->lokasi_file) ?? '';
+        abort_if(! str_starts_with($mime, 'application/pdf'), 415, 'Hanya PDF yang bisa ditampilkan.');
+
+        $path = $fs->path($template->lokasi_file);
+        abort_if(! is_file($path), 404);
+
+        $filename = str_replace(["\r", "\n", '"'], ['', '', "'"], basename($template->nama_file));
+
+        return response()->file($path, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="'.$filename.'"',
+        ]);
     }
 
     public function destroy(int $id)
@@ -86,6 +116,7 @@ class ManajemenDokumenController extends Controller
                 'nama_file' => $template->nama_file,
                 'created_at' => $template->created_at,
                 'download_url' => route('template-dokumen.download', $template->id_template_dokumen),
+                'preview_url' => route('template-dokumen.preview', $template->id_template_dokumen),
             ])
             ->values();
     }

@@ -20,6 +20,7 @@ class AdminRouteAvailabilityTest extends TestCase
         $this->assertTrue(Route::has('admin.manajemen-dokumen.index'));
         $this->assertTrue(Route::has('admin.manajemen-dokumen.store'));
         $this->assertTrue(Route::has('admin.manajemen-dokumen.download'));
+        $this->assertTrue(Route::has('admin.manajemen-dokumen.preview'));
         $this->assertTrue(Route::has('admin.manajemen-dokumen.destroy'));
     }
 
@@ -27,6 +28,7 @@ class AdminRouteAvailabilityTest extends TestCase
     {
         $this->assertTrue(Route::has('template-dokumen.index'));
         $this->assertTrue(Route::has('template-dokumen.download'));
+        $this->assertTrue(Route::has('template-dokumen.preview'));
     }
 
     public function test_admin_manajemen_dokumen_routes_require_auth_and_admin_role(): void

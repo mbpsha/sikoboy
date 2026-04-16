@@ -29,8 +29,8 @@ class ManajemenDokumenControllerTest extends TestCase
         $response->assertSessionHas('success');
 
         $template = TemplateDokumen::query()->firstOrFail();
-        Storage::disk('local')->assertExists($template->lokasi_file);
-        Storage::disk('public')->assertMissing($template->lokasi_file);
+        $this->assertTrue(Storage::disk('local')->exists($template->lokasi_file));
+        $this->assertFalse(Storage::disk('public')->exists($template->lokasi_file));
     }
 
     public function test_upload_rejects_non_pdf_template(): void
@@ -64,6 +64,26 @@ class ManajemenDokumenControllerTest extends TestCase
         $response->assertHeader('content-disposition');
     }
 
+    public function test_public_preview_works_for_template_document(): void
+    {
+        Storage::fake('local');
+        $adminUser = $this->createAdminUser();
+        $templatePath = Storage::disk('local')->putFileAs('template-dokumen', UploadedFile::fake()->create('preview.pdf', 50, 'application/pdf'), 'preview.pdf');
+
+        $template = TemplateDokumen::create([
+            'id_admin' => $adminUser->admin->id_admin,
+            'nama_file' => 'preview.pdf',
+            'lokasi_file' => $templatePath,
+        ]);
+
+        $response = $this->get(route('template-dokumen.preview', $template->id_template_dokumen));
+
+        $response->assertOk();
+        $response->assertHeader('content-type', 'application/pdf');
+        $response->assertHeader('content-disposition');
+        $this->assertStringContainsString('inline', $response->headers->get('content-disposition'));
+    }
+
     public function test_admin_can_delete_template_and_file(): void
     {
         Storage::fake('local');
@@ -81,7 +101,7 @@ class ManajemenDokumenControllerTest extends TestCase
         $response->assertRedirect();
         $response->assertSessionHas('success');
         $this->assertDatabaseMissing('template_dokumen', ['id_template_dokumen' => $template->id_template_dokumen]);
-        Storage::disk('local')->assertMissing($templatePath);
+        $this->assertFalse(Storage::disk('local')->exists($templatePath));
     }
 
     private function createAdminUser(): User

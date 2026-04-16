@@ -14,9 +14,14 @@ class UpdatePotensiRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'kategori' => ['sometimes', 'required', 'string', 'max:50'],
             'judul' => ['sometimes', 'required', 'string', 'max:255'],
-            'deskripsi' => ['nullable', 'string'],
+            'deskripsi' => ['sometimes', 'required', 'string', 'max:5000'],
+            'gambar' => ['nullable', 'image', 'mimes:jpg,jpeg,png', 'max:5120'],
             'status_tampil' => ['nullable', 'boolean'],
+
+            'poin' => ['nullable', 'array', 'max:50'],
+            'poin.*' => ['nullable', 'string', 'max:255'],
         ];
     }
 }
