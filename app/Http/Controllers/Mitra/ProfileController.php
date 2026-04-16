@@ -20,7 +20,7 @@ class ProfileController extends Controller
             'user' => [
                 'email' => $user->email,
             ],
-            'mitra' => $user->mitra
+            'mitra' => $user->mitra,
         ]);
     }
 
@@ -33,18 +33,16 @@ class ProfileController extends Controller
 
         $request->validate([
             'nama_perusahaan' => 'required|string|max:255',
-            'npwp' => 'nullable|string',
             'pic' => 'required|string',
             'no_handphone' => 'required|string',
-            'alamat' => 'required|string'
+            'alamat' => 'required|string',
         ]);
 
         $mitra->update($request->only([
             'nama_perusahaan',
-            'npwp',
             'pic',
             'no_handphone',
-            'alamat'
+            'alamat',
         ]));
 
         return back()->with('success', 'Profil berhasil diperbarui.');
@@ -57,11 +55,11 @@ class ProfileController extends Controller
     {
         $request->validate([
             'current_password' => 'required|current_password',
-            'new_password' => 'required|min:8|confirmed'
+            'new_password' => 'required|min:8|confirmed',
         ]);
 
         $request->user()->update([
-            'password' => Hash::make($request->new_password)
+            'password' => Hash::make($request->new_password),
         ]);
 
         return back()->with('success', 'Password berhasil diperbarui.');

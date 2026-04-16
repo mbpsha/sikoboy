@@ -2,9 +2,9 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
 use App\Models\Admin;
 use App\Models\Mitra;
+use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -41,7 +41,6 @@ class DatabaseSeeder extends Seeder
         Mitra::create([
             'id_user' => $mitra->id_user,
             'nama_perusahaan' => 'PT Contoh Mitra Indonesia',
-            'npwp' => '01.234.567.8-901.000',
             'no_handphone' => '081234567891',
             'pic' => 'Budi Santoso',
             'alamat' => 'Jl. Contoh No. 123, Boyolali',
@@ -57,7 +56,6 @@ class DatabaseSeeder extends Seeder
         Mitra::create([
             'id_user' => $mitra2->id_user,
             'nama_perusahaan' => 'CV Mitra Sejahtera',
-            'npwp' => '02.345.678.9-012.000',
             'no_handphone' => '081234567892',
             'pic' => 'Siti Nurhaliza',
             'alamat' => 'Jl. Merdeka No. 45, Boyolali',
@@ -79,4 +77,3 @@ class DatabaseSeeder extends Seeder
         ]);
     }
 }
-
