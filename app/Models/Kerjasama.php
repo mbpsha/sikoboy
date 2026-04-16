@@ -2,18 +2,20 @@
 
 namespace App\Models;
 
+use App\Enums\StatusPersetujuan;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
-use App\Enums\StatusPersetujuan;
 
 class Kerjasama extends Model
 {
     use HasFactory;
 
     protected $table = 'kerjasama';
+
     protected $primaryKey = 'id_kerjasama';
+
     public $timestamps = false;
 
     /**
@@ -24,10 +26,12 @@ class Kerjasama extends Model
         'id_admin',
         'id_kategori',
         'judul',
-        'nomor_surat',
+        'nomor_suratM',
+        'nomor_suratP',
         'urusan',
         'daerah',
         'status_aktif',
+        'pemrakarsa',
         'jenis_kerjasama',
         'jenis_dokumen',
         'tipe',
@@ -44,8 +48,8 @@ class Kerjasama extends Model
     protected function casts(): array
     {
         return [
-            'is_finalized'       => 'boolean',
-            'created_at'         => 'datetime',
+            'is_finalized' => 'boolean',
+            'created_at' => 'datetime',
             'status_persetujuan' => StatusPersetujuan::class,
         ];
     }
@@ -107,12 +111,22 @@ class Kerjasama extends Model
 
     public function scopeMitraTipe(Builder $query): Builder
     {
-        return $query->where('tipe', 'mitra');
+        return $query->where(function (Builder $q) {
+            $q->where('pemrakarsa', 'M')
+                ->orWhere(function (Builder $legacy) {
+                    $legacy->whereNull('pemrakarsa')->where('tipe', 'mitra');
+                });
+        });
     }
 
     public function scopePemerintahTipe(Builder $query): Builder
     {
-        return $query->where('tipe', 'pemerintah');
+        return $query->where(function (Builder $q) {
+            $q->where('pemrakarsa', 'P')
+                ->orWhere(function (Builder $legacy) {
+                    $legacy->whereNull('pemrakarsa')->where('tipe', 'pemerintah');
+                });
+        });
     }
 
     public function scopeAktif(Builder $query): Builder
@@ -121,18 +135,18 @@ class Kerjasama extends Model
 
         return $query->whereHas('latestPeriode', function (Builder $q) use ($today) {
             $q->where('tanggal_mulai', '<=', $today)
-              ->where('tanggal_berakhir', '>=', $today);
+                ->where('tanggal_berakhir', '>=', $today);
         });
     }
 
     public function scopeAkanBerakhir(Builder $query, int $days = 30): Builder
     {
-        $today       = Carbon::today()->toDateString();
-        $threshold   = Carbon::today()->addDays($days)->toDateString();
+        $today = Carbon::today()->toDateString();
+        $threshold = Carbon::today()->addDays($days)->toDateString();
 
         return $query->whereHas('latestPeriode', function (Builder $q) use ($today, $threshold) {
             $q->where('tanggal_berakhir', '>', $today)
-              ->where('tanggal_berakhir', '<=', $threshold);
+                ->where('tanggal_berakhir', '<=', $threshold);
         });
     }
 
@@ -152,15 +166,19 @@ class Kerjasama extends Model
     /**
      * Dynamically compute the active status label.
      */
-    public function getStatusLabelAttribute(): string
+    public function getStatusLabelAttribute(): ?string
     {
-        $today     = Carbon::today();
-        $threshold = Carbon::today()->addDays(30);
+        if ($this->pemrakarsa === 'M' && $this->status_persetujuan !== StatusPersetujuan::Disetujui) {
+            return null;
+        }
+
+        $today = Carbon::today();
+        $threshold = Carbon::today()->addMonths(3);
 
         $periode = $this->latestPeriode;
 
         if (! $periode) {
-            return 'tidak diketahui';
+            return null;
         }
 
         $berakhir = Carbon::parse($periode->tanggal_berakhir);
@@ -170,9 +188,16 @@ class Kerjasama extends Model
         }
 
         if ($berakhir->lte($threshold)) {
-            return 'akan berakhir';
+            return 'segera berakhir';
         }
 
         return 'aktif';
+    }
+
+    public function getNomorSuratAttribute(): ?string
+    {
+        return $this->pemrakarsa === 'P'
+            ? ($this->nomor_suratP ?? $this->nomor_suratM)
+            : ($this->nomor_suratM ?? $this->nomor_suratP);
     }
 }
