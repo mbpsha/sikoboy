@@ -18,6 +18,11 @@ use App\Http\Controllers\Admin\DataKerjasamaController;
 // Home / Welcome
 Route::get('/', fn() => Inertia::render('Welcome'))->name('home');
 
+// Dokumen page
+Route::get('/dokumen', fn() => Inertia::render('Dokumen'))->name('dokumen');
+// Kontak page
+Route::get('/kontak', fn() => Inertia::render('Kontak'))->name('kontak');
+
 // Role Selection & Authentication
 Route::get('/role-selection', [LoginController::class, 'showLoginForm'])->name('login.select');
 Route::get('/login/{role?}', [LoginController::class, 'showLoginForm'])->name('login');
