@@ -10,7 +10,9 @@ class Mitra extends Model
     use HasFactory;
 
     protected $table = 'mitras';
+
     protected $primaryKey = 'id_mitra';
+
     public $timestamps = false;
 
     /**
@@ -21,7 +23,6 @@ class Mitra extends Model
     protected $fillable = [
         'id_user',
         'nama_perusahaan',
-        'npwp',
         'no_handphone',
         'pic',
         'alamat',

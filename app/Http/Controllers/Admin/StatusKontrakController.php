@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\StatusPersetujuan;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\UpdatePersetujuanRequest;
 use App\Http\Requests\Admin\UpdateStatusKontrakRequest;
 use App\Models\Kerjasama;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -27,11 +29,11 @@ class StatusKontrakController extends Controller
             ->paginate(15)
             ->withQueryString();
 
-        $kerjasama->getCollection()->transform(fn($k) => $this->formatRow($k));
+        $kerjasama->getCollection()->transform(fn ($k) => $this->formatRow($k));
 
         return Inertia::render('Admin/StatusKontrak/Index', [
             'kerjasama' => $kerjasama,
-            'filters'   => $request->only(['search', 'tahun', 'jenis_kerjasama', 'jenis_dokumen', 'status_persetujuan']),
+            'filters' => $request->only(['search', 'tahun', 'jenis_kerjasama', 'jenis_dokumen', 'status_persetujuan']),
         ]);
     }
 
@@ -69,8 +71,8 @@ class StatusKontrakController extends Controller
         $kerjasama = Kerjasama::mitraTipe()->where('is_finalized', false)->findOrFail($id);
 
         $kerjasama->update([
-            'is_finalized'       => true,
-            'status_persetujuan' => \App\Enums\StatusPersetujuan::Disetujui,
+            'is_finalized' => true,
+            'status_persetujuan' => StatusPersetujuan::Disetujui,
         ]);
 
         return back()->with('success', 'Kontrak berhasil difinalisasi dan masuk ke Riwayat Kerjasama.');
@@ -86,14 +88,15 @@ class StatusKontrakController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('judul', 'like', "%{$search}%")
-                  ->orWhere('nomor_surat', 'like', "%{$search}%")
-                  ->orWhere('urusan', 'like', "%{$search}%")
-                  ->orWhereHas('mitra', fn($q) => $q->where('nama_perusahaan', 'like', "%{$search}%"));
+                    ->orWhere('nomor_suratM', 'like', "%{$search}%")
+                    ->orWhere('nomor_suratP', 'like', "%{$search}%")
+                    ->orWhere('urusan', 'like', "%{$search}%")
+                    ->orWhereHas('mitra', fn ($q) => $q->where('nama_perusahaan', 'like', "%{$search}%"));
             });
         }
 
         if ($request->filled('tahun')) {
-            $query->whereHas('latestPeriode', fn($q) => $q->whereYear('tanggal_mulai', $request->tahun));
+            $query->whereHas('latestPeriode', fn ($q) => $q->whereYear('tanggal_mulai', $request->tahun));
         }
 
         if ($request->filled('jenis_kerjasama')) {
@@ -119,32 +122,32 @@ class StatusKontrakController extends Controller
 
         $jangkaWaktu = null;
         if ($periode) {
-            $mulai    = \Carbon\Carbon::parse($periode->tanggal_mulai);
-            $berakhir = \Carbon\Carbon::parse($periode->tanggal_berakhir);
-            $jangkaWaktu = $mulai->diffInMonths($berakhir) . ' bulan';
+            $mulai = Carbon::parse($periode->tanggal_mulai);
+            $berakhir = Carbon::parse($periode->tanggal_berakhir);
+            $jangkaWaktu = $mulai->diffInMonths($berakhir).' bulan';
         }
 
         return [
-            'id_kerjasama'       => $k->id_kerjasama,
-            'tahun'              => $periode ? \Carbon\Carbon::parse($periode->tanggal_mulai)->year : null,
-            'mitra'              => $k->mitra?->nama_perusahaan,
-            'judul'              => $k->judul,
-            'nomor_surat'        => $k->nomor_surat,
-            'jenis_kerjasama'    => $k->jenis_kerjasama,
-            'jenis_dokumen'      => $k->jenis_dokumen,
-            'urusan'             => $k->urusan,
-            'tanggal_mulai'      => $periode?->tanggal_mulai,
-            'tanggal_berakhir'   => $periode?->tanggal_berakhir,
-            'jangka_waktu'       => $jangkaWaktu,
-            'status_negosiasi'    => $k->status_negosiasi,
-            'status_persetujuan'  => $k->status_persetujuan?->value,
+            'id_kerjasama' => $k->id_kerjasama,
+            'tahun' => $periode ? Carbon::parse($periode->tanggal_mulai)->year : null,
+            'mitra' => $k->mitra?->nama_perusahaan,
+            'judul' => $k->judul,
+            'nomor_surat' => $k->nomor_surat,
+            'jenis_kerjasama' => $k->jenis_kerjasama,
+            'jenis_dokumen' => $k->jenis_dokumen,
+            'urusan' => $k->urusan,
+            'tanggal_mulai' => $periode?->tanggal_mulai,
+            'tanggal_berakhir' => $periode?->tanggal_berakhir,
+            'jangka_waktu' => $jangkaWaktu,
+            'status_negosiasi' => $k->status_negosiasi,
+            'status_persetujuan' => $k->status_persetujuan?->value,
             'catatan_persetujuan' => $k->catatan_persetujuan,
-            'files'              => $k->dokumen->map(fn($d) => [
-                'id'            => $d->id_dokumen,
-                'nama_file'     => $d->nama_file,
-                'lokasi_file'   => $d->lokasi_file,
+            'files' => $k->dokumen->map(fn ($d) => [
+                'id' => $d->id_dokumen,
+                'nama_file' => $d->nama_file,
+                'lokasi_file' => $d->lokasi_file,
                 'versi_dokumen' => $d->versi_dokumen,
-                'created_at'    => $d->created_at,
+                'created_at' => $d->created_at,
             ])->values(),
         ];
     }
