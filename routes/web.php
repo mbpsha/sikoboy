@@ -132,6 +132,12 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     // Manajemen Potensi
     Route::get('/manajemen-potensi', [ManajemenPotensiController::class, 'index'])
         ->name('manajemen-potensi.index');
+    Route::post('/manajemen-potensi', [ManajemenPotensiController::class, 'store'])
+        ->name('manajemen-potensi.store');
+    Route::put('/manajemen-potensi/{id}', [ManajemenPotensiController::class, 'update'])
+        ->name('manajemen-potensi.update');
+    Route::delete('/manajemen-potensi/{id}', [ManajemenPotensiController::class, 'destroy'])
+        ->name('manajemen-potensi.destroy');
 
     // Manajemen Dokumen
     Route::get('/manajemen-dokumen', [ManajemenDokumenController::class, 'index'])
