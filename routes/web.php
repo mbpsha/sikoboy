@@ -65,6 +65,11 @@ Route::middleware('auth')->group(function () {
         ->name('verification.send');
 });
 
+// Authenticated user profile (renders resources/js/Components/Profile/UserProfil.Vue)
+Route::middleware('auth')->get('/profile', function () {
+    return Inertia::render('Profile/UserProfil');
+})->name('profile.show');
+
 // Partner (Mitra) Routes
 Route::middleware(['auth', 'role:mitra'])->prefix('mitra')->name('mitra.')->group(function () {
     Route::get('/dashboard', [MitraDashboardController::class, 'index'])
