@@ -10,6 +10,22 @@ use Inertia\Inertia;
 class ProfileController extends Controller
 {
     /**
+     * Show the mitra profile page.
+     */
+    public function index(Request $request)
+    {
+        $user = $request->user();
+
+        return Inertia::render('Mitra/Profile', [
+            'user' => [
+                'email' => $user->email,
+            ],
+            'mitra' => $user->mitra,
+            'activeTab' => 'pengajuan',
+        ]);
+    }
+
+    /**
      * Show the profile edit form.
      */
     public function edit(Request $request)

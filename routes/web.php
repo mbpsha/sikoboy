@@ -92,13 +92,19 @@ Route::middleware(['auth', 'role:mitra'])->prefix('mitra')->name('mitra.')->grou
     Route::post('/profile/complete', [MitraDashboardController::class, 'storeProfile'])
         ->name('profile.store');
 
-    Route::get('/profile', [MitraProfileController::class, 'edit'])
+    Route::get('/profile', [MitraProfileController::class, 'index'])
+        ->name('profile.index');
+    Route::get('/profile/edit', [MitraProfileController::class, 'edit'])
         ->name('profile.edit');
     Route::put('/profile', [MitraProfileController::class, 'update'])
         ->name('profile.update');
     Route::put('/profile/password', [MitraProfileController::class, 'updatePassword'])
         ->name('profile.password');
 });
+
+// Portal Mitra (Alias for Mitra Profile)
+Route::middleware(['auth', 'role:mitra'])->get('/portal-mitra', [MitraProfileController::class, 'index'])
+    ->name('portal-mitra');
 
 // Admin Routes
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
