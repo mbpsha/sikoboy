@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreUserRequest;
+use App\Http\Requests\Admin\UpdateUserRequest;
 use App\Models\Admin;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -106,6 +107,51 @@ class UserController extends Controller
         return Inertia::render('Admin/Users/Show', [
             'user' => $this->formatUser($user, detail: true),
         ]);
+    }
+
+    /**
+     * Update an existing user.
+     *
+     * Designed to match the admin panel form fields: username, email, instansi.
+     * Role changes are intentionally not supported here.
+     */
+    public function update(UpdateUserRequest $request, int $id)
+    {
+        $validated = $request->validated();
+
+        $user = User::with(['admin', 'mitra'])->findOrFail($id);
+
+        $user->email = $validated['email'];
+
+        if (! empty($validated['password'])) {
+            $user->password = $validated['password'];
+        }
+
+        $user->save();
+
+        if ($user->role === 'admin') {
+            $user->admin()->updateOrCreate(
+                ['id_user' => $user->id_user],
+                [
+                    'nama' => $validated['username'],
+                    'divisi' => $validated['instansi'],
+                ]
+            );
+        }
+
+        if ($user->role === 'mitra' && $user->mitra) {
+            // Optional: allow editing minimal mitra identity fields when profile exists.
+            $updates = array_filter([
+                'pic' => $validated['username'] ?? null,
+                'nama_perusahaan' => $validated['instansi'] ?? null,
+            ], fn ($value) => $value !== null);
+
+            if (! empty($updates)) {
+                $user->mitra->fill($updates)->save();
+            }
+        }
+
+        return back()->with('success', 'Pengguna berhasil diperbarui.');
     }
 
     // -------------------------------------------------------------------------

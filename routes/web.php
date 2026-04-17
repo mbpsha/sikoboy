@@ -92,11 +92,15 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
         ->name('pengguna.index');
     Route::post('/pengguna', [AdminUserController::class, 'store'])
         ->name('pengguna.store');
+    Route::put('/pengguna/{id}', [AdminUserController::class, 'update'])
+        ->name('pengguna.update');
 
     Route::get('/users', [AdminUserController::class, 'index'])
         ->name('users.index');
     Route::post('/users', [AdminUserController::class, 'store'])
         ->name('users.store');
+    Route::put('/users/{id}', [AdminUserController::class, 'update'])
+        ->name('users.update');
     Route::get('/users/{id}', [AdminUserController::class, 'show'])
         ->name('users.show');
 
