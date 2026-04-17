@@ -17,6 +17,10 @@ use App\Http\Controllers\Admin\DataKerjasamaController;
 
 // Home / Welcome
 Route::get('/', fn() => Inertia::render('Welcome'))->name('home');
+// Tentang
+Route::get('/about', function () {return Inertia::render('About');})->name('about');
+// Peraturan
+Route::get('/peraturan', function () {return Inertia::render('Peraturan');})->name('peraturan');
 
 // Dokumen page
 Route::get('/dokumen', fn() => Inertia::render('Dokumen'))->name('dokumen');
