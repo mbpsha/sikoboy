@@ -18,16 +18,19 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 // Home / Welcome
-Route::get('/', fn() => Inertia::render('Welcome'))->name('home');
-// Tentang
-Route::get('/about', function () {return Inertia::render('About');})->name('about');
-// Peraturan
-Route::get('/peraturan', function () {return Inertia::render('Peraturan');})->name('peraturan');
+Route::get('/', fn () => Inertia::render('Welcome'))->name('home');
 
-// Dokumen page
-Route::get('/dokumen', fn() => Inertia::render('Dokumen'))->name('dokumen');
-// Kontak page
-Route::get('/kontak', fn() => Inertia::render('Kontak'))->name('kontak');
+// Public pages
+Route::get('/about', fn () => Inertia::render('About'))->name('about');
+Route::get('/peraturan', fn () => Inertia::render('Peraturan'))->name('peraturan');
+
+// Public template dokumen routes (website)
+Route::get('/template-dokumen', [ManajemenDokumenController::class, 'listPublic'])
+    ->name('template-dokumen.index');
+Route::get('/template-dokumen/{id}/download', [ManajemenDokumenController::class, 'download'])
+    ->name('template-dokumen.download');
+Route::get('/template-dokumen/{id}/preview', [ManajemenDokumenController::class, 'preview'])
+    ->name('template-dokumen.preview');
 
 // Role Selection & Authentication
 Route::get('/role-selection', [LoginController::class, 'showLoginForm'])->name('login.select');
