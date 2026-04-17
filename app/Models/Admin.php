@@ -13,7 +13,7 @@ class Admin extends Model
     protected $primaryKey = 'id_admin';
     public $timestamps = false;
 
-    /**
+    /*
      * @var array<string>
      */
     protected $fillable = [

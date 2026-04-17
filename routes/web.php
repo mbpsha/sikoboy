@@ -1,19 +1,21 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
+use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Admin\DataKerjasamaController;
+use App\Http\Controllers\Admin\ManajemenDokumenController;
+use App\Http\Controllers\Admin\ManajemenPotensiController;
+use App\Http\Controllers\Admin\RiwayatKerjasamaController;
+use App\Http\Controllers\Admin\StatusKontrakController;
+use App\Http\Controllers\Admin\UserController as AdminUserController;
+use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
-use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\Auth\VerificationController;
 use App\Http\Controllers\Mitra\DashboardController as MitraDashboardController;
 use App\Http\Controllers\Mitra\ProfileController as MitraProfileController;
-use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
-use App\Http\Controllers\Admin\UserController as AdminUserController;
-use App\Http\Controllers\Admin\StatusKontrakController;
-use App\Http\Controllers\Admin\RiwayatKerjasamaController;
-use App\Http\Controllers\Admin\DataKerjasamaController;
+use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
 
 // Home / Welcome
 Route::get('/', fn() => Inertia::render('Welcome'))->name('home');
@@ -85,12 +87,25 @@ Route::middleware(['auth', 'role:mitra'])->prefix('mitra')->name('mitra.')->grou
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
 
     // Dashboard
+    Route::get('/beranda', [AdminDashboardController::class, 'index'])
+        ->name('beranda.index');
     Route::get('/dashboard', [AdminDashboardController::class, 'index'])
         ->name('dashboard');
 
     // Users
+    Route::get('/pengguna', [AdminUserController::class, 'index'])
+        ->name('pengguna.index');
+    Route::post('/pengguna', [AdminUserController::class, 'store'])
+        ->name('pengguna.store');
+    Route::put('/pengguna/{id}', [AdminUserController::class, 'update'])
+        ->name('pengguna.update');
+
     Route::get('/users', [AdminUserController::class, 'index'])
         ->name('users.index');
+    Route::post('/users', [AdminUserController::class, 'store'])
+        ->name('users.store');
+    Route::put('/users/{id}', [AdminUserController::class, 'update'])
+        ->name('users.update');
     Route::get('/users/{id}', [AdminUserController::class, 'show'])
         ->name('users.show');
 
@@ -105,6 +120,8 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
         ->name('status-kontrak.finalize');
 
     // Riwayat Kerjasama — Mitra (finalised)
+    Route::get('/riwayat-kerjasama', [RiwayatKerjasamaController::class, 'mitra'])
+        ->name('riwayat-kerjasama.index');
     Route::get('/riwayat-kerjasama/mitra', [RiwayatKerjasamaController::class, 'mitra'])
         ->name('riwayat-kerjasama.mitra');
 
@@ -117,8 +134,38 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
         ->name('riwayat-kerjasama.pemerintah.update');
 
     // Data Kerjasama (combined view)
+    Route::get('/data-kerjasama/pemda', [DataKerjasamaController::class, 'index'])
+        ->defaults('pemrakarsa', 'P')
+        ->name('data-kerjasama.pemda');
+    Route::get('/data-kerjasama/mitra', [DataKerjasamaController::class, 'index'])
+        ->defaults('pemrakarsa', 'M')
+        ->name('data-kerjasama.mitra');
     Route::get('/data-kerjasama', [DataKerjasamaController::class, 'index'])
         ->name('data-kerjasama.index');
+    Route::post('/data-kerjasama', [DataKerjasamaController::class, 'store'])
+        ->name('data-kerjasama.store');
+
+    // Manajemen Potensi
+    Route::get('/manajemen-potensi', [ManajemenPotensiController::class, 'index'])
+        ->name('manajemen-potensi.index');
+    Route::post('/manajemen-potensi', [ManajemenPotensiController::class, 'store'])
+        ->name('manajemen-potensi.store');
+    Route::put('/manajemen-potensi/{id}', [ManajemenPotensiController::class, 'update'])
+        ->name('manajemen-potensi.update');
+    Route::delete('/manajemen-potensi/{id}', [ManajemenPotensiController::class, 'destroy'])
+        ->name('manajemen-potensi.destroy');
+
+    // Manajemen Dokumen
+    Route::get('/manajemen-dokumen', [ManajemenDokumenController::class, 'index'])
+        ->name('manajemen-dokumen.index');
+    Route::post('/manajemen-dokumen', [ManajemenDokumenController::class, 'store'])
+        ->name('manajemen-dokumen.store');
+    Route::get('/manajemen-dokumen/{id}/download', [ManajemenDokumenController::class, 'download'])
+        ->name('manajemen-dokumen.download');
+    Route::get('/manajemen-dokumen/{id}/preview', [ManajemenDokumenController::class, 'preview'])
+        ->name('manajemen-dokumen.preview');
+    Route::delete('/manajemen-dokumen/{id}', [ManajemenDokumenController::class, 'destroy'])
+        ->name('manajemen-dokumen.destroy');
 
     // Legacy partner routes (kept for backward compatibility)
     Route::get('/partners', [AdminDashboardController::class, 'partners'])
