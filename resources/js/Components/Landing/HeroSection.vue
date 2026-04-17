@@ -47,17 +47,14 @@ onUnmounted(() => {
                 }">
             </div>
 
-            <!-- overlay -->
-            <div class="absolute inset-0 bg-gradient-to-b from-black/60 via-black/20 to-transparent"></div>
-
             <!-- gradient putih (moved lower so subtitle remains on dark overlay) -->
             <div 
                 class="absolute inset-0"
                 style="background: linear-gradient(
-                    to bottom,
-                    rgba(255,255,255,0.05) 75%,
-                    rgba(255,255,255,0.6) 92%,
-                    rgba(255,255,255,1) 100%
+                        to bottom,
+                        rgba(255, 255, 255, 0.05) 10%,
+                        rgba(255, 255, 255, 0.6) 70%,
+                        rgba(255, 255, 255, 1) 100%
                 );">
             </div>
         </div>
@@ -67,17 +64,17 @@ onUnmounted(() => {
             class="relative z-10 mx-auto max-w-6xl px-6 text-center animate-fadeUp">
             
             <!-- TITLE (FAHKWANG) -->
-            <h1 class="mx-auto mb-4 text-6xl font-semibold tracking-[1em] leading-none sm:text-6xl" 
+            <h1 class="mx-auto mb-4 text-4xl sm:text-6xl font-semibold tracking-[1em] leading-none" 
             style="font-family: 'Fahkwang', sans-serif;"> {{ title }} </h1> 
             <div class="mx-auto mb-6 w-56 h-px bg-white/40"></div>
 
             <!-- LABEL BELOW TITLE -->
-            <p class="mx-auto text-xl text-white/80 font-light mb-4">
+            <p class="mx-auto text-lg sm:text-xl text-white/80 font-light mb-4">
                 Sistem Kolaboratif Boyolali
             </p>
 
             <!-- SUBTITLE -->
-            <p class="mx-auto mt-2 max-w-3xl text-base leading-relaxed text-white sm:text-lg" style="text-shadow: 0 4px 18px rgba(0,0,0,0.45);">
+            <p class="mx-auto mt-2 max-w-3xl text-sm sm:text-base leading-relaxed text-white" style="text-shadow: 0 4px 18px rgba(0,0,0,0.45);">
                 {{ subtitle }}
             </p>
 

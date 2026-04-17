@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from "vue";
+import { ref, watch, onMounted, onUnmounted } from "vue";
 
 // DATA HARDCODE (SUDAH ADA TYPE)
 const peraturan = ref([
@@ -25,6 +25,32 @@ const peraturan = ref([
 
 const showModal = ref(false);
 const selectedFile = ref(null);
+const closeBtn = ref(null)
+let lastActive = null
+
+const onKeyDown = (e) => {
+  if (e.key === 'Escape' && showModal.value) {
+    closeModal()
+  }
+}
+
+watch(showModal, (val) => {
+  if (val) {
+    // open
+    lastActive = document.activeElement
+    // focus close button after next tick
+    setTimeout(() => closeBtn.value && closeBtn.value.focus(), 50)
+    document.addEventListener('keydown', onKeyDown)
+  } else {
+    document.removeEventListener('keydown', onKeyDown)
+    // restore focus
+    lastActive && lastActive.focus && lastActive.focus()
+  }
+})
+
+onUnmounted(() => {
+  document.removeEventListener('keydown', onKeyDown)
+})
 
 // HANDLE CLICK
 const handleClick = (item) => {
@@ -45,11 +71,6 @@ const closeModal = () => {
 <template>
   <section class="py-12 md:py-16 px-4 md:px-10 bg-gray-50">
     <div class="max-w-7xl mx-auto">
-
-      <!-- TITLE -->
-      <h2 class="text-xl md:text-2xl font-bold text-center text-[#17464E] mb-8 md:mb-10">
-        Peraturan-Peraturan Terkait Kerja Sama
-      </h2>
 
       <!-- GRID RESPONSIVE -->
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 md:gap-8">
@@ -95,8 +116,10 @@ const closeModal = () => {
 
           <!-- CLOSE -->
           <button
+            ref="closeBtn"
             @click="closeModal"
             class="absolute top-3 right-3 text-gray-600 hover:text-black text-xl z-10"
+            aria-label="Tutup dokumen"
           >
             ✕
           </button>

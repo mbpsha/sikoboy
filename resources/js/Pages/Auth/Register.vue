@@ -83,25 +83,6 @@
 
                     <div>
                         <p class="text-center mb-2 font-semibold text-xl">
-                            NPWP (Opsional)
-                        </p>
-                        <input
-                            type="text"
-                            v-model="form.npwp"
-                            placeholder="NPWP"
-                            class="w-full pl-3 pr-3 py-2 rounded bg-white text-black text-center placeholder:text-center border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#0C505C]/40 focus:border-[#0C505C] transition duration-200"
-                        />
-                        <!-- ERROR -->
-                        <p
-                            v-if="form.errors.npwp"
-                            class="text-red-400 text-sm mt-1 text-left"
-                        >
-                            {{ form.errors.npwp }}
-                        </p>
-                    </div>
-
-                    <div>
-                        <p class="text-center mb-2 font-semibold text-xl">
                             Nomor Handphone
                         </p>
                         <input
@@ -240,7 +221,6 @@ const goLogin = () => {
 const form = useForm({
     email: "",
     nama_perusahaan: "",
-    npwp: "",
     no_handphone: "",
     pic: "",
     alamat: "",

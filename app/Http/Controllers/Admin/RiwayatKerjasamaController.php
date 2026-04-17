@@ -32,11 +32,11 @@ class RiwayatKerjasamaController extends Controller
             ->paginate(15)
             ->withQueryString();
 
-        $kerjasama->getCollection()->transform(fn($k) => $this->formatRow($k, tipe: 'mitra'));
+        $kerjasama->getCollection()->transform(fn ($k) => $this->formatRow($k, tipe: 'mitra'));
 
         return Inertia::render('Admin/RiwayatKerjasama/Mitra', [
             'kerjasama' => $kerjasama,
-            'filters'   => $request->only(['search', 'tahun', 'jenis_kerjasama', 'jenis_dokumen', 'status']),
+            'filters' => $request->only(['search', 'tahun', 'jenis_kerjasama', 'jenis_dokumen', 'status']),
         ]);
     }
 
@@ -58,11 +58,11 @@ class RiwayatKerjasamaController extends Controller
             ->paginate(15)
             ->withQueryString();
 
-        $kerjasama->getCollection()->transform(fn($k) => $this->formatRow($k, tipe: 'pemerintah'));
+        $kerjasama->getCollection()->transform(fn ($k) => $this->formatRow($k, tipe: 'pemerintah'));
 
         return Inertia::render('Admin/RiwayatKerjasama/Pemerintah', [
             'kerjasama' => $kerjasama,
-            'filters'   => $request->only(['search', 'tahun', 'jenis_kerjasama', 'jenis_dokumen', 'status']),
+            'filters' => $request->only(['search', 'tahun', 'jenis_kerjasama', 'jenis_dokumen', 'status']),
         ]);
     }
 
@@ -76,26 +76,27 @@ class RiwayatKerjasamaController extends Controller
 
         DB::transaction(function () use ($validated, $admin) {
             $kerjasama = Kerjasama::create([
-                'id_mitra'        => null,
-                'id_admin'        => $admin->id_admin,
-                'id_kategori'     => $validated['id_kategori'] ?? null,
-                'judul'           => $validated['judul'],
-                'nomor_surat'     => $validated['nomor_surat'],
-                'urusan'          => $validated['urusan'],
-                'daerah'          => $validated['daerah'],
+                'id_mitra' => null,
+                'id_admin' => $admin->id_admin,
+                'id_kategori' => $validated['id_kategori'] ?? null,
+                'judul' => $validated['judul'],
+                'nomor_suratP' => $validated['nomor_surat'],
+                'urusan' => $validated['urusan'],
+                'daerah' => $validated['daerah'],
                 'jenis_kerjasama' => $validated['jenis_kerjasama'],
-                'jenis_dokumen'   => $validated['jenis_dokumen'],
-                'tipe'            => 'pemerintah',
+                'jenis_dokumen' => $validated['jenis_dokumen'],
+                'pemrakarsa' => 'P',
+                'tipe' => 'pemerintah',
                 'nama_pihak_luar' => $validated['nama_pihak_luar'],
-                'status_aktif'    => 'aktif',
-                'is_finalized'    => true,
+                'status_aktif' => 'aktif',
+                'is_finalized' => true,
             ]);
 
             PeriodeKerjasama::create([
-                'id_kerjasama'    => $kerjasama->id_kerjasama,
-                'tanggal_mulai'   => $validated['tanggal_mulai'],
+                'id_kerjasama' => $kerjasama->id_kerjasama,
+                'tanggal_mulai' => $validated['tanggal_mulai'],
                 'tanggal_berakhir' => $validated['tanggal_berakhir'],
-                'keterangan'      => $validated['keterangan'] ?? '',
+                'keterangan' => $validated['keterangan'] ?? '',
             ]);
         });
 
@@ -114,21 +115,21 @@ class RiwayatKerjasamaController extends Controller
 
         DB::transaction(function () use ($kerjasama, $validated) {
             $kerjasama->update([
-                'judul'           => $validated['judul'],
-                'nomor_surat'     => $validated['nomor_surat'],
-                'urusan'          => $validated['urusan'],
-                'daerah'          => $validated['daerah'],
+                'judul' => $validated['judul'],
+                'nomor_suratP' => $validated['nomor_surat'],
+                'urusan' => $validated['urusan'],
+                'daerah' => $validated['daerah'],
                 'jenis_kerjasama' => $validated['jenis_kerjasama'],
-                'jenis_dokumen'   => $validated['jenis_dokumen'],
+                'jenis_dokumen' => $validated['jenis_dokumen'],
                 'nama_pihak_luar' => $validated['nama_pihak_luar'],
-                'id_kategori'     => $validated['id_kategori'] ?? $kerjasama->id_kategori,
+                'id_kategori' => $validated['id_kategori'] ?? $kerjasama->id_kategori,
             ]);
 
             // Replace the latest periode with the updated dates
             $kerjasama->periodes()->orderByDesc('tanggal_mulai')->first()?->update([
-                'tanggal_mulai'    => $validated['tanggal_mulai'],
+                'tanggal_mulai' => $validated['tanggal_mulai'],
                 'tanggal_berakhir' => $validated['tanggal_berakhir'],
-                'keterangan'       => $validated['keterangan'] ?? '',
+                'keterangan' => $validated['keterangan'] ?? '',
             ]);
         });
 
@@ -145,15 +146,16 @@ class RiwayatKerjasamaController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('judul', 'like', "%{$search}%")
-                  ->orWhere('nomor_surat', 'like', "%{$search}%")
-                  ->orWhere('urusan', 'like', "%{$search}%")
-                  ->orWhere('nama_pihak_luar', 'like', "%{$search}%")
-                  ->orWhereHas('mitra', fn($q) => $q->where('nama_perusahaan', 'like', "%{$search}%"));
+                    ->orWhere('nomor_suratM', 'like', "%{$search}%")
+                    ->orWhere('nomor_suratP', 'like', "%{$search}%")
+                    ->orWhere('urusan', 'like', "%{$search}%")
+                    ->orWhere('nama_pihak_luar', 'like', "%{$search}%")
+                    ->orWhereHas('mitra', fn ($q) => $q->where('nama_perusahaan', 'like', "%{$search}%"));
             });
         }
 
         if ($request->filled('tahun')) {
-            $query->whereHas('latestPeriode', fn($q) => $q->whereYear('tanggal_mulai', $request->tahun));
+            $query->whereHas('latestPeriode', fn ($q) => $q->whereYear('tanggal_mulai', $request->tahun));
         }
 
         if ($request->filled('jenis_kerjasama')) {
@@ -165,14 +167,14 @@ class RiwayatKerjasamaController extends Controller
         }
 
         if ($request->filled('status')) {
-            $today     = Carbon::today()->toDateString();
+            $today = Carbon::today()->toDateString();
             $threshold = Carbon::today()->addDays(30)->toDateString();
 
             match ($request->status) {
-                'aktif'         => $query->whereHas('latestPeriode', fn($q) => $q->where('tanggal_mulai', '<=', $today)->where('tanggal_berakhir', '>=', $today)),
-                'akan_berakhir' => $query->whereHas('latestPeriode', fn($q) => $q->where('tanggal_berakhir', '>', $today)->where('tanggal_berakhir', '<=', $threshold)),
-                'berakhir'      => $query->whereHas('latestPeriode', fn($q) => $q->where('tanggal_berakhir', '<', $today)),
-                default         => null,
+                'aktif' => $query->whereHas('latestPeriode', fn ($q) => $q->where('tanggal_mulai', '<=', $today)->where('tanggal_berakhir', '>=', $today)),
+                'akan_berakhir' => $query->whereHas('latestPeriode', fn ($q) => $q->where('tanggal_berakhir', '>', $today)->where('tanggal_berakhir', '<=', $threshold)),
+                'berakhir' => $query->whereHas('latestPeriode', fn ($q) => $q->where('tanggal_berakhir', '<', $today)),
+                default => null,
             };
         }
     }
@@ -183,38 +185,38 @@ class RiwayatKerjasamaController extends Controller
 
         $jangkaWaktu = null;
         if ($periode) {
-            $mulai       = Carbon::parse($periode->tanggal_mulai);
-            $berakhir    = Carbon::parse($periode->tanggal_berakhir);
-            $jangkaWaktu = $mulai->diffInMonths($berakhir) . ' bulan';
+            $mulai = Carbon::parse($periode->tanggal_mulai);
+            $berakhir = Carbon::parse($periode->tanggal_berakhir);
+            $jangkaWaktu = $mulai->diffInMonths($berakhir).' bulan';
         }
 
         $row = [
-            'id_kerjasama'    => $k->id_kerjasama,
-            'tahun'           => $periode ? Carbon::parse($periode->tanggal_mulai)->year : null,
-            'judul'           => $k->judul,
-            'nomor_surat'     => $k->nomor_surat,
+            'id_kerjasama' => $k->id_kerjasama,
+            'tahun' => $periode ? Carbon::parse($periode->tanggal_mulai)->year : null,
+            'judul' => $k->judul,
+            'nomor_surat' => $k->nomor_surat,
             'jenis_kerjasama' => $k->jenis_kerjasama,
-            'jenis_dokumen'   => $k->jenis_dokumen,
-            'urusan'          => $k->urusan,
-            'daerah'          => $k->daerah,
-            'tanggal_mulai'   => $periode?->tanggal_mulai,
+            'jenis_dokumen' => $k->jenis_dokumen,
+            'urusan' => $k->urusan,
+            'daerah' => $k->daerah,
+            'tanggal_mulai' => $periode?->tanggal_mulai,
             'tanggal_berakhir' => $periode?->tanggal_berakhir,
-            'jangka_waktu'    => $jangkaWaktu,
-            'status'          => $k->status_label,
+            'jangka_waktu' => $jangkaWaktu,
+            'status' => $k->status_label,
         ];
 
         if ($tipe === 'mitra') {
             $row['mitra'] = $k->mitra?->nama_perusahaan;
-            $row['file']  = $k->finalDokumen ? [
-                'id'          => $k->finalDokumen->id_dokumen,
-                'nama_file'   => $k->finalDokumen->nama_file,
+            $row['file'] = $k->finalDokumen ? [
+                'id' => $k->finalDokumen->id_dokumen,
+                'nama_file' => $k->finalDokumen->nama_file,
                 'lokasi_file' => $k->finalDokumen->lokasi_file,
             ] : null;
         } else {
             $row['nama_pihak_luar'] = $k->nama_pihak_luar;
-            $row['file']  = $k->finalDokumen ? [
-                'id'          => $k->finalDokumen->id_dokumen,
-                'nama_file'   => $k->finalDokumen->nama_file,
+            $row['file'] = $k->finalDokumen ? [
+                'id' => $k->finalDokumen->id_dokumen,
+                'nama_file' => $k->finalDokumen->nama_file,
                 'lokasi_file' => $k->finalDokumen->lokasi_file,
             ] : null;
         }

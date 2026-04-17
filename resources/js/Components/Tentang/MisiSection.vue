@@ -5,7 +5,7 @@
 
       <!-- FLOATING LEFT -->
       <div class="absolute -top-4 md:-top-5 left-1/2 -translate-x-1/2 md:left-6 md:translate-x-0">
-        <h2 class="text-xs sm:text-sm md:text-base font-bold text-white bg-[#17464E] px-5 md:px-6 py-1.5 md:py-2 rounded-full shadow-md">
+        <h2 class="text-3xl sm:text-4xl md:text-2xl font-bold text-white bg-[#17464E] px-5 md:px-6 py-1.5 md:py-2 rounded-full shadow-md">
           MISI
         </h2>
       </div>
