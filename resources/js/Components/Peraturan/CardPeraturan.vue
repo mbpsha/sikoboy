@@ -5,20 +5,20 @@ import { ref } from "vue";
 const peraturan = ref([
   {
     title: "PERATURAN MENTERI DALAM NEGERI NOMOR 22 TAHUN 2020",
-    file: "/docs/Permendagri Nomor 22 Tahun 2020.pdf",
-    thumbnail: "/images/Permendagri.png",
+    file: "storage/docs/Permendagri Nomor 22 Tahun 2020.pdf",
+    thumbnail: "storage/images/Permendagri.png",
     type: "pdf",
   },
   {
     title: "PERATURAN BUPATI NOMOR 98 TAHUN 2022",
-    file: "/docs/Peraturan Bupati Nomor 98 Tahun 2022.pdf",
-    thumbnail: "/images/PeraturanBupati.png",
+    file: "storage/docs/Peraturan Bupati Nomor 98 Tahun 2022.pdf",
+    thumbnail: "storage/images/PeraturanBupati.png",
     type: "pdf",
   },
   {
     title: "SOP PENYELENGGARAAN KERJA SAMA DAERAH",
-    file: "/docs/SOP KERJASAMA DAERAH FIKS.xls",
-    thumbnail: "/images/SOP.png",
+    file: "storage/docs/SOP KERJASAMA DAERAH FIKS.xls",
+    thumbnail: "storage/images/SOP.png",
     type: "xls",
   },
 ]);
