@@ -15,12 +15,20 @@ class ProfileController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
+        $mitra = $user->mitra;
+
+        // Get kerjasama data with related kategori
+        $kerjasama = $mitra->kerjasama()
+            ->with('kategori')
+            ->orderBy('created_at', 'desc')
+            ->get();
 
         return Inertia::render('Mitra/Profile', [
             'user' => [
                 'email' => $user->email,
             ],
-            'mitra' => $user->mitra,
+            'mitra' => $mitra,
+            'kerjasama' => $kerjasama,
             'activeTab' => 'pengajuan',
         ]);
     }

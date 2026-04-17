@@ -14,6 +14,7 @@ use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\Auth\VerificationController;
 use App\Http\Controllers\Mitra\DashboardController as MitraDashboardController;
 use App\Http\Controllers\Mitra\ProfileController as MitraProfileController;
+use App\Http\Controllers\Mitra\KerjasamaController as MitraKerjasamaController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -100,6 +101,16 @@ Route::middleware(['auth', 'role:mitra'])->prefix('mitra')->name('mitra.')->grou
         ->name('profile.update');
     Route::put('/profile/password', [MitraProfileController::class, 'updatePassword'])
         ->name('profile.password');
+
+    // Pengajuan Kerjasama
+    Route::get('/pengajuan/step1', [MitraKerjasamaController::class, 'createStep1'])
+        ->name('pengajuan.step1');
+    Route::post('/pengajuan/step1', [MitraKerjasamaController::class, 'storeStep1'])
+        ->name('pengajuan.step1.store');
+    Route::get('/pengajuan/step2', [MitraKerjasamaController::class, 'createStep2'])
+        ->name('pengajuan.step2');
+    Route::post('/pengajuan', [MitraKerjasamaController::class, 'store'])
+        ->name('pengajuan.store');
 });
 
 // Portal Mitra (Alias for Mitra Profile)

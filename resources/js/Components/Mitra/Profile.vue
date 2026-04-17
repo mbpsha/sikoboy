@@ -3,27 +3,62 @@ import { ref, computed } from 'vue';
 import { usePage, Link } from '@inertiajs/vue3';
 import Header from '@/Components/Header.vue';
 import Footer from '@/Components/Footer.vue';
-import KerjasamaProgressModal from '@/Components/Mitra/KerjasamaProgressModal.vue';
+import KerjasamaCard from '@/Components/Mitra/KerjasamaCard.vue';
 
 const page = usePage();
 const mitra = computed(() => page.props.value?.mitra);
-
-// Modal state
-const isProgressModalOpen = ref(false);
+const kerjasamaList = computed(() => page.props.value?.kerjasama || []);
 
 // Data mock untuk preview tampilan
-const mockKerjasama = {
-  id_kerjasama: 1,
-  nama_kerjasama: 'Digitalisasi Sistem Administrasi Kependudukan',
-  status: 'pengajuan',
-  kategori: 'Kerjasama dengan Pihak Ketiga',
-  urusan: 'Urusan Lainnya',
-  created_at: '2026-04-18',
-  periode: '5 Tahun'
-};
+const mockKerjasama = [
+  {
+    id_kerjasama: 1,
+    nama_kerjasama: 'Digitalisasi Sistem Administrasi Kependudukan',
+    judul_dokumen: 'Digitalisasi Sistem Administrasi Kependudukan',
+    status: 'pengajuan',
+    kategori: { nama_kategori: 'Kerjasama dengan Pihak Ketiga' },
+    urusan: 'Urusan Lainnya',
+    ususan: 'Urusan Lainnya',
+    tgl_mulai: '2027-06-05',
+    tgl_selesai: '2032-06-05',
+    created_at: '2026-04-18'
+  }
+];
+
+// Gunakan mock data jika tidak ada data dari backend
+const displayKerjasama = computed(() => {
+  const realData = kerjasamaList.value && Array.isArray(kerjasamaList.value) && kerjasamaList.value.length > 0 
+    ? kerjasamaList.value 
+    : null;
+  
+  // Selalu tampilkan mock data jika tidak ada data real
+  return realData || mockKerjasama;
+});
 
 // Tab state
 const activeTab = ref('riwayat');
+
+// Format tanggal
+const formatDate = (date) => {
+  if (!date) return '-';
+  return new Date(date).toLocaleDateString('id-ID', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+};
+
+// Get status badge color
+const getStatusBadge = (status) => {
+  const statusMap = {
+    'pengajuan': { bg: 'bg-yellow-100', text: 'text-yellow-700', label: 'Pending' },
+    'disetujui': { bg: 'bg-green-100', text: 'text-green-700', label: 'Disetujui' },
+    'ditolak': { bg: 'bg-red-100', text: 'text-red-700', label: 'Ditolak' },
+    'berlangsung': { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Berlangsung' },
+    'selesai': { bg: 'bg-gray-100', text: 'text-gray-700', label: 'Selesai' },
+  };
+  return statusMap[status] || { bg: 'bg-gray-100', text: 'text-gray-700', label: status };
+};
 </script>
 
 <template>
@@ -111,7 +146,7 @@ const activeTab = ref('riwayat');
               </div>
 
               <div class="p-8">
-                <div v-show="activeTab === 'pengajuan'">
+                <div v-if="activeTab === 'pengajuan'">
                   <div class="grid grid-cols-3 gap-5 mb-10">
                     <div class="bg-[#DCEBED] p-5 rounded-2xl shadow-md hover:shadow-lg transition">
                       <div class="flex items-center gap-3 mb-2">
@@ -155,64 +190,79 @@ const activeTab = ref('riwayat');
                   </div>
                 </div>
 
-                <div v-show="activeTab === 'riwayat'" class="py-6">
+                <div v-if="activeTab === 'riwayat'" class="py-6">
                   <div class="space-y-5">
-                    <!-- Kartu Kerjasama -->
-                    <div class="bg-[#D4E9ED] rounded-3xl p-8 shadow-md">
+                    <!-- Kartu Kerjasama 1 -->
+                    <div class="bg-gradient-to-br from-[#D4E9ED] to-[#E7F5F7] rounded-2xl p-6 shadow-md">
                       
                       <!-- Header dengan judul dan status -->
-                      <div class="flex items-start justify-between mb-6">
-                        <h2 class="text-2xl font-bold text-[#17464E] flex-1">
-                          {{ mockKerjasama.nama_kerjasama }}
-                        </h2>
-                        <span class="inline-block text-xs px-4 py-1 rounded-full font-semibold bg-blue-300 text-blue-700 ml-4 whitespace-nowrap">
+                      <div class="flex items-start justify-between mb-6 pb-4 border-b-2 border-[#B8D4DA]">
+                        <div class="flex-1">
+                          <h2 class="text-2xl font-bold text-[#17464E] mb-2">
+                            Digitalisasi Sistem Administrasi Kependudukan
+                          </h2>
+                          <p class="text-sm text-[#40676f]">
+                            Kelola dan pantau progress kerjasama Anda
+                          </p>
+                        </div>
+                        <span class="inline-block text-xs px-4 py-2 rounded-full font-semibold bg-yellow-100 text-yellow-700">
                           Pending
                         </span>
                       </div>
 
                       <!-- Detail Informasi -->
-                      <div class="space-y-3 mb-6">
-                        <div class="flex items-center">
-                          <span class="text-sm text-[#40676f] font-medium w-40">Jenis Kerjasama</span>
-                          <span class="text-sm text-[#40676f] font-medium mx-4">:</span>
-                          <span class="text-sm font-bold text-[#17464E]">{{ mockKerjasama.kategori }}</span>
+                      <div class="grid grid-cols-2 gap-6 mb-6">
+                        <div>
+                          <p class="text-xs font-medium text-[#40676f] opacity-70 mb-1">Jenis Kerjasama</p>
+                          <p class="text-sm font-bold text-[#17464E]">
+                            Kerjasama dengan Pihak Ketiga
+                          </p>
                         </div>
-                        
-                        <div class="flex items-center">
-                          <span class="text-sm text-[#40676f] font-medium w-40">Urusan</span>
-                          <span class="text-sm text-[#40676f] font-medium mx-4">:</span>
-                          <span class="text-sm font-bold text-[#17464E]">{{ mockKerjasama.urusan }}</span>
+                        <div>
+                          <p class="text-xs font-medium text-[#40676f] opacity-70 mb-1">Urusan</p>
+                          <p class="text-sm font-bold text-[#17464E]">
+                            Urusan Lainnya
+                          </p>
                         </div>
-
-                        <div class="flex items-center">
-                          <span class="text-sm text-[#40676f] font-medium w-40">Tanggal Diajukan</span>
-                          <span class="text-sm text-[#40676f] font-medium mx-4">:</span>
-                          <span class="text-sm font-bold text-[#17464E]">5 Juni 2027</span>
+                        <div>
+                          <p class="text-xs font-medium text-[#40676f] opacity-70 mb-1">Tanggal Diajukan</p>
+                          <p class="text-sm font-bold text-[#17464E]">
+                            18 April 2026
+                          </p>
                         </div>
-
-                        <div class="flex items-center">
-                          <span class="text-sm text-[#40676f] font-medium w-40">Periode</span>
-                          <span class="text-sm text-[#40676f] font-medium mx-4">:</span>
-                          <span class="text-sm font-bold text-[#17464E]">{{ mockKerjasama.periode }}</span>
+                        <div>
+                          <p class="text-xs font-medium text-[#40676f] opacity-70 mb-1">Periode</p>
+                          <p class="text-sm font-bold text-[#17464E]">
+                            5 Tahun
+                          </p>
                         </div>
                       </div>
 
-                      <!-- Lihat Progres Kerjasama Button -->
-                      <div class="flex justify-center mb-6">
-                        <button @click="isProgressModalOpen = true" class="w-full py-2 text-center text-sm font-semibold text-[#2f6f73] hover:text-[#1e565a] rounded-lg transition flex items-center justify-center gap-2 bg-white/60 hover:bg-white">
-                          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"></path>
-                            <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"></path>
-                          </svg>
-                          Lihat Progres Kerjasama
-                        </button>
+                      <!-- Lihat Progres Kerjasama -->
+                      <div class="mb-4 flex items-center gap-2 text-[#2f6f73] hover:text-[#1e565a] cursor-pointer transition">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"></path>
+                          <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"></path>
+                        </svg>
+                        <span class="text-sm font-semibold">Lihat Progres Kerjasama</span>
                       </div>
 
                       <!-- Warning Message -->
-                      <div class="text-center">
-                        <p class="text-xs text-red-600 font-semibold">
-                          *Pantau status dokumen kerjasama Anda secara rutin dan berkala
+                      <div class="bg-yellow-50 border-l-4 border-yellow-400 p-3 mb-6 rounded">
+                        <p class="text-xs text-yellow-700 font-semibold">
+                          💡 *Pantau status dokumen kerjasama Anda secara rutin dan berkala
                         </p>
+                      </div>
+
+                      <!-- Action Button -->
+                      <div class="flex justify-center">
+                        <Link
+                          :href="route('mitra.pengajuan.step1')"
+                          class="flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-[#2f6f73] to-[#1e565a] text-white rounded-full shadow-md hover:shadow-lg transition-transform hover:scale-105 font-semibold"
+                        >
+                          <span class="text-lg">+</span>
+                          Ajukan Baru
+                        </Link>
                       </div>
                     </div>
                   </div>
@@ -225,13 +275,6 @@ const activeTab = ref('riwayat');
         </div>
       </div>
     </main>
-
-    <!-- Progress Modal -->
-    <KerjasamaProgressModal 
-      :isOpen="isProgressModalOpen"
-      :kerjasamaNama="mockKerjasama.nama_kerjasama"
-      @close="isProgressModalOpen = false"
-    />
 
     <Footer />
   </div>
