@@ -15,19 +15,27 @@ use App\Http\Controllers\Auth\VerificationController;
 use App\Http\Controllers\Mitra\DashboardController as MitraDashboardController;
 use App\Http\Controllers\Mitra\ProfileController as MitraProfileController;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 // Home / Welcome
-Route::get('/', fn() => Inertia::render('Welcome'))->name('home');
-// Tentang
-Route::get('/about', function () {return Inertia::render('About');})->name('about');
-// Peraturan
-Route::get('/peraturan', function () {return Inertia::render('Peraturan');})->name('peraturan');
+Route::get('/', fn () => Inertia::render('Welcome'))->name('home');
 
-// Dokumen page
-Route::get('/dokumen', fn() => Inertia::render('Dokumen'))->name('dokumen');
-// Kontak page
-Route::get('/kontak', fn() => Inertia::render('Kontak'))->name('kontak');
+// Public pages
+Route::get('/about', fn () => Inertia::render('About'))->name('about');
+Route::get('/peraturan', fn () => Inertia::render('Peraturan'))->name('peraturan');
+
+// Public docs/pages
+Route::get('/dokumen', fn () => Inertia::render('Dokumen'))->name('dokumen');
+Route::get('/kontak', fn () => Inertia::render('Kontak'))->name('kontak');
+
+// Public template dokumen routes (website)
+Route::get('/template-dokumen', [ManajemenDokumenController::class, 'listPublic'])
+    ->name('template-dokumen.index');
+Route::get('/template-dokumen/{id}/download', [ManajemenDokumenController::class, 'download'])
+    ->name('template-dokumen.download');
+Route::get('/template-dokumen/{id}/preview', [ManajemenDokumenController::class, 'preview'])
+    ->name('template-dokumen.preview');
 
 // Role Selection & Authentication
 Route::get('/role-selection', [LoginController::class, 'showLoginForm'])->name('login.select');
@@ -65,9 +73,13 @@ Route::middleware('auth')->group(function () {
         ->name('verification.send');
 });
 
-// Authenticated user profile (renders resources/js/Components/Profile/UserProfil.Vue)
-Route::middleware('auth')->get('/profile', function () {
-    return Inertia::render('Profile/UserProfil');
+// Authenticated user profile (renders resources/js/Pages/Profile/UserProfil.vue)
+Route::middleware('auth')->get('/profile', function (Request $request) {
+    $user = $request->user();
+    return Inertia::render('Profile/UserProfil', [
+        'user' => $user,
+        'mitra' => $user?->mitra,
+    ]);
 })->name('profile.show');
 
 // Partner (Mitra) Routes
