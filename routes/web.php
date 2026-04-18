@@ -20,7 +20,13 @@ use Inertia\Inertia;
 // Home / Welcome
 Route::get('/', fn () => Inertia::render('Welcome'))->name('home');
 
+// Public pages
+Route::get('/about', fn () => Inertia::render('About'))->name('about');
+Route::get('/peraturan', fn () => Inertia::render('Peraturan'))->name('peraturan');
+
 // Public template dokumen routes (website)
+Route::get('/dokumen', fn () => redirect()->route('template-dokumen.index'))
+    ->name('dokumen.index');
 Route::get('/template-dokumen', [ManajemenDokumenController::class, 'listPublic'])
     ->name('template-dokumen.index');
 Route::get('/template-dokumen/{id}/download', [ManajemenDokumenController::class, 'download'])
@@ -28,9 +34,20 @@ Route::get('/template-dokumen/{id}/download', [ManajemenDokumenController::class
 Route::get('/template-dokumen/{id}/preview', [ManajemenDokumenController::class, 'preview'])
     ->name('template-dokumen.preview');
 
+Route::middleware('auth')->get('/portal-mitra', function (\Illuminate\Http\Request $request) {
+    return match ($request->user()?->role) {
+        'admin' => redirect()->route('admin.dashboard'),
+        'mitra' => redirect()->route('mitra.profile.edit'),
+        default => redirect()->route('home'),
+    };
+})->name('portal-mitra');
+
 // Role Selection & Authentication
-Route::get('/role-selection', [LoginController::class, 'showLoginForm'])->name('login.select');
-Route::get('/login/{role?}', [LoginController::class, 'showLoginForm'])->name('login');
+Route::get('/role-selection', fn () => redirect()->route('login'))->name('login.select');
+Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
+Route::get('/login/{role}', fn () => redirect()->route('login'))
+    ->whereIn('role', ['admin', 'mitra'])
+    ->name('login.role');
 Route::post('/login', [LoginController::class, 'login'])->name('login.attempt');
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
@@ -47,6 +64,10 @@ Route::get('/reset-password/{token}', [ResetPasswordController::class, 'showRese
     ->name('password.reset');
 Route::post('/reset-password', [ResetPasswordController::class, 'reset'])
     ->name('password.update');
+
+Route::get('/dev/verify-email', function () {
+    return Inertia::render('Auth/VerifyEmail');
+});
 
 // Email Verification Routes
 Route::middleware('auth')->group(function () {
@@ -65,9 +86,9 @@ Route::middleware(['auth', 'role:mitra'])->prefix('mitra')->name('mitra.')->grou
     Route::get('/dashboard', [MitraDashboardController::class, 'index'])
         ->name('dashboard');
 
-    Route::get('/profile/complete', [MitraDashboardController::class, 'completeProfile'])
+    Route::get('/profile/complete', [MitraProfileController::class, 'completeProfile'])
         ->name('profile.complete');
-    Route::post('/profile/complete', [MitraDashboardController::class, 'storeProfile'])
+    Route::post('/profile/complete', [MitraProfileController::class, 'storeProfile'])
         ->name('profile.store');
 
     Route::get('/profile', [MitraProfileController::class, 'edit'])

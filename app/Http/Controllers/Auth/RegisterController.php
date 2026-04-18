@@ -47,7 +47,7 @@ class RegisterController extends Controller
             'alamat' => $request->alamat,
         ]);
 
-        return redirect()->route('login', ['role' => 'mitra'])
+        return redirect()->route('login')
             ->with('success', 'Registrasi berhasil! Silakan login.');
     }
 }

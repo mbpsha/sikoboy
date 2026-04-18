@@ -14,12 +14,16 @@ class LoginController extends Controller
     /**
      * Show the login form.
      */
-    public function showLoginForm(Request $request, $role = null)
+    public function showLoginForm(Request $request)
     {
-        if ($role && in_array($role, ['admin', 'mitra'])) {
-            return Inertia::render('Auth/Login', ['role' => $role]);
+        if ($request->user()) {
+            return match ($request->user()->role) {
+                'admin' => redirect()->route('admin.dashboard'),
+                default => redirect()->route('home'),
+            };
         }
-        return Inertia::render('Auth/RoleSelection');
+
+        return Inertia::render('Auth/Login');
     }
 
     /**
@@ -30,7 +34,6 @@ class LoginController extends Controller
         $request->validate([
             'email' => 'required|email',
             'password' => 'required',
-            'role' => 'required|in:admin,mitra'
         ]);
 
         $user = User::where('email', $request->email)->first();
@@ -39,21 +42,17 @@ class LoginController extends Controller
             return back()->withErrors(['email' => 'Email atau password salah.']);
         }
 
-        if ($user->role !== $request->role) {
-            return back()->withErrors(['role' => 'Akses tidak sesuai.']);
-        }
-
         Auth::login($user, $request->boolean('remember'));
+
+        // Regenerate session after login to prevent session fixation.
+        $request->session()->regenerate();
 
         if ($user->role === 'admin') {
             return redirect()->route('admin.dashboard');
         }
 
-        if (!$user->mitra) {
-            return redirect()->route('mitra.profile.complete');
-        }
-
-        return redirect()->route('mitra.dashboard');
+        // Mitra users return to public landing page.
+        return redirect()->route('home');
     }
 
     /**
