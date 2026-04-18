@@ -10,17 +10,61 @@ use Inertia\Inertia;
 class ProfileController extends Controller
 {
     /**
+     * Show profile completion form for mitra without profile.
+     */
+    public function completeProfile(Request $request)
+    {
+        if ($request->user()->mitra) {
+            return redirect()->route('mitra.profile.edit');
+        }
+
+        return Inertia::render('Mitra/Profile/Edit', [
+            'user' => [
+                'email' => $request->user()->email,
+            ],
+            'mitra' => null,
+            'mode' => 'complete',
+        ]);
+    }
+
+    /**
+     * Store profile for first-time mitra completion.
+     */
+    public function storeProfile(Request $request)
+    {
+        $validated = $request->validate([
+            'nama_perusahaan' => 'required|string|max:255',
+            'pic' => 'required|string|max:255',
+            'no_handphone' => 'required|string|max:50',
+            'alamat' => 'required|string',
+        ]);
+
+        $request->user()->mitra()->updateOrCreate(
+            ['id_user' => $request->user()->id_user],
+            $validated
+        );
+
+        return redirect()->route('mitra.profile.edit')
+            ->with('success', 'Profil berhasil dilengkapi.');
+    }
+
+    /**
      * Show the profile edit form.
      */
     public function edit(Request $request)
     {
         $user = $request->user();
 
+        if (! $user->mitra) {
+            return redirect()->route('mitra.profile.complete');
+        }
+
         return Inertia::render('Mitra/Profile/Edit', [
             'user' => [
                 'email' => $user->email,
             ],
             'mitra' => $user->mitra,
+            'mode' => 'edit',
         ]);
     }
 
@@ -29,21 +73,17 @@ class ProfileController extends Controller
      */
     public function update(Request $request)
     {
-        $mitra = $request->user()->mitra;
-
-        $request->validate([
+        $validated = $request->validate([
             'nama_perusahaan' => 'required|string|max:255',
-            'pic' => 'required|string',
-            'no_handphone' => 'required|string',
+            'pic' => 'required|string|max:255',
+            'no_handphone' => 'required|string|max:50',
             'alamat' => 'required|string',
         ]);
 
-        $mitra->update($request->only([
-            'nama_perusahaan',
-            'pic',
-            'no_handphone',
-            'alamat',
-        ]));
+        $request->user()->mitra()->updateOrCreate(
+            ['id_user' => $request->user()->id_user],
+            $validated
+        );
 
         return back()->with('success', 'Profil berhasil diperbarui.');
     }

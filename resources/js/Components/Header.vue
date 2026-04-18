@@ -4,6 +4,7 @@ import { usePage, Link } from "@inertiajs/vue3";
 import logo from "@/images/logo_byl.png";
 
 const page = usePage();
+const user = computed(() => page.props?.auth?.user ?? null);
 const isActive = (url) => {
     if (url === "/") {
         return page.url === "/";
@@ -14,6 +15,18 @@ const isActive = (url) => {
 const isAuthenticated = computed(
     () => !!(page.props && page.props.auth && page.props.auth.user),
 );
+
+const portalHref = computed(() => {
+    if (!user.value) {
+        return '/login/mitra';
+    }
+
+    if (user.value.role === 'admin') {
+        return '/admin/dashboard';
+    }
+
+    return '/mitra/profile';
+});
 </script>
 
 <template>
@@ -83,10 +96,10 @@ const isAuthenticated = computed(
 
                     <!-- Dokumen -->
                     <Link
-                        href="/dokumen"
+                        href="/template-dokumen"
                         :class="[
                             'mx-2 px-4 py-1 text-sm rounded-full transition',
-                            isActive('/dokumen')
+                            isActive('/template-dokumen')
                                 ? 'bg-white text-[#17464E] font-semibold'
                                 : 'text-white/90 hover:bg-white/20',
                         ]"
@@ -131,7 +144,7 @@ const isAuthenticated = computed(
                 </template>
                 <template v-else>
                     <Link
-                        href="/portal-mitra"
+                        :href="portalHref"
                         class="flex items-center gap-2 rounded-full bg-[#17464E] px-4 py-2 text-white font-medium shadow"
                     >
                         <svg
