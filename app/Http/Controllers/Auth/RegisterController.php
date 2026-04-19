@@ -49,10 +49,7 @@ class RegisterController extends Controller
             'alamat' => $request->alamat,
         ]);
 
-        event(new Registered($user));
-
-        Auth::login($user);
-
-        return redirect()->route('verification.notice');
+        return redirect()->route('login')
+            ->with('success', 'Registrasi berhasil! Silakan login.');
     }
 }
