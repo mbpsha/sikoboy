@@ -6,7 +6,9 @@
         <!-- Background -->
         <div
             class="fixed inset-0 bg-cover bg-center"
-            style="background-image: url('/storage/images/image19.png');"
+            style="
+                background-image: url(&quot;/storage/images/image19.png&quot;);
+            "
         ></div>
 
         <!-- Gradient -->
@@ -21,7 +23,10 @@
             >
                 <!-- HEADER (LOGO + TEXT SEJAJAR) -->
                 <div class="flex items-center justify-center gap-3 mb-8">
-                    <img src="/storage/images/removebackround1.png" class="w-12" />
+                    <img
+                        src="/storage/images/removebackround1.png"
+                        class="w-12"
+                    />
                     <div class="text-sm leading-tight">
                         <p class="font-bold text-lg">Sekretariat Daerah</p>
                         <p class="text-lg">Kabupaten Boyolali</p>
@@ -78,25 +83,6 @@
                             class="text-red-400 text-sm mt-1 text-left"
                         >
                             {{ form.errors.nama_perusahaan }}
-                        </p>
-                    </div>
-
-                    <div>
-                        <p class="text-center mb-2 font-semibold text-xl">
-                            NPWP (Opsional)
-                        </p>
-                        <input
-                            type="text"
-                            v-model="form.npwp"
-                            placeholder="NPWP"
-                            class="w-full pl-3 pr-3 py-2 rounded bg-white text-black text-center placeholder:text-center border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#0C505C]/40 focus:border-[#0C505C] transition duration-200"
-                        />
-                        <!-- ERROR -->
-                        <p
-                            v-if="form.errors.npwp"
-                            class="text-red-400 text-sm mt-1 text-left"
-                        >
-                            {{ form.errors.npwp }}
                         </p>
                     </div>
 
@@ -240,7 +226,6 @@ const goLogin = () => {
 const form = useForm({
     email: "",
     nama_perusahaan: "",
-    npwp: "",
     no_handphone: "",
     pic: "",
     alamat: "",

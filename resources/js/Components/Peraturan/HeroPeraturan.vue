@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from "vue";
-import heroTentang from "@/images/HeroPeraturan.png";
+const heroTentang = "/storage/images/HeroPeraturan.png";
 
 // PARALLAX (biar konsisten sama landing)
 const offset = ref(0);
@@ -26,7 +26,7 @@ onUnmounted(() => {
         <div class="absolute inset-0 pointer-events-none">
             <!-- PARALLAX IMAGE -->
             <div
-                class="w-full h-[120%] bg-cover bg-[center_30%]"
+                class="w-full h-[100%] bg-cover bg-[center_30%]"
                 :style="{
                     backgroundImage: `url(${heroTentang})`,
                     transform: `translateY(${offset}px)`,

@@ -4,17 +4,6 @@ import { ref, watch, onMounted, onUnmounted } from "vue";
 // DATA HARDCODE (SUDAH ADA TYPE)
 const peraturan = ref([
   {
-
-    title: "PERATURAN MENTERI DALAM NEGERI REPUBLIK INDONESIA NOMOR 22 TAHUN 2020 TATA CARA KERJA SAMA DAERAH DENGAN DAERAH LAIN DAN KERJA SAMA DAERAH DENGAN PIHAK KETIGA",
-    file: "/docs/Permendagri Nomor 22 Tahun 2020.pdf",
-    thumbnail: "/images/Permendagri.png",
-    type: "pdf",
-  },
-  {
-    title: "PERATURAN BUPATI NOMOR 98 TAHUN 2022 TENTANG PEDOMAN PELAKSANAAN KERJA SAMA DAERAH",
-    file: "/docs/Peraturan Bupati Nomor 98 Tahun 2022.pdf",
-    thumbnail: "/images/PeraturanBupati.png",
-
     title: "PERATURAN MENTERI DALAM NEGERI NOMOR 22 TAHUN 2020",
     file: "storage/docs/Permendagri Nomor 22 Tahun 2020.pdf",
     thumbnail: "storage/images/Permendagri.png",
@@ -24,7 +13,6 @@ const peraturan = ref([
     title: "PERATURAN BUPATI NOMOR 98 TAHUN 2022",
     file: "storage/docs/Peraturan Bupati Nomor 98 Tahun 2022.pdf",
     thumbnail: "storage/images/PeraturanBupati.png",
-
     type: "pdf",
   },
   {
