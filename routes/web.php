@@ -23,6 +23,8 @@ Route::get('/', fn () => Inertia::render('Welcome'))->name('home');
 // Public pages
 Route::get('/about', fn () => Inertia::render('About'))->name('about');
 Route::get('/peraturan', fn () => Inertia::render('Peraturan'))->name('peraturan');
+Route::get('/dokumen', fn () => Inertia::render('Dokumen'))->name('dokumen');
+Route::get('/kontak', fn () => Inertia::render('Kontak'))->name('kontak');
 
 // Public template dokumen routes (website)
 Route::get('/template-dokumen', [ManajemenDokumenController::class, 'listPublic'])

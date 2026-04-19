@@ -7,6 +7,8 @@ use App\Models\Mitra;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Auth\Events\Registered;
+use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
 class RegisterController extends Controller
@@ -47,7 +49,10 @@ class RegisterController extends Controller
             'alamat' => $request->alamat,
         ]);
 
-        return redirect()->route('login', ['role' => 'mitra'])
-            ->with('success', 'Registrasi berhasil! Silakan login.');
+        event(new Registered($user));
+
+        Auth::login($user);
+
+        return redirect()->route('verification.notice');
     }
 }

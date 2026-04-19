@@ -6,7 +6,9 @@
         <!-- Background -->
         <div
             class="fixed inset-0 bg-cover bg-center"
-            style="background-image: url('/storage/images/image19.png');"
+            style="
+                background-image: url(&quot;/storage/images/image19.png&quot;);
+            "
         ></div>
 
         <!-- Gradient -->
@@ -21,7 +23,10 @@
             >
                 <!-- HEADER (LOGO + TEXT SEJAJAR) -->
                 <div class="flex items-center justify-center gap-3 mb-8">
-                    <img src="/storage/images/removebackround1.png" class="w-12" />
+                    <img
+                        src="/storage/images/removebackround1.png"
+                        class="w-12"
+                    />
                     <div class="text-sm leading-tight">
                         <p class="font-bold text-lg">Sekretariat Daerah</p>
                         <p class="text-lg">Kabupaten Boyolali</p>
