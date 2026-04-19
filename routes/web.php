@@ -118,7 +118,8 @@ Route::middleware(['auth', 'role:mitra'])->prefix('mitra')->name('mitra.')->grou
     Route::post('/profile/complete', [MitraProfileController::class, 'storeProfile'])
         ->name('profile.store');
 
-    Route::get('/profile', [MitraProfileController::class, 'index'])
+    // show profile (use existing controller method 'edit' which renders the profile page)
+    Route::get('/profile', [MitraProfileController::class, 'edit'])
         ->name('profile.index');
     Route::get('/profile/edit', [MitraProfileController::class, 'edit'])
         ->name('profile.edit');
@@ -138,8 +139,8 @@ Route::middleware(['auth', 'role:mitra'])->prefix('mitra')->name('mitra.')->grou
         ->name('pengajuan.store');
 });
 
-// Portal Mitra (Alias for Mitra Profile)
-Route::middleware(['auth', 'role:mitra'])->get('/portal-mitra', [MitraProfileController::class, 'index'])
+// Portal Mitra (Alias for Mitra Profile) — point to existing controller method
+Route::middleware(['auth', 'role:mitra'])->get('/portal-mitra', [MitraProfileController::class, 'edit'])
     ->name('portal-mitra');
 
 // Admin Routes
