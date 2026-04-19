@@ -70,8 +70,8 @@ const isActive = (path) => {
           </div>
         </template>
         <template v-else>
-          <Link href="/portal-mitra" class="mx-2 flex items-center gap-2 rounded-full bg-white text-[#17464E] px-4 py-1 text-sm font-semibold">
-            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 7h8M8 12h8M8 17h8"/></svg>
+          <Link href="/portal-mitra" class="mx-2 flex items-center gap-2 rounded-full bg-[#0C505C] text-white px-4 py-2 text-sm font-semibold shadow-md hover:bg-[#0a4a4e]">
+            <svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
             <span>Portal Mitra</span>
           </Link>
         </template>

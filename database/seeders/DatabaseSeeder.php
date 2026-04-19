@@ -75,5 +75,8 @@ class DatabaseSeeder extends Seeder
             'pic' => 'Ahmad Dahlan',
             'alamat' => 'Jl. Pemuda No. 78, Boyolali',
         ]);
+
+        // Seed kategori kerjasama templates
+        $this->call(KategoriKerjasamaSeeder::class);
     }
 }

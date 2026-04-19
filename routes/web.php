@@ -16,6 +16,7 @@ use App\Http\Controllers\Mitra\DashboardController as MitraDashboardController;
 use App\Http\Controllers\Mitra\ProfileController as MitraProfileController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\DB;
 
 // Home / Welcome
 Route::get('/', fn() => Inertia::render('Welcome'))->name('home');
@@ -25,7 +26,21 @@ Route::get('/about', function () {return Inertia::render('About');})->name('abou
 Route::get('/peraturan', function () {return Inertia::render('Peraturan');})->name('peraturan');
 
 // Dokumen page
-Route::get('/dokumen', fn() => Inertia::render('Dokumen'))->name('dokumen');
+Route::get('/dokumen', function () {
+    $kategoris = DB::table('kategori_kerjasama')->get()->map(function ($k) {
+        $file = $k->file_template ?? '';
+        $filename = basename($file);
+        $pdfname = preg_replace('/\.(docx|doc|xlsx|pptx)$/i', '.pdf', $filename);
+        $pdfPath = storage_path('app/public/docs/' . $pdfname);
+        $preview = null;
+        if ($filename && file_exists($pdfPath)) {
+            $preview = '/storage/docs/' . $pdfname;
+        }
+        return (array) array_merge((array) $k, ['preview' => $preview]);
+    })->all();
+
+    return Inertia::render('Dokumen', ['kategoris' => $kategoris]);
+})->name('dokumen');
 // Kontak page
 Route::get('/kontak', fn() => Inertia::render('Kontak'))->name('kontak');
 

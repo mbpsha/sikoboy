@@ -42,12 +42,12 @@ const user = computed(() => page.props.value?.auth?.user ?? null);
 
         <div class="flex items-center gap-2">
           <img :src="instagram" alt="Instagram" class="w-4 h-4 object-contain" />
-          <span>@setda_boyolali</span>
+          <a href="https://www.instagram.com/setda_boyolali?igsh=MWlhZnl2eHhteGI3Mw==" target="_blank" rel="noopener noreferrer" class="underline">@setda_boyolali</a>
         </div>
 
         <div class="flex items-center gap-2">
           <img :src="youtube" alt="YouTube" class="w-4 h-4 object-contain" />
-          <span>SETDA BOYOLALI</span>
+          <a href="https://youtube.com/@setdaboyolali7125?si=iSWwmxc-knmGVdF0" target="_blank" rel="noopener noreferrer" class="underline">SETDA BOYOLALI</a>
         </div>
 
       </div>
@@ -73,12 +73,16 @@ const user = computed(() => page.props.value?.auth?.user ?? null);
 
         <div class="flex items-center gap-2">
           <span>✉️</span>
-          <span>setda@boyolali.go.id</span>
+          <a href="mailto:setda@boyolali.go.id" class="underline">setda@boyolali.go.id</a>
         </div>
 
         <div class="flex items-center gap-2">
           <span>📞</span>
-          <span>(0276) 321021</span>
+          <a href="tel:+62276321021" class="underline">(0276) 321021</a>
+        </div>
+
+        <div class="mt-2">
+          <a href="https://maps.app.goo.gl/d1YXQzuPidoQ4rmQA" target="_blank" rel="noopener noreferrer" class="text-sm text-white/80 underline">Lihat di Google Maps</a>
         </div>
 
       </div>
