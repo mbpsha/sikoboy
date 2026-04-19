@@ -10,6 +10,30 @@ use Inertia\Inertia;
 class ProfileController extends Controller
 {
     /**
+     * Show the mitra profile page.
+     */
+    public function index(Request $request)
+    {
+        $user = $request->user();
+        $mitra = $user->mitra;
+
+        // Get kerjasama data with related kategori
+        $kerjasama = $mitra->kerjasama()
+            ->with('kategori')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return Inertia::render('Mitra/Profile', [
+            'user' => [
+                'email' => $user->email,
+            ],
+            'mitra' => $mitra,
+            'kerjasama' => $kerjasama,
+            'activeTab' => 'pengajuan',
+        ]);
+    }
+
+    /**
      * Show the profile edit form.
      */
     public function edit(Request $request)

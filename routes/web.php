@@ -14,16 +14,18 @@ use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\Auth\VerificationController;
 use App\Http\Controllers\Mitra\DashboardController as MitraDashboardController;
 use App\Http\Controllers\Mitra\ProfileController as MitraProfileController;
+use App\Http\Controllers\Mitra\KerjasamaController as MitraKerjasamaController;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
 
 // Home / Welcome
-Route::get('/', fn() => Inertia::render('Welcome'))->name('home');
-// Tentang
-Route::get('/about', function () {return Inertia::render('About');})->name('about');
-// Peraturan
-Route::get('/peraturan', function () {return Inertia::render('Peraturan');})->name('peraturan');
+Route::get('/', fn () => Inertia::render('Welcome'))->name('home');
+
+// Public pages
+Route::get('/about', fn () => Inertia::render('About'))->name('about');
+Route::get('/peraturan', fn () => Inertia::render('Peraturan'))->name('peraturan');
 
 // Dokumen page
 Route::get('/dokumen', function () {
@@ -80,6 +82,15 @@ Route::middleware('auth')->group(function () {
         ->name('verification.send');
 });
 
+// Authenticated user profile (renders resources/js/Pages/Profile/UserProfil.vue)
+Route::middleware('auth')->get('/profile', function (Request $request) {
+    $user = $request->user();
+    return Inertia::render('Profile/UserProfil', [
+        'user' => $user,
+        'mitra' => $user?->mitra,
+    ]);
+})->name('profile.show');
+
 // Partner (Mitra) Routes
 Route::middleware(['auth', 'role:mitra'])->prefix('mitra')->name('mitra.')->group(function () {
     Route::get('/dashboard', [MitraDashboardController::class, 'index'])
@@ -90,13 +101,29 @@ Route::middleware(['auth', 'role:mitra'])->prefix('mitra')->name('mitra.')->grou
     Route::post('/profile/complete', [MitraDashboardController::class, 'storeProfile'])
         ->name('profile.store');
 
-    Route::get('/profile', [MitraProfileController::class, 'edit'])
+    Route::get('/profile', [MitraProfileController::class, 'index'])
+        ->name('profile.index');
+    Route::get('/profile/edit', [MitraProfileController::class, 'edit'])
         ->name('profile.edit');
     Route::put('/profile', [MitraProfileController::class, 'update'])
         ->name('profile.update');
     Route::put('/profile/password', [MitraProfileController::class, 'updatePassword'])
         ->name('profile.password');
+
+    // Pengajuan Kerjasama
+    Route::get('/pengajuan/step1', [MitraKerjasamaController::class, 'createStep1'])
+        ->name('pengajuan.step1');
+    Route::post('/pengajuan/step1', [MitraKerjasamaController::class, 'storeStep1'])
+        ->name('pengajuan.step1.store');
+    Route::get('/pengajuan/step2', [MitraKerjasamaController::class, 'createStep2'])
+        ->name('pengajuan.step2');
+    Route::post('/pengajuan', [MitraKerjasamaController::class, 'store'])
+        ->name('pengajuan.store');
 });
+
+// Portal Mitra (Alias for Mitra Profile)
+Route::middleware(['auth', 'role:mitra'])->get('/portal-mitra', [MitraProfileController::class, 'index'])
+    ->name('portal-mitra');
 
 // Admin Routes
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
