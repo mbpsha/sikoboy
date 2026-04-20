@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Admin;
+use App\Models\Dokumen;
 use App\Models\KategoriKerjasama;
 use App\Models\Mitra;
 use App\Models\User;
@@ -57,7 +58,7 @@ class MitraKerjasamaControllerTest extends TestCase
         ]);
         $this->assertDatabaseCount('dokumen', 1);
 
-        $path = \App\Models\Dokumen::query()->firstOrFail()->lokasi_file;
+        $path = Dokumen::query()->firstOrFail()->lokasi_file;
         $this->assertTrue(Storage::disk('public')->exists($path));
     }
 

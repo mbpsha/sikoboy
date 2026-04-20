@@ -22,8 +22,24 @@ class StoreKerjasamaRequest extends FormRequest
             'pembiayaan' => ['required', 'string', 'max:255'],
             'urusan' => ['required', 'string', 'max:255'],
             'tanggal_mulai' => ['required', 'date'],
-            'tanggal_selesai' => ['required', 'date', 'after:tanggal_mulai'],
+            'tanggal_selesai' => ['required', 'date'],
             'dokumen_file' => ['required', 'file', 'mimes:pdf', 'max:10240'],
         ];
+    }
+
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator) {
+            if (! $this->filled('tanggal_mulai') || ! $this->filled('tanggal_selesai')) {
+                return;
+            }
+
+            $mulai = strtotime((string) $this->input('tanggal_mulai'));
+            $selesai = strtotime((string) $this->input('tanggal_selesai'));
+
+            if ($mulai === false || $selesai === false || $selesai <= $mulai) {
+                $validator->errors()->add('tanggal_selesai', 'Tanggal selesai harus setelah tanggal mulai.');
+            }
+        });
     }
 }
