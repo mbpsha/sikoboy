@@ -36,7 +36,8 @@ class LoginController extends Controller
             'password' => 'required',
         ]);
 
-        $user = User::where('email', $request->email)->first();
+        $normalizedEmail = mb_strtolower(trim((string) $request->email));
+        $user = User::query()->whereRaw('LOWER(email) = ?', [$normalizedEmail])->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
             return back()->withErrors(['email' => 'Email atau password salah.']);

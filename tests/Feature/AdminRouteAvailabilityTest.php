@@ -40,4 +40,17 @@ class AdminRouteAvailabilityTest extends TestCase
         $this->assertContains('auth', $middleware);
         $this->assertContains('role:admin', $middleware);
     }
+
+    public function test_mitra_kerjasama_routes_are_registered_and_protected(): void
+    {
+        $this->assertTrue(Route::has('mitra.kerjasama.index'));
+        $this->assertTrue(Route::has('mitra.kerjasama.store'));
+
+        $route = Route::getRoutes()->getByName('mitra.kerjasama.store');
+        $this->assertNotNull($route);
+
+        $middleware = $route->gatherMiddleware();
+        $this->assertContains('auth', $middleware);
+        $this->assertContains('role:mitra', $middleware);
+    }
 }
