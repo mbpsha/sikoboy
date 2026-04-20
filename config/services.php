@@ -35,4 +35,6 @@ return [
         ],
     ],
 
+    'default_admin_email' => env('SIKOBOY_DEFAULT_ADMIN_EMAIL', 'admin@sikoboy.go.id'),
+
 ];

@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests\Mitra;
 
+use DateTimeImmutable;
 use Illuminate\Foundation\Http\FormRequest;
+use Throwable;
 
 class StoreKerjasamaRequest extends FormRequest
 {
@@ -34,10 +36,16 @@ class StoreKerjasamaRequest extends FormRequest
                 return;
             }
 
-            $mulai = strtotime((string) $this->input('tanggal_mulai'));
-            $selesai = strtotime((string) $this->input('tanggal_selesai'));
+            try {
+                $mulai = new DateTimeImmutable($this->string('tanggal_mulai')->toString());
+                $selesai = new DateTimeImmutable($this->string('tanggal_selesai')->toString());
+            } catch (Throwable) {
+                $validator->errors()->add('tanggal_selesai', 'Format tanggal tidak valid.');
 
-            if ($mulai === false || $selesai === false || $selesai <= $mulai) {
+                return;
+            }
+
+            if ($selesai <= $mulai) {
                 $validator->errors()->add('tanggal_selesai', 'Tanggal selesai harus setelah tanggal mulai.');
             }
         });

@@ -70,11 +70,18 @@ class KerjasamaController extends Controller
     {
         $mitra = $request->user()->mitra;
         $validated = $request->validated();
+        $defaultAdminEmail = (string) config('services.default_admin_email');
 
-        $admin = Admin::query()->orderBy('id_admin')->first();
+        $admin = Admin::query()
+            ->whereHas('user', fn ($query) => $query->where('email', $defaultAdminEmail))
+            ->first();
+        $admin ??= Admin::query()->orderBy('id_admin')->first();
         abort_if($admin === null, 422, 'Belum ada admin yang dapat memproses pengajuan.');
-        $kategori = KategoriKerjasama::query()->orderBy('id_kategori')->first();
-        abort_if($kategori === null, 422, 'Kategori kerjasama belum tersedia.');
+        $kategori = KategoriKerjasama::query()
+            ->firstOrCreate(
+                ['nama_kategori' => $validated['jenis_kerjasama']],
+                ['deskripsi' => 'Kategori dari pengajuan mitra', 'file_template' => '-']
+            );
 
         DB::transaction(function () use ($validated, $request, $mitra, $admin, $kategori) {
             $kerjasama = Kerjasama::create([
