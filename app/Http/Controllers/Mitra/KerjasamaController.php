@@ -44,6 +44,7 @@ class KerjasamaController extends Controller
                 'jenis_dokumen' => $item->jenis_dokumen,
                 'nomor_suratM' => $item->nomor_suratM,
                 'urusan' => $item->urusan,
+                'pembiayaan' => $item->latestPeriode?->keterangan,
                 'daerah' => $item->daerah,
                 'tanggal_mulai' => $item->latestPeriode?->tanggal_mulai,
                 'tanggal_selesai' => $item->latestPeriode?->tanggal_berakhir,
@@ -84,7 +85,7 @@ class KerjasamaController extends Controller
                 'nomor_suratM' => $validated['nomor_suratM'],
                 'nomor_suratP' => null,
                 'urusan' => $validated['urusan'],
-                'daerah' => $validated['pembiayaan'],
+                'daerah' => '-',
                 'status_aktif' => 'aktif',
                 'pemrakarsa' => 'M',
                 'jenis_kerjasama' => $validated['jenis_kerjasama'],
@@ -101,7 +102,7 @@ class KerjasamaController extends Controller
                 'id_kerjasama' => $kerjasama->id_kerjasama,
                 'tanggal_mulai' => $validated['tanggal_mulai'],
                 'tanggal_berakhir' => $validated['tanggal_selesai'],
-                'keterangan' => 'Pengajuan mitra',
+                'keterangan' => $validated['pembiayaan'],
             ]);
 
             $file = $validated['dokumen_file'];

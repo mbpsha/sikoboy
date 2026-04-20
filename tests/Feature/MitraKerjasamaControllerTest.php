@@ -55,6 +55,7 @@ class MitraKerjasamaControllerTest extends TestCase
         $this->assertDatabaseHas('periode_kerjasama', [
             'tanggal_mulai' => '2026-05-01',
             'tanggal_berakhir' => '2027-05-01',
+            'keterangan' => 'Mandiri',
         ]);
         $this->assertDatabaseCount('dokumen', 1);
 
