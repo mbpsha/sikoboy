@@ -44,7 +44,7 @@ class KerjasamaController extends Controller
                 'jenis_dokumen' => $item->jenis_dokumen,
                 'nomor_suratM' => $item->nomor_suratM,
                 'urusan' => $item->urusan,
-                'pembiayaan' => $item->daerah,
+                'daerah' => $item->daerah,
                 'tanggal_mulai' => $item->latestPeriode?->tanggal_mulai,
                 'tanggal_selesai' => $item->latestPeriode?->tanggal_berakhir,
                 'status_persetujuan' => $item->status_persetujuan?->value ?? 'menunggu',
