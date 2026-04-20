@@ -10,42 +10,27 @@ use Inertia\Inertia;
 class ProfileController extends Controller
 {
     /**
-     * Show profile completion form for mitra without profile.
+     * Show the mitra profile page.
      */
-    public function completeProfile(Request $request)
+    public function index(Request $request)
     {
-        if ($request->user()->mitra) {
-            return redirect()->route('mitra.profile.edit');
-        }
+        $user = $request->user();
+        $mitra = $user->mitra;
 
-        return Inertia::render('Mitra/Profile/Edit', [
+        // Get kerjasama data with related kategori
+        $kerjasama = $mitra->kerjasama()
+            ->with('kategori')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return Inertia::render('Mitra/Profile', [
             'user' => [
-                'email' => $request->user()->email,
+                'email' => $user->email,
             ],
-            'mitra' => null,
-            'mode' => 'complete',
+            'mitra' => $mitra,
+            'kerjasama' => $kerjasama,
+            'activeTab' => 'pengajuan',
         ]);
-    }
-
-    /**
-     * Store profile for first-time mitra completion.
-     */
-    public function storeProfile(Request $request)
-    {
-        $validated = $request->validate([
-            'nama_perusahaan' => 'required|string|max:255',
-            'pic' => 'required|string|max:255',
-            'no_handphone' => 'required|string|max:50',
-            'alamat' => 'required|string',
-        ]);
-
-        $request->user()->mitra()->updateOrCreate(
-            ['id_user' => $request->user()->id_user],
-            $validated
-        );
-
-        return redirect()->route('mitra.profile.edit')
-            ->with('success', 'Profil berhasil dilengkapi.');
     }
 
     /**
@@ -55,16 +40,11 @@ class ProfileController extends Controller
     {
         $user = $request->user();
 
-        if (! $user->mitra) {
-            return redirect()->route('mitra.profile.complete');
-        }
-
         return Inertia::render('Mitra/Profile/Edit', [
             'user' => [
                 'email' => $user->email,
             ],
             'mitra' => $user->mitra,
-            'mode' => 'edit',
         ]);
     }
 
@@ -73,17 +53,21 @@ class ProfileController extends Controller
      */
     public function update(Request $request)
     {
-        $validated = $request->validate([
+        $mitra = $request->user()->mitra;
+
+        $request->validate([
             'nama_perusahaan' => 'required|string|max:255',
-            'pic' => 'required|string|max:255',
-            'no_handphone' => 'required|string|max:50',
+            'pic' => 'required|string',
+            'no_handphone' => 'required|string',
             'alamat' => 'required|string',
         ]);
 
-        $request->user()->mitra()->updateOrCreate(
-            ['id_user' => $request->user()->id_user],
-            $validated
-        );
+        $mitra->update($request->only([
+            'nama_perusahaan',
+            'pic',
+            'no_handphone',
+            'alamat',
+        ]));
 
         return back()->with('success', 'Profil berhasil diperbarui.');
     }

@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
-const landing = "/storage/images/landing.png";
+//const landing = "/storage/images/landing.png";
+const landing = new URL('@/images/landing.png', import.meta.url).href;
 
 defineProps({
     title: {
