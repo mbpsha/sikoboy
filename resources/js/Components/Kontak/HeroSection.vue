@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from "vue";
-const heroTentang = "/storage/images/kontak.jpg";
+const heroTentang = "/storage/images/kontak.jpeg";
 
 // PARALLAX (biar konsisten sama landing)
 const offset = ref(0);

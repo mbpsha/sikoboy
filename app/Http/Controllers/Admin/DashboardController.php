@@ -89,7 +89,7 @@ class DashboardController extends Controller
             ])
             ->values();
 
-        return Inertia::render('Admin/Dashboard', [
+        return Inertia::render('Admin/BerandaAdmin', [
             'metrics'          => $metrics,
             'kerjasama_per_tahun' => $kerjasamaPerTahun,
             'jenis_dokumen'    => $jenisDokumen,
