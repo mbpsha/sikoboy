@@ -1,11 +1,25 @@
 @import 'tailwindcss';
 
+/* Import font */
+@import url('https://fonts.googleapis.com/css2?family=Fahkwang:wght@300;400;500;600;700&display=swap');
+
+/* Source (biarin aja) */
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 @source '../**/*.blade.php';
 @source '../**/*.js';
 
-@theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+/* ❌ HAPUS font global Fahkwang */
+/* html, body {
+    font-family: 'Fahkwang', ui-sans-serif, system-ui, sans-serif;
+} */
+
+/* ✅ Default font normal */
+html, body {
+    font-family: ui-sans-serif, system-ui, sans-serif;
+}
+
+/* ✅ Class khusus Fahkwang */
+.font-fahkwang {
+    font-family: 'Fahkwang', sans-serif;
 }

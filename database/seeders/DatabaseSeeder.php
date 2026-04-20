@@ -18,28 +18,34 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Create Admin User
-        $admin = User::create([
-            'email' => 'admin@sikoboy.go.id',
-            'password' => Hash::make('Admin@12345'),
-            'role' => 'admin',
-        ]);
+        // Create default admin login requested by team.
+        $admin = User::updateOrCreate(
+            ['email' => 'AdminSikoboy123@admin.com'],
+            [
+                'password' => Hash::make('sikoboybukansikejam'),
+                'role' => 'admin',
+            ]
+        );
 
-        Admin::create([
-            'id_user' => $admin->id_user,
-            'nama' => 'Administrator Utama',
-            'divisi' => 'IT',
-        ]);
+        Admin::updateOrCreate(
+            ['id_user' => $admin->id_user],
+            [
+                'nama' => 'Admin SIKOBOY',
+                'divisi' => 'Administrator',
+            ]
+        );
 
         // Create Sample Partner/Mitra
-        $mitra = User::create([
+        $mitra = User::updateOrCreate([
             'email' => 'mitra@example.com',
+        ], [
             'password' => Hash::make('Mitra@12345'),
             'role' => 'mitra',
         ]);
 
-        Mitra::create([
+        Mitra::updateOrCreate([
             'id_user' => $mitra->id_user,
+        ], [
             'nama_perusahaan' => 'PT Contoh Mitra Indonesia',
             'no_handphone' => '081234567891',
             'pic' => 'Budi Santoso',
@@ -47,14 +53,16 @@ class DatabaseSeeder extends Seeder
         ]);
 
         // Create Additional Sample Partners
-        $mitra2 = User::create([
+        $mitra2 = User::updateOrCreate([
             'email' => 'partner2@example.com',
+        ], [
             'password' => Hash::make('Partner@12345'),
             'role' => 'mitra',
         ]);
 
-        Mitra::create([
+        Mitra::updateOrCreate([
             'id_user' => $mitra2->id_user,
+        ], [
             'nama_perusahaan' => 'CV Mitra Sejahtera',
             'no_handphone' => '081234567892',
             'pic' => 'Siti Nurhaliza',
@@ -62,14 +70,16 @@ class DatabaseSeeder extends Seeder
         ]);
 
         // Create Unverified Partner
-        $mitra3 = User::create([
+        $mitra3 = User::updateOrCreate([
             'email' => 'unverified@example.com',
+        ], [
             'password' => Hash::make('Partner@12345'),
             'role' => 'mitra',
         ]);
 
-        Mitra::create([
+        Mitra::updateOrCreate([
             'id_user' => $mitra3->id_user,
+        ], [
             'nama_perusahaan' => 'PT Belum Verifikasi',
             'no_handphone' => '081234567893',
             'pic' => 'Ahmad Dahlan',
