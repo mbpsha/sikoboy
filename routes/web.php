@@ -13,7 +13,9 @@ use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\Auth\VerificationController;
 use App\Http\Controllers\Mitra\DashboardController as MitraDashboardController;
+use App\Http\Controllers\Mitra\KerjasamaController as MitraKerjasamaController;
 use App\Http\Controllers\Mitra\ProfileController as MitraProfileController;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -34,10 +36,10 @@ Route::get('/template-dokumen/{id}/download', [ManajemenDokumenController::class
 Route::get('/template-dokumen/{id}/preview', [ManajemenDokumenController::class, 'preview'])
     ->name('template-dokumen.preview');
 
-Route::middleware('auth')->get('/portal-mitra', function (\Illuminate\Http\Request $request) {
+Route::middleware('auth')->get('/portal-mitra', function (Request $request) {
     return match ($request->user()?->role) {
         'admin' => redirect()->route('admin.dashboard'),
-        'mitra' => redirect()->route('mitra.profile.edit'),
+        'mitra' => redirect()->route('mitra.kerjasama.index'),
         default => redirect()->route('home'),
     };
 })->name('portal-mitra');
@@ -85,6 +87,11 @@ Route::middleware('auth')->group(function () {
 Route::middleware(['auth', 'role:mitra'])->prefix('mitra')->name('mitra.')->group(function () {
     Route::get('/dashboard', [MitraDashboardController::class, 'index'])
         ->name('dashboard');
+
+    Route::get('/kerjasama', [MitraKerjasamaController::class, 'index'])
+        ->name('kerjasama.index');
+    Route::post('/kerjasama', [MitraKerjasamaController::class, 'store'])
+        ->name('kerjasama.store');
 
     Route::get('/profile/complete', [MitraProfileController::class, 'completeProfile'])
         ->name('profile.complete');
