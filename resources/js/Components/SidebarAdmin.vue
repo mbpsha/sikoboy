@@ -1,38 +1,67 @@
 <template>
-  <aside class="bg-teal-900 text-white w-64 min-h-screen fixed md:static flex flex-col justify-between">
+  <aside style="background-color:#0C505C" class="text-white w-64 h-screen fixed left-0 top-0 z-40 flex flex-col justify-between overflow-hidden">
     
     <!-- TOP -->
     <div>
       <!-- LOGO -->
-      <div class="p-6 text-2xl font-bold tracking-widest">
-        SIKOBOY
-        <p class="text-sm font-normal mt-1">Admin Dashboard</p>
+      <div class="px-6 pt-6 pb-4">
+        <div class="text-3xl font-extrabold tracking-widest">SIKOBOY</div>
+        <p class="text-xs text-teal-100 mt-1">Admin Dashboard</p>
+        <div class="mt-4 border-t border-teal-700"></div>
       </div>
 
       <!-- MENU -->
-      <nav class="mt-6 space-y-2 px-4">
+      <nav class="mt-2 space-y-2 px-3">
         <Link :href="route('admin.dashboard')" :class="navClass('/admin/dashboard')">
-          Beranda
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 10.5L12 3l9 7.5V20a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1v-9.5z"/>
+          </svg>
+          <span class="text-sm">Beranda</span>
         </Link>
 
-        <Link href="#" :class="navClass('/admin/pengguna')">
-          Pengguna
+        <Link :href="route('admin.pengguna.index')" :class="navClass('/admin/pengguna')">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+            <!-- Kepala utama -->
+            <circle cx="9" cy="8" r="3" />
+            <!-- Badan utama -->
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 20c0-3 3-5 5-5s5 2 5 5"/>
+          </svg>
+          <span class="text-sm">Pengguna</span>
         </Link>
 
-        <Link href="#" :class="navClass('/admin/kerjasama')">
-          Data Kerjasama
+        <Link :href="route('admin.data-kerjasama.index')" :class="navClass('/admin/data-kerjasama')">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M7 3h7l5 5v13a1 1 0 01-1 1H7a1 1 0 01-1-1V4a1 1 0 011-1z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" d="M14 3v5h5"/>
+          </svg>
+          <span class="text-sm">Data Kerjasama</span>
         </Link>
 
         <Link href="#" :class="navClass('/admin/riwayat')">
-          Riwayat Kerjasama
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+            <circle cx="12" cy="12" r="9"/>
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 7v5l3 2"/>
+          </svg>
+          <span class="text-sm">Riwayat Kerjasama</span>
         </Link>
 
         <Link href="#" :class="navClass('/admin/potensi')">
-          Manajemen Potensi
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
+            <circle cx="9" cy="6" r="2"/>
+            <circle cx="15" cy="12" r="2"/>
+            <circle cx="11" cy="18" r="2"/>
+          </svg>
+          <span class="text-sm">Manajemen Potensi</span>
         </Link>
 
         <Link href="#" :class="navClass('/admin/dokumen')">
-          Manajemen Dokumen
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M7 3h7l5 5v13a1 1 0 01-1 1H7a1 1 0 01-1-1V4a1 1 0 011-1z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" d="M14 3v5h5"/>
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 14v6M9 17h6"/>
+          </svg>
+          <span class="text-sm">Manajemen Dokumen</span>
         </Link>
       </nav>
     </div>
@@ -85,12 +114,19 @@ const showConfirm = ref(false)
 
 // ACTIVE MENU
 const navClass = (url) => {
-  return [
-    "flex items-center gap-3 p-3 rounded-lg transition",
-    page.url.startsWith(url)
-      ? "bg-teal-700"
-      : "hover:bg-teal-700"
-  ]
+  const base = 'flex items-center gap-3 px-2 py-2 rounded-full transition w-full';
+  if (page.url && page.url.startsWith(url)) {
+    return base + ' bg-teal-100 text-teal-900 font-semibold';
+  }
+  return base + ' text-white/90 hover:bg-teal-700/30 hover:text-white';
+}
+
+const iconClass = (url) => {
+  const base = 'w-9 h-9 flex items-center justify-center rounded-md';
+  if (page.url && page.url.startsWith(url)) {
+    return base + ' bg-white text-teal-900';
+  }
+  return base + ' bg-white/10 text-white';
 }
 
 // LOGOUT FUNCTION

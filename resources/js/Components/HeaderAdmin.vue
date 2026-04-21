@@ -1,5 +1,5 @@
 <template>
-  <header class="bg-white shadow px-6 py-4 flex justify-between items-center">
+  <header class="bg-white shadow px-6 py-4 flex justify-between items-center sticky top-0 z-30">
     
     <div>
       <p class="text-sm text-gray-500">Dashboard / {{ title }}</p>

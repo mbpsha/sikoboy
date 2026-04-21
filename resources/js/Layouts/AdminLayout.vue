@@ -1,17 +1,16 @@
 <template>
-  <div class="flex">
-    
-    <!-- Sidebar -->
+  <div>
+    <!-- Sidebar (fixed) -->
     <SidebarAdmin />
 
-    <!-- Content Area -->
-    <div class="flex-1 bg-gray-100 min-h-screen">
+    <!-- Content Area (account for fixed sidebar width) -->
+    <div class="ml-64 bg-gray-100 min-h-screen">
       
       <!-- Header -->
       <HeaderAdmin :title="title" />
 
       <!-- Slot Content -->
-      <div class="p-6">
+      <div class="p-6 pt-20">
         <slot />
       </div>
 
