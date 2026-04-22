@@ -18,7 +18,7 @@ class ManajemenDokumenController extends Controller
 
     public function index()
     {
-        return Inertia::render('Admin/ManajemenDokumen/Index', [
+        return Inertia::render('Admin/ManajemenDokumen', [
             'templates' => $this->templateList(),
         ]);
     }

@@ -75,11 +75,14 @@ const normalClass = 'mx-2 px-4 py-1 text-sm text-white/90 hover:text-white trans
         </template>
 
         <template v-else>
-          <Link href="/portal-mitra" class="mx-2 flex items-center gap-2 rounded-full bg-white text-[#17464E] px-4 py-2 text-sm font-semibold shadow-lg hover:bg-gray-100">
-            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="3" y="3" width="18" height="18" rx="2"/>
-              <path d="M8 7h8M8 12h8M8 17h8"/>
-            </svg>
+
+          <Link href="/portal-mitra" class="mx-2 flex items-center gap-2 rounded-full bg-[#0C505C] text-white px-4 py-2 text-sm font-semibold shadow-md hover:bg-[#0a4a4e]">
+                <div class="bg-[#2f6f73] p-2 rounded-xl shadow-sm flex items-center justify-center w-10 h-10 shrink-0">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="white">
+                    <path d="M7 19h2v-2H7v2Zm4 0h2v-2h-2v2Zm4 0h2v-2h-2v2Zm-8-4h2v-2H7v2Zm4 0h2v-2h-2v2Zm4 0h2v-2h-2v2Zm-8-4h2V9H7v2Zm4 0h2V9h-2v2Zm4 0h2V9h-2v2ZM3 21V3h18v18H3Zm2-2h14V5H5v14Z"/>
+                  </svg>
+                </div>
+
             <span>Portal Mitra</span>
           </Link>
         </template>

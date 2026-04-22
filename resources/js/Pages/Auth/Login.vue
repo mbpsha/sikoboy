@@ -83,11 +83,6 @@
                         </p>
                     </div>
 
-                    <!-- ROLE ERROR -->
-                    <p v-if="form.errors.role" class="text-red-400 text-sm mt-2 text-center">
-                        {{ form.errors.role }}
-                    </p>
-
                     <!-- BUTTON -->
                     <div class="flex justify-center mt-16">
                         <button
@@ -110,10 +105,6 @@
 import { useForm, router, Head } from "@inertiajs/vue3";
 import { ref } from "vue";
 
-const props = defineProps({
-    role: String,
-});
-
 const showPassword = ref(false);
 
 const togglePassword = () => {
@@ -127,7 +118,6 @@ const goRegister = () => {
 const form = useForm({
     email: "",
     password: "",
-    role: props.role,
 });
 
 const submit = () => {

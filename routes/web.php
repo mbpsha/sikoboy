@@ -13,10 +13,10 @@ use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\Auth\VerificationController;
 use App\Http\Controllers\Mitra\DashboardController as MitraDashboardController;
-use App\Http\Controllers\Mitra\ProfileController as MitraProfileController;
 use App\Http\Controllers\Mitra\KerjasamaController as MitraKerjasamaController;
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Mitra\ProfileController as MitraProfileController;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
 
@@ -52,10 +52,10 @@ Route::get('/dokumen', function () {
 // Kontak page
 Route::get('/kontak', fn() => Inertia::render('Kontak'))->name('kontak');
 
-Route::middleware('auth')->get('/portal-mitra', function (\Illuminate\Http\Request $request) {
+Route::middleware('auth')->get('/portal-mitra', function (Request $request) {
     return match ($request->user()?->role) {
         'admin' => redirect()->route('admin.dashboard'),
-        'mitra' => redirect()->route('mitra.profile.index'),
+        'mitra' => redirect()->route('mitra.kerjasama.index'),
         default => redirect()->route('home'),
     };
 })->name('portal-mitra');
@@ -113,6 +113,11 @@ Route::middleware(['auth', 'role:mitra'])->prefix('mitra')->name('mitra.')->grou
     Route::get('/dashboard', [MitraDashboardController::class, 'index'])
         ->name('dashboard');
 
+    Route::get('/kerjasama', [MitraKerjasamaController::class, 'index'])
+        ->name('kerjasama.index');
+    Route::post('/kerjasama', [MitraKerjasamaController::class, 'store'])
+        ->name('kerjasama.store');
+
     Route::get('/profile/complete', [MitraProfileController::class, 'completeProfile'])
         ->name('profile.complete');
     Route::post('/profile/complete', [MitraProfileController::class, 'storeProfile'])
@@ -139,16 +144,10 @@ Route::middleware(['auth', 'role:mitra'])->prefix('mitra')->name('mitra.')->grou
         ->name('pengajuan.store');
 });
 
-// Portal Mitra (Alias for Mitra Profile) — point to existing controller method
-Route::middleware(['auth', 'role:mitra'])->get('/portal-mitra', [MitraProfileController::class, 'index'])
-    ->name('portal-mitra');
-
 // Admin Routes
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
 
     // Dashboard
-    Route::get('/beranda', [AdminDashboardController::class, 'index'])
-        ->name('beranda.index');
     Route::get('/dashboard', [AdminDashboardController::class, 'index'])
         ->name('dashboard');
 

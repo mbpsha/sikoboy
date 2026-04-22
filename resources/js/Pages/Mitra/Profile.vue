@@ -52,13 +52,16 @@ const activeTab = ref('riwayat');
                   </svg>
                 </div>
                 
-                <div class="flex flex-col gap-1">
+                <div class="flex flex-col gap-2">
                   <h3 class="text-xl font-bold text-[#17464E] leading-tight mb-1">
                     {{ mitra?.nama_perusahaan || 'Hamaz Sejahtera Group' }}
                   </h3>
                   <span class="inline-block text-xs bg-[#86efac] text-[#166534] px-4 py-1 rounded-full font-medium w-fit">
                     Aktif
                   </span>
+                  <Link :href="route('components.profile.edit')" class="mt-2 inline-block text-xs bg-blue-500 text-white px-3 py-1 rounded-full font-medium hover:bg-blue-400 self-start">
+                    Edit Profil
+                  </Link>
                 </div>
               </div>
 

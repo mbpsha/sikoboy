@@ -25,7 +25,7 @@ class CheckRole
         $user = Auth::user();
 
         // Check if user has the required role
-        if (!in_array($user->role, $roles)) {
+        if (!in_array(strtolower(trim($user->role)), array_map('strtolower', $roles))) {
             abort(403, 'Unauthorized access.');
         }
 
