@@ -28,7 +28,9 @@ class RiwayatKerjasamaController extends Controller
 
         $this->applyFilters($query, $request);
 
-        $kerjasama = $query->orderBy('created_at', 'desc')
+        [$sortBy, $sortDir] = $this->resolveSort($request);
+
+        $kerjasama = $query->orderBy($sortBy, $sortDir)
             ->paginate(15)
             ->withQueryString();
 
@@ -36,7 +38,7 @@ class RiwayatKerjasamaController extends Controller
 
         return Inertia::render('Admin/RiwayatKerjasama/Mitra', [
             'kerjasama' => $kerjasama,
-            'filters' => $request->only(['search', 'tahun', 'jenis_kerjasama', 'jenis_dokumen', 'status']),
+            'filters' => $request->only(['search', 'tahun', 'jenis_kerjasama', 'jenis_dokumen', 'status', 'sort_by', 'sort_dir']),
         ]);
     }
 
@@ -54,7 +56,9 @@ class RiwayatKerjasamaController extends Controller
 
         $this->applyFilters($query, $request);
 
-        $kerjasama = $query->orderBy('created_at', 'desc')
+        [$sortBy, $sortDir] = $this->resolveSort($request);
+
+        $kerjasama = $query->orderBy($sortBy, $sortDir)
             ->paginate(15)
             ->withQueryString();
 
@@ -62,7 +66,7 @@ class RiwayatKerjasamaController extends Controller
 
         return Inertia::render('Admin/RiwayatKerjasama/Pemerintah', [
             'kerjasama' => $kerjasama,
-            'filters' => $request->only(['search', 'tahun', 'jenis_kerjasama', 'jenis_dokumen', 'status']),
+            'filters' => $request->only(['search', 'tahun', 'jenis_kerjasama', 'jenis_dokumen', 'status', 'sort_by', 'sort_dir']),
         ]);
     }
 
@@ -222,5 +226,20 @@ class RiwayatKerjasamaController extends Controller
         }
 
         return $row;
+    }
+
+    private function resolveSort(Request $request): array
+    {
+        $allowedSort = ['created_at', 'judul', 'jenis_kerjasama', 'jenis_dokumen'];
+
+        $sortBy = (string) $request->input('sort_by', 'created_at');
+        if (! in_array($sortBy, $allowedSort, true)) {
+            $sortBy = 'created_at';
+        }
+
+        $sortDir = strtolower((string) $request->input('sort_dir', 'desc'));
+        $sortDir = $sortDir === 'asc' ? 'asc' : 'desc';
+
+        return [$sortBy, $sortDir];
     }
 }

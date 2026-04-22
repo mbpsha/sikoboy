@@ -24,16 +24,19 @@ Route::get('/', fn () => Inertia::render('Welcome'))->name('home');
 
 // Public pages
 Route::get('/about', fn () => Inertia::render('About'))->name('about');
+Route::get('/kontak', fn () => Inertia::render('Kontak'))->name('kontak');
 Route::get('/peraturan', fn () => Inertia::render('Peraturan'))->name('peraturan');
+Route::get('/dokumen', fn () => Inertia::render('Dokumen'))->name('dokumen.index');
 
 // Public template dokumen routes (website)
-Route::get('/dokumen', fn () => redirect()->route('template-dokumen.index'))
-    ->name('dokumen.index');
 Route::get('/template-dokumen', [ManajemenDokumenController::class, 'listPublic'])
+    ->middleware('throttle:120,1')
     ->name('template-dokumen.index');
 Route::get('/template-dokumen/{id}/download', [ManajemenDokumenController::class, 'download'])
+    ->middleware('throttle:120,1')
     ->name('template-dokumen.download');
 Route::get('/template-dokumen/{id}/preview', [ManajemenDokumenController::class, 'preview'])
+    ->middleware('throttle:120,1')
     ->name('template-dokumen.preview');
 
 Route::middleware('auth')->get('/portal-mitra', function (Request $request) {
@@ -50,17 +53,22 @@ Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
 Route::get('/login/{role}', fn () => redirect()->route('login'))
     ->whereIn('role', ['admin', 'mitra'])
     ->name('login.role');
-Route::post('/login', [LoginController::class, 'login'])->name('login.attempt');
+Route::post('/login', [LoginController::class, 'login'])
+    ->middleware('throttle:5,1')
+    ->name('login.attempt');
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
 // Registration (Mitra only)
 Route::get('/register', [RegisterController::class, 'showRegistrationForm'])->name('register');
-Route::post('/register', [RegisterController::class, 'register'])->name('register.attempt');
+Route::post('/register', [RegisterController::class, 'register'])
+    ->middleware('throttle:5,1')
+    ->name('register.attempt');
 
 // Password Reset Routes
 Route::get('/forgot-password', [ForgotPasswordController::class, 'showLinkRequestForm'])
     ->name('password.request');
 Route::post('/forgot-password', [ForgotPasswordController::class, 'sendResetLinkEmail'])
+    ->middleware('throttle:5,1')
     ->name('password.email');
 Route::get('/reset-password/{token}', [ResetPasswordController::class, 'showResetForm'])
     ->name('password.reset');
@@ -89,6 +97,7 @@ Route::middleware(['auth', 'role:mitra'])->prefix('mitra')->name('mitra.')->grou
         ->name('dashboard');
 
     Route::get('/kerjasama', [MitraKerjasamaController::class, 'index'])
+        ->middleware('throttle:120,1')
         ->name('kerjasama.index');
     Route::post('/kerjasama', [MitraKerjasamaController::class, 'store'])
         ->name('kerjasama.store');
@@ -117,6 +126,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
 
     // Users
     Route::get('/pengguna', [AdminUserController::class, 'index'])
+        ->middleware('throttle:120,1')
         ->name('pengguna.index');
     Route::post('/pengguna', [AdminUserController::class, 'store'])
         ->name('pengguna.store');
@@ -124,6 +134,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
         ->name('pengguna.update');
 
     Route::get('/users', [AdminUserController::class, 'index'])
+        ->middleware('throttle:120,1')
         ->name('users.index');
     Route::post('/users', [AdminUserController::class, 'store'])
         ->name('users.store');
@@ -134,6 +145,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
 
     // Status Kontrak (mitra kerjasama in negotiation)
     Route::get('/status-kontrak', [StatusKontrakController::class, 'index'])
+        ->middleware('throttle:120,1')
         ->name('status-kontrak.index');
     Route::put('/status-kontrak/{id}', [StatusKontrakController::class, 'update'])
         ->name('status-kontrak.update');
@@ -144,12 +156,15 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
 
     // Riwayat Kerjasama — Mitra (finalised)
     Route::get('/riwayat-kerjasama', [RiwayatKerjasamaController::class, 'mitra'])
+        ->middleware('throttle:120,1')
         ->name('riwayat-kerjasama.index');
     Route::get('/riwayat-kerjasama/mitra', [RiwayatKerjasamaController::class, 'mitra'])
+        ->middleware('throttle:120,1')
         ->name('riwayat-kerjasama.mitra');
 
     // Riwayat Kerjasama — Pemerintah Boyolali
     Route::get('/riwayat-kerjasama/pemerintah', [RiwayatKerjasamaController::class, 'pemerintah'])
+        ->middleware('throttle:120,1')
         ->name('riwayat-kerjasama.pemerintah');
     Route::post('/riwayat-kerjasama/pemerintah', [RiwayatKerjasamaController::class, 'storePemerintah'])
         ->name('riwayat-kerjasama.pemerintah.store');
@@ -158,18 +173,22 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
 
     // Data Kerjasama (combined view)
     Route::get('/data-kerjasama/pemda', [DataKerjasamaController::class, 'index'])
+        ->middleware('throttle:120,1')
         ->defaults('pemrakarsa', 'P')
         ->name('data-kerjasama.pemda');
     Route::get('/data-kerjasama/mitra', [DataKerjasamaController::class, 'index'])
+        ->middleware('throttle:120,1')
         ->defaults('pemrakarsa', 'M')
         ->name('data-kerjasama.mitra');
     Route::get('/data-kerjasama', [DataKerjasamaController::class, 'index'])
+        ->middleware('throttle:120,1')
         ->name('data-kerjasama.index');
     Route::post('/data-kerjasama', [DataKerjasamaController::class, 'store'])
         ->name('data-kerjasama.store');
 
     // Manajemen Potensi
     Route::get('/manajemen-potensi', [ManajemenPotensiController::class, 'index'])
+        ->middleware('throttle:120,1')
         ->name('manajemen-potensi.index');
     Route::post('/manajemen-potensi', [ManajemenPotensiController::class, 'store'])
         ->name('manajemen-potensi.store');
@@ -180,6 +199,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
 
     // Manajemen Dokumen
     Route::get('/manajemen-dokumen', [ManajemenDokumenController::class, 'index'])
+        ->middleware('throttle:120,1')
         ->name('manajemen-dokumen.index');
     Route::post('/manajemen-dokumen', [ManajemenDokumenController::class, 'store'])
         ->name('manajemen-dokumen.store');

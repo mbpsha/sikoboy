@@ -19,8 +19,7 @@ class UserController extends Controller
      */
     public function index(Request $request)
     {
-        $query = User::with(['admin', 'mitra'])
-            ->orderBy('created_at', 'desc');
+        $query = User::with(['admin', 'mitra']);
 
         // Role filter
         if ($request->filled('role') && in_array($request->role, ['admin', 'mitra'])) {
@@ -48,7 +47,11 @@ class UserController extends Controller
             });
         }
 
-        $users = $query->paginate(15)->withQueryString();
+        [$sortBy, $sortDir] = $this->resolveSort($request);
+
+        $users = $query->orderBy($sortBy, $sortDir)
+            ->paginate(15)
+            ->withQueryString();
 
         // Transform each user into a flat, UI-ready shape
         $users->getCollection()->transform(function (User $user) {
@@ -57,7 +60,7 @@ class UserController extends Controller
 
         return Inertia::render('Admin/Users/Index', [
             'users' => $users,
-            'filters' => $request->only(['search', 'role', 'status']),
+            'filters' => $request->only(['search', 'role', 'status', 'sort_by', 'sort_dir']),
         ]);
     }
 
@@ -204,5 +207,20 @@ class UserController extends Controller
         }
 
         return $base;
+    }
+
+    private function resolveSort(Request $request): array
+    {
+        $allowedSort = ['created_at', 'email', 'role'];
+
+        $sortBy = (string) $request->input('sort_by', 'created_at');
+        if (! in_array($sortBy, $allowedSort, true)) {
+            $sortBy = 'created_at';
+        }
+
+        $sortDir = strtolower((string) $request->input('sort_dir', 'desc'));
+        $sortDir = $sortDir === 'asc' ? 'asc' : 'desc';
+
+        return [$sortBy, $sortDir];
     }
 }
