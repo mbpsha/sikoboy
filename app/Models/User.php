@@ -20,6 +20,7 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'status_verifikasi',
     ];
 
     /**
@@ -57,6 +58,15 @@ class User extends Authenticatable
     public function isMitra(): bool
     {
         return $this->role === 'mitra';
+    }
+
+    public function isMitraVerified(): bool
+    {
+        if (! $this->isMitra()) {
+            return true;
+        }
+
+        return $this->status_verifikasi === 'disetujui';
     }
 
     public function hasCompleteProfile(): bool

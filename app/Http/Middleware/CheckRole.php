@@ -29,6 +29,16 @@ class CheckRole
             abort(403, 'Unauthorized access.');
         }
 
+        if ($user->role === 'mitra' && ($user->status_verifikasi ?? 'disetujui') !== 'disetujui') {
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return redirect()->route('login')->withErrors([
+                'email' => 'Akun mitra Anda belum diverifikasi admin.',
+            ]);
+        }
+
         // Check if mitra has complete profile
         if ($user->role === 'mitra' && !$user->mitra) {
             // Allow access to profile completion route

@@ -132,6 +132,8 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
         ->name('pengguna.store');
     Route::put('/pengguna/{id}', [AdminUserController::class, 'update'])
         ->name('pengguna.update');
+    Route::put('/pengguna/{id}/verify', [AdminUserController::class, 'verifyMitra'])
+        ->name('pengguna.verify');
 
     Route::get('/users', [AdminUserController::class, 'index'])
         ->middleware('throttle:120,1')
@@ -140,6 +142,8 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
         ->name('users.store');
     Route::put('/users/{id}', [AdminUserController::class, 'update'])
         ->name('users.update');
+    Route::put('/users/{id}/verify', [AdminUserController::class, 'verifyMitra'])
+        ->name('users.verify');
     Route::get('/users/{id}', [AdminUserController::class, 'show'])
         ->name('users.show');
 

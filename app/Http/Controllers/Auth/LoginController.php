@@ -43,6 +43,12 @@ class LoginController extends Controller
             return back()->withErrors(['email' => 'Email atau password salah.']);
         }
 
+        if ($user->role === 'mitra' && ! $user->isMitraVerified()) {
+            return back()->withErrors([
+                'email' => 'Akun mitra Anda belum diverifikasi admin.',
+            ]);
+        }
+
         Auth::login($user, $request->boolean('remember'));
 
         // Regenerate session after login to prevent session fixation.

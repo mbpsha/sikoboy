@@ -37,6 +37,7 @@ class RegisterController extends Controller
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'role' => 'mitra',
+            'status_verifikasi' => 'pending',
         ]);
 
         Mitra::create([
@@ -48,6 +49,6 @@ class RegisterController extends Controller
         ]);
 
         return redirect()->route('login')
-            ->with('success', 'Registrasi berhasil! Silakan login.');
+            ->with('success', 'Registrasi berhasil! Akun Anda akan diverifikasi admin terlebih dahulu.');
     }
 }
