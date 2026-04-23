@@ -18,6 +18,7 @@ use App\Http\Controllers\Mitra\ProfileController as MitraProfileController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\DB;
 
 // Home / Welcome
 Route::get('/', fn () => Inertia::render('Welcome'))->name('home');
@@ -28,16 +29,30 @@ Route::get('/kontak', fn () => Inertia::render('Kontak'))->name('kontak');
 Route::get('/peraturan', fn () => Inertia::render('Peraturan'))->name('peraturan');
 Route::get('/dokumen', fn () => Inertia::render('Dokumen'))->name('dokumen.index');
 
-// Public template dokumen routes (website)
-Route::get('/template-dokumen', [ManajemenDokumenController::class, 'listPublic'])
-    ->middleware('throttle:120,1')
-    ->name('template-dokumen.index');
-Route::get('/template-dokumen/{id}/download', [ManajemenDokumenController::class, 'download'])
-    ->middleware('throttle:120,1')
-    ->name('template-dokumen.download');
-Route::get('/template-dokumen/{id}/preview', [ManajemenDokumenController::class, 'preview'])
-    ->middleware('throttle:120,1')
-    ->name('template-dokumen.preview');
+// Public pages
+Route::get('/about', fn () => Inertia::render('About'))->name('about');
+Route::get('/peraturan', fn () => Inertia::render('Peraturan'))->name('peraturan');
+Route::get('/dokumen', fn () => Inertia::render('Dokumen'))->name('dokumen');
+Route::get('/kontak', fn () => Inertia::render('Kontak'))->name('kontak');
+
+// Dokumen page
+Route::get('/dokumen', function () {
+    $kategoris = DB::table('kategori_kerjasama')->get()->map(function ($k) {
+        $file = $k->file_template ?? '';
+        $filename = basename($file);
+        $pdfname = preg_replace('/\.(docx|doc|xlsx|pptx)$/i', '.pdf', $filename);
+        $pdfPath = storage_path('app/public/docs/' . $pdfname);
+        $preview = null;
+        if ($filename && file_exists($pdfPath)) {
+            $preview = '/storage/docs/' . $pdfname;
+        }
+        return (array) array_merge((array) $k, ['preview' => $preview]);
+    })->all();
+
+    return Inertia::render('Dokumen', ['kategoris' => $kategoris]);
+})->name('dokumen');
+// Kontak page
+Route::get('/kontak', fn() => Inertia::render('Kontak'))->name('kontak');
 
 Route::middleware('auth')->get('/portal-mitra', function (Request $request) {
     return match ($request->user()?->role) {
@@ -91,6 +106,15 @@ Route::middleware('auth')->group(function () {
         ->name('verification.send');
 });
 
+// Authenticated user profile (renders resources/js/Pages/Profile/UserProfil.vue)
+Route::middleware('auth')->get('/profile', function (Request $request) {
+    $user = $request->user();
+    return Inertia::render('Profile/UserProfil', [
+        'user' => $user,
+        'mitra' => $user?->mitra,
+    ]);
+})->name('profile.show');
+
 // Partner (Mitra) Routes
 Route::middleware(['auth', 'role:mitra'])->prefix('mitra')->name('mitra.')->group(function () {
     Route::get('/dashboard', [MitraDashboardController::class, 'index'])
@@ -107,20 +131,31 @@ Route::middleware(['auth', 'role:mitra'])->prefix('mitra')->name('mitra.')->grou
     Route::post('/profile/complete', [MitraProfileController::class, 'storeProfile'])
         ->name('profile.store');
 
+    // show profile (use existing controller method 'edit' which renders the profile page)
     Route::get('/profile', [MitraProfileController::class, 'edit'])
+        ->name('profile.index');
+    Route::get('/profile/edit', [MitraProfileController::class, 'edit'])
         ->name('profile.edit');
     Route::put('/profile', [MitraProfileController::class, 'update'])
         ->name('profile.update');
     Route::put('/profile/password', [MitraProfileController::class, 'updatePassword'])
         ->name('profile.password');
+
+    // Pengajuan Kerjasama
+    Route::get('/pengajuan/step1', [MitraKerjasamaController::class, 'createStep1'])
+        ->name('pengajuan.step1');
+    Route::post('/pengajuan/step1', [MitraKerjasamaController::class, 'storeStep1'])
+        ->name('pengajuan.step1.store');
+    Route::get('/pengajuan/step2', [MitraKerjasamaController::class, 'createStep2'])
+        ->name('pengajuan.step2');
+    Route::post('/pengajuan', [MitraKerjasamaController::class, 'store'])
+        ->name('pengajuan.store');
 });
 
 // Admin Routes
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
 
     // Dashboard
-    Route::get('/beranda', [AdminDashboardController::class, 'index'])
-        ->name('beranda.index');
     Route::get('/dashboard', [AdminDashboardController::class, 'index'])
         ->name('dashboard');
 

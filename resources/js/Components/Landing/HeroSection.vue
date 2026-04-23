@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
-const landing = "/storage/images/landing.png";
+const landing = "/storage/images/beranda.png";
 
 defineProps({
     title: {

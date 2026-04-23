@@ -71,7 +71,7 @@ class UserController extends Controller
             return $this->formatUser($user);
         });
 
-        return Inertia::render('Admin/Users/Index', [
+        return Inertia::render('Admin/Users', [
             'users' => $users,
             'filters' => $request->only(['search', 'role', 'status', 'sort_by', 'sort_dir']),
         ]);

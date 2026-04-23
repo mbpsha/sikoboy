@@ -234,6 +234,11 @@ const form = useForm({
 });
 
 const submit = () => {
-    form.post("/register");
+    form.post("/register", {
+        onSuccess: () => {
+            // after successful registration, go to the email verification notice
+            router.visit('/email/verify');
+        },
+    });
 };
 </script>

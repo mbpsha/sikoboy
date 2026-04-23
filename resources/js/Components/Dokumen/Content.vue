@@ -1,8 +1,35 @@
 <script setup>
-import { Link } from '@inertiajs/vue3'
 import CardDokumen from './CardDokumen.vue'
 import ExtraTemplate from './ExtraTemplate.vue'
 import CTASection from './CTASection.vue'
+
+const props = defineProps({
+  kategoris: { type: Array, default: () => [] }
+})
+
+const getTemplate = (matchName) => {
+  if (!props.kategoris || props.kategoris.length === 0) {
+    return '/storage/docs/your-template.docx'
+  }
+  const found = props.kategoris.find(k => {
+    if (!k.nama_kategori) return false
+    return k.nama_kategori.toLowerCase().includes((matchName||'').toLowerCase())
+  })
+  if (found && found.file_template) return found.file_template
+  const firstWith = props.kategoris.find(k => k.file_template)
+  return (firstWith && firstWith.file_template) || '/storage/docs/your-template.docx'
+}
+
+const getPreview = (matchName) => {
+  if (!props.kategoris || props.kategoris.length === 0) return null
+  const found = props.kategoris.find(k => {
+    if (!k.nama_kategori) return false
+    return k.nama_kategori.toLowerCase().includes((matchName||'').toLowerCase())
+  })
+  if (found && found.preview) return found.preview
+  const firstWith = props.kategoris.find(k => k.preview)
+  return (firstWith && firstWith.preview) || null
+}
 </script>
 
 <template>
@@ -18,11 +45,15 @@ import CTASection from './CTASection.vue'
             <CardDokumen
               title="PERJANJIAN KERJA SAMA"
               description="Perjanjian Kerja Sama antara Pemerintah Kabupaten Boyolali dengan Pemerintah Daerah Kabupaten Boyolali"
+              href="public\docs\Template PKS KSDD.docx"
+              preview="public\docs\Template PKS KSDD.pdf"
             />
 
             <CardDokumen
               title="KESEPAKATAN BERSAMA"
               description="Kesepakatan bersama antara Pemerintah Daerah Kabupaten Boyolali dan Pemerintah Daerah Kabupaten Boyolali"
+              href="public\docs\Template KESEPAKATAN BERSAMA KSDD.docx"
+              preview="public\docs\Template KESEPAKATAN BERSAMA KSDD.pdf"
             />
           </div>
         </div>
@@ -36,11 +67,15 @@ import CTASection from './CTASection.vue'
             <CardDokumen
               title="PERJANJIAN KERJA SAMA"
               description="Perjanjian Kerja Sama antara Pemerintah Kabupaten Boyolali dengan Pihak Ketiga"
+              href="/public/docs/Template PKS KSDPK.docx"
+              preview="/public/docs/Template PKS KSDPK.pdf"
             />
 
             <CardDokumen
               title="KESEPAKATAN BERSAMA"
               description="Kesepakatan bersama antara Pemerintah Daerah Kabupaten Boyolali dengan Pihak Ketiga"
+              href="/public/docs/Template KESEPAKATAN BERSAMA KSDPK.docx"
+              preview="/public/docs/Template KESEPAKATAN BERSAMA KSDPK.pdf"
             />
           </div>
         </div>
@@ -54,6 +89,8 @@ import CTASection from './CTASection.vue'
             <CardDokumen
               title="SINERGI"
               description="Nota Kesepakatan antara Kementerian/Lembaga/Instansi Vertikal dan Pemerintah Kabupaten Boyolali"
+              href="/public/docs/Template NOTA KESEPAKATAN.docx"
+              preview="/public/docs/Template NOTA KESEPAKATAN.pdf"
             />
           </div>
         </div>

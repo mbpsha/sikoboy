@@ -128,7 +128,7 @@ class DataKerjasamaController extends Controller
             ];
         });
 
-        return Inertia::render('Admin/DataKerjasama/Index', [
+        return Inertia::render('Admin/DataKerjasama', [
             'kerjasama' => $kerjasama,
             'mitras' => Mitra::orderBy('nama_perusahaan')
                 ->get(['id_mitra', 'nama_perusahaan'])
