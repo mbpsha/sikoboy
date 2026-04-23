@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreKerjasamaPemerintahRequest;
+use App\Models\Dokumen;
 use App\Models\Kerjasama;
 use App\Models\PeriodeKerjasama;
 use Carbon\Carbon;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -77,8 +79,12 @@ class RiwayatKerjasamaController extends Controller
     {
         $validated = $request->validated();
         $admin = $request->user()->admin;
+        $request->validate([
+            'dokumen_file' => ['required', 'file', 'mimes:pdf', 'max:10240'],
+        ]);
+        $file = $request->file('dokumen_file');
 
-        DB::transaction(function () use ($validated, $admin) {
+        DB::transaction(function () use ($validated, $admin, $file, $request) {
             $kerjasama = Kerjasama::create([
                 'id_mitra' => null,
                 'id_admin' => $admin->id_admin,
@@ -102,6 +108,8 @@ class RiwayatKerjasamaController extends Controller
                 'tanggal_berakhir' => $validated['tanggal_berakhir'],
                 'keterangan' => $validated['keterangan'] ?? '',
             ]);
+
+            $this->storeDokumenVersion($kerjasama, $file, (int) $request->user()->id_user);
         });
 
         return redirect()
@@ -116,8 +124,12 @@ class RiwayatKerjasamaController extends Controller
     {
         $kerjasama = Kerjasama::pemerintahTipe()->findOrFail($id);
         $validated = $request->validated();
+        $request->validate([
+            'dokumen_file' => ['nullable', 'file', 'mimes:pdf', 'max:10240'],
+        ]);
+        $file = $request->file('dokumen_file');
 
-        DB::transaction(function () use ($kerjasama, $validated) {
+        DB::transaction(function () use ($kerjasama, $validated, $file, $request) {
             $kerjasama->update([
                 'judul' => $validated['judul'],
                 'nomor_suratP' => $validated['nomor_surat'],
@@ -135,6 +147,10 @@ class RiwayatKerjasamaController extends Controller
                 'tanggal_berakhir' => $validated['tanggal_berakhir'],
                 'keterangan' => $validated['keterangan'] ?? '',
             ]);
+
+            if ($file !== null) {
+                $this->storeDokumenVersion($kerjasama, $file, (int) $request->user()->id_user);
+            }
         });
 
         return back()->with('success', 'Data kerjasama pemerintah berhasil diperbarui.');
@@ -143,6 +159,20 @@ class RiwayatKerjasamaController extends Controller
     // =========================================================================
     // Helpers
     // =========================================================================
+
+    private function storeDokumenVersion(Kerjasama $kerjasama, UploadedFile $file, int $createdBy): void
+    {
+        $nextVersion = ((int) $kerjasama->dokumen()->max('versi_dokumen')) + 1;
+        $path = $file->store('dokumen-kerjasama', 'public');
+
+        Dokumen::create([
+            'id_kerjasama' => $kerjasama->id_kerjasama,
+            'nama_file' => $file->getClientOriginalName(),
+            'lokasi_file' => $path,
+            'versi_dokumen' => $nextVersion,
+            'created_by' => $createdBy,
+        ]);
+    }
 
     private function applyFilters($query, Request $request): void
     {
