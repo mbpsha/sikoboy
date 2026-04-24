@@ -176,14 +176,16 @@ class UserController extends Controller
      */
     public function verifyMitra(int $id)
     {
-        $user = User::query()->where('role', 'mitra')->findOrFail($id);
+        $user = User::query()
+            ->where('id_user', $id)
+            ->where('role', 'mitra')
+            ->firstOrFail();
 
         if ($user->status_verifikasi === 'disetujui') {
             return back()->with('success', 'Akun mitra sudah terverifikasi.');
         }
 
-        $user->status_verifikasi = 'disetujui';
-        $user->save();
+        $user->update(['status_verifikasi' => 'disetujui']);
 
         return back()->with('success', 'Akun mitra berhasil diverifikasi.');
     }
