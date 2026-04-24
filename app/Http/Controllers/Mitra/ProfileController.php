@@ -20,7 +20,7 @@ class ProfileController extends Controller
             return redirect()->route('mitra.profile.complete');
         }
 
-        return Inertia::render('Mitra/Profile', [
+        return Inertia::render('Mitra/Profile/Profile', [
             'user' => [
                 'email' => $user->email,
             ],
