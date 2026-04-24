@@ -5,7 +5,6 @@
 
         <!-- Content Area (account for fixed sidebar width) -->
         <div class="ml-64 bg-gray-100 min-h-screen">
-      
             <!-- Header -->
             <HeaderAdmin :title="title" />
 
@@ -13,7 +12,6 @@
             <div class="p-6 pt-20">
                 <slot />
             </div>
-
         </div>
     </div>
 </template>

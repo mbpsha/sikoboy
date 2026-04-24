@@ -8,6 +8,7 @@ use App\Models\Dokumen;
 use App\Models\Kerjasama;
 use App\Models\PeriodeKerjasama;
 use Carbon\Carbon;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -95,10 +96,10 @@ class RiwayatKerjasamaController extends Controller
                 'id_kategori' => 'Kategori kerjasama belum tersedia. Silakan isi data kategori terlebih dahulu.',
             ]);
         }
-        
+
         $path = null;
         $originalFileName = null;
-        
+
         if ($request->hasFile('file')) {
             $originalFileName = $request->file('file')->getClientOriginalName();
             $path = $request->file('file')->store('cooperation_docs', 'public');
@@ -155,8 +156,12 @@ class RiwayatKerjasamaController extends Controller
     {
         $kerjasama = Kerjasama::pemerintahTipe()->findOrFail($id);
         $validated = $request->validated();
+        $request->validate([
+            'dokumen_file' => ['nullable', 'file', 'mimes:pdf', 'max:10240'],
+        ]);
+        $file = $request->file('dokumen_file');
 
-        DB::transaction(function () use ($kerjasama, $validated) {
+        DB::transaction(function () use ($kerjasama, $validated, $file, $request) {
             $kerjasama->update([
                 'judul' => $validated['judul'],
                 'nomor_suratP' => $validated['nomor_surat'],
@@ -174,6 +179,10 @@ class RiwayatKerjasamaController extends Controller
                 'tanggal_berakhir' => $validated['tanggal_berakhir'],
                 'keterangan' => $validated['keterangan'] ?? '',
             ]);
+
+            if ($file !== null) {
+                $this->storeDokumenVersion($kerjasama, $file, (int) $request->user()->id_user);
+            }
         });
 
         return back()->with('success', 'Data kerjasama pemerintah berhasil diperbarui.');
@@ -182,6 +191,20 @@ class RiwayatKerjasamaController extends Controller
     // =========================================================================
     // Helpers
     // =========================================================================
+
+    private function storeDokumenVersion(Kerjasama $kerjasama, UploadedFile $file, int $createdBy): void
+    {
+        $nextVersion = ((int) $kerjasama->dokumen()->max('versi_dokumen')) + 1;
+        $path = $file->store('dokumen-kerjasama', 'public');
+
+        Dokumen::create([
+            'id_kerjasama' => $kerjasama->id_kerjasama,
+            'nama_file' => $file->getClientOriginalName(),
+            'lokasi_file' => $path,
+            'versi_dokumen' => $nextVersion,
+            'created_by' => $createdBy,
+        ]);
+    }
 
     private function applyFilters($query, Request $request): void
     {

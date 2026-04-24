@@ -20,8 +20,7 @@ class UserController extends Controller
      */
     public function index(Request $request)
     {
-        $query = User::with(['admin', 'mitra'])
-            ->orderBy('created_at', 'desc');
+        $query = User::with(['admin', 'mitra']);
 
         // Role filter
         if ($request->filled('role') && in_array($request->role, ['admin', 'mitra'])) {
@@ -30,7 +29,20 @@ class UserController extends Controller
 
         // Status filter (currently all users are active; reserved for future)
         if ($request->filled('status')) {
-            // placeholder – extend when a status column is added to users
+            $status = (string) $request->input('status');
+
+            match ($status) {
+                'aktif' => $query->where(function ($q) {
+                    $q->where('role', 'admin')
+                        ->orWhere(function ($mitra) {
+                            $mitra->where('role', 'mitra')
+                                ->where('status_verifikasi', 'disetujui');
+                        });
+                }),
+                'menunggu_verifikasi' => $query->where('role', 'mitra')->where('status_verifikasi', 'pending'),
+                'ditolak' => $query->where('role', 'mitra')->where('status_verifikasi', 'ditolak'),
+                default => null,
+            };
         }
 
         // Keyword search: email, admin.nama/divisi, mitra.nama_perusahaan/pic
@@ -49,7 +61,11 @@ class UserController extends Controller
             });
         }
 
-        $users = $query->paginate(15)->withQueryString();
+        [$sortBy, $sortDir] = $this->resolveSort($request);
+
+        $users = $query->orderBy($sortBy, $sortDir)
+            ->paginate(15)
+            ->withQueryString();
 
         // Debug log: number of users found
         try {
@@ -65,7 +81,7 @@ class UserController extends Controller
 
         return Inertia::render('Admin/Users', [
             'users' => $users,
-            'filters' => $request->only(['search', 'role', 'status']),
+            'filters' => $request->only(['search', 'role', 'status', 'sort_by', 'sort_dir']),
         ]);
     }
 
@@ -85,6 +101,7 @@ class UserController extends Controller
             'email' => $validated['email'],
             'password' => Hash::make($plainPassword),
             'role' => $validated['role'],
+            'status_verifikasi' => 'disetujui',
         ]);
 
         if ($validated['role'] === 'admin') {
@@ -162,6 +179,23 @@ class UserController extends Controller
         return back()->with('success', 'Pengguna berhasil diperbarui.');
     }
 
+    /**
+     * Verify a mitra account so it can access the system.
+     */
+    public function verifyMitra(int $id)
+    {
+        $user = User::query()->where('role', 'mitra')->findOrFail($id);
+
+        if ($user->status_verifikasi === 'disetujui') {
+            return back()->with('success', 'Akun mitra sudah terverifikasi.');
+        }
+
+        $user->status_verifikasi = 'disetujui';
+        $user->save();
+
+        return back()->with('success', 'Akun mitra berhasil diverifikasi.');
+    }
+
     // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
@@ -177,11 +211,22 @@ class UserController extends Controller
             default => null,
         };
 
+        $statusLabel = 'aktif';
+        if ($user->role === 'mitra') {
+            $statusLabel = match ($user->status_verifikasi) {
+                'pending' => 'menunggu_verifikasi',
+                'ditolak' => 'ditolak',
+                default => 'aktif',
+            };
+        }
+
         $base = [
             'id' => $user->id_user,
             'email' => $user->email,
             'role' => $user->role,
-            'status' => 'aktif',
+            'status' => $statusLabel,
+            'status_verifikasi' => $user->status_verifikasi,
+            'can_verify' => $user->role === 'mitra' && $user->status_verifikasi !== 'disetujui',
             'instansi' => $instansi,
             'tanggal_daftar' => $user->created_at?->format('d/m/Y'),
             'display_name' => $user->display_name,
@@ -212,5 +257,20 @@ class UserController extends Controller
         }
 
         return $base;
+    }
+
+    private function resolveSort(Request $request): array
+    {
+        $allowedSort = ['created_at', 'email', 'role'];
+
+        $sortBy = (string) $request->input('sort_by', 'created_at');
+        if (! in_array($sortBy, $allowedSort, true)) {
+            $sortBy = 'created_at';
+        }
+
+        $sortDir = strtolower((string) $request->input('sort_dir', 'desc'));
+        $sortDir = $sortDir === 'asc' ? 'asc' : 'desc';
+
+        return [$sortBy, $sortDir];
     }
 }

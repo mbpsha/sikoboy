@@ -57,19 +57,40 @@
                   </td>
                   <td class="py-4 px-4 text-gray-700">{{ user.instansi ?? '-' }}</td>
                   <td class="py-4 px-4">
-                    <span class="px-3 py-1 rounded-full bg-green-100 text-green-800 text-xs">Aktif</span>
+                    <span
+                      class="px-3 py-1 rounded-full text-xs"
+                      :class="user.status === 'menunggu_verifikasi'
+                        ? 'bg-amber-100 text-amber-800'
+                        : user.status === 'ditolak'
+                          ? 'bg-red-100 text-red-800'
+                          : 'bg-green-100 text-green-800'"
+                    >
+                      {{ user.status === 'menunggu_verifikasi' ? 'Menunggu Verifikasi' : user.status === 'ditolak' ? 'Ditolak' : 'Aktif' }}
+                    </span>
                   </td>
                   <td class="py-4 px-4 text-gray-700">{{ user.tanggal_daftar ?? '-' }}</td>
                   <td class="py-4 px-4 text-gray-700">
                     <div class="flex items-center gap-2">
-                      <Link :href="route('users.show', user.id)" class="text-teal-700 hover:text-teal-900">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M15 12l4 4M9 12l-4 4M12 20V4"/></svg>
+                      <Link
+                        :href="route('admin.users.show', user.id)"
+                        class="px-3 py-1 rounded-md bg-slate-100 text-slate-700 hover:bg-slate-200 text-xs"
+                      >
+                        Detail
                       </Link>
-                      <button class="text-red-600 hover:text-red-800">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 6h18M8 6v13a2 2 0 002 2h4a2 2 0 002-2V6"/><path d="M10 11v6M14 11v6"/></svg>
+
+                      <button
+                        v-if="user.role === 'mitra' && user.can_verify"
+                        class="px-3 py-1 rounded-md bg-emerald-600 text-white hover:bg-emerald-700 text-xs disabled:opacity-60"
+                        :disabled="verifyingUserId === user.id"
+                        @click.prevent="verifyMitra(user.id)"
+                      >
+                        {{ verifyingUserId === user.id ? 'Memverifikasi...' : 'Verifikasi' }}
                       </button>
                     </div>
                   </td>
+                </tr>
+                <tr v-if="!users.data?.length">
+                  <td colspan="8" class="py-6 px-4 text-center text-gray-500">Belum ada data pengguna.</td>
                 </tr>
               </tbody>
             </table>
@@ -91,12 +112,23 @@
 
 <script setup>
 import AdminLayout from '@/Layouts/AdminLayout.vue'
-import { Link, usePage, router } from '@inertiajs/vue3'
-import { ref, onBeforeUnmount } from 'vue'
+import { Link, router } from '@inertiajs/vue3'
+import { ref } from 'vue'
 
-const page = usePage()
-const users = page.props.value?.users ?? { data: [], per_page: 15, prev_page_url: null, next_page_url: null, current_page: 1 }
-const filters = page.props.value?.filters ?? {}
+const props = defineProps({
+  users: {
+    type: Object,
+    default: () => ({ data: [], per_page: 15, prev_page_url: null, next_page_url: null, current_page: 1 }),
+  },
+  filters: {
+    type: Object,
+    default: () => ({}),
+  },
+})
+
+const users = props.users
+const filters = props.filters
+const verifyingUserId = ref(null)
 
 const indexOffset = (users?.current_page ? ((users.current_page - 1) * users.per_page) : 0)
 
@@ -132,9 +164,17 @@ function goTo(url) {
   router.visit(url, { preserveState: false })
 }
 
-onBeforeUnmount(() => {
-  clearTimeout(debounceTimer)
-})
+function verifyMitra(id) {
+  if (!id) return
+
+  verifyingUserId.value = id
+  router.put(route('admin.pengguna.verify', id), {}, {
+    preserveScroll: true,
+    onFinish: () => {
+      verifyingUserId.value = null
+    },
+  })
+}
 </script>
 
 <style scoped>
