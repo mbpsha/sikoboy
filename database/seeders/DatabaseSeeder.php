@@ -89,5 +89,7 @@ class DatabaseSeeder extends Seeder
 
         // Seed kategori kerjasama templates
         $this->call(KategoriKerjasamaSeeder::class);
+        // Seed riwayat kerjasama
+        $this->call(RiwayatKerjasamaSeeder::class);
     }
 }

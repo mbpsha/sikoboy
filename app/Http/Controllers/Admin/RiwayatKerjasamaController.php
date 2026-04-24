@@ -4,11 +4,13 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreKerjasamaPemerintahRequest;
+use App\Models\Dokumen;
 use App\Models\Kerjasama;
 use App\Models\PeriodeKerjasama;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 class RiwayatKerjasamaController extends Controller
@@ -28,15 +30,21 @@ class RiwayatKerjasamaController extends Controller
 
         $this->applyFilters($query, $request);
 
-        $kerjasama = $query->orderBy('created_at', 'desc')
-            ->paginate(15)
+        $kerjasama = $query->orderBy('id_kerjasama', 'asc')
+            ->paginate(10)
             ->withQueryString();
 
-        $kerjasama->getCollection()->transform(fn ($k) => $this->formatRow($k, tipe: 'mitra'));
+        $offset = ($kerjasama->currentPage() - 1) * $kerjasama->perPage();
+        $kerjasama->getCollection()->transform(fn ($k, $i) => $this->formatRow($k, $offset + $i));
 
         return Inertia::render('Admin/RiwayatKerjasama/Mitra', [
-            'kerjasama' => $kerjasama,
-            'filters' => $request->only(['search', 'tahun', 'jenis_kerjasama', 'jenis_dokumen', 'status']),
+            'data' => $kerjasama,
+            'filters' => request()->only(['search', 'tahun']),
+            'years' => DB::table('periode_kerjasama')
+                ->selectRaw('YEAR(tanggal_mulai) as tahun')
+                ->distinct()
+                ->orderBy('tahun', 'desc')
+                ->pluck('tahun')
         ]);
     }
 
@@ -54,15 +62,21 @@ class RiwayatKerjasamaController extends Controller
 
         $this->applyFilters($query, $request);
 
-        $kerjasama = $query->orderBy('created_at', 'desc')
-            ->paginate(15)
+        $kerjasama = $query->orderBy('id_kerjasama', 'asc')
+            ->paginate(10)
             ->withQueryString();
 
-        $kerjasama->getCollection()->transform(fn ($k) => $this->formatRow($k, tipe: 'pemerintah'));
+        $offset = ($kerjasama->currentPage() - 1) * $kerjasama->perPage();
+        $kerjasama->getCollection()->transform(fn ($k, $i) => $this->formatRow($k, $offset + $i));
 
         return Inertia::render('Admin/RiwayatKerjasama/Pemerintah', [
-            'kerjasama' => $kerjasama,
-            'filters' => $request->only(['search', 'tahun', 'jenis_kerjasama', 'jenis_dokumen', 'status']),
+            'data' => $kerjasama,
+            'filters' => request()->only(['search', 'tahun']),
+            'years' => DB::table('periode_kerjasama')
+                ->selectRaw('YEAR(tanggal_mulai) as tahun')
+                ->distinct()
+                ->orderBy('tahun', 'desc')
+                ->pluck('tahun')
         ]);
     }
 
@@ -73,12 +87,28 @@ class RiwayatKerjasamaController extends Controller
     {
         $validated = $request->validated();
         $admin = $request->user()->admin;
+        $idKategori = $validated['id_kategori']
+            ?? DB::table('kategori_kerjasama')->orderBy('id_kategori')->value('id_kategori');
 
-        DB::transaction(function () use ($validated, $admin) {
+        if (! $idKategori) {
+            throw ValidationException::withMessages([
+                'id_kategori' => 'Kategori kerjasama belum tersedia. Silakan isi data kategori terlebih dahulu.',
+            ]);
+        }
+        
+        $path = null;
+        $originalFileName = null;
+        
+        if ($request->hasFile('file')) {
+            $originalFileName = $request->file('file')->getClientOriginalName();
+            $path = $request->file('file')->store('cooperation_docs', 'public');
+        }
+
+        DB::transaction(function () use ($validated, $admin, $path, $idKategori, $originalFileName) {
             $kerjasama = Kerjasama::create([
                 'id_mitra' => null,
                 'id_admin' => $admin->id_admin,
-                'id_kategori' => $validated['id_kategori'] ?? null,
+                'id_kategori' => $idKategori,
                 'judul' => $validated['judul'],
                 'nomor_suratP' => $validated['nomor_surat'],
                 'urusan' => $validated['urusan'],
@@ -90,18 +120,31 @@ class RiwayatKerjasamaController extends Controller
                 'nama_pihak_luar' => $validated['nama_pihak_luar'],
                 'status_aktif' => 'aktif',
                 'is_finalized' => true,
+                'status_persetujuan' => 'disetujui',
             ]);
 
             PeriodeKerjasama::create([
                 'id_kerjasama' => $kerjasama->id_kerjasama,
                 'tanggal_mulai' => $validated['tanggal_mulai'],
                 'tanggal_berakhir' => $validated['tanggal_berakhir'],
-                'keterangan' => $validated['keterangan'] ?? '',
+                'keterangan' => $path,
             ]);
+
+            if ($path && $originalFileName) {
+                Dokumen::create([
+                    'id_kerjasama' => $kerjasama->id_kerjasama,
+                    'nama_file' => $originalFileName,
+                    'lokasi_file' => $path,
+                    'versi_dokumen' => 1,
+                    'created_by' => $admin->id_user,
+                ]);
+            }
         });
 
+        $lastPage = (int) ceil(max(1, Kerjasama::pemerintahTipe()->count()) / 10);
+
         return redirect()
-            ->route('admin.riwayat-kerjasama.pemerintah')
+            ->route('admin.riwayat-kerjasama.pemerintah', ['page' => $lastPage])
             ->with('success', 'Data kerjasama pemerintah berhasil ditambahkan.');
     }
 
@@ -171,56 +214,94 @@ class RiwayatKerjasamaController extends Controller
             $threshold = Carbon::today()->addDays(30)->toDateString();
 
             match ($request->status) {
-                'aktif' => $query->whereHas('latestPeriode', fn ($q) => $q->where('tanggal_mulai', '<=', $today)->where('tanggal_berakhir', '>=', $today)),
+                'aktif' => $query->whereHas('latestPeriode', fn ($q) => $q->where('tanggal_mulai', '<=', $today)->where('tanggal_berakhir', '>', $today)),
                 'akan_berakhir' => $query->whereHas('latestPeriode', fn ($q) => $q->where('tanggal_berakhir', '>', $today)->where('tanggal_berakhir', '<=', $threshold)),
-                'berakhir' => $query->whereHas('latestPeriode', fn ($q) => $q->where('tanggal_berakhir', '<', $today)),
+                'berakhir' => $query->whereHas('latestPeriode', fn ($q) => $q->where('tanggal_berakhir', '<=', $today)),
                 default => null,
             };
         }
     }
 
-    private function formatRow(Kerjasama $k, string $tipe): array
+    private function formatRow(Kerjasama $k, int $index = 0): array
     {
         $periode = $k->latestPeriode;
 
+        $mulai = $periode?->tanggal_mulai;
+        $berakhir = $periode?->tanggal_berakhir;
+
+        $tahun = $mulai ? Carbon::parse($mulai)->year : null;
+
+        // 🔥 STATUS OTOMATIS
+        $status = 'Aktif';
+        if ($berakhir) {
+            $today = Carbon::today();
+            $end = Carbon::parse($berakhir);
+
+            if ($today->gte($end)) {
+                $status = 'Berakhir';
+            } elseif ($today->diffInDays($end) <= 30) {
+                $status = 'Segera Berakhir';
+            }
+        }
+
         $jangkaWaktu = null;
-        if ($periode) {
-            $mulai = Carbon::parse($periode->tanggal_mulai);
-            $berakhir = Carbon::parse($periode->tanggal_berakhir);
-            $jangkaWaktu = $mulai->diffInMonths($berakhir).' bulan';
+        if ($mulai && $berakhir) {
+            $years = Carbon::parse($mulai)->diffInYears($berakhir);
+            if ($years > 0) {
+                $formattedYears = rtrim(rtrim(number_format($years, 1, ',', ''), '0'), ',');
+                $jangkaWaktu = $formattedYears . ' Tahun';
+            } else {
+                $jangkaWaktu = 'Kurang dari 1 Tahun';
+            }
         }
 
-        $row = [
-            'id_kerjasama' => $k->id_kerjasama,
-            'tahun' => $periode ? Carbon::parse($periode->tanggal_mulai)->year : null,
+        $namaMitra = null;
+        if ($k->relationLoaded('mitra') && $k->mitra) {
+            $namaMitra = $k->mitra->nama_perusahaan ?? null;
+        }
+
+        $storedFilePath = $k->finalDokumen?->lokasi_file;
+        $storedFileName = $k->finalDokumen?->nama_file;
+
+        if (! $storedFilePath && is_string($periode?->keterangan) && $periode->keterangan !== '') {
+            $storedFilePath = $periode->keterangan;
+            $storedFileName = basename($storedFilePath);
+        }
+
+        return [
+            'no' => $index + 1,
+            'tahun' => $tahun,
+            'mitra' => $k->tipe === 'mitra'
+                    ? ($namaMitra ?? $k->nama_pihak_luar ?? '-')
+                    : ($k->nama_pihak_luar ?? '-'),
             'judul' => $k->judul,
-            'nomor_surat' => $k->nomor_surat,
-            'jenis_kerjasama' => $k->jenis_kerjasama,
-            'jenis_dokumen' => $k->jenis_dokumen,
-            'urusan' => $k->urusan,
-            'daerah' => $k->daerah,
-            'tanggal_mulai' => $periode?->tanggal_mulai,
-            'tanggal_berakhir' => $periode?->tanggal_berakhir,
+            'mulai' => $mulai ? Carbon::parse($mulai)->translatedFormat('d F Y') : '-',
+            'berakhir' => $berakhir ? Carbon::parse($berakhir)->translatedFormat('d F Y') : '-',
             'jangka_waktu' => $jangkaWaktu,
-            'status' => $k->status_label,
+            'file_name' => $storedFileName,
+            'file_url' => $this->resolveFileUrl($storedFilePath),
+            'status' => $status,
         ];
+    }
 
-        if ($tipe === 'mitra') {
-            $row['mitra'] = $k->mitra?->nama_perusahaan;
-            $row['file'] = $k->finalDokumen ? [
-                'id' => $k->finalDokumen->id_dokumen,
-                'nama_file' => $k->finalDokumen->nama_file,
-                'lokasi_file' => $k->finalDokumen->lokasi_file,
-            ] : null;
-        } else {
-            $row['nama_pihak_luar'] = $k->nama_pihak_luar;
-            $row['file'] = $k->finalDokumen ? [
-                'id' => $k->finalDokumen->id_dokumen,
-                'nama_file' => $k->finalDokumen->nama_file,
-                'lokasi_file' => $k->finalDokumen->lokasi_file,
-            ] : null;
+    private function resolveFileUrl(?string $path): ?string
+    {
+        if (! $path) {
+            return null;
         }
 
-        return $row;
+        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+            return $path;
+        }
+
+        if (str_starts_with($path, '/')) {
+            return url($path);
+        }
+
+        if (str_starts_with($path, 'storage/')) {
+            return asset($path);
+        }
+
+        return asset('storage/' . ltrim($path, '/'));
     }
 }
