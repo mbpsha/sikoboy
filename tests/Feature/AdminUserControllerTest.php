@@ -59,6 +59,13 @@ class AdminUserControllerTest extends TestCase
             'alamat' => 'Boyolali',
         ]);
 
+        $otherMitraUser = User::create([
+            'email' => 'pending-mitra-2@example.com',
+            'password' => Hash::make('password'),
+            'role' => 'mitra',
+            'status_verifikasi' => 'pending',
+        ]);
+
         $response = $this->actingAs($actor)->put(route('admin.users.verify', $mitraUser->id_user));
 
         $response->assertRedirect();
@@ -67,6 +74,11 @@ class AdminUserControllerTest extends TestCase
         $this->assertDatabaseHas('users', [
             'id_user' => $mitraUser->id_user,
             'status_verifikasi' => 'disetujui',
+        ]);
+
+        $this->assertDatabaseHas('users', [
+            'id_user' => $otherMitraUser->id_user,
+            'status_verifikasi' => 'pending',
         ]);
     }
 
