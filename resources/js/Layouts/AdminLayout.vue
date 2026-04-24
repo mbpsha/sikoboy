@@ -1,19 +1,19 @@
 <template>
-    <div class="flex h-screen">
-        <!-- Sidebar (DIKUNCI) -->
-        <div class="w-64 flex-shrink-0">
-            <SidebarAdmin />
-        </div>
+    <div>
+        <!-- Sidebar (fixed) -->
+        <SidebarAdmin />
 
-        <!-- Content Area -->
-        <div class="flex-1 flex flex-col bg-gray-100 overflow-hidden">
+        <!-- Content Area (account for fixed sidebar width) -->
+        <div class="ml-64 bg-gray-100 min-h-screen">
+      
             <!-- Header -->
             <HeaderAdmin :title="title" />
 
-            <!-- Content -->
-            <main class="flex-1 overflow-auto p-6">
+            <!-- Slot Content -->
+            <div class="p-6 pt-20">
                 <slot />
-            </main>
+            </div>
+
         </div>
     </div>
 </template>

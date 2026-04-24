@@ -26,12 +26,7 @@ Route::get('/', fn () => Inertia::render('Welcome'))->name('home');
 // Public pages
 Route::get('/about', fn () => Inertia::render('About'))->name('about');
 Route::get('/peraturan', fn () => Inertia::render('Peraturan'))->name('peraturan');
-
-// Public pages
-Route::get('/about', fn () => Inertia::render('About'))->name('about');
-Route::get('/peraturan', fn () => Inertia::render('Peraturan'))->name('peraturan');
-Route::get('/dokumen', fn () => Inertia::render('Dokumen'))->name('dokumen');
-Route::get('/kontak', fn () => Inertia::render('Kontak'))->name('kontak');
+Route::get('/kontak', fn() => Inertia::render('Kontak'))->name('kontak');
 
 // Dokumen page
 Route::get('/dokumen', function () {
@@ -49,13 +44,11 @@ Route::get('/dokumen', function () {
 
     return Inertia::render('Dokumen', ['kategoris' => $kategoris]);
 })->name('dokumen');
-// Kontak page
-Route::get('/kontak', fn() => Inertia::render('Kontak'))->name('kontak');
 
 Route::middleware('auth')->get('/portal-mitra', function (Request $request) {
     return match ($request->user()?->role) {
         'admin' => redirect()->route('admin.dashboard'),
-        'mitra' => redirect()->route('mitra.kerjasama.index'),
+        'mitra' => redirect()->route('mitra.profile.index'),
         default => redirect()->route('home'),
     };
 })->name('portal-mitra');
@@ -123,8 +116,8 @@ Route::middleware(['auth', 'role:mitra'])->prefix('mitra')->name('mitra.')->grou
     Route::post('/profile/complete', [MitraProfileController::class, 'storeProfile'])
         ->name('profile.store');
 
-    // show profile (use existing controller method 'edit' which renders the profile page)
-    Route::get('/profile', [MitraProfileController::class, 'edit'])
+    // Profile routes
+    Route::get('/profile', [MitraProfileController::class, 'index'])
         ->name('profile.index');
     Route::get('/profile/edit', [MitraProfileController::class, 'edit'])
         ->name('profile.edit');

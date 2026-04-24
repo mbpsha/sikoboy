@@ -103,7 +103,7 @@ const goToPage = (page) => {
 
                     <Link
                         :href="route('admin.riwayat-kerjasama.mitra')"
-                        class="px-4 py-2 rounded-lg text-sm bg-teal-600 text-white"
+                        class="px-4 py-2 rounded-lg text-sm bg-teal-700 text-white"
                     >
                         Pemrakarsa Mitra
                     </Link>

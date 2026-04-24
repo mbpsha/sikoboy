@@ -10,6 +10,25 @@ use Inertia\Inertia;
 class ProfileController extends Controller
 {
     /**
+     * Show the profile page.
+     */
+    public function index(Request $request)
+    {
+        $user = $request->user();
+
+        if (! $user->mitra) {
+            return redirect()->route('mitra.profile.complete');
+        }
+
+        return Inertia::render('Mitra/Profile', [
+            'user' => [
+                'email' => $user->email,
+            ],
+            'mitra' => $user->mitra,
+        ]);
+    }
+
+    /**
      * Show profile completion form for mitra without profile.
      */
     public function completeProfile(Request $request)

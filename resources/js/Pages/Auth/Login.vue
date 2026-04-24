@@ -112,7 +112,8 @@ const togglePassword = () => {
 };
 
 const goRegister = () => {
-    router.visit("/register");
+    const href = (typeof route !== 'undefined') ? route('register') : '/register';
+    router.visit(href);
 };
 
 const form = useForm({
@@ -121,6 +122,7 @@ const form = useForm({
 });
 
 const submit = () => {
-    form.post("/login");
+    const href = (typeof route !== 'undefined') ? route('login') : '/login';
+    form.post(href);
 };
 </script>

@@ -195,7 +195,7 @@ const closeModal = () => {
                 >
                     <Link
                         :href="route('admin.riwayat-kerjasama.pemerintah')"
-                        class="px-4 py-2 rounded-lg text-sm bg-teal-600 text-white"
+                        class="px-4 py-2 rounded-lg text-sm bg-teal-700 text-white"
                     >
                         Pemrakarsa Boyolali
                     </Link>
