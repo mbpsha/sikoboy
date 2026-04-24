@@ -45,7 +45,8 @@
           <span class="text-sm">Riwayat Kerjasama</span>
         </Link>
 
-        <Link href="#" :class="navClass('/admin/potensi')">
+        <Link :href="route('admin.manajemen-potensi.index')" 
+  :class="navClass('/admin/manajemen-potensi')">
           <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
             <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
             <circle cx="9" cy="6" r="2"/>
@@ -55,7 +56,10 @@
           <span class="text-sm">Manajemen Potensi</span>
         </Link>
 
-        <Link href="#" :class="navClass('/admin/dokumen')">
+       <Link 
+  :href="route('admin.manajemen-dokumen.index')" 
+  :class="navClass('/admin/manajemen-dokumen')"
+>
           <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
             <path stroke-linecap="round" stroke-linejoin="round" d="M7 3h7l5 5v13a1 1 0 01-1 1H7a1 1 0 01-1-1V4a1 1 0 011-1z"/>
             <path stroke-linecap="round" stroke-linejoin="round" d="M14 3v5h5"/>

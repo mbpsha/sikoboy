@@ -39,7 +39,7 @@ class ManajemenPotensiController extends Controller
 
         $activeKategori = $request->query('kategori', $kategoriList[0] ?? null);
         if ($activeKategori === null) {
-            return Inertia::render('Admin/ManajemenPotensi/Index', [
+            return Inertia::render('Admin/ManajemenPotensi', [
                 'kategori_list' => [],
                 'active_kategori' => null,
                 'potensi' => null,
@@ -51,7 +51,7 @@ class ManajemenPotensiController extends Controller
             ->with('poin')
             ->first();
 
-        return Inertia::render('Admin/ManajemenPotensi/Index', [
+        return Inertia::render('Admin/ManajemenPotensi', [
             'kategori_list' => $kategoriList,
             'active_kategori' => $activeKategori,
             'potensi' => $potensi ? $this->formatPotensi($potensi) : null,
