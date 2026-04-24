@@ -185,10 +185,7 @@ class UserController extends Controller
             return back()->with('success', 'Akun mitra sudah terverifikasi.');
         }
 
-        User::query()
-            ->where('id_user', $id)
-            ->where('role', 'mitra')
-            ->update(['status_verifikasi' => 'disetujui']);
+        $user->update(['status_verifikasi' => 'disetujui']);
 
         return back()->with('success', 'Akun mitra berhasil diverifikasi.');
     }
