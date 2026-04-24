@@ -4,32 +4,32 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div class="bg-teal-500 text-white p-6 rounded-xl">
                 <p>Total Kerjasama</p>
-                <h2 class="text-3xl font-bold mt-2">47</h2>
+                <h2 class="text-3xl font-bold mt-2">{{ metrics.total_kerjasama ?? 0 }}</h2>
             </div>
 
             <div class="bg-green-500 text-white p-6 rounded-xl">
                 <p>Kerjasama Aktif</p>
-                <h2 class="text-3xl font-bold mt-2">32</h2>
+                <h2 class="text-3xl font-bold mt-2">{{ metrics.aktif ?? 0 }}</h2>
             </div>
 
             <div class="bg-yellow-500 text-white p-6 rounded-xl">
                 <p>Akan Berakhir</p>
-                <h2 class="text-3xl font-bold mt-2">8</h2>
+                <h2 class="text-3xl font-bold mt-2">{{ metrics.akan_berakhir ?? 0 }}</h2>
             </div>
 
             <div class="bg-red-500 text-white p-6 rounded-xl">
                 <p>Berakhir</p>
-                <h2 class="text-3xl font-bold mt-2">7</h2>
+                <h2 class="text-3xl font-bold mt-2">{{ metrics.berakhir ?? 0 }}</h2>
             </div>
 
             <div class="bg-blue-500 text-white p-6 rounded-xl">
                 <p>Total Mitra</p>
-                <h2 class="text-3xl font-bold mt-2">38</h2>
+                <h2 class="text-3xl font-bold mt-2">{{ metrics.total_mitra ?? 0 }}</h2>
             </div>
 
             <div class="bg-purple-500 text-white p-6 rounded-xl">
                 <p>Total Dokumen</p>
-                <h2 class="text-3xl font-bold mt-2">124</h2>
+                <h2 class="text-3xl font-bold mt-2">{{ metrics.total_dokumen ?? 0 }}</h2>
             </div>
         </div>
 
@@ -53,20 +53,46 @@ import { onMounted } from "vue";
 import Chart from "chart.js/auto";
 import AdminLayout from "@/Layouts/AdminLayout.vue";
 
+const props = defineProps({
+    metrics: {
+        type: Object,
+        default: () => ({}),
+    },
+    kerjasama_per_tahun: {
+        type: Array,
+        default: () => [],
+    },
+    jenis_dokumen: {
+        type: Array,
+        default: () => [],
+    },
+});
+
+const metrics = props.metrics ?? {};
+
 onMounted(() => {
     new Chart(document.getElementById("barChart"), {
         type: "bar",
         data: {
-            labels: ["2020", "2021", "2022", "2023", "2024", "2025"],
-            datasets: [{ data: [5, 9, 11, 13, 15, 16] }],
+            labels: (props.kerjasama_per_tahun ?? []).map((row) => row.tahun),
+            datasets: [
+                {
+                    label: "Jumlah Kerjasama",
+                    data: (props.kerjasama_per_tahun ?? []).map((row) => row.total),
+                },
+            ],
         },
     });
 
     new Chart(document.getElementById("pieChart"), {
         type: "pie",
         data: {
-            labels: ["PKS", "MoU", "Nota", "Perjanjian"],
-            datasets: [{ data: [32, 26, 18, 25] }],
+            labels: (props.jenis_dokumen ?? []).map((row) => row.jenis_dokumen),
+            datasets: [
+                {
+                    data: (props.jenis_dokumen ?? []).map((row) => row.total),
+                },
+            ],
         },
     });
 });
