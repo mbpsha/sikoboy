@@ -9,16 +9,21 @@
             <h2 class="text-white font-semibold">Pengguna</h2>
           </div>
 
-          <form :action="route('admin.pengguna.index')" method="get" class="flex items-center gap-3">
-            <input name="search" :value="filters.search || ''" placeholder="Cari Berdasarkan nama, email, instansi..." class="rounded-full px-4 py-2 text-sm w-80" />
-            <select name="role" class="rounded-full px-3 py-2 text-sm">
+          <div class="flex items-center gap-3">
+            <div class="flex items-center gap-2 flex-1">
+              <input v-model="local.search" @input="onSearchInput" placeholder="Cari Berdasarkan nama, email, instansi..." class="rounded-full px-4 py-2 text-sm w-full" />
+              <button @click="applyFilters" title="Apply filters" class="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 18h4"/><path d="M6 6h12"/><path d="M8 12h8"/></svg>
+              </button>
+            </div>
+
+            <select v-model="local.role" @change="onRoleChange" class="rounded-full px-3 py-2 text-sm">
               <option value="">Semua Role</option>
-              <option value="admin" :selected="filters.role==='admin'">Admin</option>
-              <option value="mitra" :selected="filters.role==='mitra'">Mitra</option>
+              <option value="admin">Admin</option>
+              <option value="mitra">Mitra</option>
             </select>
-            <button type="submit" class="bg-white text-teal-800 px-4 py-2 rounded-full text-sm">Filter</button>
             <Link :href="route('admin.pengguna.index') + '?create=1'" class="bg-white text-teal-800 px-4 py-2 rounded-full text-sm">+ Tambah Pengguna</Link>
-          </form>
+          </div>
         </div>
 
         <!-- Table -->
@@ -87,6 +92,7 @@
 <script setup>
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import { Link, usePage, router } from '@inertiajs/vue3'
+import { ref, onBeforeUnmount } from 'vue'
 
 const page = usePage()
 const users = page.props.value?.users ?? { data: [], per_page: 15, prev_page_url: null, next_page_url: null, current_page: 1 }
@@ -94,10 +100,41 @@ const filters = page.props.value?.filters ?? {}
 
 const indexOffset = (users?.current_page ? ((users.current_page - 1) * users.per_page) : 0)
 
+// Local reactive filter state
+const local = ref({
+  search: filters.search || '',
+  role: filters.role || ''
+})
+
+let debounceTimer = null
+function scheduleApplyFilters() {
+  clearTimeout(debounceTimer)
+  debounceTimer = setTimeout(() => applyFilters(), 400)
+}
+
+function onSearchInput() {
+  scheduleApplyFilters()
+}
+
+function onRoleChange() {
+  scheduleApplyFilters()
+}
+
+function applyFilters() {
+  const params = {}
+  if (local.value.search) params.search = local.value.search
+  if (local.value.role) params.role = local.value.role
+  router.visit(route('admin.pengguna.index'), { method: 'get', data: params, preserveState: false })
+}
+
 function goTo(url) {
   if (!url) return
   router.visit(url, { preserveState: false })
 }
+
+onBeforeUnmount(() => {
+  clearTimeout(debounceTimer)
+})
 </script>
 
 <style scoped>

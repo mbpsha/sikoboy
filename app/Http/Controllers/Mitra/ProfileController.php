@@ -15,7 +15,7 @@ class ProfileController extends Controller
     public function completeProfile(Request $request)
     {
         if ($request->user()->mitra) {
-            return redirect()->route('mitra.profile.edit');
+            return redirect()->route('mitra.profile.index');
         }
 
         return Inertia::render('Mitra/Profile/Edit', [
@@ -44,12 +44,31 @@ class ProfileController extends Controller
             $validated
         );
 
-        return redirect()->route('mitra.profile.edit')
+        return redirect()->route('mitra.profile.index')
             ->with('success', 'Profil berhasil dilengkapi.');
     }
 
     /**
-     * Show the profile edit form.
+     * PENTING: Show the profile page (dashboard/portal mitra)
+     */
+    public function index(Request $request)
+    {
+        $user = $request->user();
+
+        if (! $user->mitra) {
+            return redirect()->route('mitra.profile.complete');
+        }
+
+        return Inertia::render('Mitra/Profile', [
+            'user' => [
+                'email' => $user->email,
+            ],
+            'mitra' => $user->mitra,
+        ]);
+    }
+
+    /**
+     * Show the profile EDIT form.
      */
     public function edit(Request $request)
     {
@@ -67,7 +86,7 @@ class ProfileController extends Controller
             'mode' => 'edit',
         ]);
     }
-
+    
     /**
      * Update the partner profile.
      */
@@ -85,7 +104,8 @@ class ProfileController extends Controller
             $validated
         );
 
-        return back()->with('success', 'Profil berhasil diperbarui.');
+        return redirect()->route('mitra.profile.index')
+            ->with('success', 'Profil berhasil diperbarui.');
     }
 
     /**
@@ -104,6 +124,4 @@ class ProfileController extends Controller
 
         return back()->with('success', 'Password berhasil diperbarui.');
     }
-
-    // Logo upload removed: schema has no logo field.
 }

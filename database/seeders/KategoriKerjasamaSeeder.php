@@ -12,8 +12,18 @@ class KategoriKerjasamaSeeder extends Seeder
      */
     public function run(): void
     {
-        // Insert or update all .docx templates found in public/docs
-        $files = glob(base_path('public/docs') . '/*.docx');
+        // Insert or update all .docx templates found in public/docs and public/storage/docs
+        $paths = [base_path('public/docs'), base_path('public/storage/docs')];
+        $files = [];
+        foreach ($paths as $p) {
+            if (is_dir($p)) {
+                $files = array_merge($files, glob($p . '/*.docx'));
+            }
+        }
+
+        // Deduplicate
+        $files = array_values(array_unique($files));
+
         foreach ($files as $f) {
             $base = basename($f);
             $storagePath = '/storage/docs/' . $base;

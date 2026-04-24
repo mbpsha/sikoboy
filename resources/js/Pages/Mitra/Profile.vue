@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed } from 'vue';
-import { usePage, Link } from '@inertiajs/vue3';
+import { usePage, Link, router } from '@inertiajs/vue3';
 import Header from '@/Components/Header.vue';
 import Footer from '@/Components/Footer.vue';
 import KerjasamaProgressModal from '@/Components/Mitra/KerjasamaProgressModal.vue';
@@ -10,6 +10,7 @@ const mitra = computed(() => page.props.value?.mitra);
 
 // Modal state
 const isProgressModalOpen = ref(false);
+const showLogoutConfirm = ref(false);
 
 // Data mock untuk preview tampilan
 const mockKerjasama = {
@@ -24,6 +25,45 @@ const mockKerjasama = {
 
 // Tab state
 const activeTab = ref('riwayat');
+
+// Logout function
+const handleLogout = () => {
+  router.post(route('logout'), {}, {
+    onSuccess: () => {
+      // Redirect akan otomatis dilakukan oleh Laravel setelah logout
+    },
+    onError: (errors) => {
+      console.error('Logout error:', errors);
+    }
+  });
+  showLogoutConfirm.value = false;
+};
+
+const openLogoutConfirm = () => {
+  showLogoutConfirm.value = true;
+};
+
+// Safe href for pengajuan step1 — fall back to static path if `route()` isn't available
+const pengajuanStep1Href = computed(() => {
+  try {
+    return route('mitra.pengajuan.step1')
+  } catch (e) {
+    return '/mitra/pengajuan/step1'
+  }
+})
+
+// Safe href for edit profile — fall back to static path if `route()` isn't available
+const editProfileHref = computed(() => {
+  try {
+    return route('mitra.profile.edit')
+  } catch (e) {
+    return '/mitra/profile/edit'
+  }
+})
+
+const cancelLogout = () => {
+  showLogoutConfirm.value = false;
+};
 </script>
 
 <template>
@@ -54,14 +94,16 @@ const activeTab = ref('riwayat');
                 
                 <div class="flex flex-col gap-2">
                   <h3 class="text-xl font-bold text-[#17464E] leading-tight mb-1">
-                    {{ mitra?.nama_perusahaan || 'Hamaz Sejahtera Group' }}
+                    <Link :href="route('mitra.profile.index')" class="hover:underline">
+                      {{ mitra?.nama_perusahaan || 'Hamaz Sejahtera Group' }}
+                    </Link>
                   </h3>
                   <span class="inline-block text-xs bg-[#86efac] text-[#166534] px-4 py-1 rounded-full font-medium w-fit">
                     Aktif
                   </span>
-                  <Link :href="route('components.profile.edit')" class="mt-2 inline-block text-xs bg-blue-500 text-white px-3 py-1 rounded-full font-medium hover:bg-blue-400 self-start">
+                  <button @click="() => router.visit(editProfileHref)" class="mt-2 inline-block text-xs bg-blue-500 text-white px-3 py-1 rounded-full font-medium hover:bg-blue-400 self-start">
                     Edit Profil
-                  </Link>
+                  </button>
                 </div>
               </div>
 
@@ -81,6 +123,21 @@ const activeTab = ref('riwayat');
                 <div class="flex justify-between"><span>Dalam Proses</span><span>0</span></div>
                 <div class="flex justify-between"><span>Pending</span><span>0</span></div>
               </div>
+            </div>
+
+            <!-- Logout Button Card -->
+            <div class="bg-[#E7F0F1] rounded-2xl p-5 shadow-md">
+              <button 
+                @click="openLogoutConfirm"
+                class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-red-500 text-white rounded-xl font-semibold hover:bg-red-600 transition-all shadow-md hover:shadow-lg"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                  <polyline points="16 17 21 12 16 7"></polyline>
+                  <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+                Logout
+              </button>
             </div>
           </div>
 
@@ -149,9 +206,9 @@ const activeTab = ref('riwayat');
 
                   <div class="flex justify-center">
                     <Link
-                      :href="route('mitra.pengajuan.step1')"
-                      class="flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-[#2f6f73] to-[#1e565a] text-white rounded-full shadow-md hover:shadow-lg transition-transform hover:scale-105"
-                    >
+                        :href="pengajuanStep1Href"
+                        class="flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-[#2f6f73] to-[#1e565a] text-white rounded-full shadow-md hover:shadow-lg transition-transform hover:scale-105"
+                      >
                       <span class="text-lg">+</span>
                       Ajukan Baru
                     </Link>
@@ -228,6 +285,37 @@ const activeTab = ref('riwayat');
         </div>
       </div>
     </main>
+
+    <!-- Logout Confirmation Modal -->
+    <div v-if="showLogoutConfirm" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+      <div class="bg-white rounded-2xl p-8 max-w-md mx-4 shadow-2xl">
+        <div class="text-center">
+          <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-100 mb-4">
+            <svg class="h-8 w-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+            </svg>
+          </div>
+          <h3 class="text-xl font-bold text-gray-900 mb-2">Konfirmasi Keluar</h3>
+          <p class="text-sm text-gray-600 mb-6">
+            Apakah Anda yakin ingin keluar dari akun Anda?
+          </p>
+          <div class="flex gap-3 justify-center">
+            <button 
+              @click="cancelLogout"
+              class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition"
+            >
+              Batal
+            </button>
+            <button 
+              @click="handleLogout"
+              class="px-6 py-2 bg-red-500 text-white rounded-lg font-semibold hover:bg-red-600 transition"
+            >
+              Ya, Keluar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- Progress Modal -->
     <KerjasamaProgressModal 

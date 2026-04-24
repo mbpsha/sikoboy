@@ -19,6 +19,7 @@ class LoginController extends Controller
         if ($request->user()) {
             return match ($request->user()->role) {
                 'admin' => redirect()->route('admin.dashboard'),
+                'mitra' => redirect()->route('home'),
                 default => redirect()->route('home'),
             };
         }
@@ -49,10 +50,11 @@ class LoginController extends Controller
         $request->session()->regenerate();
 
         if ($user->role === 'admin') {
+            // Send admin users to the Dashboard route
             return redirect()->route('admin.dashboard');
         }
 
-        // Mitra users return to public landing page.
+        // Mitra users: go to the public welcome page (Home)
         return redirect()->route('home');
     }
 

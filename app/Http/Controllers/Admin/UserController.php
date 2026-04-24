@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Log;
 
 class UserController extends Controller
 {
@@ -49,6 +50,13 @@ class UserController extends Controller
         }
 
         $users = $query->paginate(15)->withQueryString();
+
+        // Debug log: number of users found
+        try {
+            Log::info('Admin\UserController@index - users total', ['total' => $users->total()]);
+        } catch (\Throwable $e) {
+            // ignore logging failures
+        }
 
         // Transform each user into a flat, UI-ready shape
         $users->getCollection()->transform(function (User $user) {

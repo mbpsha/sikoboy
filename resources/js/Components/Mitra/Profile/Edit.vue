@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { usePage, useForm, Link } from '@inertiajs/vue3';
 import Header from '@/Components/Header.vue';
 import Footer from '@/Components/Footer.vue';
@@ -35,6 +35,10 @@ const updatePassword = () => {
     },
   });
 };
+
+onMounted(() => {
+  console.log('[Edit.vue] mounted — edit component mounted')
+})
 </script>
 
 <template>

@@ -1,17 +1,36 @@
 <script setup>
-import { computed } from "vue";
+import { computed, onMounted } from "vue";
 import { usePage, Link } from "@inertiajs/vue3";
 import logo from "@/images/logo_byl.png";
 
 const page = usePage();
-// Inertia exposes shared props under `props` — check `auth.user` for logged-in user
-const isAuthenticated = computed(() => !!(page.props && page.props.auth && page.props.auth.user))
+const isAuthenticated = computed(() => !!page.props?.auth?.user)
+const userRole = computed(() => page.props?.auth?.user?.role ?? null)
+
+// Normalized role (lowercase) to avoid case mismatches from backend
+const userRoleNorm = computed(() => String(page.props?.auth?.user?.role ?? '').toLowerCase())
+
+const isDev = typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.DEV
+
+onMounted(() => {
+  try {
+    if (import.meta.env && import.meta.env.DEV) {
+      // Dev-only debugging to inspect auth props when clicking fails
+      console.log('[Header] page.props.auth:', page.props?.auth)
+      console.log('[Header] userRole:', userRole.value)
+      console.log('[Header] userRoleNorm:', userRoleNorm.value)
+      console.log('[Header] isAuthenticated:', isAuthenticated.value)
+    }
+  } catch (e) {
+    console.error('[Header] Debug error:', e)
+  }
+})
 
 const currentUrl = computed(() => {
   // Prefer Inertia page url if available, otherwise fall back to page props url or window location
   try {
     if (page && page.url) return String(page.url)
-    const props = page && page.props && page.props.value
+    const props = page && page.props
     if (props && props.url) return String(props.url)
   } catch (e) {}
   if (typeof window !== 'undefined') return window.location.href
@@ -35,6 +54,31 @@ const isActive = (path) => {
     return currentUrl.value === path
   }
 }
+
+// Safe route helpers with fallbacks in case Ziggy route() isn't available
+const registerHref = computed(() => {
+  try { return route('register') } catch (e) { return '/register' }
+});
+
+const loginHref = computed(() => {
+  try { return route('login') } catch (e) { return '/login' }
+});
+
+const portalHref = computed(() => {
+  try {
+    if (userRoleNorm.value === 'mitra') return route('mitra.profile.index')
+    if (userRoleNorm.value === 'admin') return route('admin.dashboard')
+    return route('home')
+  } catch (e) {
+    if (userRoleNorm.value === 'mitra') return '/mitra/profile'
+    if (userRoleNorm.value === 'admin') return '/admin/dashboard'
+    return '/'
+  }
+});
+
+const portalLabel = computed(() => {
+  return userRoleNorm.value === 'mitra' ? 'Portal Mitra' : (userRoleNorm.value === 'admin' ? 'Dashboard' : 'Portal')
+});
 </script>
 
 <template>
@@ -65,18 +109,18 @@ const isActive = (path) => {
         <template v-if="!isAuthenticated">
           <!-- pill CTAs with soft background -->
           <div class="flex items-center gap-3 rounded-full px-3 py-1" style="background: rgba(49,113,124,0.6);">
-            <Link href="/register" class="rounded-full bg-white text-[#17464E] px-5 py-2 text-sm font-semibold shadow-sm hover:bg-[#BEBDBD]">Daftar</Link>
-            <Link href="/login/mitra" class="rounded-full bg-[#0C505C] px-5 py-2 text-sm font-semibold text-white shadow-md hover:bg-[#265e63]">Masuk</Link>
+              <Link :href="registerHref" class="rounded-full bg-white text-[#17464E] px-5 py-2 text-sm font-semibold shadow-sm hover:bg-[#BEBDBD]">Daftar</Link>
+              <Link :href="loginHref" class="rounded-full bg-[#0C505C] px-5 py-2 text-sm font-semibold text-white shadow-md hover:bg-[#265e63]">Masuk</Link>
           </div>
         </template>
         <template v-else>
-          <Link href="/portal-mitra" class="mx-2 flex items-center gap-2 rounded-full bg-[#0C505C] text-white px-4 py-2 text-sm font-semibold shadow-md hover:bg-[#0a4a4e]">
+            <Link :href="portalHref" class="mx-2 flex items-center gap-2 rounded-full bg-[#0C505C] text-white px-4 py-2 text-sm font-semibold shadow-md hover:bg-[#0a4a4e]">
                 <div class="bg-[#2f6f73] p-2 rounded-xl shadow-sm flex items-center justify-center w-10 h-10 shrink-0">
                   <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="white">
                     <path d="M7 19h2v-2H7v2Zm4 0h2v-2h-2v2Zm4 0h2v-2h-2v2Zm-8-4h2v-2H7v2Zm4 0h2v-2h-2v2Zm4 0h2v-2h-2v2Zm-8-4h2V9H7v2Zm4 0h2V9h-2v2Zm4 0h2V9h-2v2ZM3 21V3h18v18H3Zm2-2h14V5H5v14Z"/>
                   </svg>
                 </div>
-            <span>Portal Mitra</span>
+            <span>{{ portalLabel }}</span>
           </Link>
         </template>
       </div>

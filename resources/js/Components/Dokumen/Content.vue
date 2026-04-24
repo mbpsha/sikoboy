@@ -45,15 +45,15 @@ const getPreview = (matchName) => {
             <CardDokumen
               title="PERJANJIAN KERJA SAMA"
               description="Perjanjian Kerja Sama antara Pemerintah Kabupaten Boyolali dengan Pemerintah Daerah Kabupaten Boyolali"
-              href="public\docs\Template PKS KSDD.docx"
-              preview="public\docs\Template PKS KSDD.pdf"
+              :href="getTemplate('PKS KSDD')"
+              :preview="getPreview('PKS KSDD')"
             />
 
             <CardDokumen
               title="KESEPAKATAN BERSAMA"
               description="Kesepakatan bersama antara Pemerintah Daerah Kabupaten Boyolali dan Pemerintah Daerah Kabupaten Boyolali"
-              href="public\docs\Template KESEPAKATAN BERSAMA KSDD.docx"
-              preview="public\docs\Template KESEPAKATAN BERSAMA KSDD.pdf"
+              :href="getTemplate('KESEPAKATAN BERSAMA')"
+              :preview="getPreview('KESEPAKATAN BERSAMA')"
             />
           </div>
         </div>
@@ -67,15 +67,15 @@ const getPreview = (matchName) => {
             <CardDokumen
               title="PERJANJIAN KERJA SAMA"
               description="Perjanjian Kerja Sama antara Pemerintah Kabupaten Boyolali dengan Pihak Ketiga"
-              href="/public/docs/Template PKS KSDPK.docx"
-              preview="/public/docs/Template PKS KSDPK.pdf"
+              :href="getTemplate('PKS KSDPK')"
+              :preview="getPreview('PKS KSDPK')"
             />
 
             <CardDokumen
               title="KESEPAKATAN BERSAMA"
               description="Kesepakatan bersama antara Pemerintah Daerah Kabupaten Boyolali dengan Pihak Ketiga"
-              href="/public/docs/Template KESEPAKATAN BERSAMA KSDPK.docx"
-              preview="/public/docs/Template KESEPAKATAN BERSAMA KSDPK.pdf"
+              :href="getTemplate('KESEPAKATAN BERSAMA')"
+              :preview="getPreview('KESEPAKATAN BERSAMA')"
             />
           </div>
         </div>
@@ -89,8 +89,8 @@ const getPreview = (matchName) => {
             <CardDokumen
               title="SINERGI"
               description="Nota Kesepakatan antara Kementerian/Lembaga/Instansi Vertikal dan Pemerintah Kabupaten Boyolali"
-              href="/public/docs/Template NOTA KESEPAKATAN.docx"
-              preview="/public/docs/Template NOTA KESEPAKATAN.pdf"
+              :href="getTemplate('NOTA KESEPAKATAN')"
+              :preview="getPreview('NOTA KESEPAKATAN')"
             />
           </div>
         </div>
