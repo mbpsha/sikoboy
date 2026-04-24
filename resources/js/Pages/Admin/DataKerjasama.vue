@@ -83,20 +83,35 @@
 
 <script setup>
 import AdminLayout from '@/Layouts/AdminLayout.vue'
-import { Link, usePage, router } from '@inertiajs/vue3'
+import { Link, router } from '@inertiajs/vue3'
 import { ref, computed } from 'vue'
 
-const page = usePage()
-const kerjasama = page.props.value?.kerjasama ?? { data: [], per_page: 15, prev_page_url: null, next_page_url: null, current_page: 1 }
-const filters = page.props.value?.filters ?? {}
+const props = defineProps({
+  kerjasama: Object,
+  filters: Object,
+})
 
-const indexOffset = kerjasama.current_page ? ((kerjasama.current_page - 1) * kerjasama.per_page) : 0
+const kerjasama = computed(() => props.kerjasama ?? {
+  data: [],
+  per_page: 15,
+  prev_page_url: null,
+  next_page_url: null,
+  current_page: 1,
+})
+
+const filters = computed(() => props.filters ?? {})
+
+const indexOffset = computed(() => (
+  kerjasama.value.current_page
+    ? ((kerjasama.value.current_page - 1) * kerjasama.value.per_page)
+    : 0
+))
 
 // Local filter state for the UI
 const local = ref({
-  search: filters.search || '',
-  tahun: filters.tahun || '',
-  status: filters.status || '',
+  search: filters.value.search || '',
+  tahun: filters.value.tahun || '',
+  status: filters.value.status || '',
 })
 
 const years = computed(() => {
