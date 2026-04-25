@@ -7,6 +7,7 @@ use App\Http\Requests\Admin\StoreKerjasamaPemerintahRequest;
 use App\Models\Dokumen;
 use App\Models\Kerjasama;
 use App\Models\PeriodeKerjasama;
+use App\Models\RiwayatStatus;
 use Carbon\Carbon;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Http\Request;
@@ -140,6 +141,13 @@ class RiwayatKerjasamaController extends Controller
                     'created_by' => $admin->id_user,
                 ]);
             }
+
+            RiwayatStatus::recordStatus(
+                idKerjasama: (int) $kerjasama->id_kerjasama,
+                jenisStatus: 'disetujui',
+                idAdmin: (int) $admin->id_admin,
+                catatan: 'Kerjasama pemerintah ditambahkan ke riwayat',
+            );
         });
 
         $lastPage = (int) ceil(max(1, Kerjasama::pemerintahTipe()->count()) / 10);

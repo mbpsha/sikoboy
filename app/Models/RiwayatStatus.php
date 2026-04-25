@@ -24,6 +24,39 @@ class RiwayatStatus extends Model
         'tanggal',
     ];
 
+    protected static function booted(): void
+    {
+        static::created(function (self $riwayat): void {
+            $riwayat->loadMissing('status');
+            $jenisStatus = $riwayat->status?->jenis_status;
+
+            if (! in_array($jenisStatus, ['disetujui', 'revisi', 'ditolak'], true)) {
+                return;
+            }
+
+            Kerjasama::query()
+                ->whereKey($riwayat->id_kerjasama)
+                ->update(['status_persetujuan' => $jenisStatus]);
+        });
+    }
+
+    public static function recordStatus(
+        int $idKerjasama,
+        string $jenisStatus,
+        int $idAdmin,
+        ?string $catatan = null
+    ): self {
+        $status = Status::query()->firstOrCreate(['jenis_status' => $jenisStatus]);
+
+        return self::create([
+            'id_kerjasama' => $idKerjasama,
+            'id_status' => $status->id_status,
+            'id_admin' => $idAdmin,
+            'catatan' => $catatan ?? '-',
+            'tanggal' => now(),
+        ]);
+    }
+
     public function kerjasama()
     {
         return $this->belongsTo(Kerjasama::class, 'id_kerjasama', 'id_kerjasama');
