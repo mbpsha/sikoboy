@@ -9,6 +9,7 @@ use App\Models\Dokumen;
 use App\Models\KategoriKerjasama;
 use App\Models\Kerjasama;
 use App\Models\PeriodeKerjasama;
+use App\Models\RiwayatStatus;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -122,6 +123,13 @@ class KerjasamaController extends Controller
                 'versi_dokumen' => 1,
                 'created_by' => $request->user()->id_user,
             ]);
+
+            RiwayatStatus::recordStatus(
+                idKerjasama: (int) $kerjasama->id_kerjasama,
+                jenisStatus: 'diajukan',
+                idAdmin: (int) $admin->id_admin,
+                catatan: 'Pengajuan baru dari mitra',
+            );
         });
 
         return redirect()
