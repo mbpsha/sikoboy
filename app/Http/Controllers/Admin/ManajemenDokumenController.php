@@ -27,6 +27,9 @@ class ManajemenDokumenController extends Controller
     {
         $validated = $request->validate([
             'template_file' => ['required', 'file', 'mimes:pdf', 'max:10240'],
+            'id_kategori' => ['nullable', 'exists:kategori_kerjasama,id_kategori'],
+            'jenis_dokumen' => ['nullable', 'string', 'max:100'],
+            'is_active' => ['sometimes', 'boolean'],
         ]);
 
         $admin = $request->user()?->admin;
@@ -37,8 +40,11 @@ class ManajemenDokumenController extends Controller
 
         TemplateDokumen::create([
             'id_admin' => $admin->id_admin,
+            'id_kategori' => $validated['id_kategori'] ?? null,
             'nama_file' => $file->getClientOriginalName(),
+            'jenis_dokumen' => $validated['jenis_dokumen'] ?? null,
             'lokasi_file' => $path,
+            'is_active' => (bool) ($validated['is_active'] ?? true),
         ]);
 
         return back()->with('success', 'Template dokumen berhasil diunggah.');
@@ -109,11 +115,16 @@ class ManajemenDokumenController extends Controller
     private function templateList()
     {
         return TemplateDokumen::query()
+            ->with('kategori:id_kategori,nama_kategori')
             ->orderByDesc('created_at')
             ->get()
             ->map(fn (TemplateDokumen $template) => [
                 'id_template_dokumen' => $template->id_template_dokumen,
+                'id_kategori' => $template->id_kategori,
+                'nama_kategori' => $template->kategori?->nama_kategori,
                 'nama_file' => $template->nama_file,
+                'jenis_dokumen' => $template->jenis_dokumen,
+                'is_active' => (bool) $template->is_active,
                 'created_at' => $template->created_at,
                 'download_url' => route('template-dokumen.download', $template->id_template_dokumen),
                 'preview_url' => route('template-dokumen.preview', $template->id_template_dokumen),
