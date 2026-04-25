@@ -63,17 +63,19 @@ class StatusKontrakController extends Controller
         $kerjasama = Kerjasama::mitraTipe()->where('is_finalized', false)->findOrFail($id);
         $validated = $request->validated();
         $adminId = (int) $request->user()->admin->id_admin;
+        $catatanPersetujuan = $validated['catatan_persetujuan'] ?? null;
 
-        DB::transaction(function () use ($kerjasama, $validated, $adminId): void {
+        DB::transaction(function () use ($kerjasama, $validated, $adminId, $catatanPersetujuan): void {
             $kerjasama->update([
-                'catatan_persetujuan' => $validated['catatan_persetujuan'] ?? null,
+                'status_persetujuan' => $validated['status_persetujuan'],
+                'catatan_persetujuan' => $catatanPersetujuan,
             ]);
 
             RiwayatStatus::recordStatus(
                 idKerjasama: (int) $kerjasama->id_kerjasama,
-                jenisStatus: (string) $validated['status_persetujuan'],
+                jenisStatus: $validated['status_persetujuan'],
                 idAdmin: $adminId,
-                catatan: $validated['catatan_persetujuan'] ?? null,
+                catatan: $catatanPersetujuan,
             );
         });
 
@@ -91,6 +93,7 @@ class StatusKontrakController extends Controller
         DB::transaction(function () use ($kerjasama, $adminId): void {
             $kerjasama->update([
                 'is_finalized' => true,
+                'status_persetujuan' => StatusPersetujuan::Disetujui,
             ]);
 
             RiwayatStatus::recordStatus(

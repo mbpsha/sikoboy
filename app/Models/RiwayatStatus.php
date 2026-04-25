@@ -9,8 +9,15 @@ class RiwayatStatus extends Model
 {
     use HasFactory;
 
+    /**
+     * @var array<int, string>
+     */
+    public const SNAPSHOT_SYNCABLE_STATUSES = ['disetujui', 'revisi', 'ditolak'];
+
     protected $table = 'riwayat_status';
+
     protected $primaryKey = 'id_riwayat';
+
     public $timestamps = false;
 
     /**
@@ -24,22 +31,9 @@ class RiwayatStatus extends Model
         'tanggal',
     ];
 
-    protected static function booted(): void
-    {
-        static::created(function (self $riwayat): void {
-            $riwayat->loadMissing('status');
-            $jenisStatus = $riwayat->status?->jenis_status;
-
-            if (! in_array($jenisStatus, ['disetujui', 'revisi', 'ditolak'], true)) {
-                return;
-            }
-
-            Kerjasama::query()
-                ->whereKey($riwayat->id_kerjasama)
-                ->update(['status_persetujuan' => $jenisStatus]);
-        });
-    }
-
+    /**
+     * Record status transition and sync kerjasama status snapshot when applicable.
+     */
     public static function recordStatus(
         int $idKerjasama,
         string $jenisStatus,
@@ -47,14 +41,21 @@ class RiwayatStatus extends Model
         ?string $catatan = null
     ): self {
         $status = Status::query()->firstOrCreate(['jenis_status' => $jenisStatus]);
-
-        return self::create([
+        $riwayat = self::create([
             'id_kerjasama' => $idKerjasama,
             'id_status' => $status->id_status,
             'id_admin' => $idAdmin,
             'catatan' => $catatan ?? '-',
             'tanggal' => now(),
         ]);
+
+        if (in_array($jenisStatus, self::SNAPSHOT_SYNCABLE_STATUSES, true)) {
+            Kerjasama::query()
+                ->whereKey($idKerjasama)
+                ->update(['status_persetujuan' => $jenisStatus]);
+        }
+
+        return $riwayat;
     }
 
     public function kerjasama()

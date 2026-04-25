@@ -25,7 +25,7 @@ class StatusKontrakControllerTest extends TestCase
             route('admin.status-kontrak.persetujuan', ['id' => $kerjasama->id_kerjasama]),
             [
                 'status_persetujuan' => 'revisi',
-                'catatan_persetujuan' => 'Perbaiki bagian typo pada dokumen.',
+                'catatan_persetujuan' => 'Perbaiki kesalahan pengetikan pada dokumen.',
             ]
         );
 
@@ -33,13 +33,19 @@ class StatusKontrakControllerTest extends TestCase
 
         $kerjasama->refresh();
         $this->assertSame('revisi', $kerjasama->status_persetujuan?->value);
-        $this->assertSame('Perbaiki bagian typo pada dokumen.', $kerjasama->catatan_persetujuan);
+        $this->assertSame('Perbaiki kesalahan pengetikan pada dokumen.', $kerjasama->catatan_persetujuan);
 
         $this->assertDatabaseHas('status', ['jenis_status' => 'revisi']);
         $this->assertDatabaseHas('riwayat_status', [
             'id_kerjasama' => $kerjasama->id_kerjasama,
-            'catatan' => 'Perbaiki bagian typo pada dokumen.',
+            'catatan' => 'Perbaiki kesalahan pengetikan pada dokumen.',
         ]);
+        $this->assertTrue(
+            RiwayatStatus::query()
+                ->where('id_kerjasama', $kerjasama->id_kerjasama)
+                ->whereHas('status', fn ($q) => $q->where('jenis_status', 'revisi'))
+                ->exists()
+        );
     }
 
     public function test_finalize_records_riwayat_and_marks_finalized(): void
@@ -119,7 +125,7 @@ class StatusKontrakControllerTest extends TestCase
             'jenis_dokumen' => 'PDF',
             'nama_pihak_luar' => 'PT Mitra Status',
             'is_finalized' => false,
-            'status_negosiasi' => 'Direview',
+            'status_negosiasi' => 'direview',
             'status_persetujuan' => null,
             'catatan_persetujuan' => null,
         ]);
