@@ -1,17 +1,15 @@
 <template>
   <AdminLayout title="Pengguna">
     <div class="max-w-6xl mx-auto">
-      <!-- Card -->
       <div class="bg-white rounded-xl shadow-md overflow-hidden">
-        <!-- Card header with search and add button -->
-        <div class="flex items-center justify-between p-6 border-b" style="background-color:#0C9AA0">
+        <div class="flex items-center justify-between p-6 border-b bg-teal-700">
           <div class="flex items-center gap-4">
             <h2 class="text-white font-semibold">Pengguna</h2>
           </div>
 
           <div class="flex items-center gap-3">
             <div class="flex items-center gap-2 flex-1">
-              <input v-model="local.search" @input="onSearchInput" placeholder="Cari Berdasarkan nama, email, instansi..." class="rounded-full px-4 py-2 text-sm w-full" />
+              <input v-model="local.search" @input="onSearchInput" placeholder="Cari Berdasarkan nama, email, instansi..." class="rounded-full bg-white px-4 py-2 text-sm w-full" />
               <button @click="applyFilters" title="Apply filters" class="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white">
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 18h4"/><path d="M6 6h12"/><path d="M8 12h8"/></svg>
               </button>
@@ -22,17 +20,17 @@
               <option value="admin">Admin</option>
               <option value="mitra">Mitra</option>
             </select>
+
             <button @click.prevent="openCreate" class="bg-white text-teal-800 px-4 py-2 rounded-full text-sm">+ Tambah Pengguna</button>
             <button @click.prevent="resetFilters" title="Reset filters" class="ml-2 bg-white/20 text-white px-3 py-2 rounded-full text-sm">Reset</button>
           </div>
         </div>
 
-        <!-- Table -->
         <div class="p-6">
           <div class="overflow-x-auto">
-            <table class="min-w-full table-auto">
+            <table class="min-w-full table-auto table-lines">
               <thead>
-                <tr class="bg-[#0C9AA0] text-white text-sm">
+                <tr class="bg-teal-700 text-white text-sm">
                   <th class="py-3 px-4 text-left rounded-l-md">No</th>
                   <th class="py-3 px-4 text-left">Username</th>
                   <th class="py-3 px-4 text-left">Email</th>
@@ -58,25 +56,41 @@
                   </td>
                   <td class="py-4 px-4 text-gray-700">{{ user.instansi ?? '-' }}</td>
                   <td class="py-4 px-4">
-                    <span class="px-3 py-1 rounded-full bg-green-100 text-green-800 text-xs">Aktif</span>
+                    <span
+                      class="px-3 py-1 rounded-full text-xs"
+                      :class="user.status === 'menunggu_verifikasi'
+                        ? 'bg-amber-100 text-amber-800'
+                        : user.status === 'ditolak'
+                          ? 'bg-red-100 text-red-800'
+                          : 'bg-green-100 text-green-800'"
+                    >
+                      {{ user.status === 'menunggu_verifikasi' ? 'Menunggu Verifikasi' : user.status === 'ditolak' ? 'Ditolak' : 'Aktif' }}
+                    </span>
                   </td>
                   <td class="py-4 px-4 text-gray-700">{{ user.tanggal_daftar ?? '-' }}</td>
                   <td class="py-4 px-4 text-gray-700">
                     <div class="flex items-center gap-2">
-                      <Link :href="route('users.show', user.id)" class="text-teal-700 hover:text-teal-900">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M15 12l4 4M9 12l-4 4M12 20V4"/></svg>
-                      </Link>
-                      <button class="text-red-600 hover:text-red-800">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 6h18M8 6v13a2 2 0 002 2h4a2 2 0 002-2V6"/><path d="M10 11v6M14 11v6"/></svg>
+                      <Link :href="route('admin.users.show', user.id)" class="px-3 py-1 rounded-md bg-slate-100 text-slate-700 hover:bg-slate-200 text-xs">Detail</Link>
+
+                      <button
+                        v-if="user.role === 'mitra' && user.can_verify"
+                        class="px-3 py-1 rounded-md bg-emerald-600 text-white hover:bg-emerald-700 text-xs disabled:opacity-60"
+                        :disabled="verifyingUserId === user.id"
+                        @click.prevent="verifyMitra(user.id)"
+                      >
+                        {{ verifyingUserId === user.id ? 'Memverifikasi...' : 'Verifikasi' }}
                       </button>
                     </div>
                   </td>
+                </tr>
+
+                <tr v-if="!users.data?.length">
+                  <td colspan="8" class="py-6 px-4 text-center text-gray-500">Belum ada data pengguna.</td>
                 </tr>
               </tbody>
             </table>
           </div>
 
-          <!-- Pagination -->
           <div class="mt-6 flex items-center justify-between">
             <div class="text-sm text-gray-600">Tampilkan {{ users.per_page }} / Halaman</div>
             <div class="flex items-center gap-2">
@@ -85,11 +99,11 @@
             </div>
           </div>
         </div>
-        
+
         <!-- Create User Modal -->
         <div v-if="showCreateModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div class="bg-white rounded-xl shadow-lg w-full max-w-lg p-6">
-            <h3 class="text-xl font-bold mb-4">Tambah Pengguna</h3>
+            <h3 class="text-lg font-semibold mb-4">Tambah Pengguna</h3>
             <form @submit.prevent="submitCreate" class="space-y-3">
               <div>
                 <label class="text-sm font-medium">Nama / Username</label>
@@ -132,6 +146,7 @@
             </form>
           </div>
         </div>
+
       </div>
     </div>
   </AdminLayout>
@@ -139,31 +154,25 @@
 
 <script setup>
 import AdminLayout from '@/Layouts/AdminLayout.vue'
-import { Link, usePage, router, useForm } from '@inertiajs/vue3'
-import { ref, onBeforeUnmount, computed, onMounted } from 'vue'
+import { Link, router, useForm } from '@inertiajs/vue3'
+import { ref } from 'vue'
 
-const page = usePage()
-const users = computed(() => page.props.value?.users ?? { data: [], per_page: 15, prev_page_url: null, next_page_url: null, current_page: 1 })
-const filters = computed(() => page.props.value?.filters ?? {})
-
-const indexOffset = computed(() => (users.value?.current_page ? ((users.value.current_page - 1) * users.value.per_page) : 0))
-
-onMounted(() => {
-  try {
-    if (typeof window !== 'undefined' && import.meta.env && import.meta.env.DEV) {
-      console.log('[Admin/Users] page.props:', page.props.value)
-      console.log('[Admin/Users] users prop:', users.value)
-    }
-  } catch (e) { console.error(e) }
+const props = defineProps({
+  users: {
+    type: Object,
+    default: () => ({ data: [], per_page: 15, prev_page_url: null, next_page_url: null, current_page: 1 }),
+  },
+  filters: {
+    type: Object,
+    default: () => ({}),
+  },
 })
 
-// Local reactive filter state
-const local = ref({
-  search: filters.search || '',
-  role: filters.role || ''
-})
+const users = props.users
+const filters = props.filters
+const verifyingUserId = ref(null)
 
-// Create user modal state + form
+// Create user modal + form
 const showCreateModal = ref(false)
 const createForm = useForm({
   username: '',
@@ -187,11 +196,18 @@ function submitCreate() {
   createForm.post(url, {
     onSuccess: () => {
       closeCreate()
-      // refresh list
       try { router.visit(route('admin.pengguna.index')) } catch (e) { router.reload() }
-    },
+    }
   })
 }
+
+const indexOffset = (users?.current_page ? ((users.current_page - 1) * users.per_page) : 0)
+
+// Local reactive filter state
+const local = ref({
+  search: filters.search || '',
+  role: filters.role || ''
+})
 
 let debounceTimer = null
 function scheduleApplyFilters() {
@@ -211,20 +227,48 @@ function applyFilters() {
   const params = {}
   if (local.value.search) params.search = local.value.search
   if (local.value.role) params.role = local.value.role
-  router.visit(route('admin.pengguna.index'), { method: 'get', data: params, preserveState: true, replace : true })
+  router.visit(route('admin.pengguna.index'), { method: 'get', data: params, preserveState: false })
+}
+
+function resetFilters() {
+  local.value.search = ''
+  local.value.role = ''
+  router.visit(route('admin.pengguna.index'), { method: 'get', data: {}, preserveState: false, replace: true })
 }
 
 function goTo(url) {
   if (!url) return
-  router.visit(url, { preserveState: true })
+  router.visit(url, { preserveState: false })
 }
 
-onBeforeUnmount(() => {
-  clearTimeout(debounceTimer)
-})
+function verifyMitra(id) {
+  if (!id) return
+
+  verifyingUserId.value = id
+  router.put(route('admin.pengguna.verify', id), {}, {
+    preserveScroll: true,
+    onFinish: () => {
+      verifyingUserId.value = null
+    },
+  })
+}
 </script>
 
 <style scoped>
 /* Slight card header color tune to match example */
-.card-header { background-color: #37c3c8 }
+.card-header { background-color: #0C9AA0 }
+  /* Slight card header color tune to match example */
+  .card-header { background-color: #0C9AA0 }
+
+  /* Table helpers: header vertical separators and row dividers */
+  .table-lines thead th {
+    border-right: 1px solid rgba(255,255,255,0.18);
+  }
+  .table-lines thead th:last-child {
+    border-right: none;
+  }
+  .table-lines tbody td {
+    border-bottom: 1px solid rgba(15,23,42,0.06);
+  }
+
 </style>

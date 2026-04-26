@@ -42,6 +42,7 @@ class LoginControllerTest extends TestCase
             'email' => 'mitra@example.com',
             'password' => Hash::make('mitra-password'),
             'role' => 'mitra',
+            'status_verifikasi' => 'disetujui',
         ]);
 
         Mitra::create([
@@ -59,5 +60,32 @@ class LoginControllerTest extends TestCase
 
         $response->assertRedirect(route('home'));
         $this->assertAuthenticatedAs($mitraUser);
+    }
+
+    public function test_unverified_mitra_cannot_login(): void
+    {
+        $mitraUser = User::create([
+            'email' => 'pending@example.com',
+            'password' => Hash::make('mitra-password'),
+            'role' => 'mitra',
+            'status_verifikasi' => 'pending',
+        ]);
+
+        Mitra::create([
+            'id_user' => $mitraUser->id_user,
+            'nama_perusahaan' => 'PT Pending',
+            'no_handphone' => '081234567890',
+            'pic' => 'PIC Pending',
+            'alamat' => 'Boyolali',
+        ]);
+
+        $response = $this->from(route('login'))->post(route('login.attempt'), [
+            'email' => 'pending@example.com',
+            'password' => 'mitra-password',
+        ]);
+
+        $response->assertRedirect(route('login'));
+        $response->assertSessionHasErrors('email');
+        $this->assertGuest();
     }
 }

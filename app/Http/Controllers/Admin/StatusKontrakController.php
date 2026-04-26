@@ -25,7 +25,9 @@ class StatusKontrakController extends Controller
 
         $this->applyFilters($query, $request);
 
-        $kerjasama = $query->orderBy('created_at', 'desc')
+        [$sortBy, $sortDir] = $this->resolveSort($request);
+
+        $kerjasama = $query->orderBy($sortBy, $sortDir)
             ->paginate(15)
             ->withQueryString();
 
@@ -33,7 +35,7 @@ class StatusKontrakController extends Controller
 
         return Inertia::render('Admin/StatusKontrak/Index', [
             'kerjasama' => $kerjasama,
-            'filters' => $request->only(['search', 'tahun', 'jenis_kerjasama', 'jenis_dokumen', 'status_persetujuan']),
+            'filters' => $request->only(['search', 'tahun', 'jenis_kerjasama', 'jenis_dokumen', 'status_persetujuan', 'sort_by', 'sort_dir']),
         ]);
     }
 
@@ -150,5 +152,20 @@ class StatusKontrakController extends Controller
                 'created_at' => $d->created_at,
             ])->values(),
         ];
+    }
+
+    private function resolveSort(Request $request): array
+    {
+        $allowedSort = ['created_at', 'judul', 'jenis_kerjasama', 'jenis_dokumen'];
+
+        $sortBy = (string) $request->input('sort_by', 'created_at');
+        if (! in_array($sortBy, $allowedSort, true)) {
+            $sortBy = 'created_at';
+        }
+
+        $sortDir = strtolower((string) $request->input('sort_dir', 'desc'));
+        $sortDir = $sortDir === 'asc' ? 'asc' : 'desc';
+
+        return [$sortBy, $sortDir];
     }
 }

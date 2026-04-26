@@ -1,7 +1,7 @@
 <script setup>
-import Profile from '@/Pages/Mitra/Profile.vue'
+import Edit from '@/Components/Mitra/Profile/Edit.vue'
 </script>
 
 <template>
-  <Profile />
+  <Edit />
 </template>

@@ -25,6 +25,7 @@ class DatabaseSeeder extends Seeder
             [
                 'password' => Hash::make('sikoboybukansikejam'),
                 'role' => 'admin',
+                'status_verifikasi' => 'disetujui',
             ]
         );
 
@@ -42,6 +43,7 @@ class DatabaseSeeder extends Seeder
         ], [
             'password' => Hash::make('Mitra@12345'),
             'role' => 'mitra',
+            'status_verifikasi' => 'disetujui',
         ]);
 
         Mitra::updateOrCreate([
@@ -59,6 +61,7 @@ class DatabaseSeeder extends Seeder
         ], [
             'password' => Hash::make('Partner@12345'),
             'role' => 'mitra',
+            'status_verifikasi' => 'disetujui',
         ]);
 
         Mitra::updateOrCreate([
@@ -76,6 +79,7 @@ class DatabaseSeeder extends Seeder
         ], [
             'password' => Hash::make('Partner@12345'),
             'role' => 'mitra',
+            'status_verifikasi' => 'pending',
         ]);
 
         Mitra::updateOrCreate([
@@ -89,5 +93,7 @@ class DatabaseSeeder extends Seeder
 
         // Seed kategori kerjasama templates
         $this->call(KategoriKerjasamaSeeder::class);
+        // Seed riwayat kerjasama
+        $this->call(RiwayatKerjasamaSeeder::class);
     }
 }

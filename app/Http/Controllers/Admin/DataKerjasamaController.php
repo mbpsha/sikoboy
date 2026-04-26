@@ -21,8 +21,7 @@ class DataKerjasamaController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Kerjasama::with(['mitra', 'admin', 'latestPeriode', 'kategori'])
-            ->orderBy('created_at', 'desc');
+        $query = Kerjasama::with(['mitra', 'admin', 'latestPeriode', 'kategori']);
 
         // -----------------------------------------------------------------------
         // Filters
@@ -94,7 +93,11 @@ class DataKerjasamaController extends Controller
             };
         }
 
-        $kerjasama = $query->paginate(15)->withQueryString();
+        [$sortBy, $sortDir] = $this->resolveSort($request);
+
+        $kerjasama = $query->orderBy($sortBy, $sortDir)
+            ->paginate(15)
+            ->withQueryString();
 
         $kerjasama->getCollection()->transform(function (Kerjasama $k) {
             $periode = $k->latestPeriode;
@@ -141,6 +144,8 @@ class DataKerjasamaController extends Controller
                     'jenis_dokumen',
                     'is_finalized',
                     'status',
+                    'sort_by',
+                    'sort_dir',
                 ]),
                 ['pemrakarsa' => $pemrakarsa]
             ),
@@ -239,5 +244,27 @@ class DataKerjasamaController extends Controller
         }
 
         return 'aktif';
+    }
+
+    private function resolveSort(Request $request): array
+    {
+        $allowedSort = [
+            'created_at',
+            'judul',
+            'jenis_kerjasama',
+            'jenis_dokumen',
+            'urusan',
+            'pemrakarsa',
+        ];
+
+        $sortBy = (string) $request->input('sort_by', 'created_at');
+        if (! in_array($sortBy, $allowedSort, true)) {
+            $sortBy = 'created_at';
+        }
+
+        $sortDir = strtolower((string) $request->input('sort_dir', 'desc'));
+        $sortDir = $sortDir === 'asc' ? 'asc' : 'desc';
+
+        return [$sortBy, $sortDir];
     }
 }

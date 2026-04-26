@@ -22,9 +22,9 @@
       <!-- Table card -->
       <div class="mt-6 bg-white rounded-xl shadow-md overflow-hidden">
         <div class="p-6 overflow-x-auto">
-          <table class="min-w-full table-auto text-sm">
+          <table class="min-w-full table-auto text-sm table-lines">
             <thead>
-              <tr class="bg-[#0C9AA0] text-white">
+              <tr class="bg-teal-700 text-white">
                 <th class="py-3 px-4">No</th>
                 <th class="py-3 px-4">Tahun</th>
                 <th class="py-3 px-4">Mitra</th>
@@ -83,20 +83,35 @@
 
 <script setup>
 import AdminLayout from '@/Layouts/AdminLayout.vue'
-import { Link, usePage, router } from '@inertiajs/vue3'
+import { Link, router } from '@inertiajs/vue3'
 import { ref, computed } from 'vue'
 
-const page = usePage()
-const kerjasama = page.props.value?.kerjasama ?? { data: [], per_page: 15, prev_page_url: null, next_page_url: null, current_page: 1 }
-const filters = page.props.value?.filters ?? {}
+const props = defineProps({
+  kerjasama: Object,
+  filters: Object,
+})
 
-const indexOffset = kerjasama.current_page ? ((kerjasama.current_page - 1) * kerjasama.per_page) : 0
+const kerjasama = computed(() => props.kerjasama ?? {
+  data: [],
+  per_page: 15,
+  prev_page_url: null,
+  next_page_url: null,
+  current_page: 1,
+})
+
+const filters = computed(() => props.filters ?? {})
+
+const indexOffset = computed(() => (
+  kerjasama.value.current_page
+    ? ((kerjasama.value.current_page - 1) * kerjasama.value.per_page)
+    : 0
+))
 
 // Local filter state for the UI
 const local = ref({
-  search: filters.search || '',
-  tahun: filters.tahun || '',
-  status: filters.status || '',
+  search: filters.value.search || '',
+  tahun: filters.value.tahun || '',
+  status: filters.value.status || '',
 })
 
 const years = computed(() => {
@@ -120,4 +135,10 @@ function goTo(url) {
 
 <style scoped>
 .truncate { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.truncate { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Table header separators to match design */
+.table-lines thead th { border-right: 1px solid rgba(255,255,255,0.18); }
+.table-lines thead th:last-child { border-right: none; }
+.table-lines tbody td { border-bottom: 1px solid rgba(15,23,42,0.06); }
 </style>

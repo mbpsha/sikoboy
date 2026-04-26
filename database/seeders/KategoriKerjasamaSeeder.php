@@ -12,18 +12,26 @@ class KategoriKerjasamaSeeder extends Seeder
      */
     public function run(): void
     {
-        // Insert or update all .docx templates found in public/docs and public/storage/docs
-        $paths = [base_path('public/docs'), base_path('public/storage/docs')];
-        $files = [];
-        foreach ($paths as $p) {
-            if (is_dir($p)) {
-                $files = array_merge($files, glob($p . '/*.docx'));
-            }
+        // Insert or update all .docx templates found in public/docs
+        $files = glob(base_path('public/docs') . '/*.docx');
+
+        if (empty($files)) {
+            DB::table('kategori_kerjasama')->insert([
+                [
+                    'nama_kategori' => 'PERJANJIAN KERJA SAMA (PKS)',
+                    'deskripsi' => 'Template PKS',
+                    'file_template' => 'storage/docs/default_pks.docx',
+                ],
+                [
+                    'nama_kategori' => 'KESEPAKATAN BERSAMA',
+                    'deskripsi' => 'Template Kesepakatan',
+                    'file_template' => 'storage/docs/default_kb.docx',
+                ],
+            ]);
+
+            return;
         }
-
-        // Deduplicate
-        $files = array_values(array_unique($files));
-
+        
         foreach ($files as $f) {
             $base = basename($f);
             $storagePath = '/storage/docs/' . $base;

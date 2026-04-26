@@ -10,6 +10,25 @@ use Inertia\Inertia;
 class ProfileController extends Controller
 {
     /**
+     * Show the profile page.
+     */
+    public function index(Request $request)
+    {
+        $user = $request->user();
+
+        if (! $user->mitra) {
+            return redirect()->route('mitra.profile.complete');
+        }
+
+        return Inertia::render('Mitra/Profile/Profile', [
+            'user' => [
+                'email' => $user->email,
+            ],
+            'mitra' => $user->mitra,
+        ]);
+    }
+
+    /**
      * Show profile completion form for mitra without profile.
      */
     public function completeProfile(Request $request)
@@ -65,24 +84,6 @@ class ProfileController extends Controller
             ],
             'mitra' => $user->mitra,
             'mode' => 'edit',
-        ]);
-    }
-
-    /**
-     * Display the mitra profile page (read-only view).
-     */
-    public function index(Request $request)
-    {
-        $user = $request->user();
-
-        // If mitra hasn't completed profile, redirect to completion flow
-        if (! $user->mitra) {
-            return redirect()->route('mitra.profile.complete');
-        }
-
-        return Inertia::render('Mitra/Profile', [
-            'user' => [ 'email' => $user->email ],
-            'mitra' => $user->mitra,
         ]);
     }
 
