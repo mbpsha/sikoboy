@@ -69,6 +69,24 @@ class ProfileController extends Controller
     }
 
     /**
+     * Display the mitra profile page (read-only view).
+     */
+    public function index(Request $request)
+    {
+        $user = $request->user();
+
+        // If mitra hasn't completed profile, redirect to completion flow
+        if (! $user->mitra) {
+            return redirect()->route('mitra.profile.complete');
+        }
+
+        return Inertia::render('Mitra/Profile', [
+            'user' => [ 'email' => $user->email ],
+            'mitra' => $user->mitra,
+        ]);
+    }
+
+    /**
      * Update the partner profile.
      */
     public function update(Request $request)

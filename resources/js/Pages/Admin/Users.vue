@@ -22,7 +22,8 @@
               <option value="admin">Admin</option>
               <option value="mitra">Mitra</option>
             </select>
-            <Link :href="route('admin.pengguna.index') + '?create=1'" class="bg-white text-teal-800 px-4 py-2 rounded-full text-sm">+ Tambah Pengguna</Link>
+            <button @click.prevent="openCreate" class="bg-white text-teal-800 px-4 py-2 rounded-full text-sm">+ Tambah Pengguna</button>
+            <button @click.prevent="resetFilters" title="Reset filters" class="ml-2 bg-white/20 text-white px-3 py-2 rounded-full text-sm">Reset</button>
           </div>
         </div>
 
@@ -84,6 +85,53 @@
             </div>
           </div>
         </div>
+        
+        <!-- Create User Modal -->
+        <div v-if="showCreateModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div class="bg-white rounded-xl shadow-lg w-full max-w-lg p-6">
+            <h3 class="text-xl font-bold mb-4">Tambah Pengguna</h3>
+            <form @submit.prevent="submitCreate" class="space-y-3">
+              <div>
+                <label class="text-sm font-medium">Nama / Username</label>
+                <input v-model="createForm.username" class="w-full border rounded px-3 py-2" />
+                <p v-if="createForm.errors.username" class="text-red-500 text-sm">{{ createForm.errors.username }}</p>
+              </div>
+
+              <div>
+                <label class="text-sm font-medium">Email</label>
+                <input type="email" v-model="createForm.email" class="w-full border rounded px-3 py-2" />
+                <p v-if="createForm.errors.email" class="text-red-500 text-sm">{{ createForm.errors.email }}</p>
+              </div>
+
+              <div class="flex gap-2">
+                <div class="flex-1">
+                  <label class="text-sm font-medium">Role</label>
+                  <select v-model="createForm.role" class="w-full border rounded px-3 py-2">
+                    <option value="mitra">Mitra</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                  <p v-if="createForm.errors.role" class="text-red-500 text-sm">{{ createForm.errors.role }}</p>
+                </div>
+                <div class="flex-1">
+                  <label class="text-sm font-medium">Instansi</label>
+                  <input v-model="createForm.instansi" class="w-full border rounded px-3 py-2" />
+                  <p v-if="createForm.errors.instansi" class="text-red-500 text-sm">{{ createForm.errors.instansi }}</p>
+                </div>
+              </div>
+
+              <div>
+                <label class="text-sm font-medium">Password (opsional)</label>
+                <input type="password" v-model="createForm.password" class="w-full border rounded px-3 py-2" />
+                <p v-if="createForm.errors.password" class="text-red-500 text-sm">{{ createForm.errors.password }}</p>
+              </div>
+
+              <div class="flex justify-end gap-2 mt-4">
+                <button type="button" @click="closeCreate" class="px-4 py-2 rounded bg-gray-200">Batal</button>
+                <button type="submit" :disabled="createForm.processing" class="px-4 py-2 rounded bg-teal-600 text-white">Simpan</button>
+              </div>
+            </form>
+          </div>
+        </div>
       </div>
     </div>
   </AdminLayout>
@@ -91,20 +139,59 @@
 
 <script setup>
 import AdminLayout from '@/Layouts/AdminLayout.vue'
-import { Link, usePage, router } from '@inertiajs/vue3'
-import { ref, onBeforeUnmount } from 'vue'
+import { Link, usePage, router, useForm } from '@inertiajs/vue3'
+import { ref, onBeforeUnmount, computed, onMounted } from 'vue'
 
 const page = usePage()
-const users = page.props.value?.users ?? { data: [], per_page: 15, prev_page_url: null, next_page_url: null, current_page: 1 }
-const filters = page.props.value?.filters ?? {}
+const users = computed(() => page.props.value?.users ?? { data: [], per_page: 15, prev_page_url: null, next_page_url: null, current_page: 1 })
+const filters = computed(() => page.props.value?.filters ?? {})
 
-const indexOffset = (users?.current_page ? ((users.current_page - 1) * users.per_page) : 0)
+const indexOffset = computed(() => (users.value?.current_page ? ((users.value.current_page - 1) * users.value.per_page) : 0))
+
+onMounted(() => {
+  try {
+    if (typeof window !== 'undefined' && import.meta.env && import.meta.env.DEV) {
+      console.log('[Admin/Users] page.props:', page.props.value)
+      console.log('[Admin/Users] users prop:', users.value)
+    }
+  } catch (e) { console.error(e) }
+})
 
 // Local reactive filter state
 const local = ref({
   search: filters.search || '',
   role: filters.role || ''
 })
+
+// Create user modal state + form
+const showCreateModal = ref(false)
+const createForm = useForm({
+  username: '',
+  email: '',
+  role: 'mitra',
+  instansi: '',
+  password: ''
+})
+
+function openCreate() {
+  showCreateModal.value = true
+}
+
+function closeCreate() {
+  showCreateModal.value = false
+  createForm.reset()
+}
+
+function submitCreate() {
+  const url = (() => { try { return route('admin.pengguna.store') } catch (e) { return '/admin/pengguna' } })()
+  createForm.post(url, {
+    onSuccess: () => {
+      closeCreate()
+      // refresh list
+      try { router.visit(route('admin.pengguna.index')) } catch (e) { router.reload() }
+    },
+  })
+}
 
 let debounceTimer = null
 function scheduleApplyFilters() {
@@ -124,12 +211,12 @@ function applyFilters() {
   const params = {}
   if (local.value.search) params.search = local.value.search
   if (local.value.role) params.role = local.value.role
-  router.visit(route('admin.pengguna.index'), { method: 'get', data: params, preserveState: false })
+  router.visit(route('admin.pengguna.index'), { method: 'get', data: params, preserveState: true, replace : true })
 }
 
 function goTo(url) {
   if (!url) return
-  router.visit(url, { preserveState: false })
+  router.visit(url, { preserveState: true })
 }
 
 onBeforeUnmount(() => {
@@ -139,5 +226,5 @@ onBeforeUnmount(() => {
 
 <style scoped>
 /* Slight card header color tune to match example */
-.card-header { background-color: #0C9AA0 }
+.card-header { background-color: #37c3c8 }
 </style>
