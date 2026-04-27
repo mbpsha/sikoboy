@@ -15,6 +15,7 @@ use App\Http\Controllers\Auth\VerificationController;
 use App\Http\Controllers\Mitra\DashboardController as MitraDashboardController;
 use App\Http\Controllers\Mitra\KerjasamaController as MitraKerjasamaController;
 use App\Http\Controllers\Mitra\ProfileController as MitraProfileController;
+use App\Http\Controllers\TemplateDokumenController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -51,6 +52,16 @@ Route::get('/dokumen', function () {
 
     return Inertia::render('Dokumen', ['kategoris' => $kategoris]);
 })->name('dokumen');
+
+Route::get('/template-dokumen', [TemplateDokumenController::class, 'index'])
+    ->name('template-dokumen.index');
+Route::get('/template-dokumen/{id}/download', [TemplateDokumenController::class, 'download'])
+    ->name('template-dokumen.download');
+Route::get('/template-dokumen/{id}/preview', [TemplateDokumenController::class, 'preview'])
+    ->name('template-dokumen.preview');
+
+// Kontak page
+Route::get('/kontak', fn() => Inertia::render('Kontak'))->name('kontak');
 
 Route::middleware('auth')->get('/portal-mitra', function (Request $request) {
     return match ($request->user()?->role) {

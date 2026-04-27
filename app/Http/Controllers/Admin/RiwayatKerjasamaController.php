@@ -7,9 +7,10 @@ use App\Http\Requests\Admin\StoreKerjasamaPemerintahRequest;
 use App\Models\Dokumen;
 use App\Models\Kerjasama;
 use App\Models\PeriodeKerjasama;
+use App\Models\RiwayatStatus;
 use Carbon\Carbon;
-use Illuminate\Http\UploadedFile;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
@@ -45,7 +46,7 @@ class RiwayatKerjasamaController extends Controller
                 ->selectRaw('YEAR(tanggal_mulai) as tahun')
                 ->distinct()
                 ->orderBy('tahun', 'desc')
-                ->pluck('tahun')
+                ->pluck('tahun'),
         ]);
     }
 
@@ -77,7 +78,7 @@ class RiwayatKerjasamaController extends Controller
                 ->selectRaw('YEAR(tanggal_mulai) as tahun')
                 ->distinct()
                 ->orderBy('tahun', 'desc')
-                ->pluck('tahun')
+                ->pluck('tahun'),
         ]);
     }
 
@@ -140,6 +141,13 @@ class RiwayatKerjasamaController extends Controller
                     'created_by' => $admin->id_user,
                 ]);
             }
+
+            RiwayatStatus::recordStatus(
+                idKerjasama: (int) $kerjasama->id_kerjasama,
+                jenisStatus: 'disetujui',
+                idAdmin: (int) $admin->id_admin,
+                catatan: 'Kerjasama pemerintah ditambahkan ke riwayat',
+            );
         });
 
         $lastPage = (int) ceil(max(1, Kerjasama::pemerintahTipe()->count()) / 10);
@@ -272,7 +280,7 @@ class RiwayatKerjasamaController extends Controller
             $years = Carbon::parse($mulai)->diffInYears($berakhir);
             if ($years > 0) {
                 $formattedYears = rtrim(rtrim(number_format($years, 1, ',', ''), '0'), ',');
-                $jangkaWaktu = $formattedYears . ' Tahun';
+                $jangkaWaktu = $formattedYears.' Tahun';
             } else {
                 $jangkaWaktu = 'Kurang dari 1 Tahun';
             }
@@ -325,6 +333,6 @@ class RiwayatKerjasamaController extends Controller
             return asset($path);
         }
 
-        return asset('storage/' . ltrim($path, '/'));
+        return asset('storage/'.ltrim($path, '/'));
     }
 }

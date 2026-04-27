@@ -8,6 +8,7 @@ use App\Models\Dokumen;
 use App\Models\Kerjasama;
 use App\Models\Mitra;
 use App\Models\PeriodeKerjasama;
+use App\Models\RiwayatStatus;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -192,6 +193,13 @@ class DataKerjasamaController extends Controller
                 'versi_dokumen' => 1,
                 'created_by' => $admin->id_user,
             ]);
+
+            RiwayatStatus::recordStatus(
+                idKerjasama: (int) $kerjasama->id_kerjasama,
+                jenisStatus: 'disetujui',
+                idAdmin: (int) $admin->id_admin,
+                catatan: 'Data kerjasama pemerintah ditambahkan admin',
+            );
         });
 
         return redirect()

@@ -9,6 +9,7 @@ use App\Models\Dokumen;
 use App\Models\KategoriKerjasama;
 use App\Models\Kerjasama;
 use App\Models\PeriodeKerjasama;
+use App\Models\RiwayatStatus;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -63,6 +64,35 @@ class KerjasamaController extends Controller
             ],
             'kerjasama' => $kerjasama,
             'filters' => $request->only(['search']),
+        ]);
+    }
+
+    /**
+     * Show pengajuan step 1 form.
+     */
+    public function createStep1(Request $request)
+    {
+        $mitra = $request->user()->mitra;
+        return Inertia::render('Mitra/Pengajuan/Step1', [
+            'mitra' => $mitra ? [
+                'id_mitra' => $mitra->id_mitra,
+                'nama_perusahaan' => $mitra->nama_perusahaan,
+            ] : null,
+        ]);
+    }
+
+    /**
+     * Show pengajuan step 2 form.
+     */
+    public function createStep2(Request $request)
+    {
+        $mitra = $request->user()->mitra;
+        // In a real flow you'd validate session/previous step data here
+        return Inertia::render('Mitra/Pengajuan/Step2', [
+            'mitra' => $mitra ? [
+                'id_mitra' => $mitra->id_mitra,
+                'nama_perusahaan' => $mitra->nama_perusahaan,
+            ] : null,
         ]);
     }
 
@@ -122,63 +152,17 @@ class KerjasamaController extends Controller
                 'versi_dokumen' => 1,
                 'created_by' => $request->user()->id_user,
             ]);
+
+            RiwayatStatus::recordStatus(
+                idKerjasama: (int) $kerjasama->id_kerjasama,
+                jenisStatus: 'diajukan',
+                idAdmin: (int) $admin->id_admin,
+                catatan: 'Pengajuan baru dari mitra',
+            );
         });
 
         return redirect()
             ->route('mitra.kerjasama.index')
             ->with('success', 'Pengajuan kerjasama berhasil dikirim.');
-    }
-
-    /**
-     * Show step1 of pengajuan (fallback).
-     */
-    public function createStep1(Request $request)
-    {
-        return Inertia::render('Mitra/Pengajuan/Step1');
-    }
-
-    /**
-     * Handle step1 POST (fallback) and redirect to step2 or index.
-     */
-    public function storeStep1(Request $request)
-    {
-        // Validate step1 fields (exclude file upload which is handled in final submit)
-        $validated = $request->validate([
-            'jenis_kerjasama' => ['required', 'string', 'max:100'],
-            'jenis_dokumen' => ['required', 'string', 'max:100'],
-            'judul' => ['required', 'string', 'max:255'],
-            'nama_pihak_luar' => ['required', 'string', 'max:255'],
-            'nomor_suratM' => ['required', 'string', 'max:100'],
-            'pembiayaan' => ['required', 'string', 'max:255'],
-            'urusan' => ['required', 'string', 'max:255'],
-            'tanggal_mulai' => ['required', 'date'],
-            'tanggal_selesai' => ['required', 'date'],
-        ]);
-
-        // Store partial pengajuan in session for step flow
-        $request->session()->put('pengajuan.step1', $validated);
-
-        return redirect()->route('mitra.pengajuan.step2');
-    }
-
-    /**
-     * Show step2 of pengajuan (fallback).
-     */
-    public function createStep2(Request $request)
-    {
-        $step1 = $request->session()->get('pengajuan.step1', []);
-
-        // Load kategoris for the select options
-        $kategoris = KategoriKerjasama::query()->get()->map(function ($k) {
-            return [
-                'id_kategori' => $k->id_kategori ?? $k->id,
-                'nama_kategori' => $k->nama_kategori ?? $k->nama_kategori,
-            ];
-        })->values();
-
-        return Inertia::render('Mitra/Pengajuan/Step2', [
-            'step1' => $step1,
-            'kategoris' => $kategoris,
-        ]);
     }
 }
