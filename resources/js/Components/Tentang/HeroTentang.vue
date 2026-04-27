@@ -43,14 +43,14 @@ onUnmounted(() => {
         }"
       ></div>
 
-      <!-- gradient bawah -->
+      <!-- Gradient bawah HIJAU -->
       <div
         class="absolute inset-0"
         style="
           background: linear-gradient(
             to bottom,
-            rgba(255, 255, 255, 0.05) 20%,
-            rgba(255, 255, 255, 0.6) 70%,
+            rgba(138, 180, 187, 0.3) 10%,
+            rgba(138, 180, 187, 0.9) 60%,
             rgba(255, 255, 255, 1) 100%
           );
         "
@@ -60,30 +60,36 @@ onUnmounted(() => {
     <!-- CONTENT -->
     <div class="relative z-10 mx-auto max-w-6xl px-6 text-center animate-fadeUp">
       
-      <h1 class="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 tracking-widest">
-        TENTANG
+      <h1 class="text-5xl sm:text-4xl md:text-5xl font-extrabold mb-3 tracking-widest">
+        T E N T A N G
       </h1>
 
-      <div class="mx-auto mb-4 w-40 h-px bg-white/50"></div>
+      <div class="mx-auto mb-4 w-120 h-px bg-white/50"></div>
 
-      <p class="text-base sm:text-lg md:text-xl text-white/90">
+      <p class="text-base sm:text-lg md:text-xl text-white/90 font-medium mb-2">
         SIKOBOY (Sistem Kolaboratif Boyolali)
       </p>
 
       <!-- DESKRIPSI PANJANG -->
-      <p class="mt-4 max-w-xl md:max-w-2xl mx-auto text-xs sm:text-sm md:text-base text-white/80 leading-relaxed px-2">
+      <p class="mt-4 max-w-xl md:max-w-2xl mx-auto text-sm sm:text-md lg:text-base font-bold text-white/80 leading-relaxed px-2">
         Mewujudkan Pengelolaan Kerja Sama Daerah yang Efektif, Transparan, dan Akuntabel untuk Kemajuan Kabupaten Boyolali
       </p>
 
-      <!-- TEKS BAWAH -->
-      <p class="mt-10 md:mt-20 text-3xl sm:text-4xl md:text-2xl text-black">
-        Ayo Berkenalan Dengan 
-        <span class="text-[#31717C] font-medium">SIKOBOY</span>
-      </p>
-
-      <div class="mx-auto mb-4 w-80 h-px bg-black/50"></div>
+      <!-- TEKS BAWAH removed here (rendered absolutely below to avoid shifting layout) -->
 
     </div>
+
+    <!-- TEKS BAWAH: absolutely positioned so it appears lower without affecting layout -->
+    <div class="absolute left-0 right-0 bottom-10 md:bottom-20 z-20">
+      <div class="mx-auto max-w-6xl px-6 text-center">
+        <p class="text-3xl sm:text-4xl md:text-2xl text-black">
+          Ayo Berkenalan Dengan
+          <span class="text-[#31717C] font-medium"> SIKOBOY</span>
+        </p>
+        <div class="mx-auto mt-2 w-80 h-px bg-black/50"></div>
+      </div>
+    </div>
+
   </section>
 </template>
 
