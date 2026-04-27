@@ -15,13 +15,13 @@
               </button>
             </div>
 
-            <select v-model="local.role" @change="onRoleChange" class="rounded-full px-3 py-2 text-sm">
+            <select v-model="local.role" @change="onRoleChange" class="rounded-full px-3 py-2 text-sm bg-white">
               <option value="">Semua Role</option>
               <option value="admin">Admin</option>
               <option value="mitra">Mitra</option>
             </select>
 
-            <button @click.prevent="openCreate" class="bg-white text-teal-800 px-4 py-2 rounded-full text-sm">+ Tambah Pengguna</button>
+            <button @click.prevent="openCreate" class="bg-teal-400 text-white px-4 py-2 rounded-full text-sm">+ Tambah Pengguna</button>
             <button @click.prevent="resetFilters" title="Reset filters" class="ml-2 bg-white/20 text-white px-3 py-2 rounded-full text-sm">Reset</button>
           </div>
         </div>

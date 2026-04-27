@@ -2,7 +2,6 @@
 import { ref } from 'vue';
 import { useForm, Link, usePage } from '@inertiajs/vue3';
 import Header from '@/Components/Header.vue';
-import Footer from '@/Components/Footer.vue';
 
 const page = usePage();
 const props = defineProps({

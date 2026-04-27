@@ -16,7 +16,7 @@
             <div
                 class="mt-10 md:mt-12 space-y-4 md:space-y-5 text-gray-700 leading-relaxed text-sm sm:text-base md:text-base"
             >
-                <p class="text-justify max-w-4xl mx-auto">
+                <p class="text-center max-w-4xl mx-auto">
                     <strong class="text-[#17464E]">SIKOBOY</strong> (Sistem
                     Kolaboratif Boyolali) merupakan sistem informasi berbasis
                     web yang dikembangkan oleh Sekretariat Daerah Kabupaten
@@ -28,7 +28,7 @@
                     dengan berbagai mitra.
                 </p>
 
-                <p class="text-justify max-w-4xl mx-auto">
+                <p class="text-center max-w-4xl mx-auto">
                     Pengembangan SIKOBOY dilatarbelakangi oleh kebutuhan akan
                     sistem pengelolaan dokumen kerja sama yang lebih tertib dan
                     terpusat. Sebelumnya, dokumen kerja sama masih tersimpan
@@ -37,7 +37,7 @@
                     sering memerlukan waktu yang cukup lama.
                 </p>
 
-                <p class="text-justify max-w-4xl mx-auto">
+                <p class="text-center max-w-4xl mx-auto">
                     Melalui SIKOBOY, seluruh data dan dokumen kerja sama dapat
                     disimpan dalam satu sistem yang terintegrasi. Sistem ini
                     memungkinkan proses pengarsipan dokumen, pencarian data
@@ -45,7 +45,7 @@
                     secara lebih cepat dan efisien.
                 </p>
 
-                <p class="text-justify max-w-4xl mx-auto">
+                <p class="text-center max-w-4xl mx-auto">
                     Dengan hadirnya SIKOBOY, diharapkan pengelolaan kerja sama
                     daerah di Kabupaten Boyolali dapat berjalan lebih efektif,
                     transparan, dan tertata dengan baik, sekaligus mendukung

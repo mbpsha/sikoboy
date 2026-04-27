@@ -11,7 +11,7 @@
       </div>
 
       <!-- CONTENT -->
-      <p class="mt-10 md:mt-6 text-gray-700 leading-relaxed text-sm sm:text-base md:text-base text-justify max-w-4xl mx-auto">
+      <p class="mt-10 md:mt-6 text-gray-700 leading-relaxed text-sm sm:text-base md:text-base text-center max-w-4xl mx-auto">
         Mewujudkan platform website pengelolaan kerja sama daerah yang terintegrasi, transparan, dan efisien guna mendukung tata kelola pemerintahan yang modern di Kabupaten Boyolali.
       </p>
 
