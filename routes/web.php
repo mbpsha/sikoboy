@@ -16,6 +16,7 @@ use App\Http\Controllers\Mitra\DashboardController as MitraDashboardController;
 use App\Http\Controllers\Mitra\KerjasamaController as MitraKerjasamaController;
 use App\Http\Controllers\Mitra\ProfileController as MitraProfileController;
 use App\Http\Controllers\TemplateDokumenController;
+use App\Models\Peraturan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -27,12 +28,15 @@ Route::get('/', fn () => Inertia::render('Welcome'))->name('home');
 // Public pages
 Route::get('/about', fn () => Inertia::render('About'))->name('about');
 Route::get('/kontak', fn () => Inertia::render('Kontak'))->name('kontak');
-Route::get('/peraturan', fn () => Inertia::render('Peraturan'))->name('peraturan');
+Route::get('/peraturan', function () {
+    return Inertia::render('Peraturan', [
+        'peraturans' => Peraturan::latest()->get(),
+    ]);
+})->name('peraturan');
 Route::get('/dokumen', fn () => Inertia::render('Dokumen'))->name('dokumen.index');
 
 // Public pages
 Route::get('/about', fn () => Inertia::render('About'))->name('about');
-Route::get('/peraturan', fn () => Inertia::render('Peraturan'))->name('peraturan');
 Route::get('/dokumen', fn () => Inertia::render('Dokumen'))->name('dokumen');
 Route::get('/kontak', fn () => Inertia::render('Kontak'))->name('kontak');
 
@@ -257,6 +261,19 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
         ->name('manajemen-dokumen.preview');
     Route::delete('/manajemen-dokumen/{id}', [ManajemenDokumenController::class, 'destroy'])
         ->name('manajemen-dokumen.destroy');
+
+    // Manajemen Peraturan
+    Route::get('/manajemen-peraturan', [\App\Http\Controllers\Admin\PeraturanController::class, 'index'])
+        ->name('manajemen-peraturan.index');
+
+    Route::post('/manajemen-peraturan', [\App\Http\Controllers\Admin\PeraturanController::class, 'store'])
+        ->name('manajemen-peraturan.store');
+
+    Route::post('/manajemen-peraturan/{peraturan}', [\App\Http\Controllers\Admin\PeraturanController::class, 'update'])
+        ->name('manajemen-peraturan.update');
+
+    Route::delete('/manajemen-peraturan/{peraturan}', [\App\Http\Controllers\Admin\PeraturanController::class, 'destroy'])
+        ->name('manajemen-peraturan.destroy');
 
     // Legacy partner routes (kept for backward compatibility)
     Route::get('/partners', [AdminDashboardController::class, 'partners'])
