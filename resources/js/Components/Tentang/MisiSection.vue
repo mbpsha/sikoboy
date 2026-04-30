@@ -11,7 +11,7 @@
       </div>
 
       <!-- CONTENT -->
-      <ol class="mt-10 md:mt-6 list-decimal pl-6 md:pl-5 space-y-3 md:space-y-4 text-gray-700 leading-relaxed text-sm sm:text-base md:text-base">
+      <ol class="mt-10 md:mt-6 list-decimal pl-6 md:pl-5 space-y-3 md:space-y-4 text-gray-700 leading-relaxed text-sm sm:text-base md:text-base text-justify">
 
         <li class="pl-1">
           Menyediakan website terpusat untuk pengelolaan dan pengarsipan dokumen kerja sama daerah secara digital dan terstruktur.

@@ -93,6 +93,8 @@ class DatabaseSeeder extends Seeder
 
         // Seed kategori kerjasama templates
         $this->call(KategoriKerjasamaSeeder::class);
+        // Backfill template_dokumen from legacy file_template data
+        $this->call(TemplateDokumenSeeder::class);
         // Seed riwayat kerjasama
         $this->call(RiwayatKerjasamaSeeder::class);
     }

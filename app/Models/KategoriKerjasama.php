@@ -21,4 +21,9 @@ class KategoriKerjasama extends Model
         'deskripsi',
         'file_template',
     ];
+
+    public function templates()
+    {
+        return $this->hasMany(TemplateDokumen::class, 'id_kategori', 'id_kategori');
+    }
 }

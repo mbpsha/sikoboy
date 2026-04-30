@@ -1,8 +1,6 @@
 <script setup>
 import { ref, onMounted } from 'vue';
-import { usePage, useForm, Link } from '@inertiajs/vue3';
-import Header from '@/Components/Header.vue';
-import Footer from '@/Components/Footer.vue';
+import { usePage, useForm, Link, router } from '@inertiajs/vue3';
 
 const page = usePage();
 const mitra = page.props.value?.mitra;
@@ -21,14 +19,32 @@ const passwordForm = useForm({
   new_password_confirmation: '',
 });
 
+// show/hide toggles for password fields
+const showCurrent = ref(false)
+const showNew = ref(false)
+const showConfirm = ref(false)
+
 const updateProfile = () => {
   form.put(route('mitra.profile.update'), {
+    onSuccess: () => {
+      // show confirmation then redirect to mitra portal/profile
+      try {
+        alert('Perubahan informasi akun disimpan')
+      } catch (e) {}
+      try { router.visit(route('mitra.profile.index')) } catch (e) { window.location.href = '/mitra/profile' }
+    },
     onFinish: () => form.reset(),
   });
 };
 
 const updatePassword = () => {
   passwordForm.put(route('mitra.profile.password'), {
+    onSuccess: () => {
+      try {
+        alert('Password berhasil diubah')
+      } catch (e) {}
+      try { router.visit(route('mitra.profile.index')) } catch (e) { window.location.href = '/mitra/profile' }
+    },
     onFinish: () => {
       passwordForm.reset();
       showPasswordForm.value = false;
@@ -50,7 +66,7 @@ onMounted(() => {
     <main class="flex-1 pt-24 pb-8 px-6">
       <div class="max-w-4xl mx-auto">
         <!-- Title Section -->
-        <div class="mb-8">
+        <div class="mb-8 gap-3 ">
           <Link :href="route('mitra.profile.index')" class="flex items-center gap-2 text-[#17464E] hover:text-[#0f3238] mb-4">
             <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
               <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 111.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
@@ -171,13 +187,19 @@ onMounted(() => {
               <label for="current_password" class="block text-sm font-semibold text-[#17464E] mb-2">
                 Password Saat Ini
               </label>
-              <input
-                v-model="passwordForm.current_password"
-                id="current_password"
-                type="password"
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#17464E] focus:border-transparent"
-                placeholder="Masukkan password saat ini"
-              />
+              <div class="relative">
+                <input
+                  v-model="passwordForm.current_password"
+                  id="current_password"
+                  :type="showCurrent ? 'text' : 'password'"
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#17464E] focus:border-transparent"
+                  placeholder="Masukkan password saat ini"
+                />
+                <button type="button" @click="showCurrent = !showCurrent" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">
+                  <svg v-if="!showCurrent" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>
+                  <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.94 10.94 0 0112 20c-7 0-11-8-11-8a21.33 21.33 0 014.11-5.11"/><path d="M1 1l22 22"/></svg>
+                </button>
+              </div>
               <p v-if="passwordForm.errors.current_password" class="text-red-500 text-sm mt-1">
                 {{ passwordForm.errors.current_password }}
               </p>
@@ -188,13 +210,19 @@ onMounted(() => {
               <label for="new_password" class="block text-sm font-semibold text-[#17464E] mb-2">
                 Password Baru
               </label>
-              <input
-                v-model="passwordForm.new_password"
-                id="new_password"
-                type="password"
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#17464E] focus:border-transparent"
-                placeholder="Masukkan password baru (minimal 8 karakter)"
-              />
+              <div class="relative">
+                <input
+                  v-model="passwordForm.new_password"
+                  id="new_password"
+                  :type="showNew ? 'text' : 'password'"
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#17464E] focus:border-transparent"
+                  placeholder="Masukkan password baru (minimal 8 karakter)"
+                />
+                <button type="button" @click="showNew = !showNew" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">
+                  <svg v-if="!showNew" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>
+                  <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.94 10.94 0 0112 20c-7 0-11-8-11-8a21.33 21.33 0 014.11-5.11"/><path d="M1 1l22 22"/></svg>
+                </button>
+              </div>
               <p v-if="passwordForm.errors.new_password" class="text-red-500 text-sm mt-1">
                 {{ passwordForm.errors.new_password }}
               </p>
@@ -205,13 +233,19 @@ onMounted(() => {
               <label for="new_password_confirmation" class="block text-sm font-semibold text-[#17464E] mb-2">
                 Konfirmasi Password Baru
               </label>
-              <input
-                v-model="passwordForm.new_password_confirmation"
-                id="new_password_confirmation"
-                type="password"
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#17464E] focus:border-transparent"
-                placeholder="Konfirmasi password baru"
-              />
+              <div class="relative">
+                <input
+                  v-model="passwordForm.new_password_confirmation"
+                  id="new_password_confirmation"
+                  :type="showConfirm ? 'text' : 'password'"
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#17464E] focus:border-transparent"
+                  placeholder="Konfirmasi password baru"
+                />
+                <button type="button" @click="showConfirm = !showConfirm" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">
+                  <svg v-if="!showConfirm" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>
+                  <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.94 10.94 0 0112 20c-7 0-11-8-11-8a21.33 21.33 0 014.11-5.11"/><path d="M1 1l22 22"/></svg>
+                </button>
+              </div>
               <p v-if="passwordForm.errors.new_password_confirmation" class="text-red-500 text-sm mt-1">
                 {{ passwordForm.errors.new_password_confirmation }}
               </p>

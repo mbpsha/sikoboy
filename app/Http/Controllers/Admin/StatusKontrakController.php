@@ -7,8 +7,10 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\UpdatePersetujuanRequest;
 use App\Http\Requests\Admin\UpdateStatusKontrakRequest;
 use App\Models\Kerjasama;
+use App\Models\RiwayatStatus;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class StatusKontrakController extends Controller
@@ -59,8 +61,23 @@ class StatusKontrakController extends Controller
     public function updatePersetujuan(int $id, UpdatePersetujuanRequest $request)
     {
         $kerjasama = Kerjasama::mitraTipe()->where('is_finalized', false)->findOrFail($id);
+        $validated = $request->validated();
+        $adminId = (int) $request->user()->admin->id_admin;
+        $catatanPersetujuan = $validated['catatan_persetujuan'] ?? null;
 
-        $kerjasama->update($request->validated());
+        DB::transaction(function () use ($kerjasama, $validated, $adminId, $catatanPersetujuan): void {
+            $kerjasama->update([
+                'status_persetujuan' => $validated['status_persetujuan'],
+                'catatan_persetujuan' => $catatanPersetujuan,
+            ]);
+
+            RiwayatStatus::recordStatus(
+                idKerjasama: (int) $kerjasama->id_kerjasama,
+                jenisStatus: $validated['status_persetujuan'],
+                idAdmin: $adminId,
+                catatan: $catatanPersetujuan,
+            );
+        });
 
         return back()->with('success', 'Status persetujuan berhasil diperbarui.');
     }
@@ -68,14 +85,24 @@ class StatusKontrakController extends Controller
     /**
      * Mark a kontrak as finalised — it will then appear in Riwayat Kerjasama (mitra).
      */
-    public function finalize(int $id)
+    public function finalize(int $id, Request $request)
     {
         $kerjasama = Kerjasama::mitraTipe()->where('is_finalized', false)->findOrFail($id);
+        $adminId = (int) $request->user()->admin->id_admin;
 
-        $kerjasama->update([
-            'is_finalized' => true,
-            'status_persetujuan' => StatusPersetujuan::Disetujui,
-        ]);
+        DB::transaction(function () use ($kerjasama, $adminId): void {
+            $kerjasama->update([
+                'is_finalized' => true,
+                'status_persetujuan' => StatusPersetujuan::Disetujui,
+            ]);
+
+            RiwayatStatus::recordStatus(
+                idKerjasama: (int) $kerjasama->id_kerjasama,
+                jenisStatus: StatusPersetujuan::Disetujui->value,
+                idAdmin: $adminId,
+                catatan: 'Finalisasi kontrak',
+            );
+        });
 
         return back()->with('success', 'Kontrak berhasil difinalisasi dan masuk ke Riwayat Kerjasama.');
     }
