@@ -22,25 +22,27 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
 
+// ========================================
+// PUBLIC ROUTES
+// ========================================
+
 // Home / Welcome
 Route::get('/', fn () => Inertia::render('Welcome'))->name('home');
 
-// Public pages
+// About
 Route::get('/about', fn () => Inertia::render('About'))->name('about');
+
+// Kontak
 Route::get('/kontak', fn () => Inertia::render('Kontak'))->name('kontak');
+
+// Peraturan
 Route::get('/peraturan', function () {
     return Inertia::render('Peraturan', [
         'peraturans' => Peraturan::latest()->get(),
     ]);
 })->name('peraturan');
-Route::get('/dokumen', fn () => Inertia::render('Dokumen'))->name('dokumen.index');
 
-// Public pages
-Route::get('/about', fn () => Inertia::render('About'))->name('about');
-Route::get('/dokumen', fn () => Inertia::render('Dokumen'))->name('dokumen');
-Route::get('/kontak', fn () => Inertia::render('Kontak'))->name('kontak');
-
-// Dokumen page
+// Dokumen (dengan data kategori)
 Route::get('/dokumen', function () {
     $kategoris = DB::table('kategori_kerjasama')->get()->map(function ($k) {
         $file = $k->file_template ?? '';
@@ -57,6 +59,7 @@ Route::get('/dokumen', function () {
     return Inertia::render('Dokumen', ['kategoris' => $kategoris]);
 })->name('dokumen');
 
+// Template Dokumen
 Route::get('/template-dokumen', [TemplateDokumenController::class, 'index'])
     ->name('template-dokumen.index');
 Route::get('/template-dokumen/{id}/download', [TemplateDokumenController::class, 'download'])
@@ -64,9 +67,11 @@ Route::get('/template-dokumen/{id}/download', [TemplateDokumenController::class,
 Route::get('/template-dokumen/{id}/preview', [TemplateDokumenController::class, 'preview'])
     ->name('template-dokumen.preview');
 
-// Kontak page
-Route::get('/kontak', fn() => Inertia::render('Kontak'))->name('kontak');
+// ========================================
+// AUTHENTICATION ROUTES
+// ========================================
 
+// Portal redirect
 Route::middleware('auth')->get('/portal-mitra', function (Request $request) {
     return match ($request->user()?->role) {
         'admin' => redirect()->route('admin.dashboard'),
@@ -75,7 +80,7 @@ Route::middleware('auth')->get('/portal-mitra', function (Request $request) {
     };
 })->name('portal-mitra');
 
-// Role Selection & Authentication
+// Login
 Route::get('/role-selection', fn () => redirect()->route('login'))->name('login.select');
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
 Route::get('/login/{role}', fn () => redirect()->route('login'))
@@ -92,7 +97,7 @@ Route::post('/register', [RegisterController::class, 'register'])
     ->middleware('throttle:5,1')
     ->name('register.attempt');
 
-// Password Reset Routes
+// Password Reset
 Route::get('/forgot-password', [ForgotPasswordController::class, 'showLinkRequestForm'])
     ->name('password.request');
 Route::post('/forgot-password', [ForgotPasswordController::class, 'sendResetLinkEmail'])
@@ -103,11 +108,7 @@ Route::get('/reset-password/{token}', [ResetPasswordController::class, 'showRese
 Route::post('/reset-password', [ResetPasswordController::class, 'reset'])
     ->name('password.update');
 
-Route::get('/dev/verify-email', function () {
-    return Inertia::render('Auth/VerifyEmail');
-});
-
-// Email Verification Routes
+// Email Verification
 Route::middleware('auth')->group(function () {
     Route::get('/email/verify', [VerificationController::class, 'notice'])
         ->name('verification.notice');
@@ -119,7 +120,15 @@ Route::middleware('auth')->group(function () {
         ->name('verification.send');
 });
 
-// Authenticated user profile (renders resources/js/Pages/Profile/UserProfil.vue)
+// Dev: Verify Email Page
+Route::get('/dev/verify-email', function () {
+    return Inertia::render('Auth/VerifyEmail');
+});
+
+// ========================================
+// AUTHENTICATED USER PROFILE
+// ========================================
+
 Route::middleware('auth')->get('/profile', function (Request $request) {
     $user = $request->user();
     return Inertia::render('Profile/UserProfil', [
@@ -128,23 +137,27 @@ Route::middleware('auth')->get('/profile', function (Request $request) {
     ]);
 })->name('profile.show');
 
-// Partner (Mitra) Routes
+// ========================================
+// MITRA ROUTES
+// ========================================
+
 Route::middleware(['auth', 'role:mitra'])->prefix('mitra')->name('mitra.')->group(function () {
+    // Dashboard
     Route::get('/dashboard', [MitraDashboardController::class, 'index'])
         ->name('dashboard');
 
+    // Kerjasama
     Route::get('/kerjasama', [MitraKerjasamaController::class, 'index'])
         ->middleware('throttle:120,1')
         ->name('kerjasama.index');
     Route::post('/kerjasama', [MitraKerjasamaController::class, 'store'])
         ->name('kerjasama.store');
 
+    // Profile
     Route::get('/profile/complete', [MitraProfileController::class, 'completeProfile'])
         ->name('profile.complete');
     Route::post('/profile/complete', [MitraProfileController::class, 'storeProfile'])
         ->name('profile.store');
-
-    // Profile routes
     Route::get('/profile', [MitraProfileController::class, 'index'])
         ->name('profile.index');
     Route::get('/profile/edit', [MitraProfileController::class, 'edit'])
@@ -165,37 +178,32 @@ Route::middleware(['auth', 'role:mitra'])->prefix('mitra')->name('mitra.')->grou
         ->name('pengajuan.store');
 });
 
-// Admin Routes
-Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
+// ========================================
+// ADMIN ROUTES
+// ========================================
 
+Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
+    
     // Dashboard
     Route::get('/dashboard', [AdminDashboardController::class, 'index'])
         ->name('dashboard');
 
-    // Users
+    // Pengguna (Users) - Gunakan prefix 'pengguna' untuk konsistensi
     Route::get('/pengguna', [AdminUserController::class, 'index'])
         ->middleware('throttle:120,1')
         ->name('pengguna.index');
     Route::post('/pengguna', [AdminUserController::class, 'store'])
         ->name('pengguna.store');
+    Route::get('/pengguna/{id}', [AdminUserController::class, 'show'])
+        ->name('pengguna.show');
     Route::put('/pengguna/{id}', [AdminUserController::class, 'update'])
         ->name('pengguna.update');
     Route::put('/pengguna/{id}/verify', [AdminUserController::class, 'verifyMitra'])
         ->name('pengguna.verify');
+    Route::delete('/pengguna/{id}', [AdminUserController::class, 'destroy'])
+        ->name('pengguna.destroy');
 
-    Route::get('/users', [AdminUserController::class, 'index'])
-        ->middleware('throttle:120,1')
-        ->name('users.index');
-    Route::post('/users', [AdminUserController::class, 'store'])
-        ->name('users.store');
-    Route::put('/users/{id}', [AdminUserController::class, 'update'])
-        ->name('users.update');
-    Route::put('/users/{id}/verify', [AdminUserController::class, 'verifyMitra'])
-        ->name('users.verify');
-    Route::get('/users/{id}', [AdminUserController::class, 'show'])
-        ->name('users.show');
-
-    // Status Kontrak (mitra kerjasama in negotiation)
+    // Status Kontrak
     Route::get('/status-kontrak', [StatusKontrakController::class, 'index'])
         ->middleware('throttle:120,1')
         ->name('status-kontrak.index');
@@ -206,15 +214,13 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::put('/status-kontrak/{id}/finalize', [StatusKontrakController::class, 'finalize'])
         ->name('status-kontrak.finalize');
 
-    // Riwayat Kerjasama — Mitra (finalised)
+    // Riwayat Kerjasama
     Route::get('/riwayat-kerjasama', [RiwayatKerjasamaController::class, 'mitra'])
         ->middleware('throttle:120,1')
         ->name('riwayat-kerjasama.index');
     Route::get('/riwayat-kerjasama/mitra', [RiwayatKerjasamaController::class, 'mitra'])
         ->middleware('throttle:120,1')
         ->name('riwayat-kerjasama.mitra');
-
-    // Riwayat Kerjasama — Pemerintah Boyolali
     Route::get('/riwayat-kerjasama/pemerintah', [RiwayatKerjasamaController::class, 'pemerintah'])
         ->middleware('throttle:120,1')
         ->name('riwayat-kerjasama.pemerintah');
@@ -223,7 +229,10 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::put('/riwayat-kerjasama/pemerintah/{id}', [RiwayatKerjasamaController::class, 'updatePemerintah'])
         ->name('riwayat-kerjasama.pemerintah.update');
 
-    // Data Kerjasama (combined view)
+    // Data Kerjasama
+    Route::get('/data-kerjasama', [DataKerjasamaController::class, 'index'])
+        ->middleware('throttle:120,1')
+        ->name('data-kerjasama.index');
     Route::get('/data-kerjasama/pemda', [DataKerjasamaController::class, 'index'])
         ->middleware('throttle:120,1')
         ->defaults('pemrakarsa', 'P')
@@ -232,9 +241,6 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
         ->middleware('throttle:120,1')
         ->defaults('pemrakarsa', 'M')
         ->name('data-kerjasama.mitra');
-    Route::get('/data-kerjasama', [DataKerjasamaController::class, 'index'])
-        ->middleware('throttle:120,1')
-        ->name('data-kerjasama.index');
     Route::post('/data-kerjasama', [DataKerjasamaController::class, 'store'])
         ->name('data-kerjasama.store');
 
@@ -265,17 +271,14 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     // Manajemen Peraturan
     Route::get('/manajemen-peraturan', [\App\Http\Controllers\Admin\PeraturanController::class, 'index'])
         ->name('manajemen-peraturan.index');
-
     Route::post('/manajemen-peraturan', [\App\Http\Controllers\Admin\PeraturanController::class, 'store'])
         ->name('manajemen-peraturan.store');
-
     Route::post('/manajemen-peraturan/{peraturan}', [\App\Http\Controllers\Admin\PeraturanController::class, 'update'])
         ->name('manajemen-peraturan.update');
-
     Route::delete('/manajemen-peraturan/{peraturan}', [\App\Http\Controllers\Admin\PeraturanController::class, 'destroy'])
         ->name('manajemen-peraturan.destroy');
 
-    // Legacy partner routes (kept for backward compatibility)
+    // Legacy routes (backward compatibility)
     Route::get('/partners', [AdminDashboardController::class, 'partners'])
         ->name('partners.index');
     Route::get('/partners/{id}', [AdminDashboardController::class, 'showPartner'])

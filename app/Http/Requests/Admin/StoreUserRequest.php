@@ -34,6 +34,15 @@ class StoreUserRequest extends FormRequest
                 'string',
                 'max:255',
             ],
+            // Allow admin to provide mitra identity when creating mitra users
+            'nama_perusahaan' => [
+                'nullable',
+                'string',
+                'max:255',
+            ],
+            'pic' => ['nullable', 'string', 'max:255'],
+            'no_handphone' => ['nullable', 'string', 'max:32'],
+            'alamat' => ['nullable', 'string', 'max:1000'],
         ];
     }
 }

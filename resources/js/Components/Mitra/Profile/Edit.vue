@@ -1,15 +1,18 @@
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import { usePage, useForm, Link, router } from '@inertiajs/vue3';
+import Swal from 'sweetalert2';
+import 'sweetalert2/dist/sweetalert2.min.css';
 
 const page = usePage();
-const mitra = page.props.value?.mitra;
+const mitra = computed(() => page.props.value?.mitra ?? page.props.mitra ?? null);
+const mode = page.props.value?.mode || 'edit';
 
 const form = useForm({
-  nama_perusahaan: mitra?.nama_perusahaan || '',
-  pic: mitra?.pic || '',
-  no_handphone: mitra?.no_handphone || '',
-  alamat: mitra?.alamat || '',
+  nama_perusahaan: '',
+  pic: '',
+  no_handphone: '',
+  alamat: '',
 });
 
 const showPasswordForm = ref(false);
@@ -25,11 +28,37 @@ const showNew = ref(false)
 const showConfirm = ref(false)
 
 const updateProfile = () => {
+  // If we're completing profile for the first time, use store route
+  if (mode === 'complete') {
+    form.post(route('mitra.profile.store'), {
+      onSuccess: () => {
+        try {
+          Swal.fire({
+            icon: 'success',
+            title: 'Profil lengkap',
+            text: 'Profil berhasil dilengkapi',
+            timer: 2000,
+            showConfirmButton: false,
+          });
+        } catch (e) {}
+        try { router.visit(route('mitra.profile.index')) } catch (e) { window.location.href = '/mitra/profile' }
+      },
+      onFinish: () => form.reset(),
+    });
+    return;
+  }
+
+  // Otherwise update existing mitra
   form.put(route('mitra.profile.update'), {
     onSuccess: () => {
-      // show confirmation then redirect to mitra portal/profile
       try {
-        alert('Perubahan informasi akun disimpan')
+        Swal.fire({
+          icon: 'success',
+          title: 'Tersimpan',
+          text: 'Perubahan informasi akun disimpan',
+          timer: 2000,
+          showConfirmButton: false,
+        });
       } catch (e) {}
       try { router.visit(route('mitra.profile.index')) } catch (e) { window.location.href = '/mitra/profile' }
     },
@@ -41,7 +70,13 @@ const updatePassword = () => {
   passwordForm.put(route('mitra.profile.password'), {
     onSuccess: () => {
       try {
-        alert('Password berhasil diubah')
+        Swal.fire({
+          icon: 'success',
+          title: 'Berhasil',
+          text: 'Password berhasil diubah',
+          timer: 2000,
+          showConfirmButton: false,
+        });
       } catch (e) {}
       try { router.visit(route('mitra.profile.index')) } catch (e) { window.location.href = '/mitra/profile' }
     },
@@ -54,6 +89,23 @@ const updatePassword = () => {
 
 onMounted(() => {
   console.log('[Edit.vue] mounted — edit component mounted')
+  // Ensure form fields are prefilled from server-provided `mitra` data
+  if (mitra.value) {
+    form.nama_perusahaan = mitra.value.nama_perusahaan || '';
+    form.pic = mitra.value.pic || '';
+    form.no_handphone = mitra.value.no_handphone || '';
+    form.alamat = mitra.value.alamat || '';
+  }
+});
+
+// react to prop changes (in case Inertia updates props after mount)
+watch(mitra, (v) => {
+  if (v) {
+    form.nama_perusahaan = v.nama_perusahaan || '';
+    form.pic = v.pic || '';
+    form.no_handphone = v.no_handphone || '';
+    form.alamat = v.alamat || '';
+  }
 })
 </script>
 

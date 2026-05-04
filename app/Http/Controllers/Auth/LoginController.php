@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\Admin;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -33,20 +34,39 @@ class LoginController extends Controller
     public function login(Request $request)
     {
         $request->validate([
-            'email' => 'required|email',
+            'login' => 'required|string',
             'password' => 'required',
         ]);
 
-        $normalizedEmail = mb_strtolower(trim((string) $request->email));
-        $user = User::query()->whereRaw('LOWER(email) = ?', [$normalizedEmail])->first();
+        $loginVal = trim((string) $request->login);
+        $normalized = mb_strtolower($loginVal);
+
+        // Try email first (if user entered an email)
+        $user = null;
+        if (filter_var($loginVal, FILTER_VALIDATE_EMAIL)) {
+            $user = User::query()->whereRaw('LOWER(email) = ?', [$normalized])->first();
+        }
+
+        // If not found by email, try matching admin username (`admins.nama`) case-insensitively
+        if (! $user) {
+            $admin = Admin::query()->whereRaw('LOWER(nama) = ?', [$normalized])->first();
+            if ($admin) {
+                $user = $admin->user;
+            }
+        }
+
+        // As a final fallback, try matching email exactly (in case input wasn't validated as email)
+        if (! $user) {
+            $user = User::query()->whereRaw('LOWER(email) = ?', [$normalized])->first();
+        }
 
         if (!$user || !Hash::check($request->password, $user->password)) {
-            return back()->withErrors(['email' => 'Email atau password salah.']);
+            return back()->withErrors(['login' => 'Email/Username atau password salah.']);
         }
 
         if ($user->role === 'mitra' && ! $user->isMitraVerified()) {
             return back()->withErrors([
-                'email' => 'Akun mitra Anda belum diverifikasi admin.',
+                'login' => 'Akun mitra Anda belum diverifikasi admin.',
             ]);
         }
 
