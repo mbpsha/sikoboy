@@ -37,4 +37,9 @@ return [
 
     'default_admin_email' => env('SIKOBOY_DEFAULT_ADMIN_EMAIL', 'admin@sikoboy.go.id'),
 
+    'recaptcha' => [
+        'secret' => env('RECAPTCHA_SECRET'),
+        'site_key' => env('RECAPTCHA_SITE_KEY'),
+    ],
+
 ];

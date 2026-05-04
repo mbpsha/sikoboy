@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
 use Inertia\Inertia;
 
 class LoginController extends Controller
@@ -35,6 +36,7 @@ class LoginController extends Controller
         $request->validate([
             'email' => 'required|email',
             'password' => 'required',
+            'g-recaptcha-response' => 'nullable|string',
         ]);
 
         $normalizedEmail = mb_strtolower(trim((string) $request->email));
@@ -42,6 +44,25 @@ class LoginController extends Controller
 
         if (!$user || !Hash::check($request->password, $user->password)) {
             return back()->withErrors(['email' => 'Email atau password salah.']);
+        }
+
+        if ($user->role === 'mitra') {
+            $captchaToken = (string) $request->input('g-recaptcha-response', '');
+            $captchaSecret = (string) config('services.recaptcha.secret');
+
+            // Verify CAPTCHA for mitra login.
+            $captchaResponse = Http::asForm()->timeout(5)->post(
+                'https://www.google.com/recaptcha/api/siteverify',
+                [
+                    'secret' => $captchaSecret,
+                    'response' => $captchaToken,
+                    'remoteip' => $request->ip(),
+                ]
+            )->json();
+
+            if (empty($captchaSecret) || empty($captchaResponse['success'])) {
+                return back()->withErrors(['email' => 'CAPTCHA gagal, coba lagi.']);
+            }
         }
 
         if ($user->role === 'mitra' && ! $user->isMitraVerified()) {
