@@ -73,26 +73,28 @@ class DashboardController extends Controller
             ->values();
 
         // ---------------------------------------------------------------
-        // Donut/Pie: jenis dokumen percentage
+        // Donut/Pie: kategori kerjasama percentage
         // ---------------------------------------------------------------
         $totalFinalized = $metrics['total_kerjasama'] ?: 1; // avoid division by zero
 
-        $jenisDokumen = Kerjasama::finalized()
-            ->whereNotNull('jenis_dokumen')
-            ->selectRaw('jenis_dokumen, COUNT(*) AS total')
-            ->groupBy('jenis_dokumen')
+        $kategoriKerjasama = Kerjasama::query()
+            ->finalized()
+            ->leftJoin('kategori_kerjasama as kk', 'kk.id_kategori', '=', 'kerjasama.id_kategori')
+            ->whereNotNull('kk.nama_kategori')
+            ->selectRaw('kk.nama_kategori as kategori, COUNT(*) AS total')
+            ->groupBy('kk.nama_kategori')
             ->get()
             ->map(fn($r) => [
-                'jenis_dokumen' => $r->jenis_dokumen,
-                'total'         => (int) $r->total,
-                'persentase'    => round($r->total / $totalFinalized * 100, 1),
+                'kategori' => $r->kategori,
+                'total' => (int) $r->total,
+                'persentase' => round($r->total / $totalFinalized * 100, 1),
             ])
             ->values();
 
         return Inertia::render('Admin/BerandaAdmin', [
             'metrics'          => $metrics,
             'kerjasama_per_tahun' => $kerjasamaPerTahun,
-            'jenis_dokumen'    => $jenisDokumen,
+            'kategori_kerjasama' => $kategoriKerjasama,
         ]);
     }
 

@@ -88,71 +88,42 @@ class UserController extends Controller
     }
 
     /**
-     * Create a new user (admin or mitra).
-     *
-     * Note: For role=mitra, this only creates the User account; the mitra profile
-     * will be completed by the user via the "Complete Profile" flow.
+     * Create a new user: either mitra (with full mitras row) or admin (with admins row).
      */
-public function store(StoreUserRequest $request)
-{
-    $validated = $request->validated();
+    public function store(StoreUserRequest $request)
+    {
+        $validated = $request->validated();
+        $plainPassword = $validated['password'] ?: Str::password(12);
 
-    $plainPassword = $validated['password'] ?: Str::password(12);
-
-    $user = User::create([
-        'email' => $validated['email'],
-        'password' => Hash::make($plainPassword),
-        'role' => $validated['role'],
-        'status_verifikasi' => 'disetujui',
-    ]);
-
-    if ($validated['role'] === 'admin') {
-        Admin::create([
-            'id_user' => $user->id_user,
-            'nama' => $validated['username'],
-            'divisi' => $validated['instansi'] ?? '',
-        ]);
-    }
-
-    if ($validated['role'] === 'mitra') {
-        $company = $validated['nama_perusahaan'] ?? $validated['instansi'] ?? '';
-        
-        Mitra::create([
-            'id_user' => $user->id_user,
-            'nama_perusahaan' => $company,
-            'pic' => $validated['pic'] ?? $validated['username'] ?? '',
-            'no_handphone' => $validated['no_handphone'] ?? '', // ← PERBAIKAN
-            'alamat' => $validated['alamat'] ?? '',             // ← PERBAIKAN
-        ]);
-    }
-
-    $response = back()->with('success', 'Pengguna berhasil ditambahkan.');
-
-    if (empty($validated['password'])) {
-        $response->with('generated_password', $plainPassword);
-    }
-
-    return $response;
-
-        // If admin creates a mitra user, store minimal mitra identity so 'instansi' column
-        // in the users listing shows the company name (`nama_perusahaan`). Prefer
-        // `nama_perusahaan` input; fall back to `instansi` if provided.
-        if ($validated['role'] === 'mitra') {
-            $company = $validated['nama_perusahaan'] ?? $validated['instansi'] ?? null;
-            Mitra::create([
-                'id_user' => $user->id_user,
-                'nama_perusahaan' => $company,
-                // DB requires `pic` not null in current schema — use a sensible fallback
-                // Prefer explicit `pic` input, then admin-provided username, then instansi, then empty string.
-                'pic' => $validated['pic'] ?? $validated['username'] ?? $validated['instansi'] ?? '',
-                'no_handphone' => $validated['no_handphone'] ?? null,
-                'alamat' => $validated['alamat'] ?? null,
+        DB::transaction(function () use ($validated, $plainPassword): void {
+            $user = User::create([
+                'email' => $validated['email'],
+                'password' => Hash::make($plainPassword),
+                'role' => $validated['role'],
+                'status_verifikasi' => 'disetujui',
             ]);
-        }
+
+            if ($validated['role'] === 'admin') {
+                Admin::create([
+                    'id_user' => $user->id_user,
+                    'nama' => $validated['username'],
+                    'divisi' => $validated['instansi'] ?? '',
+                ]);
+            }
+
+            if ($validated['role'] === 'mitra') {
+                Mitra::create([
+                    'id_user' => $user->id_user,
+                    'nama_perusahaan' => $validated['nama_perusahaan'],
+                    'pic' => $validated['pic'],
+                    'no_handphone' => $validated['no_handphone'],
+                    'alamat' => $validated['alamat'],
+                ]);
+            }
+        });
 
         $response = back()->with('success', 'Pengguna berhasil ditambahkan.');
 
-        // Only flash the generated password when admin did not provide one.
         if (empty($validated['password'])) {
             $response->with('generated_password', $plainPassword);
         }

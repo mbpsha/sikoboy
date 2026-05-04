@@ -7,6 +7,14 @@ use Illuminate\Validation\Rule;
 
 class StoreUserRequest extends FormRequest
 {
+    protected function prepareForValidation(): void
+    {
+        $password = $this->input('password');
+        if ($password === '' || $password === null) {
+            $this->merge(['password' => null]);
+        }
+    }
+
     public function authorize(): bool
     {
         return $this->user()?->role === 'admin';
@@ -21,28 +29,51 @@ class StoreUserRequest extends FormRequest
             // Optional: if omitted, backend will generate a random password.
             'password' => ['nullable', 'string', 'min:8', 'max:255'],
 
-            // Required for admin profile creation
+            // admins: nama + divisi (request fields: username, instansi)
             'username' => [
+                Rule::excludeIf(fn () => $this->input('role') !== 'admin'),
                 Rule::requiredIf(fn () => $this->input('role') === 'admin'),
                 'nullable',
                 'string',
                 'max:255',
             ],
             'instansi' => [
+                Rule::excludeIf(fn () => $this->input('role') !== 'admin'),
                 Rule::requiredIf(fn () => $this->input('role') === 'admin'),
                 'nullable',
                 'string',
                 'max:255',
             ],
-            // Allow admin to provide mitra identity when creating mitra users
+
+            // mitras: nama_perusahaan, pic, no_handphone, alamat
             'nama_perusahaan' => [
+                Rule::excludeIf(fn () => $this->input('role') !== 'mitra'),
+                Rule::requiredIf(fn () => $this->input('role') === 'mitra'),
                 'nullable',
                 'string',
                 'max:255',
             ],
-            'pic' => ['nullable', 'string', 'max:255'],
-            'no_handphone' => ['nullable', 'string', 'max:32'],
-            'alamat' => ['nullable', 'string', 'max:1000'],
+            'pic' => [
+                Rule::excludeIf(fn () => $this->input('role') !== 'mitra'),
+                Rule::requiredIf(fn () => $this->input('role') === 'mitra'),
+                'nullable',
+                'string',
+                'max:255',
+            ],
+            'no_handphone' => [
+                Rule::excludeIf(fn () => $this->input('role') !== 'mitra'),
+                Rule::requiredIf(fn () => $this->input('role') === 'mitra'),
+                'nullable',
+                'string',
+                'max:32',
+            ],
+            'alamat' => [
+                Rule::excludeIf(fn () => $this->input('role') !== 'mitra'),
+                Rule::requiredIf(fn () => $this->input('role') === 'mitra'),
+                'nullable',
+                'string',
+                'max:1000',
+            ],
         ];
     }
 }

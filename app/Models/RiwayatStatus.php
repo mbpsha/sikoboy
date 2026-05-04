@@ -28,6 +28,7 @@ class RiwayatStatus extends Model
         'id_status',
         'id_admin',
         'catatan',
+        'penanggung_jawab',
         'tanggal',
     ];
 
@@ -38,7 +39,8 @@ class RiwayatStatus extends Model
         int $idKerjasama,
         string $jenisStatus,
         int $idAdmin,
-        ?string $catatan = null
+        ?string $catatan = null,
+        ?string $penanggungJawab = null
     ): self {
         $status = Status::query()->firstOrCreate(['jenis_status' => $jenisStatus]);
         $riwayat = self::create([
@@ -46,6 +48,7 @@ class RiwayatStatus extends Model
             'id_status' => $status->id_status,
             'id_admin' => $idAdmin,
             'catatan' => $catatan ?? '-',
+            'penanggung_jawab' => $penanggungJawab,
             'tanggal' => now(),
         ]);
 

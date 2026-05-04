@@ -47,10 +47,22 @@ class StatusKontrakController extends Controller
     public function update(int $id, UpdateStatusKontrakRequest $request)
     {
         $kerjasama = Kerjasama::mitraTipe()->where('is_finalized', false)->findOrFail($id);
+        $admin = $request->user()->admin;
+        $penanggungJawab = trim(($admin->divisi ?? '').' - '.($admin->nama ?? ''));
+        $penanggungJawab = trim($penanggungJawab, ' -');
+        $statusNegosiasi = $request->validated('status_negosiasi');
 
         $kerjasama->update([
-            'status_negosiasi' => $request->validated('status_negosiasi'),
+            'status_negosiasi' => $statusNegosiasi,
         ]);
+
+        RiwayatStatus::recordStatus(
+            idKerjasama: (int) $kerjasama->id_kerjasama,
+            jenisStatus: 'proses',
+            idAdmin: (int) $admin->id_admin,
+            catatan: $statusNegosiasi,
+            penanggungJawab: $penanggungJawab !== '' ? $penanggungJawab : null,
+        );
 
         return back()->with('success', 'Status kontrak berhasil diperbarui.');
     }
@@ -62,10 +74,13 @@ class StatusKontrakController extends Controller
     {
         $kerjasama = Kerjasama::mitraTipe()->where('is_finalized', false)->findOrFail($id);
         $validated = $request->validated();
-        $adminId = (int) $request->user()->admin->id_admin;
+        $admin = $request->user()->admin;
+        $adminId = (int) $admin->id_admin;
+        $penanggungJawab = trim(($admin->divisi ?? '').' - '.($admin->nama ?? ''));
+        $penanggungJawab = trim($penanggungJawab, ' -');
         $catatanPersetujuan = $validated['catatan_persetujuan'] ?? null;
 
-        DB::transaction(function () use ($kerjasama, $validated, $adminId, $catatanPersetujuan): void {
+        DB::transaction(function () use ($kerjasama, $validated, $adminId, $catatanPersetujuan, $penanggungJawab): void {
             $kerjasama->update([
                 'status_persetujuan' => $validated['status_persetujuan'],
                 'catatan_persetujuan' => $catatanPersetujuan,
@@ -76,6 +91,7 @@ class StatusKontrakController extends Controller
                 jenisStatus: $validated['status_persetujuan'],
                 idAdmin: $adminId,
                 catatan: $catatanPersetujuan,
+                penanggungJawab: $penanggungJawab !== '' ? $penanggungJawab : null,
             );
         });
 

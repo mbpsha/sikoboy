@@ -19,16 +19,30 @@ const users = props.users
 const filters = props.filters
 const verifyingUserId = ref(null)
 
-// Create user modal + form
+// Tambah pengguna: dua alur terpisah (mitra / admin)
 const showCreateModal = ref(false)
-const createForm = useForm({
-  username: '',
-  email: '',
+const createType = ref(null) // 'mitra' | 'admin'
+
+const mitraForm = useForm({
   role: 'mitra',
-  nama_perusahaan: '', // ← UBAH dari instansi ke nama_perusahaan
+  email: '',
   password: '',
+  nama_perusahaan: '',
+  pic: '',
+  no_handphone: '',
+  alamat: '',
 })
-const showPassword = ref(false)
+
+const adminForm = useForm({
+  role: 'admin',
+  email: '',
+  password: '',
+  username: '',
+  instansi: '',
+})
+
+const showPasswordMitra = ref(false)
+const showPasswordAdmin = ref(false)
 
 // Detail modal state
 const showDetailModal = ref(false)
@@ -69,24 +83,35 @@ async function deleteUser(id) {
   }
 }
 
-function openCreate() {
+function openCreateMitra() {
+  createType.value = 'mitra'
+  mitraForm.clearErrors()
+  showCreateModal.value = true
+}
+
+function openCreateAdmin() {
+  createType.value = 'admin'
+  adminForm.clearErrors()
   showCreateModal.value = true
 }
 
 function closeCreate() {
   showCreateModal.value = false
-  createForm.reset()
+  createType.value = null
+  mitraForm.reset()
+  adminForm.reset()
 }
 
-function submitCreate() {
+function submitCreateMitra() {
   const url = (() => { try { return route('admin.pengguna.store') } catch (e) { return '/admin/pengguna' } })()
-  
+
   const missing = []
-  if (!createForm.username) missing.push('Nama / Username')
-  if (!createForm.email) missing.push('Email')
-  if (!createForm.role) missing.push('Role')
-  if (!createForm.nama_perusahaan) missing.push('Nama Perusahaan') // ← UBAH
-  if (!createForm.password) missing.push('Password')
+  if (!mitraForm.email) missing.push('Email')
+  if (!mitraForm.nama_perusahaan) missing.push('Nama perusahaan')
+  if (!mitraForm.pic) missing.push('PIC / Nama penanggung jawab')
+  if (!mitraForm.no_handphone) missing.push('No. HP')
+  if (!mitraForm.alamat) missing.push('Alamat')
+
   if (missing.length) {
     Swal.fire({
       icon: 'warning',
@@ -96,26 +121,76 @@ function submitCreate() {
     return
   }
 
-  createForm.post(url, {
+  mitraForm.post(url, {
+    preserveScroll: true,
     onSuccess: () => {
-      Swal.fire({ 
-        icon: 'success', 
-        title: 'Berhasil', 
-        text: 'Pengguna berhasil ditambahkan',
-        timer: 1500, 
-        showConfirmButton: false 
+      Swal.fire({
+        icon: 'success',
+        title: 'Berhasil',
+        text: 'Akun mitra berhasil ditambahkan',
+        timer: 1500,
+        showConfirmButton: false,
       })
       closeCreate()
-      try { router.visit(route('admin.pengguna.index')) } catch (e) { router.reload() }
+      try {
+        router.visit(route('admin.pengguna.index'))
+      } catch (e) {
+        router.reload()
+      }
     },
     onError: (errors) => {
-      console.error('Error creating user:', errors)
-      Swal.fire({ 
-        icon: 'error', 
-        title: 'Gagal', 
-        text: 'Terjadi kesalahan saat menyimpan data'
+      const first = Object.values(errors)[0]
+      Swal.fire({
+        icon: 'error',
+        title: 'Gagal menyimpan',
+        text: Array.isArray(first) ? first[0] : String(first ?? 'Periksa data yang dikirim.'),
       })
-    }
+    },
+  })
+}
+
+function submitCreateAdmin() {
+  const url = (() => { try { return route('admin.pengguna.store') } catch (e) { return '/admin/pengguna' } })()
+
+  const missing = []
+  if (!adminForm.email) missing.push('Email')
+  if (!adminForm.username) missing.push('Nama')
+  if (!adminForm.instansi) missing.push('Divisi')
+
+  if (missing.length) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Form belum lengkap',
+      html: `Silakan lengkapi: <strong>${missing.join(', ')}</strong>`,
+    })
+    return
+  }
+
+  adminForm.post(url, {
+    preserveScroll: true,
+    onSuccess: () => {
+      Swal.fire({
+        icon: 'success',
+        title: 'Berhasil',
+        text: 'Akun admin berhasil ditambahkan',
+        timer: 1500,
+        showConfirmButton: false,
+      })
+      closeCreate()
+      try {
+        router.visit(route('admin.pengguna.index'))
+      } catch (e) {
+        router.reload()
+      }
+    },
+    onError: (errors) => {
+      const first = Object.values(errors)[0]
+      Swal.fire({
+        icon: 'error',
+        title: 'Gagal menyimpan',
+        text: Array.isArray(first) ? first[0] : String(first ?? 'Periksa data yang dikirim.'),
+      })
+    },
   })
 }
 
@@ -194,7 +269,8 @@ function verifyMitra(id) {
               <option value="mitra">Mitra</option>
             </select>
 
-            <button @click.prevent="openCreate" class="bg-teal-400 text-white px-4 py-2 rounded-full text-sm">+ Tambah Pengguna</button>
+            <button type="button" @click.prevent="openCreateMitra" class="bg-teal-400 text-white px-4 py-2 rounded-full text-sm">+ Tambah Mitra</button>
+            <button type="button" @click.prevent="openCreateAdmin" class="bg-indigo-500 text-white px-4 py-2 rounded-full text-sm">+ Tambah Admin</button>
             <button @click.prevent="resetFilters" title="Reset filters" class="ml-2 bg-white/20 text-white px-3 py-2 rounded-full text-sm">Reset</button>
           </div>
         </div>
@@ -208,7 +284,7 @@ function verifyMitra(id) {
                   <th class="py-3 px-4 text-left">Username</th>
                   <th class="py-3 px-4 text-left">Email</th>
                   <th class="py-3 px-4 text-left">Role</th>
-                  <th class="py-3 px-4 text-left">Perusahaan</th>
+                  <th class="py-3 px-4 text-left">Perusahaan / Divisi</th>
                   <th class="py-3 px-4 text-left">Status</th>
                   <th class="py-3 px-4 text-left">Tanggal Daftar</th>
                   <th class="py-3 px-4 text-left rounded-r-md">Aksi</th>
@@ -274,85 +350,94 @@ function verifyMitra(id) {
           </div>
         </div>
 
-        <!-- Create User Modal -->
-        <div v-if="showCreateModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" @click.self="closeCreate">
-          <div class="bg-white rounded-xl shadow-lg w-full max-w-lg p-6">
-            <h3 class="text-xl font-bold mb-4">Tambah Pengguna</h3>
-            <div class="text-sm text-gray-500 mb-3">Semua field berikut wajib diisi.</div>
-            <form @submit.prevent="submitCreate" class="space-y-3">
+        <!-- Tambah Mitra -->
+        <div v-if="showCreateModal && createType === 'mitra'" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" @click.self="closeCreate">
+          <div class="bg-white rounded-xl shadow-lg w-full max-w-lg max-h-[90vh] overflow-y-auto p-6">
+            <h3 class="text-xl font-bold mb-1">Tambah Pengguna Mitra</h3>
+            <p class="text-sm text-gray-500 mb-4">Menyimpan akun login (users) beserta profil mitra (nama perusahaan, PIC, kontak, alamat).</p>
+            <form @submit.prevent="submitCreateMitra" class="space-y-3">
               <div>
-                <label class="text-sm font-medium">Nama / Username <span class="text-red-600">*</span></label>
-                <input v-model="createForm.username" class="w-full border rounded px-3 py-2" />
-                <p v-if="createForm.errors.username" class="text-red-500 text-sm">{{ createForm.errors.username }}</p>
+                <label class="text-sm font-medium">Email login <span class="text-red-600">*</span></label>
+                <input type="email" v-model="mitraForm.email" autocomplete="email" class="w-full border rounded px-3 py-2" />
+                <p v-if="mitraForm.errors.email" class="text-red-500 text-sm">{{ mitraForm.errors.email }}</p>
               </div>
-
               <div>
-                <label class="text-sm font-medium">Email <span class="text-red-600">*</span></label>
-                <input type="email" v-model="createForm.email" class="w-full border rounded px-3 py-2" />
-                <p v-if="createForm.errors.email" class="text-red-500 text-sm">{{ createForm.errors.email }}</p>
+                <label class="text-sm font-medium">Nama perusahaan <span class="text-red-600">*</span></label>
+                <input v-model="mitraForm.nama_perusahaan" class="w-full border rounded px-3 py-2" />
+                <p v-if="mitraForm.errors.nama_perusahaan" class="text-red-500 text-sm">{{ mitraForm.errors.nama_perusahaan }}</p>
               </div>
-
-              <div class="flex gap-2">
-                <div class="flex-1">
-                  <label class="text-sm font-medium">Role <span class="text-red-600">*</span></label>
-                  <select v-model="createForm.role" class="w-full border rounded px-3 py-2">
-                    <option value="mitra">Mitra</option>
-                    <option value="admin">Admin</option>
-                  </select>
-                  <p v-if="createForm.errors.role" class="text-red-500 text-sm">{{ createForm.errors.role }}</p>
-                </div>
-                <div class="flex-1">
-                  <label class="text-sm font-medium">Nama Perusahaan<span class="text-red-600">*</span></label>
-                  <input v-model="createForm.nama_perusahaan" class="w-full border rounded px-3 py-2" placeholder="Nama perusahaan" />
-                  <p v-if="createForm.errors.nama_perusahaan" class="text-red-500 text-sm">{{ createForm.errors.nama_perusahaan }}</p>
-                </div>
-              </div>
-
               <div>
-                <label class="text-sm font-medium">Password <span class="text-red-600">*</span></label>
+                <label class="text-sm font-medium">PIC (nama penanggung jawab) <span class="text-red-600">*</span></label>
+                <input v-model="mitraForm.pic" class="w-full border rounded px-3 py-2" />
+                <p v-if="mitraForm.errors.pic" class="text-red-500 text-sm">{{ mitraForm.errors.pic }}</p>
+              </div>
+              <div>
+                <label class="text-sm font-medium">No. handphone <span class="text-red-600">*</span></label>
+                <input v-model="mitraForm.no_handphone" class="w-full border rounded px-3 py-2" />
+                <p v-if="mitraForm.errors.no_handphone" class="text-red-500 text-sm">{{ mitraForm.errors.no_handphone }}</p>
+              </div>
+              <div>
+                <label class="text-sm font-medium">Alamat <span class="text-red-600">*</span></label>
+                <textarea v-model="mitraForm.alamat" rows="3" class="w-full border rounded px-3 py-2"></textarea>
+                <p v-if="mitraForm.errors.alamat" class="text-red-500 text-sm">{{ mitraForm.errors.alamat }}</p>
+              </div>
+              <div>
+                <label class="text-sm font-medium">Password <span class="text-gray-500 text-xs font-normal">(opsional, min. 8 karakter jika diisi)</span></label>
                 <div class="relative">
-                  <input :type="showPassword ? 'text' : 'password'" v-model="createForm.password" class="w-full border rounded px-3 py-2 pr-10" />
-                  <button
-                    type="button"
-                    @click="showPassword = !showPassword"
-                    class="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-600 px-2 py-1 rounded hover:text-gray-800"
-                  >
-                    <!-- OPEN EYE -->
-                    <svg v-if="showPassword" xmlns="http://www.w3.org/2000/svg"
-                      width="24" height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round">
-
-                      <path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z"/>
-                      <circle cx="12" cy="12" r="3"/>
-                    </svg>
-                    <!-- CLOSED EYE -->
-                    <svg v-else xmlns="http://www.w3.org/2000/svg"
-                      width="24" height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round">
-
-                      <path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z"/>
-                      <circle cx="12" cy="12" r="3"/>
-                      <line x1="1" y1="1" x2="23" y2="23"/>
-                    </svg>
+                  <input :type="showPasswordMitra ? 'text' : 'password'" v-model="mitraForm.password" autocomplete="new-password" class="w-full border rounded px-3 py-2 pr-10" />
+                  <button type="button" @click="showPasswordMitra = !showPasswordMitra" class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-600 p-1">
+                    <svg v-if="showPasswordMitra" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+                    <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>
                   </button>
                 </div>
-                <p v-if="createForm.errors.password" class="text-red-500 text-sm">{{ createForm.errors.password }}</p>
+                <p v-if="mitraForm.errors.password" class="text-red-500 text-sm">{{ mitraForm.errors.password }}</p>
               </div>
-
               <div class="flex gap-2 justify-end mt-4">
                 <button type="button" @click="closeCreate" class="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300">Batal</button>
-                <button type="submit" :disabled="createForm.processing" class="px-4 py-2 bg-teal-600 text-white rounded-md hover:bg-teal-700 disabled:opacity-50">
-                  {{ createForm.processing ? 'Menyimpan...' : 'Simpan' }}
+                <button type="submit" :disabled="mitraForm.processing" class="px-4 py-2 bg-teal-600 text-white rounded-md hover:bg-teal-700 disabled:opacity-50">
+                  {{ mitraForm.processing ? 'Menyimpan...' : 'Simpan' }}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Tambah Admin -->
+        <div v-if="showCreateModal && createType === 'admin'" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" @click.self="closeCreate">
+          <div class="bg-white rounded-xl shadow-lg w-full max-w-lg p-6">
+            <h3 class="text-xl font-bold mb-1">Tambah Pengguna Admin</h3>
+            <p class="text-sm text-gray-500 mb-4">Menyimpan akun login (users) beserta profil admin (nama dan divisi).</p>
+            <form @submit.prevent="submitCreateAdmin" class="space-y-3">
+              <div>
+                <label class="text-sm font-medium">Email login <span class="text-red-600">*</span></label>
+                <input type="email" v-model="adminForm.email" autocomplete="email" class="w-full border rounded px-3 py-2" />
+                <p v-if="adminForm.errors.email" class="text-red-500 text-sm">{{ adminForm.errors.email }}</p>
+              </div>
+              <div>
+                <label class="text-sm font-medium">Nama <span class="text-red-600">*</span></label>
+                <input v-model="adminForm.username" class="w-full border rounded px-3 py-2" placeholder="Nama lengkap admin" />
+                <p v-if="adminForm.errors.username" class="text-red-500 text-sm">{{ adminForm.errors.username }}</p>
+              </div>
+              <div>
+                <label class="text-sm font-medium">Divisi <span class="text-red-600">*</span></label>
+                <input v-model="adminForm.instansi" class="w-full border rounded px-3 py-2" placeholder="Nama divisi / bidang" />
+                <p v-if="adminForm.errors.instansi" class="text-red-500 text-sm">{{ adminForm.errors.instansi }}</p>
+              </div>
+              <div>
+                <label class="text-sm font-medium">Password <span class="text-gray-500 text-xs font-normal">(opsional, min. 8 karakter jika diisi)</span></label>
+                <div class="relative">
+                  <input :type="showPasswordAdmin ? 'text' : 'password'" v-model="adminForm.password" autocomplete="new-password" class="w-full border rounded px-3 py-2 pr-10" />
+                  <button type="button" @click="showPasswordAdmin = !showPasswordAdmin" class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-600 p-1">
+                    <svg v-if="showPasswordAdmin" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+                    <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>
+                  </button>
+                </div>
+                <p v-if="adminForm.errors.password" class="text-red-500 text-sm">{{ adminForm.errors.password }}</p>
+              </div>
+              <div class="flex gap-2 justify-end mt-4">
+                <button type="button" @click="closeCreate" class="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300">Batal</button>
+                <button type="submit" :disabled="adminForm.processing" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50">
+                  {{ adminForm.processing ? 'Menyimpan...' : 'Simpan' }}
                 </button>
               </div>
             </form>
@@ -371,6 +456,11 @@ function verifyMitra(id) {
               <div><strong>Nama:</strong> {{ selectedUser?.admin?.nama ?? selectedUser?.mitra?.pic ?? selectedUser?.display_name ?? '-' }}</div>
               <div><strong>Email:</strong> {{ selectedUser?.email ?? '-' }}</div>
               <div><strong>Role:</strong> {{ selectedUser?.role ?? '-' }}</div>
+              <div v-if="selectedUser?.role === 'admin' && selectedUser?.admin">
+                <h4 class="font-semibold mt-2">Data Admin</h4>
+                <div><strong>Nama:</strong> {{ selectedUser.admin.nama ?? '-' }}</div>
+                <div><strong>Divisi:</strong> {{ selectedUser.admin.divisi ?? '-' }}</div>
+              </div>
               <div v-if="selectedUser?.mitra?.nama_perusahaan"><strong>Nama Perusahaan:</strong> {{ selectedUser.mitra.nama_perusahaan }}</div>
               <div v-if="selectedUser?.mitra">
                 <h4 class="font-semibold mt-2">Data Mitra</h4>
