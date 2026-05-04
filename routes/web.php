@@ -27,20 +27,14 @@ Route::get('/', fn() => Inertia::render('Welcome'))->name('home');
 
 // Public pages
 Route::get('/about', fn() => Inertia::render('About'))->name('about');
-Route::get('/kontak', fn() => Inertia::render('Kontak'))->name('kontak');
+
 Route::get('/peraturan', function () {
     return Inertia::render('Peraturan', [
         'peraturans' => Peraturan::latest()->get(),
     ]);
 })->name('peraturan');
-Route::get('/dokumen', fn() => Inertia::render('Dokumen'))->name('dokumen.index');
 
-// Public pages
-Route::get('/about', fn() => Inertia::render('About'))->name('about');
-Route::get('/dokumen', fn() => Inertia::render('Dokumen'))->name('dokumen');
-Route::get('/kontak', fn() => Inertia::render('Kontak'))->name('kontak');
-
-// Dokumen page
+// Dokumen page (detailed with categories)
 Route::get('/dokumen', function () {
     $kategoris = DB::table('kategori_kerjasama')->get()->map(function ($k) {
         $file = $k->file_template ?? '';
@@ -64,7 +58,6 @@ Route::get('/template-dokumen/{id}/download', [TemplateDokumenController::class,
 Route::get('/template-dokumen/{id}/preview', [TemplateDokumenController::class, 'preview'])
     ->name('template-dokumen.preview');
 
-// Kontak page
 Route::get('/kontak', fn() => Inertia::render('Kontak'))->name('kontak');
 
 Route::middleware('auth')->get('/portal-mitra', function (Request $request) {
