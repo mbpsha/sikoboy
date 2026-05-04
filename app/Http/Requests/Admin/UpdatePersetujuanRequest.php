@@ -15,9 +15,9 @@ class UpdatePersetujuanRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'status_persetujuan'  => ['required', Rule::in(['disetujui', 'revisi', 'ditolak'])],
+            'status_persetujuan'  => ['required', Rule::in(['disetujui', 'revisi', 'dibatalkan'])],
             'catatan_persetujuan' => [
-                Rule::requiredIf(fn() => in_array($this->status_persetujuan, ['revisi', 'ditolak'])),
+                Rule::requiredIf(fn() => in_array($this->status_persetujuan, ['revisi', 'dibatalkan'])),
                 'nullable',
                 'string',
                 'max:1000',
@@ -28,7 +28,7 @@ class UpdatePersetujuanRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'catatan_persetujuan.required' => 'Catatan wajib diisi untuk status revisi atau ditolak.',
+            'catatan_persetujuan.required' => 'Catatan wajib diisi untuk status revisi atau dibatalkan.',
         ];
     }
 }

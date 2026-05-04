@@ -56,7 +56,7 @@ class StatusKontrakController extends Controller
     }
 
     /**
-     * Update the approval status (disetujui / revisi / ditolak) with optional catatan.
+     * Update the approval status (disetujui / revisi / dibatalkan) with optional catatan.
      */
     public function updatePersetujuan(int $id, UpdatePersetujuanRequest $request)
     {

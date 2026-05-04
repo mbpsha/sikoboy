@@ -45,16 +45,16 @@
                     <!-- EMAIL -->
                     <div>
                         <p class="text-center mb-2 font-semibold text-xl">
-                            Email
+                            Email/Username
                         </p>
                         <input
-                            type="email"
-                            v-model="form.email"
-                            placeholder="nama@gmail.com"
+                            type="text"
+                            v-model="form.login"
+                            placeholder="email/username"
                             class="w-full pl-3 pr-3 py-2 rounded bg-white text-black text-center placeholder:text-center border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#0C505C]/40 focus:border-[#0C505C] transition duration-200"
                         />
-                        <p v-if="form.errors.email" class="text-red-400 text-sm mt-1 text-left">
-                            {{ form.errors.email }}
+                        <p v-if="form.errors.login" class="text-red-400 text-sm mt-1 text-left">
+                            {{ form.errors.login }}
                         </p>
                     </div>
 
@@ -117,7 +117,7 @@ const goRegister = () => {
 };
 
 const form = useForm({
-    email: "",
+    login: "",
     password: "",
 });
 

@@ -32,11 +32,15 @@ class HandleInertiaRequests extends Middleware
         return [
             ...parent::share($request),
             'auth' => [
+                // Only share minimal identity info: username and role (plus id/email)
                 'user' => $request->user() ? [
                     'id' => $request->user()->id_user,
                     'email' => $request->user()->email,
                     'role' => $request->user()->role,
-                    'display_name' => $request->user()->display_name,
+                    // username: prefer admin.nama, then mitra.pic, then email local part
+                    'username' => $request->user()->admin?->nama
+                        ?? $request->user()->mitra?->pic
+                        ?? preg_replace('/@.*$/', '', $request->user()->email),
                 ] : null,
             ],
             'flash' => [

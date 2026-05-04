@@ -122,7 +122,7 @@ class StatusKontrakControllerTest extends TestCase
             'pemrakarsa' => 'M',
             'tipe' => 'mitra',
             'jenis_kerjasama' => 'PKS',
-            'jenis_dokumen' => 'PDF',
+            'jenis_dokumen' => 'PKS',
             'nama_pihak_luar' => 'PT Mitra Status',
             'is_finalized' => false,
             'status_negosiasi' => 'direview',

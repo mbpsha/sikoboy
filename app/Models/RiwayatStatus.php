@@ -12,7 +12,7 @@ class RiwayatStatus extends Model
     /**
      * @var array<int, string>
      */
-    public const SNAPSHOT_SYNCABLE_STATUSES = ['disetujui', 'revisi', 'ditolak'];
+    public const SNAPSHOT_SYNCABLE_STATUSES = ['disetujui', 'revisi', 'dibatalkan'];
 
     protected $table = 'riwayat_status';
 

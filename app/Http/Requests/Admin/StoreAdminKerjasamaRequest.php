@@ -4,6 +4,7 @@ namespace App\Http\Requests\Admin;
 
 use Carbon\Carbon;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreAdminKerjasamaRequest extends FormRequest
 {
@@ -24,7 +25,7 @@ class StoreAdminKerjasamaRequest extends FormRequest
             'dokumen_file' => ['required', 'file', 'mimes:pdf', 'max:10240'],
             'nomor_suratP' => ['nullable', 'string', 'max:100'],
             'jenis_kerjasama' => ['nullable', 'string', 'max:100'],
-            'jenis_dokumen' => ['nullable', 'string', 'max:100'],
+            'jenis_dokumen' => ['nullable', 'string', Rule::in(['KS', 'PKS', 'Nota Kesepakatan'])],
             'urusan' => ['nullable', 'string', 'max:255'],
             'daerah' => ['nullable', 'string', 'max:255'],
             'id_kategori' => ['nullable', 'integer', 'exists:kategori_kerjasama,id_kategori'],

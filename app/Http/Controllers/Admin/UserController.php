@@ -7,11 +7,13 @@ use App\Http\Requests\Admin\StoreUserRequest;
 use App\Http\Requests\Admin\UpdateUserRequest;
 use App\Models\Admin;
 use App\Models\User;
+use App\Models\Mitra;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 
 class UserController extends Controller
 {
@@ -91,24 +93,60 @@ class UserController extends Controller
      * Note: For role=mitra, this only creates the User account; the mitra profile
      * will be completed by the user via the "Complete Profile" flow.
      */
-    public function store(StoreUserRequest $request)
-    {
-        $validated = $request->validated();
+public function store(StoreUserRequest $request)
+{
+    $validated = $request->validated();
 
-        $plainPassword = $validated['password'] ?: Str::password(12);
+    $plainPassword = $validated['password'] ?: Str::password(12);
 
-        $user = User::create([
-            'email' => $validated['email'],
-            'password' => Hash::make($plainPassword),
-            'role' => $validated['role'],
-            'status_verifikasi' => 'disetujui',
+    $user = User::create([
+        'email' => $validated['email'],
+        'password' => Hash::make($plainPassword),
+        'role' => $validated['role'],
+        'status_verifikasi' => 'disetujui',
+    ]);
+
+    if ($validated['role'] === 'admin') {
+        Admin::create([
+            'id_user' => $user->id_user,
+            'nama' => $validated['username'],
+            'divisi' => $validated['instansi'] ?? '',
         ]);
+    }
 
-        if ($validated['role'] === 'admin') {
-            Admin::create([
+    if ($validated['role'] === 'mitra') {
+        $company = $validated['nama_perusahaan'] ?? $validated['instansi'] ?? '';
+        
+        Mitra::create([
+            'id_user' => $user->id_user,
+            'nama_perusahaan' => $company,
+            'pic' => $validated['pic'] ?? $validated['username'] ?? '',
+            'no_handphone' => $validated['no_handphone'] ?? '', // ← PERBAIKAN
+            'alamat' => $validated['alamat'] ?? '',             // ← PERBAIKAN
+        ]);
+    }
+
+    $response = back()->with('success', 'Pengguna berhasil ditambahkan.');
+
+    if (empty($validated['password'])) {
+        $response->with('generated_password', $plainPassword);
+    }
+
+    return $response;
+
+        // If admin creates a mitra user, store minimal mitra identity so 'instansi' column
+        // in the users listing shows the company name (`nama_perusahaan`). Prefer
+        // `nama_perusahaan` input; fall back to `instansi` if provided.
+        if ($validated['role'] === 'mitra') {
+            $company = $validated['nama_perusahaan'] ?? $validated['instansi'] ?? null;
+            Mitra::create([
                 'id_user' => $user->id_user,
-                'nama' => $validated['username'],
-                'divisi' => $validated['instansi'],
+                'nama_perusahaan' => $company,
+                // DB requires `pic` not null in current schema — use a sensible fallback
+                // Prefer explicit `pic` input, then admin-provided username, then instansi, then empty string.
+                'pic' => $validated['pic'] ?? $validated['username'] ?? $validated['instansi'] ?? '',
+                'no_handphone' => $validated['no_handphone'] ?? null,
+                'alamat' => $validated['alamat'] ?? null,
             ]);
         }
 
@@ -196,6 +234,44 @@ class UserController extends Controller
         $user->update(['status_verifikasi' => 'disetujui']);
 
         return back()->with('success', 'Akun mitra berhasil diverifikasi.');
+    }
+
+    /**
+     * Remove the specified user and related records from storage.
+     */
+    public function destroy(int $id)
+    {
+        $user = User::with(['admin', 'mitra.kerjasama.periodes', 'mitra.kerjasama.dokumen', 'mitra.kerjasama.riwayatStatus'])->where('id_user', $id)->firstOrFail();
+
+        // Prevent accidental deletion of the currently authenticated admin
+        if (auth()->check() && auth()->id() === $user->id_user) {
+            return back()->with('error', 'Anda tidak dapat menghapus akun yang sedang digunakan.');
+        }
+
+        DB::transaction(function () use ($user) {
+            // Delete admin profile if exists
+            if ($user->admin) {
+                $user->admin->delete();
+            }
+
+            // Delete mitra and their kerjasama, periodes, dokumen, riwayatStatus if exists
+            if ($user->mitra) {
+                foreach ($user->mitra->kerjasama as $k) {
+                    // delete related dokumen, periodes and riwayatStatus
+                    $k->dokumen()->delete();
+                    $k->periodes()->delete();
+                    $k->riwayatStatus()->delete();
+                    $k->delete();
+                }
+
+                $user->mitra->delete();
+            }
+
+            // Finally delete the user
+            $user->delete();
+        });
+
+        return back()->with('success', 'Pengguna berhasil dihapus.');
     }
 
     // -------------------------------------------------------------------------

@@ -88,11 +88,19 @@ class KerjasamaController extends Controller
     {
         $mitra = $request->user()->mitra;
         // In a real flow you'd validate session/previous step data here
+        $kategoris = KategoriKerjasama::query()->orderBy('nama_kategori')->get()->map(function ($k) {
+            return [
+                'id_kategori' => $k->id_kategori,
+                'nama_kategori' => $k->nama_kategori,
+            ];
+        })->values();
+
         return Inertia::render('Mitra/Pengajuan/Step2', [
             'mitra' => $mitra ? [
                 'id_mitra' => $mitra->id_mitra,
                 'nama_perusahaan' => $mitra->nama_perusahaan,
             ] : null,
+            'kategoris' => $kategoris,
         ]);
     }
 
