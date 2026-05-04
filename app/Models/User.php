@@ -63,7 +63,7 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function isMitraVerified(): bool
     {
-        if (! $this->isMitra()) {
+        if (!$this->isMitra()) {
             return true;
         }
 

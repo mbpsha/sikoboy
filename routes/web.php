@@ -23,22 +23,22 @@ use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
 
 // Home / Welcome
-Route::get('/', fn () => Inertia::render('Welcome'))->name('home');
+Route::get('/', fn() => Inertia::render('Welcome'))->name('home');
 
 // Public pages
-Route::get('/about', fn () => Inertia::render('About'))->name('about');
-Route::get('/kontak', fn () => Inertia::render('Kontak'))->name('kontak');
+Route::get('/about', fn() => Inertia::render('About'))->name('about');
+Route::get('/kontak', fn() => Inertia::render('Kontak'))->name('kontak');
 Route::get('/peraturan', function () {
     return Inertia::render('Peraturan', [
         'peraturans' => Peraturan::latest()->get(),
     ]);
 })->name('peraturan');
-Route::get('/dokumen', fn () => Inertia::render('Dokumen'))->name('dokumen.index');
+Route::get('/dokumen', fn() => Inertia::render('Dokumen'))->name('dokumen.index');
 
 // Public pages
-Route::get('/about', fn () => Inertia::render('About'))->name('about');
-Route::get('/dokumen', fn () => Inertia::render('Dokumen'))->name('dokumen');
-Route::get('/kontak', fn () => Inertia::render('Kontak'))->name('kontak');
+Route::get('/about', fn() => Inertia::render('About'))->name('about');
+Route::get('/dokumen', fn() => Inertia::render('Dokumen'))->name('dokumen');
+Route::get('/kontak', fn() => Inertia::render('Kontak'))->name('kontak');
 
 // Dokumen page
 Route::get('/dokumen', function () {
@@ -76,9 +76,9 @@ Route::middleware('auth')->get('/portal-mitra', function (Request $request) {
 })->name('portal-mitra');
 
 // Role Selection & Authentication
-Route::get('/role-selection', fn () => redirect()->route('login'))->name('login.select');
+Route::get('/role-selection', fn() => redirect()->route('login'))->name('login.select');
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
-Route::get('/login/{role}', fn () => redirect()->route('login'))
+Route::get('/login/{role}', fn() => redirect()->route('login'))
     ->whereIn('role', ['admin', 'mitra'])
     ->name('login.role');
 Route::post('/login', [LoginController::class, 'login'])
