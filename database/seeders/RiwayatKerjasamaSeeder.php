@@ -45,7 +45,7 @@ class RiwayatKerjasamaSeeder extends Seeder
                 'daerah' => 'Boyolali',
 
                 'jenis_kerjasama' => 'MoU',
-                'jenis_dokumen' => 'PDF',
+                'jenis_dokumen' => 'KS',
 
                 'pemrakarsa' => 'P',
                 'tipe' => 'pemerintah',
@@ -79,7 +79,7 @@ class RiwayatKerjasamaSeeder extends Seeder
                 'daerah' => 'Boyolali',
 
                 'jenis_kerjasama' => 'PKS',
-                'jenis_dokumen' => 'PDF',
+                'jenis_dokumen' => 'PKS',
 
                 'pemrakarsa' => 'M',
                 'tipe' => 'mitra',

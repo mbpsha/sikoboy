@@ -4,6 +4,7 @@ namespace App\Http\Requests\Mitra;
 
 use DateTimeImmutable;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 use Throwable;
 
 class StoreKerjasamaRequest extends FormRequest
@@ -17,7 +18,7 @@ class StoreKerjasamaRequest extends FormRequest
     {
         return [
             'jenis_kerjasama' => ['required', 'string', 'max:100'],
-            'jenis_dokumen' => ['required', 'string', 'max:100'],
+            'jenis_dokumen' => ['required', 'string', Rule::in(['KS', 'PKS', 'Nota Kesepakatan'])],
             'judul' => ['required', 'string', 'max:255'],
             'nama_pihak_luar' => ['required', 'string', 'max:255'],
             'nomor_suratM' => ['required', 'string', 'max:100'],

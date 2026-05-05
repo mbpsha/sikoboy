@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\Admin;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
 use Inertia\Inertia;
 
 class LoginController extends Controller
@@ -19,7 +21,7 @@ class LoginController extends Controller
         if ($request->user()) {
             return match ($request->user()->role) {
                 'admin' => redirect()->route('admin.dashboard'),
-                'mitra' => redirect()->route('home'),
+                'mitra' => redirect()->route('mitra.profile.index'), // ✅ DIPERBAIKI
                 default => redirect()->route('home'),
             };
         }
@@ -33,35 +35,63 @@ class LoginController extends Controller
     public function login(Request $request)
     {
         $request->validate([
-            'email' => 'required|email',
+            'login'    => 'required|string',
             'password' => 'required',
+            'g-recaptcha-response' => 'nullable|string',
         ]);
 
-        $normalizedEmail = mb_strtolower(trim((string) $request->email));
-        $user = User::query()->whereRaw('LOWER(email) = ?', [$normalizedEmail])->first();
+        // ✅ Validasi reCAPTCHA untuk semua role
+        $captchaToken  = (string) $request->input('g-recaptcha-response', '');
+        $captchaSecret = (string) config('services.recaptcha.secret');
 
-        if (!$user || !Hash::check($request->password, $user->password)) {
-            return back()->withErrors(['email' => 'Email atau password salah.']);
+        if (!empty($captchaSecret)) {
+            $captchaResponse = Http::asForm()->timeout(5)->post(
+                'https://www.google.com/recaptcha/api/siteverify',
+                [
+                    'secret'   => $captchaSecret,
+                    'response' => $captchaToken,
+                    'remoteip' => $request->ip(),
+                ]
+            )->json();
+
+            if (empty($captchaResponse['success'])) {
+                return back()->withErrors(['captcha' => 'Verifikasi CAPTCHA gagal, coba lagi.']);
+            }
         }
 
-        if ($user->role === 'mitra' && ! $user->isMitraVerified()) {
+        $loginVal   = trim((string) $request->login);
+        $normalized = mb_strtolower($loginVal);
+
+        $user = null;
+        if (filter_var($loginVal, FILTER_VALIDATE_EMAIL)) {
+            $user = User::query()->whereRaw('LOWER(email) = ?', [$normalized])->first();
+        }
+
+        if (!$user) {
+            $admin = Admin::query()->whereRaw('LOWER(nama) = ?', [$normalized])->first();
+            if ($admin) $user = $admin->user;
+        }
+
+        if (!$user) {
+            $user = User::query()->whereRaw('LOWER(email) = ?', [$normalized])->first();
+        }
+
+        if (!$user || !Hash::check($request->password, $user->password)) {
+            return back()->withErrors(['login' => 'Email/Username atau password salah.']);
+        }
+
+        if ($user->role === 'mitra' && !$user->isMitraVerified()) {
             return back()->withErrors([
-                'email' => 'Akun mitra Anda belum diverifikasi admin.',
+                'login' => 'Akun mitra Anda belum diverifikasi admin.',
             ]);
         }
 
         Auth::login($user, $request->boolean('remember'));
-
-        // Regenerate session after login to prevent session fixation.
         $request->session()->regenerate();
 
-        if ($user->role === 'admin') {
-            // Send admin users to the Dashboard route
-            return redirect()->route('admin.dashboard');
-        }
-
-        // Mitra users: go to the public welcome page (Home)
-        return redirect()->route('home');
+        return $user->role === 'admin'
+            ? redirect()->route('admin.dashboard')
+            : redirect()->route('home');
     }
 
     /**
