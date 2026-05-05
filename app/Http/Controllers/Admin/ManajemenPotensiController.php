@@ -58,32 +58,48 @@ class ManajemenPotensiController extends Controller
         ]);
     }
 
-    public function store(StorePotensiRequest $request)
-    {
-        $validated = $request->validated();
+    public function store(Request $request)
+{
+    $request->validate([
+        'kategori' => 'required|string',
+        'potensi' => 'required|array',
+    ]);
 
-        DB::transaction(function () use ($request, $validated) {
-            /** @var Potensi $potensi */
-            $potensi = Potensi::query()->updateOrCreate(
-                ['kategori' => $validated['kategori']],
-                [
-                    'judul' => $validated['judul'],
-                    'deskripsi' => $validated['deskripsi'],
-                    'status_tampil' => $validated['status_tampil'] ?? true,
-                    'updated_at' => now(),
-                ]
-            );
+    DB::transaction(function () use ($request) {
 
-            if ($request->hasFile('gambar')) {
-                $this->replaceGambar($potensi, $request->file('gambar'));
+        foreach ($request->potensi as $item) {
+
+            $potensi = Potensi::create([
+                'kategori' => $request->kategori,
+                'judul' => $item['judul'],
+                'deskripsi' => $item['deskripsi'],
+                'status_tampil' => true
+            ]);
+
+            // poin
+            if (isset($item['poin'])) {
+                foreach ($item['poin'] as $i => $p) {
+                    $potensi->poin()->create([
+                        'isi' => $p,
+                        'urutan' => $i + 1
+                    ]);
+                }
             }
 
-            $this->syncPoin($potensi, $validated['poin'] ?? []);
-        });
+            // gambar
+            if (isset($item['gambar'])) {
+                $path = $item['gambar']->store('potensi', 'public');
 
-        return back()->with('success', 'Potensi berhasil disimpan.');
-    }
+                $potensi->update([
+                    'gambar_path' => $path
+                ]);
+            }
+        }
 
+    });
+
+    return back()->with('success', 'Berhasil simpan banyak potensi');
+}
     public function update(int $id, UpdatePotensiRequest $request)
     {
         $potensi = Potensi::with('poin')->findOrFail($id);
