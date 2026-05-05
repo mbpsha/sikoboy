@@ -15,6 +15,7 @@ use App\Http\Controllers\Auth\VerificationController;
 use App\Http\Controllers\Mitra\DashboardController as MitraDashboardController;
 use App\Http\Controllers\Mitra\KerjasamaController as MitraKerjasamaController;
 use App\Http\Controllers\Mitra\ProfileController as MitraProfileController;
+use App\Http\Controllers\PotensiController;
 use App\Http\Controllers\TemplateDokumenController;
 use App\Models\Peraturan;
 use Illuminate\Http\Request;
@@ -41,6 +42,10 @@ Route::get('/peraturan', function () {
         'peraturans' => Peraturan::latest()->get(),
     ]);
 })->name('peraturan');
+
+// Potensi (public JSON)
+Route::get('/potensi', [PotensiController::class, 'index'])
+    ->name('potensi.index');
 
 // Dokumen (dengan data kategori)
 Route::get('/dokumen', function () {
@@ -248,6 +253,8 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('/manajemen-potensi', [ManajemenPotensiController::class, 'index'])
         ->middleware('throttle:120,1')
         ->name('manajemen-potensi.index');
+    Route::get('/manajemen-potensi/list', [ManajemenPotensiController::class, 'list'])
+        ->name('manajemen-potensi.list');
     Route::post('/manajemen-potensi', [ManajemenPotensiController::class, 'store'])
         ->name('manajemen-potensi.store');
     Route::put('/manajemen-potensi/{id}', [ManajemenPotensiController::class, 'update'])
@@ -259,8 +266,12 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('/manajemen-dokumen', [ManajemenDokumenController::class, 'index'])
         ->middleware('throttle:120,1')
         ->name('manajemen-dokumen.index');
+    Route::get('/manajemen-dokumen/list', [ManajemenDokumenController::class, 'list'])
+        ->name('manajemen-dokumen.list');
     Route::post('/manajemen-dokumen', [ManajemenDokumenController::class, 'store'])
         ->name('manajemen-dokumen.store');
+    Route::put('/manajemen-dokumen/{id}', [ManajemenDokumenController::class, 'update'])
+        ->name('manajemen-dokumen.update');
     Route::get('/manajemen-dokumen/{id}/download', [ManajemenDokumenController::class, 'download'])
         ->name('manajemen-dokumen.download');
     Route::get('/manajemen-dokumen/{id}/preview', [ManajemenDokumenController::class, 'preview'])
@@ -271,6 +282,8 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     // Manajemen Peraturan
     Route::get('/manajemen-peraturan', [\App\Http\Controllers\Admin\PeraturanController::class, 'index'])
         ->name('manajemen-peraturan.index');
+    Route::get('/manajemen-peraturan/list', [\App\Http\Controllers\Admin\PeraturanController::class, 'list'])
+        ->name('manajemen-peraturan.list');
     Route::post('/manajemen-peraturan', [\App\Http\Controllers\Admin\PeraturanController::class, 'store'])
         ->name('manajemen-peraturan.store');
     Route::post('/manajemen-peraturan/{peraturan}', [\App\Http\Controllers\Admin\PeraturanController::class, 'update'])

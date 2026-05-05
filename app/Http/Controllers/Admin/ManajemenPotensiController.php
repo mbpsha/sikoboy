@@ -58,6 +58,21 @@ class ManajemenPotensiController extends Controller
         ]);
     }
 
+    public function list()
+    {
+        $items = Potensi::query()
+            ->with('poin')
+            ->orderBy('kategori')
+            ->orderBy('id_potensi')
+            ->get()
+            ->map(fn (Potensi $potensi) => $this->formatPotensi($potensi))
+            ->values();
+
+        return response()->json([
+            'data' => $items,
+        ]);
+    }
+
     public function store(Request $request)
 {
     $request->validate([

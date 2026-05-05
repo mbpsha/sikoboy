@@ -56,6 +56,10 @@ class DataKerjasamaController extends Controller
             $query->where('jenis_dokumen', $request->jenis_dokumen);
         }
 
+        if ($request->filled('pembiayaan')) {
+            $query->where('pembiayaan', $request->pembiayaan);
+        }
+
         if ($request->filled('is_finalized') && $request->is_finalized !== '') {
             $query->where('is_finalized', (bool) $request->is_finalized);
         }
@@ -116,6 +120,7 @@ class DataKerjasamaController extends Controller
                 'nomor_surat' => $k->nomor_surat,
                 'jenis_kerjasama' => $k->jenis_kerjasama,
                 'jenis_dokumen' => $k->jenis_dokumen,
+                'pembiayaan' => $k->pembiayaan,
                 'urusan' => $k->urusan,
                 'daerah' => $k->daerah,
                 'tanggal_mulai' => $periode?->tanggal_mulai,
@@ -143,6 +148,7 @@ class DataKerjasamaController extends Controller
                     'tahun',
                     'jenis_kerjasama',
                     'jenis_dokumen',
+                    'pembiayaan',
                     'is_finalized',
                     'status',
                     'sort_by',
@@ -159,6 +165,7 @@ class DataKerjasamaController extends Controller
         $admin = $request->user()->admin;
 
         DB::transaction(function () use ($validated, $admin) {
+            $jenisDokumen = $validated['jenis_dokumen'] ?? 'KSB';
             $kerjasama = Kerjasama::create([
                 'id_mitra' => $validated['id_mitra'],
                 'id_admin' => $admin->id_admin,
@@ -168,10 +175,11 @@ class DataKerjasamaController extends Controller
                 'urusan' => $validated['urusan'] ?? '-',
                 'daerah' => $validated['daerah'] ?? '-',
                 'status_aktif' => 'aktif',
+                'pembiayaan' => $validated['pembiayaan'] ?? 'APBN',
                 'pemrakarsa' => 'P',
                 'tipe' => 'pemerintah',
                 'jenis_kerjasama' => $validated['jenis_kerjasama'] ?? null,
-                'jenis_dokumen' => $validated['jenis_dokumen'] ?? null,
+                'jenis_dokumen' => $jenisDokumen,
                 'is_finalized' => true,
                 'status_persetujuan' => 'disetujui',
             ]);
@@ -188,6 +196,7 @@ class DataKerjasamaController extends Controller
 
             Dokumen::create([
                 'id_kerjasama' => $kerjasama->id_kerjasama,
+                'jenis_dokumen' => $jenisDokumen,
                 'nama_file' => $file->getClientOriginalName(),
                 'lokasi_file' => $path,
                 'versi_dokumen' => 1,

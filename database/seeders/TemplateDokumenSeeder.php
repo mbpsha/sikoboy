@@ -89,11 +89,11 @@ class TemplateDokumenSeeder extends Seeder
         }
 
         if (str_contains($source, 'kesepakatan bersama')) {
-            return 'KESEPAKATAN BERSAMA';
+            return 'KSB';
         }
 
         if (str_contains($source, 'nota kesepakatan')) {
-            return 'NOTA KESEPAKATAN';
+            return 'Nota Kesepakatan';
         }
 
         return null;

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\TemplateDokumen;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
 class ManajemenDokumenController extends Controller
@@ -15,6 +16,17 @@ class ManajemenDokumenController extends Controller
     private const PRIMARY_STORAGE_DISK = 'local';
 
     private const FALLBACK_STORAGE_DISK = 'public';
+
+    private const JENIS_DOKUMEN = [
+        'KSB',
+        'Nota Kesepakatan',
+        'Perjanjian Teknis',
+        'PKS',
+        'Rencana Kerja',
+        'MOU',
+        'RKT',
+        'LOI',
+    ];
 
     public function index()
     {
@@ -28,7 +40,7 @@ class ManajemenDokumenController extends Controller
         $validated = $request->validate([
             'template_file' => ['required', 'file', 'mimes:pdf', 'max:10240'],
             'id_kategori' => ['nullable', 'exists:kategori_kerjasama,id_kategori'],
-            'jenis_dokumen' => ['nullable', 'string', 'max:100'],
+            'jenis_dokumen' => ['nullable', 'string', Rule::in(self::JENIS_DOKUMEN)],
             'is_active' => ['sometimes', 'boolean'],
         ]);
 
@@ -50,7 +62,60 @@ class ManajemenDokumenController extends Controller
         return back()->with('success', 'Template dokumen berhasil diunggah.');
     }
 
+    public function update(int $id, Request $request)
+    {
+        $validated = $request->validate([
+            'template_file' => ['nullable', 'file', 'mimes:pdf', 'max:10240'],
+            'id_kategori' => ['nullable', 'exists:kategori_kerjasama,id_kategori'],
+            'jenis_dokumen' => ['nullable', 'string', Rule::in(self::JENIS_DOKUMEN)],
+            'is_active' => ['sometimes', 'boolean'],
+            'nama_file' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $template = TemplateDokumen::findOrFail($id);
+
+        $payload = [
+            'id_kategori' => $validated['id_kategori'] ?? $template->id_kategori,
+            'jenis_dokumen' => $validated['jenis_dokumen'] ?? $template->jenis_dokumen,
+        ];
+
+        if (array_key_exists('is_active', $validated)) {
+            $payload['is_active'] = (bool) $validated['is_active'];
+        }
+
+        if (array_key_exists('nama_file', $validated) && $validated['nama_file'] !== null) {
+            $payload['nama_file'] = $validated['nama_file'];
+        }
+
+        $oldPath = $template->lokasi_file;
+
+        if (! empty($validated['template_file'])) {
+            $file = $validated['template_file'];
+            $payload['lokasi_file'] = $file->store(self::STORAGE_DIRECTORY, self::PRIMARY_STORAGE_DISK);
+            $payload['nama_file'] = $payload['nama_file'] ?? $file->getClientOriginalName();
+        }
+
+        $template->update($payload);
+
+        if (! empty($validated['template_file'])) {
+            foreach ([self::PRIMARY_STORAGE_DISK, self::FALLBACK_STORAGE_DISK] as $disk) {
+                if (Storage::disk($disk)->exists($oldPath)) {
+                    Storage::disk($disk)->delete($oldPath);
+                }
+            }
+        }
+
+        return back()->with('success', 'Template dokumen berhasil diperbarui.');
+    }
+
     public function listPublic()
+    {
+        return response()->json([
+            'data' => $this->templateList(),
+        ]);
+    }
+
+    public function list()
     {
         return response()->json([
             'data' => $this->templateList(),

@@ -13,7 +13,14 @@ return new class extends Migration
     {
         Schema::create('kategori_kerjasama', function (Blueprint $table) {
             $table->id('id_kategori');
-            $table->string('nama_kategori');
+                        $table->enum('nama_kategori', [
+                'Kerjasama Daerah Antar Daerah (KSDD)',
+                'Kerjasama Dengan Pihak Ketiga (KSDPK)',
+                'Sinergi Dengan Pemerintah Pusat / Lembaga (NK/RK)',
+                'Perjanjian Teknis (PERTEK)',
+                'Kerjasama Daerah Dengan Pemerintah Daerah Di Luar Negeri (KSDPL)',
+                'Kerjasama Daerah Dengan Lembaga Di Luar Negeri (KSDLL)',
+            ]);
             $table->string('deskripsi');
             $table->string('file_template');
         });

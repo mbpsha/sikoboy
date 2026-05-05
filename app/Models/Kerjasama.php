@@ -31,6 +31,7 @@ class Kerjasama extends Model
         'urusan',
         'daerah',
         'status_aktif',
+        'pembiayaan',
         'pemrakarsa',
         'jenis_kerjasama',
         'jenis_dokumen',

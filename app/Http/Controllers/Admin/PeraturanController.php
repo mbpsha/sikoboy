@@ -18,6 +18,24 @@ class PeraturanController extends Controller
         ]);
     }
 
+    public function list()
+    {
+        $items = Peraturan::query()
+            ->latest()
+            ->get()
+            ->map(fn (Peraturan $peraturan) => [
+                'id_peraturan' => $peraturan->id_peraturan,
+                'judul' => $peraturan->judul,
+                'file' => $peraturan->file,
+                'thumbnail' => $peraturan->thumbnail,
+                'created_at' => $peraturan->created_at,
+            ]);
+
+        return response()->json([
+            'data' => $items,
+        ]);
+    }
+
     public function store(Request $request)
     {
         try {

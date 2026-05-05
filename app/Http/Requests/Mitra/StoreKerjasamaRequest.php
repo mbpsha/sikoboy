@@ -18,11 +18,26 @@ class StoreKerjasamaRequest extends FormRequest
     {
         return [
             'jenis_kerjasama' => ['required', 'string', 'max:100'],
-            'jenis_dokumen' => ['required', 'string', Rule::in(['KS', 'PKS', 'Nota Kesepakatan'])],
+            'jenis_dokumen' => ['required', 'string', Rule::in([
+                'KSB',
+                'Nota Kesepakatan',
+                'Perjanjian Teknis',
+                'PKS',
+                'Rencana Kerja',
+                'MOU',
+                'RKT',
+                'LOI',
+            ])],
             'judul' => ['required', 'string', 'max:255'],
             'nama_pihak_luar' => ['required', 'string', 'max:255'],
             'nomor_suratM' => ['required', 'string', 'max:100'],
-            'pembiayaan' => ['required', 'string', 'max:255'],
+            'pembiayaan' => ['required', 'string', Rule::in([
+                'APBN',
+                'APBD',
+                'PIHAK KETIGA',
+                'PARA PIHAK',
+                'SESUAI DENGAN PERATURAN PERUNDANG-UNDANGAN',
+            ])],
             'urusan' => ['required', 'string', 'max:255'],
             'tanggal_mulai' => ['required', 'date'],
             'tanggal_selesai' => ['required', 'date'],

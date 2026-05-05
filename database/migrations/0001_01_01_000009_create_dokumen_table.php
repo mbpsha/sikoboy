@@ -13,7 +13,17 @@ return new class extends Migration
     {
         Schema::create('dokumen', function (Blueprint $table) {
             $table->id('id_dokumen');
-            $table->unsignedBigInteger('id_kerjasama');
+                        $table->unsignedBigInteger('id_kerjasama');
+            $table->enum('jenis_dokumen', [
+                'KSB',
+                'Nota Kesepakatan',
+                'Perjanjian Teknis',
+                'PKS',
+                'Rencana Kerja',
+                'MOU',
+                'RKT',
+                'LOI',
+            ]);
             $table->string('nama_file');
             $table->string('lokasi_file');
             $table->integer('versi_dokumen');
