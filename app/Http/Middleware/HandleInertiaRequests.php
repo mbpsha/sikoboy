@@ -50,6 +50,7 @@ class HandleInertiaRequests extends Middleware
                 'info' => $request->session()->get('info'),
                 'generated_password' => $request->session()->get('generated_password'),
             ],
+            'recaptcha_site_key' => config('services.recaptcha.key'),
         ];
     }
 }
