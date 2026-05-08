@@ -31,7 +31,7 @@ const selectedKerjasama = ref(null);
 
 const filter = () => {
     router.get(
-        route("admin.riwayat-kerjasama.pemerintah"),
+        route("admin.riwayat-kerjasama.gabungan"),
         {
             search: search.value,
             tahun: tahun.value,
@@ -51,7 +51,7 @@ watch([search, tahun], () => {
 
 watch(search, (value) => {
     router.get(
-        route('admin.riwayat-kerjasama.pemerintah'),
+        route('admin.riwayat-kerjasama.gabungan'),
         {
             search: value,
             tahun: tahun.value,
@@ -72,7 +72,7 @@ const goToPage = (page) => {
     if (!page || page === props.data?.current_page) return;
 
     router.get(
-        route("admin.riwayat-kerjasama.pemerintah"),
+        route("admin.riwayat-kerjasama.gabungan"),
         {
             search: search.value,
             tahun: tahun.value,
@@ -90,7 +90,7 @@ const form = ref({
     mulai: "",
     selesai: "",
     jenis_kerjasama: "KSDD",
-    tipe_pengajuan: "pemerintah",
+    tipe_pengajuan: "mitra",
     file: null,
 });
 
@@ -165,17 +165,21 @@ const submit = () => {
         .replace(/^-+|-+$/g, "")
         .slice(0, 24);
 
+    // Determine nomor_surat prefix based on jenis_kerjasama
+    const prefix = form.value.tipe_pengajuan === "mitra" ? "RIW-M" : "RIW-P";
+
     formData.append("mitra", form.value.mitra);
     formData.append("tahun", tahun);
     formData.append("judul", form.value.judul);
     formData.append("jangka", form.value.jangka);
     formData.append(
         "nomor_surat",
-        `RIW-P/${tahun}/${judulSlug || "KERJASAMA"}`,
+        `${prefix}/${tahun}/${judulSlug || "KERJASAMA"}`,
     );
     formData.append("urusan", "Kerjasama Daerah");
     formData.append("daerah", "Boyolali");
     formData.append("jenis_kerjasama", form.value.jenis_kerjasama);
+    formData.append("tipe_pengajuan", form.value.tipe_pengajuan);
     formData.append("jenis_dokumen", "PDF");
     formData.append("nama_pihak_luar", form.value.mitra);
     formData.append("tanggal_mulai", form.value.mulai);
@@ -185,7 +189,7 @@ const submit = () => {
         formData.append("file", form.value.file);
     }
 
-    router.post(route("admin.riwayat-kerjasama.pemerintah.store"), formData, {
+    router.post(route("admin.riwayat-kerjasama.gabungan.store"), formData, {
         preserveScroll: true,
         onSuccess: closeModal,
         onError: (err) => {
@@ -225,12 +229,13 @@ const closeModal = () => {
         mulai: "",
         selesai: "",
         jenis_kerjasama: "KSDD",
-        tipe_pengajuan: "pemerintah",
+        tipe_pengajuan: "mitra",
         file: null,
     };
     errors.value = {};
     if (fileInput.value) fileInput.value.value = "";
 };
+
 // CLOSE ADENDUM MODAL
 const closeAdendumModal = () => {
     showAdendumModal.value = false;
@@ -251,14 +256,13 @@ const openAdendumModal = (item) => {
 </script>
 
 <template>
-    <AdminLayout title="Riwayat Kerjasama - Boyolali">
+    <AdminLayout title="Riwayat Kerjasama - Semua Kerjasama">
         <div class="p-6">
             <div class="max-w-7xl mx-auto">
-                <!-- SEARCH + FILTER CARD -->
+                <!-- SEARCH -->
                 <div
                     class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex gap-3 items-center overflow-x-auto"
                 >
-                    <!-- SEARCH -->
                     <div
                         class="flex items-center gap-2 flex-1 min-w-[220px] rounded-full px-4 py-2.5 border border-gray-200 bg-gray-50 focus-within:border-teal-600 focus-within:ring-1 focus-within:ring-teal-600 transition"
                     >
@@ -270,7 +274,6 @@ const openAdendumModal = (item) => {
                         />
                     </div>
 
-                    <!-- DROPDOWN -->
                     <select
                         v-model="tahun"
                         class="rounded-full px-4 py-2.5 text-sm border border-gray-200 bg-gray-50 focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition min-w-[180px]"
@@ -284,7 +287,6 @@ const openAdendumModal = (item) => {
 
                 <!-- TAB + BUTTON -->
                 <div class="flex justify-between items-center mt-6">
-                    <!-- TAB -->
                     <div
                         class="bg-white border-gray-300 rounded-xl p-1 flex gap-1 shadow-sm"
                     >
@@ -292,7 +294,7 @@ const openAdendumModal = (item) => {
                             :href="route('admin.riwayat-kerjasama.gabungan')"
                             :class="[
                                 'px-4 py-2 rounded-lg text-sm transition',
-                                isActiveTab('/admin/riwayat-kerjasama')
+                                isActiveTab('/admin/riwayat-kerjasama/gabungan')
                                     ? 'bg-teal-700 text-white'
                                     : 'text-gray-600 hover:text-gray-900'
                             ]"
@@ -443,7 +445,7 @@ const openAdendumModal = (item) => {
                                     <td
                                         class="px-4 py-3 border-r border-gray-200"
                                     >
-                                        {{ item.judul || "-" }}
+                                        {{ item.judul }}
                                     </td>
                                     <td class="px-6 py-4">
                                         <span
@@ -455,17 +457,17 @@ const openAdendumModal = (item) => {
                                     <td
                                         class="px-4 py-3 whitespace-nowrap border-r border-gray-200"
                                     >
-                                        {{ item.mulai || "-" }}
+                                        {{ item.mulai }}
                                     </td>
                                     <td
                                         class="px-4 py-3 whitespace-nowrap border-r border-gray-200"
                                     >
-                                        {{ item.berakhir || "-" }}
+                                        {{ item.berakhir }}
                                     </td>
                                     <td
-                                        class="px-4 py-3 whitespace-nowrap min-w-[120px] border-r border-gray-200"
+                                        class="px-4 py-3 whitespace-nowrap border-r border-gray-200"
                                     >
-                                        {{ item.jangka_waktu || "-" }}
+                                        {{ item.jangka_waktu }}
                                     </td>
                                     <td
                                         class="px-4 py-3 whitespace-nowrap min-w-[90px] border-r border-gray-200"
@@ -558,8 +560,8 @@ const openAdendumModal = (item) => {
                         class="px-3 py-2 text-sm rounded-lg border"
                         :class="
                             page === data.current_page
-                                ? 'bg-teal-600 text-white border-teal-600'
-                                : 'bg-white text-gray-700'
+                                ? 'bg-teal-600 text-white'
+                                : 'bg-white'
                         "
                         @click="goToPage(page)"
                     >
@@ -576,6 +578,7 @@ const openAdendumModal = (item) => {
                 </div>
             </div>
         </div>
+
         <!-- MODAL TAMBAH KERJASAMA -->
         <div
             v-if="showModal"
@@ -699,6 +702,7 @@ const openAdendumModal = (item) => {
                             v-model="form.tipe_pengajuan"
                             class="w-full border rounded-lg px-3 py-2 mt-1"
                         >
+                            <option value="mitra">Mitra</option>
                             <option value="pemerintah">Pemerintah</option>
                         </select>
                         <p
@@ -808,6 +812,7 @@ const openAdendumModal = (item) => {
                 </div>
             </div>
         </div>
+
         <!-- MODAL UPLOAD ADENDUM -->
         <div
             v-if="showAdendumModal"

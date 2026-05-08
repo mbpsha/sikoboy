@@ -84,7 +84,7 @@
                             d="M14 3v5h5"
                         />
                     </svg>
-                    <span class="text-sm">Data Kerjasama</span>
+                    <span class="text-sm">Ajuan Kerjasama</span>
                 </Link>
 
                 <div>
@@ -133,11 +133,18 @@
                         class="mt-2 ml-5 space-y-1 border-l border-teal-700/50 pl-3"
                     >
                         <Link
+                            :href="route('admin.riwayat-kerjasama.gabungan')"
+                            :class="
+                                subNavClass('/admin/riwayat-kerjasama/gabungan')
+                            "
+                        >
+                            <span class="text-sm">Semua Kerjasama</span>
+                        </Link>
+
+                        <Link
                             :href="route('admin.riwayat-kerjasama.pemerintah')"
                             :class="
-                                subNavClass(
-                                    '/admin/riwayat-kerjasama/pemerintah',
-                                )
+                                subNavClass('/admin/riwayat-kerjasama/pemerintah')
                             "
                         >
                             <span class="text-sm">Pemrakarsa Boyolali</span>
@@ -210,30 +217,30 @@
                 </Link>
 
                 <Link
-    :href="route('admin.manajemen-peraturan.index')"
-    :class="navClass('/admin/manajemen-peraturan')"
->
-    <svg
-        xmlns="http://www.w3.org/2000/svg"
-        class="w-5 h-5"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-        stroke-width="1.8"
-    >
-        <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            d="M7 3h7l5 5v13a1 1 0 01-1 1H7a1 1 0 01-1-1V4a1 1 0 011-1z"
-        />
-        <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            d="M14 3v5h5"
-        />
-    </svg>
-    <span class="text-sm">Manajemen Peraturan</span>
-</Link>
+                    :href="route('admin.manajemen-peraturan.index')"
+                    :class="navClass('/admin/manajemen-peraturan')"
+                >
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="w-5 h-5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        stroke-width="1.8"
+                    >
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="M7 3h7l5 5v13a1 1 0 01-1 1H7a1 1 0 01-1-1V4a1 1 0 011-1z"
+                    />
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="M14 3v5h5"
+                    />
+                    </svg>
+                    <span class="text-sm">Manajemen Peraturan</span>
+                </Link>
             </nav>
         </div>
 

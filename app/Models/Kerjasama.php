@@ -100,6 +100,11 @@ class Kerjasama extends Model
         return $this->hasMany(RiwayatStatus::class, 'id_kerjasama', 'id_kerjasama');
     }
 
+    public function adendum()
+    {
+        return $this->hasMany(Adendum::class, 'id_kerjasama', 'id_kerjasama');
+    }
+
     // -------------------------------------------------------------------------
     // Scopes
     // -------------------------------------------------------------------------

@@ -215,12 +215,18 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
         ->name('status-kontrak.finalize');
 
     // Riwayat Kerjasama
-    Route::get('/riwayat-kerjasama', [RiwayatKerjasamaController::class, 'mitra'])
+    Route::get('/riwayat-kerjasama/gabungan', [RiwayatKerjasamaController::class, 'index'])
         ->middleware('throttle:120,1')
-        ->name('riwayat-kerjasama.index');
+        ->name('riwayat-kerjasama.gabungan');
+    Route::post('/riwayat-kerjasama/gabungan', [RiwayatKerjasamaController::class, 'storeGabungan'])
+        ->name('riwayat-kerjasama.gabungan.store');
+    Route::put('/riwayat-kerjasama/gabungan/{id}', [RiwayatKerjasamaController::class, 'updateGabungan'])
+        ->name('riwayat-kerjasama.gabungan.update');
     Route::get('/riwayat-kerjasama/mitra', [RiwayatKerjasamaController::class, 'mitra'])
         ->middleware('throttle:120,1')
         ->name('riwayat-kerjasama.mitra');
+    Route::post('/riwayat-kerjasama/mitra', [RiwayatKerjasamaController::class, 'storeMitra'])
+        ->name('riwayat-kerjasama.mitra.store');
     Route::get('/riwayat-kerjasama/pemerintah', [RiwayatKerjasamaController::class, 'pemerintah'])
         ->middleware('throttle:120,1')
         ->name('riwayat-kerjasama.pemerintah');
@@ -228,6 +234,8 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
         ->name('riwayat-kerjasama.pemerintah.store');
     Route::put('/riwayat-kerjasama/pemerintah/{id}', [RiwayatKerjasamaController::class, 'updatePemerintah'])
         ->name('riwayat-kerjasama.pemerintah.update');
+    Route::post('/riwayat-kerjasama/adendum', [RiwayatKerjasamaController::class, 'storeAdendum'])
+        ->name('riwayat-kerjasama.adendum.store');
 
     // Data Kerjasama
     Route::get('/data-kerjasama', [DataKerjasamaController::class, 'index'])
