@@ -1,5 +1,5 @@
 <template>
-  <AdminLayout title="Data Kerjasama">
+  <AdminLayout title="Ajuan Kerjasama">
     <div class="max-w-7xl mx-auto px-4 py-6 space-y-6">
 
       <!-- Search & Filter Bar -->
