@@ -22,6 +22,14 @@ class RiwayatKerjasamaSeeder extends Seeder
             ->orderBy('id_kategori')
             ->pluck('id_kategori');
 
+        $pembiayaan = [
+            'APBN',
+            'APBD',
+            'PIHAK KETIGA',
+            'PARA PIHAK',
+            'SESUAI DENGAN PERATURAN PERUNDANG-UNDANGAN',
+        ];
+
         if ($kategori->isEmpty()) {
             throw new \Exception('Kategori kosong!');
         }
@@ -53,6 +61,7 @@ class RiwayatKerjasamaSeeder extends Seeder
                 'nama_pihak_luar' => $mitra->nama_perusahaan,
 
                 'status_aktif' => 'aktif',
+                'pembiayaan' => $pembiayaan[$i % count($pembiayaan)],
                 'is_finalized' => true,
                 'status_persetujuan' => 'disetujui',
             ]);
@@ -87,6 +96,7 @@ class RiwayatKerjasamaSeeder extends Seeder
                 'nama_pihak_luar' => $mitra->nama_perusahaan,
 
                 'status_aktif' => 'aktif',
+                'pembiayaan' => $pembiayaan[$i % count($pembiayaan)],
                 'is_finalized' => true,
                 'status_persetujuan' => 'disetujui',
             ]);

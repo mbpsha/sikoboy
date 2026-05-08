@@ -44,6 +44,8 @@
                 <th class="py-3 px-4 text-left font-medium border-r border-white/10">Berakhir</th>
                 <th class="py-3 px-4 text-left font-medium border-r border-white/10">Jangka Waktu</th>
                 <th class="py-3 px-4 text-left font-medium border-r border-white/10">File</th>
+                <th class="py-3 px-4 text-left font-medium border-r border-white/10">Pembiayaan</th>
+                <th class="py-3 px-4 text-left font-medium border-r border-white/10">No. Surat Mitra</th>
                 <th class="py-3 px-4 text-left font-medium border-r border-white/10">Proses</th>
                 <th class="py-3 px-4 text-left font-medium">Status</th>
               </tr>
@@ -66,6 +68,8 @@
                     Lihat
                   </Link>
                 </td>
+                <td class="py-3 px-4 text-gray-600 whitespace-nowrap">{{ k.pembiayaan ?? '—' }}</td>
+                <td class="py-3 px-4 text-gray-600 whitespace-nowrap">{{ k.nomor_suratM ?? k.nomor_surat ?? '—' }}</td>
 
                 <!-- Proses column -->
                 <td class="py-3 px-4 align-top">
@@ -93,6 +97,7 @@
                       <div class="flex gap-2">
                         <button @click.prevent="addProcess(k)" class="flex-1 bg-teal-600 hover:bg-teal-700 text-white text-xs px-3 py-1.5 rounded-lg transition">Tambah</button>
                         <button @click.prevent="cancelAdd(k.id_kerjasama)" class="flex-1 bg-white border border-gray-200 text-gray-600 text-xs px-3 py-1.5 rounded-lg transition">Batal</button>
+                        <button @click.prevent="finishAddProcess(k)" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1.5 rounded-lg transition">Selesai Proses</button>
                       </div>
                     </div>
                   </div>
@@ -190,6 +195,7 @@
           <div class="flex justify-end gap-2 pt-2">
             <button @click="closeProcessModal" class="px-4 py-2 text-sm rounded-lg border border-gray-200 hover:bg-gray-50 transition">Batal</button>
             <button @click.prevent="saveProcessUpdate" class="px-4 py-2 text-sm rounded-lg bg-teal-600 hover:bg-teal-700 text-white font-medium transition">Simpan</button>
+            <button @click.prevent="endProcess" class="px-4 py-2 text-sm rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-medium transition">Selesai & Simpan ke Riwayat</button>
           </div>
         </div>
       </div>
@@ -201,6 +207,7 @@
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import { Link, router, usePage } from '@inertiajs/vue3'
 import { ref, computed, reactive } from 'vue'
+import Swal from 'sweetalert2'
 
 const props = defineProps({
   kerjasama: Object,
@@ -218,13 +225,12 @@ const kerjasama = computed(() => props.kerjasama ?? {
   current_page: 1,
 })
 
-const filters = computed(() => props.filters ?? {})
-
-const indexOffset = computed(() => (
+const filters   = computed(() => props.filters ?? {})
+const indexOffset = computed(() =>
   kerjasama.value.current_page
-    ? ((kerjasama.value.current_page - 1) * kerjasama.value.per_page)
+    ? (kerjasama.value.current_page - 1) * kerjasama.value.per_page
     : 0
-))
+)
 
 const local = ref({
   search: filters.value?.search ?? '',
@@ -250,64 +256,110 @@ function goTo(url) {
   router.visit(url, { preserveState: false })
 }
 
+// ─── Add process form ────────────────────────────────────────────────────────
 const showAddFormFor = reactive({})
 const newProcessForm = reactive({})
 
-function toggleAddForm(id_kerjasama) {
-  showAddFormFor[id_kerjasama] = !showAddFormFor[id_kerjasama]
-  if (!newProcessForm[id_kerjasama]) {
-    newProcessForm[id_kerjasama] = { title: '' }
-  }
+function toggleAddForm(id) {
+  showAddFormFor[id] = !showAddFormFor[id]
+  if (!newProcessForm[id]) newProcessForm[id] = { title: '' }
 }
 
-function cancelAdd(id_kerjasama) {
-  showAddFormFor[id_kerjasama] = false
-  if (newProcessForm[id_kerjasama]) newProcessForm[id_kerjasama].title = ''
+function cancelAdd(id) {
+  showAddFormFor[id] = false
+  if (newProcessForm[id]) newProcessForm[id].title = ''
 }
 
-const showProcessModal = ref(false)
-const activeProcess = ref(null)
-const activeKerjasama = ref(null)
+// Tambah proses baru — kirim ke server, reload data
+function addProcess(k) {
+  const id    = k.id_kerjasama
+  const title = (newProcessForm[id]?.title || '').trim()
+  if (!title) return
+
+  router.post(
+    route('admin.data-kerjasama.proses.store', id),
+    { title },
+    {
+      preserveScroll: true,
+      onSuccess: () => {
+        newProcessForm[id].title = ''
+        showAddFormFor[id] = false
+      },
+      onError: (e) => {
+        console.error('Gagal tambah proses:', e)
+      },
+    }
+  )
+}
+
+// Selesaikan semua proses dan simpan ke riwayat
+async function finishAddProcess(k) {
+  const confirmed = await Swal.fire({
+    title: 'Konfirmasi',
+    text: 'Tandai semua proses selesai dan simpan ke riwayat kerjasama?',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Ya, selesai',
+    cancelButtonText: 'Batal',
+  }).then(r => r.isConfirmed)
+
+  if (!confirmed) return
+
+  const id    = k.id_kerjasama
+  const title = (newProcessForm[id]?.title || '').trim() || 'Proses Selesai'
+
+  const fd = new FormData()
+  fd.append('title',       title)
+  fd.append('catatan',     'Semua proses telah diselesaikan.')
+  fd.append('penanggung',  currentUsername.value)
+  fd.append('is_finished', '1')   // flag untuk controller simpan ke riwayat
+
+  router.post(
+    route('admin.data-kerjasama.proses.store', id),
+    fd,
+    {
+      preserveScroll: true,
+      onSuccess: () => {
+        newProcessForm[id].title = ''
+        showAddFormFor[id] = false
+      },
+    }
+  )
+}
+
+// ─── Process Modal ────────────────────────────────────────────────────────────
+const showProcessModal  = ref(false)
+const activeProcess     = ref(null)
+const activeKerjasama   = ref(null)
+const fileToUpload      = ref(null)
+const fileName          = ref('')
+const processFileInput  = ref(null)
 
 function openProcessModal(k, p) {
   activeKerjasama.value = k
-  activeProcess.value = {
+  activeProcess.value   = {
     ...p,
     penanggung: p.penanggung || currentUsername.value,
+    catatan:    p.catatan    || '',
   }
   showProcessModal.value = true
+  // reset file setiap buka modal
+  fileToUpload.value = null
+  fileName.value     = ''
 }
 
 function closeProcessModal() {
   showProcessModal.value = false
-  activeProcess.value = null
-  activeKerjasama.value = null
+  activeProcess.value    = null
+  activeKerjasama.value  = null
+  fileToUpload.value     = null
+  fileName.value         = ''
 }
-
-async function addProcess(k) {
-  const id = k.id_kerjasama
-  const title = (newProcessForm[id].title || '').trim()
-  if (!title) return
-
-  k.proses = k.proses || []
-  k.proses.unshift({ id: Date.now(), title, label: title })
-
-  newProcessForm[id].title = ''
-  showAddFormFor[id] = false
-
-  try {
-    await router.post(route('admin.kerjasama.proses.store', k.id_kerjasama), { title })
-  } catch (e) {}
-}
-
-const fileToUpload = ref(null)
-const fileName = ref('')
-const processFileInput = ref(null)
 
 function onFileSelect(e) {
   const f = e.target.files?.[0] ?? null
   fileToUpload.value = f
-  fileName.value = f ? f.name : ''
+  fileName.value     = f ? f.name : ''
 }
 
 function triggerProcessFileInput() {
@@ -316,32 +368,76 @@ function triggerProcessFileInput() {
 
 function handleProcessDrop(e) {
   const file = e.dataTransfer.files?.[0] ?? null
-  if (file && file.type === 'application/pdf') {
+  if (file?.type === 'application/pdf') {
     fileToUpload.value = file
-    fileName.value = file.name
+    fileName.value     = file.name
   }
 }
 
-async function saveProcessUpdate() {
+// Simpan update proses (catatan + file) — pakai POST + FormData
+function saveProcessUpdate() {
   const k = activeKerjasama.value
   const p = activeProcess.value
   if (!k || !p) return
 
-  k.proses = k.proses || []
-  const existing = k.proses.findIndex(x => x.id === p.id)
-  existing >= 0 ? k.proses.splice(existing, 1, { ...p }) : k.proses.unshift({ ...p })
+  const fd = new FormData()
+  fd.append('title',      p.title      ?? '')
+  fd.append('penanggung', p.penanggung ?? currentUsername.value)
+  fd.append('catatan',    p.catatan    ?? '')
+  if (fileToUpload.value) {
+    fd.append('file', fileToUpload.value)
+  }
 
-  const title = (p.title || '').toLowerCase()
-  k.status_persetujuan = title.includes('diterima') ? 'disetujui'
-    : title.includes('ditolak') ? 'ditolak'
-    : p.title || null
+  router.post(
+    route('admin.data-kerjasama.proses.update', [k.id_kerjasama, p.id]),
+    fd,
+    {
+      preserveScroll: true,
+      onSuccess: () => {
+        closeProcessModal()
+      },
+      onError: (e) => {
+        console.error('Gagal simpan proses:', e)
+      },
+    }
+  )
+}
 
-  try {
-    const url = route('admin.kerjasama.proses.update', [k.id_kerjasama, p.id])
-    await router.put(url, { title: p.title, penanggung: p.penanggung ?? null, catatan: p.catatan ?? null })
-  } catch (e) {}
+// Selesai & Simpan ke Riwayat dari modal
+async function endProcess() {
+  const k = activeKerjasama.value
+  const p = activeProcess.value
+  if (!k || !p) return
 
-  fileToUpload.value = null
-  closeProcessModal()
+  const confirmed = await Swal.fire({
+    title: 'Selesaikan Proses?',
+    text: 'Data akan disimpan ke riwayat kerjasama.',
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonText: 'Ya, selesaikan',
+    cancelButtonText: 'Batal',
+  }).then(r => r.isConfirmed)
+
+  if (!confirmed) return
+
+  const fd = new FormData()
+  fd.append('title',       p.title      ?? 'Selesai')
+  fd.append('penanggung',  p.penanggung ?? currentUsername.value)
+  fd.append('catatan',     p.catatan    ?? '')
+  fd.append('is_finished', '1')
+  if (fileToUpload.value) {
+    fd.append('file', fileToUpload.value)
+  }
+
+  router.post(
+    route('admin.data-kerjasama.proses.update', [k.id_kerjasama, p.id]),
+    fd,
+    {
+      preserveScroll: true,
+      onSuccess: () => {
+        closeProcessModal()
+      },
+    }
+  )
 }
 </script>

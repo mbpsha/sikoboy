@@ -12,60 +12,43 @@ class KategoriKerjasamaSeeder extends Seeder
      */
     public function run(): void
     {
-        // Insert or update all .docx templates found in public/docs
-        $files = glob(base_path('public/docs') . '/*.docx');
+        $kategori = [
+            [
+                'nama_kategori' => 'Kerjasama Daerah Antar Daerah (KSDD)',
+                'deskripsi' => 'Kerjasama daerah antar daerah',
+                'file_template' => '-',
+            ],
+            [
+                'nama_kategori' => 'Kerjasama Dengan Pihak Ketiga (KSDPK)',
+                'deskripsi' => 'Kerjasama dengan pihak ketiga',
+                'file_template' => '-',
+            ],
+            [
+                'nama_kategori' => 'Sinergi Dengan Pemerintah Pusat / Lembaga (NK/RK)',
+                'deskripsi' => 'Sinergi dengan pemerintah pusat atau lembaga',
+                'file_template' => '-',
+            ],
+            [
+                'nama_kategori' => 'Perjanjian Teknis (PERTEK)',
+                'deskripsi' => 'Perjanjian teknis',
+                'file_template' => '-',
+            ],
+            [
+                'nama_kategori' => 'Kerjasama Daerah Dengan Pemerintah Daerah Di Luar Negeri (KSDPL)',
+                'deskripsi' => 'Kerjasama daerah dengan pemerintah daerah di luar negeri',
+                'file_template' => '-',
+            ],
+            [
+                'nama_kategori' => 'Kerjasama Daerah Dengan Lembaga Di Luar Negeri (KSDLL)',
+                'deskripsi' => 'Kerjasama daerah dengan lembaga di luar negeri',
+                'file_template' => '-',
+            ],
+        ];
 
-        if (empty($files)) {
-            DB::table('kategori_kerjasama')->insert([
-                [
-                    'nama_kategori' => 'PERJANJIAN KERJA SAMA (PKS)',
-                    'deskripsi' => 'Template PKS',
-                    'file_template' => 'storage/docs/default_pks.docx',
-                ],
-                [
-                    'nama_kategori' => 'KESEPAKATAN BERSAMA',
-                    'deskripsi' => 'Template Kesepakatan',
-                    'file_template' => 'storage/docs/default_kb.docx',
-                ],
-            ]);
-
-            return;
-        }
-        
-        foreach ($files as $f) {
-            $base = basename($f);
-            $storagePath = '/storage/docs/' . $base;
-
-            // derive a readable category name from filename
-            $nama = '';
-            if (stripos($base, 'PKS') !== false) {
-                // e.g. 'Template PKS KSDD.docx' => 'PERJANJIAN KERJA SAMA (PKS KSDD)'
-                if (preg_match('/PKS\s*([A-Za-z0-9]+)/i', $base, $m)) {
-                    $suf = $m[1];
-                    $nama = 'PERJANJIAN KERJA SAMA (PKS ' . strtoupper($suf) . ')';
-                } else {
-                    $nama = 'PERJANJIAN KERJA SAMA';
-                }
-            } elseif (stripos($base, 'KESEPAKATAN BERSAMA') !== false) {
-                // e.g. 'Template KESEPAKATAN BERSAMA KSDD.docx' => 'KESEPAKATAN BERSAMA (KSDD)'
-                if (preg_match('/KESEPAKATAN BERSAMA\s*([A-Za-z0-9]+)/i', $base, $m)) {
-                    $suf = $m[1];
-                    $nama = 'KESEPAKATAN BERSAMA (' . strtoupper($suf) . ')';
-                } else {
-                    $nama = 'KESEPAKATAN BERSAMA';
-                }
-            } elseif (stripos($base, 'NOTA KESEPAKATAN') !== false) {
-                $nama = 'NOTA KESEPAKATAN';
-            } else {
-                // fallback: filename without extension
-                $nama = preg_replace('/\.[^.]+$/', '', $base);
-            }
-
-            $deskripsi = 'Template ' . $nama;
-
+        foreach ($kategori as $item) {
             DB::table('kategori_kerjasama')->updateOrInsert(
-                ['file_template' => $storagePath],
-                ['nama_kategori' => $nama, 'deskripsi' => $deskripsi]
+                ['nama_kategori' => $item['nama_kategori']],
+                $item
             );
         }
     }

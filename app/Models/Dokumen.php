@@ -18,6 +18,7 @@ class Dokumen extends Model
      */
     protected $fillable = [
         'id_kerjasama',
+        'jenis_dokumen',
         'nama_file',
         'lokasi_file',
         'versi_dokumen',
