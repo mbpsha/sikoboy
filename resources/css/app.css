@@ -1,7 +1,7 @@
-@import 'tailwindcss';
-
 /* Import font */
 @import url('https://fonts.googleapis.com/css2?family=Fahkwang:wght@300;400;500;600;700&display=swap');
+
+@import 'tailwindcss';
 
 /* Source (biarin aja) */
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
