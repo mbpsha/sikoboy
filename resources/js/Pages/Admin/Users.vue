@@ -239,6 +239,29 @@ function verifyMitra(id) {
   verifyingUserId.value = id
   router.put(route('admin.pengguna.verify', id), {}, {
     preserveScroll: true,
+    onSuccess: () => {
+      Swal.fire({
+        icon: 'success',
+        title: 'Berhasil',
+        text: 'Akun mitra berhasil diverifikasi',
+        timer: 1200,
+        showConfirmButton: false,
+      }).then(() => {
+        try {
+          router.visit(route('admin.pengguna.index'), { preserveState: false })
+        } catch (e) {
+          router.reload()
+        }
+      })
+    },
+    onError: () => {
+      Swal.fire({
+        icon: 'error',
+        title: 'Gagal',
+        text: 'Gagal memverifikasi akun mitra',
+      })
+      verifyingUserId.value = null
+    },
     onFinish: () => {
       verifyingUserId.value = null
     },

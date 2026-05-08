@@ -18,6 +18,7 @@ use App\Http\Controllers\Mitra\ProfileController as MitraProfileController;
 use App\Http\Controllers\PotensiController;
 use App\Http\Controllers\TemplateDokumenController;
 use App\Models\Peraturan;
+use App\Models\Potensi;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -28,7 +29,34 @@ use Illuminate\Support\Facades\DB;
 // ========================================
 
 // Home / Welcome
-Route::get('/', fn() => Inertia::render('Welcome'))->name('home');
+Route::get('/', function () {
+    $potensi = Potensi::query()
+        ->with('poin')
+        ->where('status_tampil', true)
+        ->orderBy('kategori')
+        ->orderBy('id_potensi')
+        ->get()
+        ->groupBy('kategori')
+        ->map(function ($items) {
+            return $items->map(function (Potensi $p) {
+                return [
+                    'id_potensi' => $p->id_potensi,
+                    'kategori' => $p->kategori,
+                    'judul' => $p->judul,
+                    'deskripsi' => $p->deskripsi,
+                    'gambar_url' => $p->gambar_path ? asset('storage/'.$p->gambar_path) : null,
+                    'poin' => $p->poin->map(fn ($pt) => [
+                        'id' => $pt->id_potensi_poin,
+                        'isi' => $pt->isi,
+                    ])->values(),
+                ];
+            })->values();
+        });
+
+    return Inertia::render('Welcome', [
+        'potensiData' => $potensi,
+    ]);
+})->name('home');
 
 // About
 Route::get('/about', fn () => Inertia::render('About'))->name('about');

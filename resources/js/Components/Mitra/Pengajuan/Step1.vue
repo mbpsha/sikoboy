@@ -21,12 +21,12 @@ const submit = () => {
 
     <main class="flex-1 flex flex-col">
       
-      <div class="max-w-5xl mx-auto w-full px-10 pt-32 pb-8">
+      <div class="max-w-5xl mx-auto w-full px-10 pt-32 pb-16">
         <h1 class="text-4xl font-bold text-[#17464E]">Profil Mitra</h1>
         <p class="text-sm text-[#17464E]/80 mt-2">Kelola informasi dan pantau status pengajuan kerjasama Anda</p>
       </div>
 
-      <div class="bg-[#17464E] rounded-t-[40px] pt-16 pb-32 text-center shadow-inner">
+      <div class="bg-[#17464E] rounded-t-[40px] pt-24 pb-32 text-center shadow-inner">
         <div class="max-w-5xl mx-auto px-6">
           <h2 class="text-3xl font-bold text-white mb-3">Form Pengajuan Kerjasama</h2>
           <p class="text-[15px] text-gray-200 leading-relaxed max-w-2xl mx-auto">

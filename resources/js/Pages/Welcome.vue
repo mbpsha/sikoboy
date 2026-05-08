@@ -1,10 +1,18 @@
 <script setup>
+import { defineProps } from 'vue'
 import LandingLayout from '@/Layouts/LandingLayout.vue';
 import HeroSection from '@/Components/Landing/HeroSection.vue';
 import StatsSection from '@/Components/Landing/StatsSection.vue';
 import AboutSection from '@/Components/Landing/AboutSection.vue';
 import PotentialSection from '@/Components/Landing/PotentialSection.vue';
 import landingImages from '@/images';
+
+defineProps({
+    potensiData: {
+        type: Object,
+        default: () => ({})
+    }
+});
 
 const stats = [
     { label: 'Jumlah Kerja Sama', value: '147' },
@@ -42,7 +50,7 @@ const potentials = [
 
         <StatsSection :stats="stats" />
         <AboutSection />
-        <PotentialSection :items="potentials" />
+        <PotentialSection :potensiData="potensiData" />
 
         <!-- Image gallery: place your image files into public/images/ -->
         <ImageGallery :images="landingImages" />
