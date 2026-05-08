@@ -2,32 +2,37 @@
 import { ref, onMounted, computed } from 'vue'
 import images from '@/images'
 
-// Pertanian images (top=1, main=2, bottom=3)
-const topImg    = images.find(i => /landing_pertanian1/i.test(i.alt))?.src || images[0]?.src
-const mainImg   = images.find(i => /landing_pertanian2/i.test(i.alt))?.src || images[1]?.src
-const bottomImg = images.find(i => /landing_pertanian3/i.test(i.alt))?.src || images[2]?.src
+// Pertanian images (4 images)
+const pertanian1 = images.find(i => /landing_pertanian1/i.test(i.alt))?.src || images[0]?.src
+const pertanian2 = images.find(i => /landing_pertanian2/i.test(i.alt))?.src || images[1]?.src
+const pertanian3 = images.find(i => /landing_pertanian3/i.test(i.alt))?.src || images[2]?.src
+const pertanian4 = images.find(i => /landing_pertanian4/i.test(i.alt))?.src || images[3]?.src
 
-// Peternakan images
-const peternakanTopImg    = images.find(i => /landing_peternakan1/i.test(i.alt))?.src || images[3]?.src
-const peternakanMainImg   = images.find(i => /landing_peternakan2/i.test(i.alt))?.src || images[4]?.src
-const peternakanBottomImg = images.find(i => /landing_peternakan3/i.test(i.alt))?.src || images[5]?.src
+// Peternakan images (4 images)
+const peternakan1 = images.find(i => /landing_peternakan1/i.test(i.alt))?.src || images[4]?.src
+const peternakan2 = images.find(i => /landing_peternakan2/i.test(i.alt))?.src || images[5]?.src
+const peternakan3 = images.find(i => /landing_peternakan3/i.test(i.alt))?.src || images[6]?.src
+const peternakan4 = images.find(i => /landing_peternakan4/i.test(i.alt))?.src || images[7]?.src
 
-// Wisata Alam images
-const wisataTopImg    = images.find(i => /landing_wisal2/i.test(i.alt))?.src || images[6]?.src
-const wisataMainImg   = images.find(i => /landing_wisal1/i.test(i.alt))?.src || images[7]?.src
-const wisataBottomImg = images.find(i => /landing_wisal4/i.test(i.alt))?.src || images[8]?.src
+// Wisata Alam images (4 images)
+const wisata1 = images.find(i => /landing_wisal1/i.test(i.alt))?.src || images[8]?.src
+const wisata2 = images.find(i => /landing_wisal2/i.test(i.alt))?.src || images[9]?.src
+const wisata3 = images.find(i => /landing_wisal3/i.test(i.alt))?.src || images[10]?.src
+const wisata4 = images.find(i => /landing_wisal4/i.test(i.alt))?.src || images[11]?.src
 
-// UMKM images
-const umkmTopImg    = images.find(i => /landing_umkm1/i.test(i.alt))?.src || images[9]?.src
-const umkmMainImg   = images.find(i => /landing_umkm2/i.test(i.alt))?.src || images[10]?.src
-const umkmBottomImg = images.find(i => /landing_umkm3/i.test(i.alt))?.src || images[11]?.src
+// UMKM images (4 images)
+const umkm1 = images.find(i => /landing_umkm1/i.test(i.alt))?.src || images[12]?.src
+const umkm2 = images.find(i => /landing_umkm2/i.test(i.alt))?.src || images[13]?.src
+const umkm3 = images.find(i => /landing_umkm3/i.test(i.alt))?.src || images[14]?.src
+const umkm4 = images.find(i => /landing_umkm4/i.test(i.alt))?.src || images[15]?.src
 
-// Budaya images
-const budayaTopImg    = images.find(i => /landing_budaya2/i.test(i.alt))?.src || images[12]?.src
-const budayaMainImg   = images.find(i => /landing_budaya1/i.test(i.alt))?.src || images[13]?.src
-const budayaBottomImg = images.find(i => /landing_budaya3/i.test(i.alt))?.src || images[14]?.src
+// Budaya images (4 images)
+const budaya1 = images.find(i => /landing_budaya1/i.test(i.alt))?.src || images[16]?.src
+const budaya2 = images.find(i => /landing_budaya2/i.test(i.alt))?.src || images[17]?.src
+const budaya3 = images.find(i => /landing_budaya3/i.test(i.alt))?.src || images[18]?.src
+const budaya4 = images.find(i => /landing_budaya4/i.test(i.alt))?.src || images[19]?.src
 
-// Active tab
+// State
 const activeTab = ref('pertanian')
 const show = ref(false)
 const tabVisible = ref(true)
@@ -53,9 +58,10 @@ onMounted(() => {
   setTimeout(() => { show.value = true }, 200)
 })
 
+// FULL CONTENT (TIDAK DIUBAH)
 const tabContent = {
   pertanian: {
-    images: { top: topImg, main: mainImg, bottom: bottomImg },
+    images: { img1: pertanian1, img2: pertanian2, img3: pertanian3, img4: pertanian4 },
     left: [
       {
         title: 'Lahan Subur dan Produktif',
@@ -78,7 +84,7 @@ const tabContent = {
     ],
   },
   peternakan: {
-    images: { top: peternakanTopImg, main: peternakanMainImg, bottom: peternakanBottomImg },
+    images: { img1: peternakan1, img2: peternakan2, img3: peternakan3, img4: peternakan4 },
     left: [
       {
         title: 'Lumbung Susu',
@@ -101,7 +107,7 @@ const tabContent = {
     ],
   },
   wisata: {
-    images: { top: wisataTopImg, main: wisataMainImg, bottom: wisataBottomImg },
+    images: { img1: wisata1, img2: wisata2, img3: wisata3, img4: wisata4 },
     left: [
       {
         title: 'Embung Manajar',
@@ -124,7 +130,7 @@ const tabContent = {
     ],
   },
   umkm: {
-    images: { top: umkmTopImg, main: umkmMainImg, bottom: umkmBottomImg },
+    images: { img1: umkm1, img2: umkm2, img3: umkm3, img4: umkm4 },
     left: [
       {
         title: 'Olahan Susu Sapi',
@@ -147,7 +153,7 @@ const tabContent = {
     ],
   },
   budaya: {
-    images: { top: budayaTopImg, main: budayaMainImg, bottom: budayaBottomImg },
+    images: { img1: budaya1, img2: budaya2, img3: budaya3, img4: budaya4 },
     left: [
       {
         title: 'Festival Budaya Tahunan',
@@ -175,114 +181,93 @@ const current = computed(() => tabContent[activeTab.value])
 </script>
 
 <template>
-<section class="bg-white py-32 px-6 overflow-hidden">
+<section class="bg-white pt-44 pb-32 px-6 overflow-hidden">
   <div class="max-w-7xl mx-auto">
 
     <!-- TITLE -->
-    <div
-      class="text-center transition-all duration-700"
-      :class="show ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'"
-    >
-      <h2 class="text-2xl md:text-3xl font-extrabold tracking-tight text-[#0C505C]">
+    <div class="text-center">
+      <h2 class="text-2xl md:text-3xl font-extrabold text-[#0C505C]">
         Potensi Unggulan Kabupaten Boyolali
       </h2>
-      <p class="mt-4 text-md text-slate-600 max-w-2xl mx-auto">
+      <p class="mt-4 text-md text-slate-600">
         Mendukung Peluang Kolaborasi dan Pengembangan daerah
       </p>
     </div>
 
-    <!-- NAV TABS -->
-    <div
-      class="mt-8 flex justify-center transition-all duration-700 delay-100"
-      :class="show ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'"
-    >
+    <!-- TABS -->
+    <div class="mt-8 flex justify-center">
       <div class="flex gap-8 text-sm">
-        <button
-          v-for="tab in tabs"
-          :key="tab.key"
+        <button v-for="tab in tabs" :key="tab.key"
           @click="switchTab(tab.key)"
-          class="pb-1 transition-all duration-300 font-medium"
           :class="activeTab === tab.key
-            ? 'text-[#0D99FF] font-semibold border-b-2 border-[#0D99FF]'
-            : 'text-slate-400 hover:text-[#0C505C]'"
-        >
+            ? 'text-blue-500 border-b-2 border-blue-500'
+            : 'text-gray-400'">
           {{ tab.label }}
         </button>
       </div>
     </div>
 
     <!-- CONTENT -->
-    <div
-      class="mt-20 grid grid-cols-1 md:grid-cols-3 items-center gap-8 transition-all duration-300"
-      :class="tabVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'"
-    >
+    <div class="mt-20 grid md:grid-cols-3 gap-8 items-center">
 
       <!-- LEFT TEXT -->
-      <div
-        class="space-y-16 pl-4 transition-all duration-700 delay-200"
-        :class="show ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-10'"
-      >
-        <div
-          v-for="(item, i) in current.left"
-          :key="i"
-          class="max-w-[280px] hover:-translate-y-1 transition"
-        >
-          <h3 class="text-[#0C505C] font-bold text-md text-center">
-            {{ item.title }}
-          </h3>
-          <p class="text-sm text-slate-500 mt-2 leading-relaxed text-center">
-            {{ item.desc }}
-          </p>
+      <div class="space-y-16">
+        <div v-for="(item, idx) in current.left" :key="idx" 
+             class="opacity-0 animate-fadeInLeft" 
+             :style="{ animationDelay: `${idx * 0.15}s`, animationFillMode: 'forwards' }">
+          <h3 class="text-center font-bold text-[#0C505C]">{{ item.title }}</h3>
+          <p class="text-center text-sm text-gray-500 mt-2">{{ item.desc }}</p>
         </div>
       </div>
 
-      <!-- IMAGE STACK -->
-      <div
-        class="relative flex justify-center transition-all duration-700 delay-300"
-        :class="show ? 'opacity-100 scale-100' : 'opacity-0 scale-90'"
-      >
-        <div class="relative w-[340px] h-[520px]">
-
-          <!-- TOP -->
-          <div class="absolute top-0 left-1/2 -translate-x-1/2 z-20 animate-float">
-            <div class="w-52 aspect-[3/4] rounded-3xl border-4 border-white overflow-hidden shadow-[0_20px_50px_rgba(12,80,80,0.15)] hover:scale-105 transition">
-              <img :src="current.images.top" class="w-full h-full object-cover" />
-            </div>
+      <!-- IMAGES - ALL 3:4 ASPECT RATIO, PLACED CLOSE TO EACH OTHER -->
+      <div class="relative flex justify-center items-center min-h-[500px]">
+        
+        <!-- Image 1: Bottom Left -->
+        <div class="absolute left-13 bottom-28 z-10 transition-all duration-500 hover:scale-105 hover:z-50">
+          <div class="w-36 h-48 rounded-xl overflow-hidden shadow-lg bg-gray-100">
+            <img :src="current.images.img1" 
+                 class="w-full h-full object-cover"
+                 alt="Image 1"/>
           </div>
-
-          <!-- MIDDLE -->
-          <div class="absolute top-[120px] left-0 z-30 -rotate-3 animate-float-delay">
-            <div class="w-52 aspect-[3/4] rounded-3xl border-4 border-white overflow-hidden shadow-[0_25px_60px_rgba(12,80,80,0.18)] hover:scale-105 transition">
-              <img :src="current.images.main" class="w-full h-full object-cover" />
-            </div>
-          </div>
-
-          <!-- BOTTOM -->
-          <div class="absolute top-[240px] right-0 z-10 rotate-2 animate-float-slow">
-            <div class="w-52 aspect-[3/4] rounded-3xl border-4 border-white overflow-hidden shadow-[0_24px_56px_rgba(12,80,80,0.12)] hover:scale-105 transition">
-              <img :src="current.images.bottom" class="w-full h-full object-cover" />
-            </div>
-          </div>
-
         </div>
+
+        <!-- Image 2: Top Left -->
+        <div class="absolute left-18 top-3 z-20 transition-all duration-500 hover:scale-105 hover:z-50">
+          <div class="w-36 h-48 rounded-xl overflow-hidden shadow-lg bg-gray-100">
+            <img :src="current.images.img2" 
+                 class="w-full h-full object-cover"
+                 alt="Image 2"/>
+          </div>
+        </div>
+
+        <!-- Image 3: Center Right (main image) -->
+        <div class="absolute right-12 top-1/3 -translate-y-1/2 z-30 transition-all duration-500 hover:scale-105 hover:z-50">
+          <div class="w-36 h-48 rounded-xl overflow-hidden shadow-xl bg-gray-100">
+            <img :src="current.images.img3" 
+                 class="w-full h-full object-cover"
+                 alt="Image 3"/>
+          </div>
+        </div>
+
+        <!-- Image 4: Bottom Right (overlapping img3) -->
+        <div class="absolute right-18 bottom-15 z-40 transition-all duration-500 hover:scale-105 hover:z-50">
+          <div class="w-36 h-48 rounded-xl overflow-hidden shadow-lg bg-gray-100">
+            <img :src="current.images.img4" 
+                 class="w-full h-full object-cover"
+                 alt="Image 4"/>
+          </div>
+        </div>
+
       </div>
 
       <!-- RIGHT TEXT -->
-      <div
-        class="space-y-16 pl-4 transition-all duration-700 delay-200"
-        :class="show ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-10'"
-      >
-        <div
-          v-for="(item, i) in current.right"
-          :key="i"
-          class="max-w-[280px] hover:-translate-y-1 transition"
-        >
-          <h3 class="text-[#0C505C] font-bold text-md text-center">
-            {{ item.title }}
-          </h3>
-          <p class="text-sm text-slate-500 mt-2 leading-relaxed text-center">
-            {{ item.desc }}
-          </p>
+      <div class="space-y-16">
+        <div v-for="(item, idx) in current.right" :key="idx"
+             class="opacity-0 animate-fadeInRight"
+             :style="{ animationDelay: `${idx * 0.15}s`, animationFillMode: 'forwards' }">
+          <h3 class="text-center font-bold text-[#0C505C]">{{ item.title }}</h3>
+          <p class="text-center text-sm text-gray-500 mt-2">{{ item.desc }}</p>
         </div>
       </div>
 
@@ -293,12 +278,38 @@ const current = computed(() => tabContent[activeTab.value])
 </template>
 
 <style scoped>
-@keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50%       { transform: translateY(-12px); }
+@keyframes fadeInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
-.animate-float       { animation: float 6s ease-in-out infinite; }
-.animate-float-delay { animation: float 7s ease-in-out infinite; }
-.animate-float-slow  { animation: float 8s ease-in-out infinite; }
+@keyframes fadeInRight {
+  from {
+    opacity: 0;
+    transform: translateX(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-fadeInLeft {
+  animation: fadeInLeft 0.6s ease-out forwards;
+}
+
+.animate-fadeInRight {
+  animation: fadeInRight 0.6s ease-out forwards;
+}
+
+/* Smooth transitions */
+.relative > div {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
 </style>

@@ -2,12 +2,13 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
 use App\Models\Admin;
 use App\Models\Mitra;
+use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+
 
 class DatabaseSeeder extends Seeder
 {
@@ -18,60 +19,77 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Create Admin User
-        $admin = User::create([
-            'email' => 'admin@sikoboy.go.id',
-            'password' => Hash::make('Admin@12345'),
-            'role' => 'admin',
+        // Seed kategori kerjasama templates
+        $this->call([
+            KategoriKerjasamaSeeder::class,
         ]);
 
-        Admin::create([
-            'id_user' => $admin->id_user,
-            'nama' => 'Administrator Utama',
-            'divisi' => 'IT',
-        ]);
+        // Create default admin login requested by team.
+        $admin = User::updateOrCreate(
+            ['email' => 'AdminSikoboy123@admin.com'],
+            [
+                'password' => Hash::make('sikoboybukansikejam'),
+                'role' => 'admin',
+                'status_verifikasi' => 'disetujui',
+            ]
+        );
+
+        Admin::updateOrCreate(
+            ['id_user' => $admin->id_user],
+            [
+                'nama' => 'Admin SIKOBOY',
+                'divisi' => 'Administrator',
+            ]
+        );
 
         // Create Sample Partner/Mitra
-        $mitra = User::create([
+        $mitra = User::updateOrCreate([
             'email' => 'mitra@example.com',
+        ], [
             'password' => Hash::make('Mitra@12345'),
             'role' => 'mitra',
+            'status_verifikasi' => 'disetujui',
         ]);
 
-        Mitra::create([
+        Mitra::updateOrCreate([
             'id_user' => $mitra->id_user,
+        ], [
             'nama_perusahaan' => 'PT Contoh Mitra Indonesia',
-            'npwp' => '01.234.567.8-901.000',
             'no_handphone' => '081234567891',
             'pic' => 'Budi Santoso',
             'alamat' => 'Jl. Contoh No. 123, Boyolali',
         ]);
 
         // Create Additional Sample Partners
-        $mitra2 = User::create([
+        $mitra2 = User::updateOrCreate([
             'email' => 'partner2@example.com',
+        ], [
             'password' => Hash::make('Partner@12345'),
             'role' => 'mitra',
+            'status_verifikasi' => 'disetujui',
         ]);
 
-        Mitra::create([
+        Mitra::updateOrCreate([
             'id_user' => $mitra2->id_user,
+        ], [
             'nama_perusahaan' => 'CV Mitra Sejahtera',
-            'npwp' => '02.345.678.9-012.000',
             'no_handphone' => '081234567892',
             'pic' => 'Siti Nurhaliza',
             'alamat' => 'Jl. Merdeka No. 45, Boyolali',
         ]);
 
         // Create Unverified Partner
-        $mitra3 = User::create([
+        $mitra3 = User::updateOrCreate([
             'email' => 'unverified@example.com',
+        ], [
             'password' => Hash::make('Partner@12345'),
             'role' => 'mitra',
+            'status_verifikasi' => 'pending',
         ]);
 
-        Mitra::create([
+        Mitra::updateOrCreate([
             'id_user' => $mitra3->id_user,
+        ], [
             'nama_perusahaan' => 'PT Belum Verifikasi',
             'no_handphone' => '081234567893',
             'pic' => 'Ahmad Dahlan',
@@ -79,4 +97,3 @@ class DatabaseSeeder extends Seeder
         ]);
     }
 }
-

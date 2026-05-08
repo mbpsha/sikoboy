@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\Admin;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
 use Inertia\Inertia;
 
 class LoginController extends Controller
@@ -14,12 +16,17 @@ class LoginController extends Controller
     /**
      * Show the login form.
      */
-    public function showLoginForm(Request $request, $role = null)
+    public function showLoginForm(Request $request)
     {
-        if ($role && in_array($role, ['admin', 'mitra'])) {
-            return Inertia::render('Auth/Login', ['role' => $role]);
+        if ($request->user()) {
+            return match ($request->user()->role) {
+                'admin' => redirect()->route('admin.dashboard'),
+                'mitra' => redirect()->route('mitra.profile.index'), // ✅ DIPERBAIKI
+                default => redirect()->route('home'),
+            };
         }
-        return Inertia::render('Auth/RoleSelection');
+
+        return Inertia::render('Auth/Login');
     }
 
     /**
@@ -28,28 +35,63 @@ class LoginController extends Controller
     public function login(Request $request)
     {
         $request->validate([
-            'email' => 'required|email',
+            'login'    => 'required|string',
             'password' => 'required',
-            'role' => 'required|in:admin,mitra'
+            'g-recaptcha-response' => 'nullable|string',
         ]);
 
-        $user = User::where('email', $request->email)->first();
+        // ✅ Validasi reCAPTCHA untuk semua role
+        $captchaToken  = (string) $request->input('g-recaptcha-response', '');
+        $captchaSecret = (string) config('services.recaptcha.secret');
 
-        if (!$user || !Hash::check($request->password, $user->password)) {
-            return back()->withErrors(['email' => 'Email atau password salah.']);
+        if (!empty($captchaSecret)) {
+            $captchaResponse = Http::asForm()->timeout(5)->post(
+                'https://www.google.com/recaptcha/api/siteverify',
+                [
+                    'secret'   => $captchaSecret,
+                    'response' => $captchaToken,
+                    'remoteip' => $request->ip(),
+                ]
+            )->json();
+
+            if (empty($captchaResponse['success'])) {
+                return back()->withErrors(['captcha' => 'Verifikasi CAPTCHA gagal, coba lagi.']);
+            }
         }
 
-        if ($user->role !== $request->role) {
-            return back()->withErrors(['role' => 'Akses tidak sesuai.']);
+        $loginVal   = trim((string) $request->login);
+        $normalized = mb_strtolower($loginVal);
+
+        $user = null;
+        if (filter_var($loginVal, FILTER_VALIDATE_EMAIL)) {
+            $user = User::query()->whereRaw('LOWER(email) = ?', [$normalized])->first();
+        }
+
+        if (!$user) {
+            $admin = Admin::query()->whereRaw('LOWER(nama) = ?', [$normalized])->first();
+            if ($admin) $user = $admin->user;
+        }
+
+        if (!$user) {
+            $user = User::query()->whereRaw('LOWER(email) = ?', [$normalized])->first();
+        }
+
+        if (!$user || !Hash::check($request->password, $user->password)) {
+            return back()->withErrors(['login' => 'Email/Username atau password salah.']);
+        }
+
+        if ($user->role === 'mitra' && !$user->isMitraVerified()) {
+            return back()->withErrors([
+                'login' => 'Akun mitra Anda belum diverifikasi admin.',
+            ]);
         }
 
         Auth::login($user, $request->boolean('remember'));
-
-        // Regenerate session to prevent session fixation and ensure auth persists
         $request->session()->regenerate();
 
-        // Redirect to the public welcome page as requested
-        return redirect()->route('home');
+        return $user->role === 'admin'
+            ? redirect()->route('admin.dashboard')
+            : redirect()->route('home');
     }
 
     /**

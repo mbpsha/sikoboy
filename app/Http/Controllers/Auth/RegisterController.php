@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
 use App\Models\Mitra;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Auth\Events\Registered;
+use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
 class RegisterController extends Controller
@@ -28,28 +30,27 @@ class RegisterController extends Controller
             'email' => 'required|email|unique:users,email',
             'password' => 'required|min:8|confirmed',
             'nama_perusahaan' => 'required|string|max:255',
-            'npwp' => 'nullable|string',
             'no_handphone' => 'required|string',
             'pic' => 'required|string',
-            'alamat' => 'required|string'
+            'alamat' => 'required|string',
         ]);
 
         $user = User::create([
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'role' => 'mitra'
+            'role' => 'mitra',
+            'status_verifikasi' => 'pending',
         ]);
 
         Mitra::create([
             'id_user' => $user->id_user,
             'nama_perusahaan' => $request->nama_perusahaan,
-            'npwp' => $request->npwp,
             'no_handphone' => $request->no_handphone,
             'pic' => $request->pic,
             'alamat' => $request->alamat,
         ]);
 
-        return redirect()->route('login', ['role' => 'mitra'])
-            ->with('success', 'Registrasi berhasil! Silakan login.');
+        return redirect()->route('login')
+            ->with('success', 'Registrasi berhasil! Akun Anda akan diverifikasi admin terlebih dahulu.');
     }
 }

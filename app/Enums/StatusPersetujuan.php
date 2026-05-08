@@ -6,14 +6,14 @@ enum StatusPersetujuan: string
 {
     case Disetujui = 'disetujui';
     case Revisi    = 'revisi';
-    case Ditolak   = 'ditolak';
+    case Dibatalkan = 'dibatalkan';
 
     public function label(): string
     {
         return match ($this) {
             self::Disetujui => 'Disetujui',
             self::Revisi    => 'Revisi',
-            self::Ditolak   => 'Ditolak',
+            self::Dibatalkan => 'Dibatalkan',
         };
     }
 }

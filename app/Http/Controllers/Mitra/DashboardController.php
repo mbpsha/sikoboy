@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Mitra;
 use App\Http\Controllers\Controller;
 use App\Models\Mitra;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 use Inertia\Inertia;
 
 class DashboardController extends Controller
@@ -23,8 +22,8 @@ class DashboardController extends Controller
             'stats' => [
                 'member_since' => $user->created_at->format('d F Y'),
                 'last_login' => null,
-                'verification_status' => null
-            ]
+                'verification_status' => null,
+            ],
         ]);
     }
 
@@ -50,13 +49,11 @@ class DashboardController extends Controller
             'pic' => 'required|string',
             'no_handphone' => 'required|string',
             'alamat' => 'required|string',
-            'npwp' => 'nullable|string',
         ]);
 
         Mitra::create([
             'id_user' => $request->user()->id_user,
             'nama_perusahaan' => $request->nama_perusahaan,
-            'npwp' => $request->npwp,
             'no_handphone' => $request->no_handphone,
             'pic' => $request->pic,
             'alamat' => $request->alamat,
