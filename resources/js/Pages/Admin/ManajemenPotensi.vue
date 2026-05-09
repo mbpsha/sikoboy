@@ -34,12 +34,9 @@
       <div class="bg-white rounded-xl shadow mb-8">
         
         <!-- HEADER -->
-        <div class="flex justify-between items-center p-6 border-b">
+        <div class="flex justify-between items-center p-6">
           <div>
-            <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V6z"></path>
-              </svg>
+            <h3 class="text-lg font-bold text-gray-800">
               Paket {{ activeKategori }}
             </h3>
           </div>
@@ -57,8 +54,8 @@
         <!-- TABLE -->
         <div class="overflow-x-auto">
           <table class="w-full">
-            <thead class="bg-gray-100 border-b">
-              <tr>
+            <thead>
+              <tr class="border-b-2 border-gray-200">
                 <th class="px-6 py-4 text-left font-semibold text-gray-700">Nama Potensi</th>
                 <th class="px-6 py-4 text-left font-semibold text-gray-700">Jumlah Poin</th>
                 <th class="px-6 py-4 text-left font-semibold text-gray-700">Status</th>
@@ -66,12 +63,12 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-if="potensiList.length === 0" class="border-b hover:bg-gray-50">
+              <tr v-if="potensiList.length === 0" class="hover:bg-gray-50">
                 <td colspan="4" class="px-6 py-8 text-center text-gray-500">
                   Belum ada potensi untuk kategori ini
                 </td>
               </tr>
-              <tr v-for="item in potensiList" :key="item.id_potensi" class="border-b hover:bg-gray-50 transition-colors">
+              <tr v-for="item in potensiList" :key="item.id_potensi" class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                 <td class="px-6 py-4 font-medium text-gray-800">{{ item.judul }}</td>
                 <td class="px-6 py-4 text-gray-600">{{ item.poin?.length || 0 }} Poin</td>
                 <td class="px-6 py-4">

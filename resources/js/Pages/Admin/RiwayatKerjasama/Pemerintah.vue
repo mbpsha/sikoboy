@@ -7,6 +7,7 @@ import {
     DocumentTextIcon,
 } from "@heroicons/vue/24/outline";
 import AdminLayout from "@/Layouts/AdminLayout.vue";
+import Swal from "sweetalert2";
 
 const page = usePage();
 
@@ -42,27 +43,18 @@ const filter = () => {
 
 let debounceTimer = null;
 
-watch([search, tahun], () => {
-    if (debounceTimer) clearTimeout(debounceTimer);
+// Single watcher for search with debounce
+watch(search, () => {
+    clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => {
         filter();
-    }, 400);
+    }, 500);
 });
 
-watch(search, (value) => {
-    router.get(
-        route('admin.riwayat-kerjasama.pemerintah'),
-        {
-            search: value,
-            tahun: tahun.value,
-        },
-        {
-            preserveState: true,
-            preserveScroll: true,
-            replace: true,
-        }
-    )
-})
+// Direct filter on tahun change (no debounce needed)
+watch(tahun, () => {
+    filter();
+});
 
 onBeforeUnmount(() => {
     if (debounceTimer) clearTimeout(debounceTimer);
@@ -102,6 +94,35 @@ const adendumForm = ref({
 
 const errors = ref({});
 const adendumErrors = ref({});
+const isSubmitting = ref(false);
+
+// AUTO CALCULATE TANGGAL SELESAI
+const calculateEndDate = () => {
+  if (form.value.mulai && form.value.jangka) {
+    const startDate = new Date(form.value.mulai);
+    const years = parseInt(form.value.jangka, 10);
+    
+    if (!isNaN(years)) {
+      const endDate = new Date(startDate);
+      endDate.setFullYear(endDate.getFullYear() + years);
+      
+      // Format ke YYYY-MM-DD
+      const year = endDate.getFullYear();
+      const month = String(endDate.getMonth() + 1).padStart(2, '0');
+      const day = String(endDate.getDate()).padStart(2, '0');
+      
+      form.value.selesai = `${year}-${month}-${day}`;
+    }
+  }
+};
+
+// WATCHER untuk auto-calculate
+watch(
+  [() => form.value.mulai, () => form.value.jangka],
+  () => {
+    calculateEndDate();
+  }
+);
 
 // VALIDASI
 const validate = () => {
@@ -155,7 +176,20 @@ const handleAdendumDrop = (e) => {
 
 // SUBMIT
 const submit = () => {
-    if (!validate()) return;
+    if (!validate()) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Validasi Gagal',
+            html: '<div style="text-align: left">' + 
+                  Object.values(errors.value).map(err => `• ${err}`).join('<br>') + 
+                  '</div>',
+            confirmButtonText: 'OK',
+            confirmButtonColor: '#0d9488'
+        });
+        return;
+    }
+
+    isSubmitting.value = true;
 
     const formData = new FormData();
     const tahun = String(form.value.tahun || new Date().getFullYear());
@@ -187,9 +221,42 @@ const submit = () => {
 
     router.post(route("admin.riwayat-kerjasama.pemerintah.store"), formData, {
         preserveScroll: true,
-        onSuccess: closeModal,
+        onSuccess: () => {
+            isSubmitting.value = false;
+            Swal.fire({
+                icon: 'success',
+                title: 'Berhasil!',
+                text: 'Data kerjasama pemerintah berhasil disimpan',
+                confirmButtonText: 'OK',
+                confirmButtonColor: '#0d9488'
+            }).then(() => {
+                closeModal();
+                router.visit(route('admin.riwayat-kerjasama.pemerintah'), { preserveState: false });
+            });
+        },
         onError: (err) => {
-            console.log(err);
+            isSubmitting.value = false;
+            console.error('Error:', err);
+            
+            let errorHtml = '<div style="text-align: left; font-size: 0.9rem;">';
+            if (typeof err === 'object') {
+                Object.entries(err).forEach(([key, value]) => {
+                    const errorMsg = Array.isArray(value) ? value[0] : value;
+                    errorHtml += `<strong>${key}:</strong> ${errorMsg}<br>`;
+                });
+            } else {
+                errorHtml += String(err);
+            }
+            errorHtml += '</div>';
+
+            Swal.fire({
+                icon: 'error',
+                title: 'Gagal Menyimpan Data',
+                html: errorHtml,
+                confirmButtonText: 'OK',
+                confirmButtonColor: '#0d9488'
+            });
+            
             errors.value = err;
         },
     });
@@ -248,6 +315,10 @@ const openAdendumModal = (item) => {
     selectedKerjasama.value = item;
     showAdendumModal.value = true;
 };
+
+onBeforeUnmount(() => {
+    if (debounceTimer) clearTimeout(debounceTimer);
+});
 </script>
 
 <template>
@@ -794,16 +865,19 @@ const openAdendumModal = (item) => {
                 <div class="flex gap-3 justify-end mt-4 pt-4 border-t border-gray-200">
                     <button
                         @click="closeModal"
-                        class="px-4 py-2 bg-gray-300 rounded-lg"
+                        :disabled="isSubmitting"
+                        class="px-4 py-2 bg-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         Batal
                     </button>
 
                     <button
                         @click="submit"
-                        class="px-4 py-2 bg-teal-600 text-white rounded-lg"
+                        :disabled="isSubmitting"
+                        class="px-4 py-2 bg-teal-600 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                     >
-                        Simpan Pengajuan
+                        <span v-if="isSubmitting" class="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                        {{ isSubmitting ? 'Menyimpan...' : 'Simpan Pengajuan' }}
                     </button>
                 </div>
             </div>

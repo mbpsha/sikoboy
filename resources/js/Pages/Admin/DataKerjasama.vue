@@ -2,20 +2,52 @@
   <AdminLayout title="Ajuan Kerjasama">
     <div class="max-w-7xl mx-auto px-4 py-6 space-y-6">
 
+      <!-- Header with Add Button -->
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-2xl font-bold text-gray-800">Ajuan Kerjasama</h2>
+          <p class="text-sm text-gray-500 mt-1">Kelola dan pantau semua data kerjasama</p>
+        </div>
+        <div class="relative">
+          <button
+            @click="showAddMenu = !showAddMenu"
+            class="bg-teal-600 hover:bg-teal-700 text-white px-5 py-2.5 rounded-lg font-medium flex items-center gap-2 transition"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+            </svg>
+            Tambah Kerjasama
+          </button>
+          <div
+            v-if="showAddMenu"
+            class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-100 overflow-hidden z-10"
+          >
+            <Link href="/admin/riwayat-kerjasama/pemerintah" class="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 font-medium transition">
+              ➕ Pemerintah
+            </Link>
+            <Link href="/admin/riwayat-kerjasama/mitra" class="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 font-medium transition border-t">
+              ➕ Mitra
+            </Link>
+            <Link href="/admin/riwayat-kerjasama/gabungan" class="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 font-medium transition border-t">
+              ➕ Gabungan
+            </Link>
+          </div>
+        </div>
+      </div>
+
       <!-- Search & Filter Bar -->
       <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
         <div class="flex flex-wrap items-center gap-3">
           <input
             v-model="local.search"
-            @keyup.enter="applyFilters"
             placeholder="Cari berdasarkan mitra atau nama kerjasama..."
             class="flex-1 min-w-[220px] rounded-full px-4 py-2.5 text-sm border border-gray-200 bg-gray-50 focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition"
           />
-          <select v-model="local.tahun" class="rounded-full px-4 py-2.5 text-sm border border-gray-200 bg-gray-50 focus:outline-none focus:border-teal-600">
+          <select v-model="local.tahun" @change="applyFilters" class="rounded-full px-4 py-2.5 text-sm border border-gray-200 bg-gray-50 focus:outline-none focus:border-teal-600">
             <option value="">Semua Tahun</option>
             <option v-for="y in years" :key="y" :value="y">{{ y }}</option>
           </select>
-          <select v-model="local.status" class="rounded-full px-4 py-2.5 text-sm border border-gray-200 bg-gray-50 focus:outline-none focus:border-teal-600">
+          <select v-model="local.status" @change="applyFilters" class="rounded-full px-4 py-2.5 text-sm border border-gray-200 bg-gray-50 focus:outline-none focus:border-teal-600">
             <option value="">Semua Status</option>
             <option value="aktif">Aktif</option>
             <option value="segera berakhir">Segera Berakhir</option>
@@ -23,6 +55,9 @@
           </select>
           <button @click="applyFilters" class="bg-teal-700 hover:bg-teal-800 text-white text-sm px-5 py-2.5 rounded-full font-medium transition">
             Filter
+          </button>
+          <button v-if="local.search || local.tahun || local.status" @click="resetAllFilters" class="bg-gray-300 hover:bg-gray-400 text-gray-700 text-sm px-5 py-2.5 rounded-full font-medium transition">
+            Reset
           </button>
         </div>
       </div>
@@ -34,7 +69,12 @@
             <thead>
               <tr class="bg-teal-700 text-white text-xs uppercase tracking-wide">
                 <th class="py-3 px-4 text-left font-medium border-r border-white/10">No</th>
-                <th class="py-3 px-4 text-left font-medium border-r border-white/10">Tahun</th>
+                <th class="py-3 px-4 text-left font-medium border-r border-white/10">
+                  <div class="flex items-center justify-between gap-1">
+                    <span>Tahun</span>
+                    <button v-if="local.tahun" @click="local.tahun = ''; applyFilters()" class="text-yellow-300 hover:text-yellow-100" title="Clear filter">✕</button>
+                  </div>
+                </th>
                 <th class="py-3 px-4 text-left font-medium border-r border-white/10">Mitra</th>
                 <th class="py-3 px-4 text-left font-medium border-r border-white/10">Judul</th>
                 <th class="py-3 px-4 text-left font-medium border-r border-white/10">Jenis Kerjasama</th>
@@ -206,7 +246,7 @@
 <script setup>
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import { Link, router, usePage } from '@inertiajs/vue3'
-import { ref, computed, reactive } from 'vue'
+import { ref, computed, reactive, watch } from 'vue'
 import Swal from 'sweetalert2'
 
 const props = defineProps({
@@ -238,9 +278,30 @@ const local = ref({
   status: filters.value?.status ?? '',
 })
 
+// Column filters state
+const columnFilters = ref({
+  mitra: '',
+  jenis_kerjasama: '',
+  jenis_dokumen: '',
+  urusan: '',
+})
+
+// Add menu state
+const showAddMenu = ref(false)
+
+let searchTimeout = null
+
 const years = computed(() => {
   const now = new Date().getFullYear()
   return Array.from({ length: 6 }).map((_, i) => now - i)
+})
+
+// Auto-search dengan debounce
+watch(() => local.value.search, () => {
+  clearTimeout(searchTimeout)
+  searchTimeout = setTimeout(() => {
+    applyFilters()
+  }, 500)
 })
 
 function applyFilters() {
@@ -249,6 +310,21 @@ function applyFilters() {
   if (local.value.tahun)  params.tahun  = local.value.tahun
   if (local.value.status) params.status = local.value.status
   router.visit(route('admin.data-kerjasama.index'), { method: 'get', data: params })
+}
+
+function applyColumnFilter(column, value) {
+  if (!value) return
+  local.value.search = value
+  columnFilters.value[column] = value
+  applyFilters()
+}
+
+function resetAllFilters() {
+  local.value.search = ''
+  local.value.tahun = ''
+  local.value.status = ''
+  columnFilters.value = { mitra: '', jenis_kerjasama: '', jenis_dokumen: '', urusan: '' }
+  router.visit(route('admin.data-kerjasama.index'), { method: 'get', data: {} })
 }
 
 function goTo(url) {
