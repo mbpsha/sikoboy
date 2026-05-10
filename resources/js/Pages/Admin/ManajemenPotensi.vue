@@ -37,7 +37,7 @@
         <div class="flex justify-between items-center p-6">
           <div>
             <h3 class="text-lg font-bold text-gray-800">
-              Paket {{ activeKategori }}
+              Potensi {{ activeKategori }}
             </h3>
           </div>
           <button

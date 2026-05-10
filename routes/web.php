@@ -53,8 +53,44 @@ Route::get('/', function () {
             })->values();
         });
 
+    // STATISTIK DINAMIS
+    $today = now();
+    $sixMonthsLater = now()->addMonths(6);
+    $threeMonthsLater = now()->addMonths(3);
+    
+    $totalKerjasama = DB::table('kerjasama')->count();
+    
+    $lessThanSixMonths = DB::table('kerjasama')
+        ->join('periode_kerjasama', 'kerjasama.id_kerjasama', '=', 'periode_kerjasama.id_kerjasama')
+        ->whereBetween('periode_kerjasama.tanggal_berakhir', [$today, $sixMonthsLater])
+        ->where('kerjasama.status_aktif', true)
+        ->distinct('kerjasama.id_kerjasama')
+        ->count('kerjasama.id_kerjasama');
+    
+    $lessThanThreeMonths = DB::table('kerjasama')
+        ->join('periode_kerjasama', 'kerjasama.id_kerjasama', '=', 'periode_kerjasama.id_kerjasama')
+        ->whereBetween('periode_kerjasama.tanggal_berakhir', [$today, $threeMonthsLater])
+        ->where('kerjasama.status_aktif', true)
+        ->distinct('kerjasama.id_kerjasama')
+        ->count('kerjasama.id_kerjasama');
+    
+    $expired = DB::table('kerjasama')
+        ->join('periode_kerjasama', 'kerjasama.id_kerjasama', '=', 'periode_kerjasama.id_kerjasama')
+        ->where('periode_kerjasama.tanggal_berakhir', '<', $today)
+        ->where('kerjasama.status_aktif', true)
+        ->distinct('kerjasama.id_kerjasama')
+        ->count('kerjasama.id_kerjasama');
+
+    $stats = [
+        ['label' => 'Jumlah Kerja Sama', 'value' => $totalKerjasama],
+        ['label' => 'Masa Berlaku <6 Bulan', 'value' => $lessThanSixMonths],
+        ['label' => 'Masa Berlaku <3 Bulan', 'value' => $lessThanThreeMonths],
+        ['label' => 'Masa Berlaku Habis', 'value' => $expired],
+    ];
+
     return Inertia::render('Welcome', [
         'potensiData' => $potensi,
+        'stats' => $stats,
     ]);
 })->name('home');
 

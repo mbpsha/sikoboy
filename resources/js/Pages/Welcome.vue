@@ -11,15 +11,17 @@ defineProps({
     potensiData: {
         type: Object,
         default: () => ({})
+    },
+    stats: {
+        type: Array,
+        default: () => [
+            { label: 'Jumlah Kerja Sama', value: '0' },
+            { label: 'Masa Berlaku <6 Bulan', value: '0' },
+            { label: 'Masa Berlaku <3 Bulan', value: '0' },
+            { label: 'Masa Berlaku Habis', value: '0' },
+        ]
     }
 });
-
-const stats = [
-    { label: 'Jumlah Kerja Sama', value: '147' },
-    { label: 'Masa Berlaku <6 Bulan', value: '11' },
-    { label: 'Masa Berlaku <3 Bulan', value: '13' },
-    { label: 'Masa Berlaku Habis', value: '37' },
-];
 
 const potentials = [
     {

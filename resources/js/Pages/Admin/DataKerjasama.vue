@@ -75,11 +75,95 @@
                     <button v-if="local.tahun" @click="local.tahun = ''; applyFilters()" class="text-yellow-300 hover:text-yellow-100" title="Clear filter">✕</button>
                   </div>
                 </th>
-                <th class="py-3 px-4 text-left font-medium border-r border-white/10">Mitra</th>
+                <th class="py-3 px-4 text-left font-medium border-r border-white/10">
+                  <div class="flex items-center justify-between gap-1 group relative cursor-pointer">
+                    <span>Mitra</span>
+                    <button class="text-yellow-300 hover:text-yellow-100">⚙️</button>
+                    <!-- MITRA FILTER DROPDOWN -->
+                    <div class="hidden group-hover:block absolute left-0 top-full mt-1 bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200 max-w-xs">
+                      <div class="mb-2 max-h-40 overflow-y-auto">
+                        <label v-for="val in uniqueMitra" :key="val" class="flex items-center gap-2 mb-1 cursor-pointer hover:bg-gray-100 p-1 rounded">
+                          <input type="checkbox" :checked="columnFilters.mitra.includes(val)" @change="(e) => {
+                            if (e.target.checked) {
+                              columnFilters.mitra.push(val)
+                            } else {
+                              columnFilters.mitra = columnFilters.mitra.filter(v => v !== val)
+                            }
+                          }" class="cursor-pointer" />
+                          <span class="text-xs">{{ val }}</span>
+                        </label>
+                      </div>
+                      <button @click="columnFilters.mitra = []" class="w-full px-2 py-1 bg-gray-300 hover:bg-gray-400 rounded text-xs">Clear</button>
+                    </div>
+                  </div>
+                </th>
                 <th class="py-3 px-4 text-left font-medium border-r border-white/10">Judul</th>
-                <th class="py-3 px-4 text-left font-medium border-r border-white/10">Jenis Kerjasama</th>
-                <th class="py-3 px-4 text-left font-medium border-r border-white/10">Jenis Dokumen</th>
-                <th class="py-3 px-4 text-left font-medium border-r border-white/10">Urusan</th>
+                <th class="py-3 px-4 text-left font-medium border-r border-white/10">
+                  <div class="flex items-center justify-between gap-1 group relative cursor-pointer">
+                    <span>Jenis Kerjasama</span>
+                    <button class="text-yellow-300 hover:text-yellow-100">⚙️</button>
+                    <!-- JENIS KERJASAMA FILTER DROPDOWN -->
+                    <div class="hidden group-hover:block absolute left-0 top-full mt-1 bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200">
+                      <div class="mb-2 max-h-40 overflow-y-auto">
+                        <label v-for="val in uniqueJenisKerjasama" :key="val" class="flex items-center gap-2 mb-1 cursor-pointer hover:bg-gray-100 p-1 rounded">
+                          <input type="checkbox" :checked="columnFilters.jenis_kerjasama.includes(val)" @change="(e) => {
+                            if (e.target.checked) {
+                              columnFilters.jenis_kerjasama.push(val)
+                            } else {
+                              columnFilters.jenis_kerjasama = columnFilters.jenis_kerjasama.filter(v => v !== val)
+                            }
+                          }" class="cursor-pointer" />
+                          <span class="text-xs">{{ val }}</span>
+                        </label>
+                      </div>
+                      <button @click="columnFilters.jenis_kerjasama = []" class="w-full px-2 py-1 bg-gray-300 hover:bg-gray-400 rounded text-xs">Clear</button>
+                    </div>
+                  </div>
+                </th>
+                <th class="py-3 px-4 text-left font-medium border-r border-white/10">
+                  <div class="flex items-center justify-between gap-1 group relative cursor-pointer">
+                    <span>Jenis Dokumen</span>
+                    <button class="text-yellow-300 hover:text-yellow-100">⚙️</button>
+                    <!-- JENIS DOKUMEN FILTER DROPDOWN -->
+                    <div class="hidden group-hover:block absolute left-0 top-full mt-1 bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200">
+                      <div class="mb-2 max-h-40 overflow-y-auto">
+                        <label v-for="val in uniqueJenisDokumen" :key="val" class="flex items-center gap-2 mb-1 cursor-pointer hover:bg-gray-100 p-1 rounded">
+                          <input type="checkbox" :checked="columnFilters.jenis_dokumen.includes(val)" @change="(e) => {
+                            if (e.target.checked) {
+                              columnFilters.jenis_dokumen.push(val)
+                            } else {
+                              columnFilters.jenis_dokumen = columnFilters.jenis_dokumen.filter(v => v !== val)
+                            }
+                          }" class="cursor-pointer" />
+                          <span class="text-xs">{{ val }}</span>
+                        </label>
+                      </div>
+                      <button @click="columnFilters.jenis_dokumen = []" class="w-full px-2 py-1 bg-gray-300 hover:bg-gray-400 rounded text-xs">Clear</button>
+                    </div>
+                  </div>
+                </th>
+                <th class="py-3 px-4 text-left font-medium border-r border-white/10">
+                  <div class="flex items-center justify-between gap-1 group relative cursor-pointer">
+                    <span>Urusan</span>
+                    <button class="text-yellow-300 hover:text-yellow-100">⚙️</button>
+                    <!-- URUSAN FILTER DROPDOWN -->
+                    <div class="hidden group-hover:block absolute left-0 top-full mt-1 bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200">
+                      <div class="mb-2 max-h-40 overflow-y-auto">
+                        <label v-for="val in uniqueUrusan" :key="val" class="flex items-center gap-2 mb-1 cursor-pointer hover:bg-gray-100 p-1 rounded">
+                          <input type="checkbox" :checked="columnFilters.urusan.includes(val)" @change="(e) => {
+                            if (e.target.checked) {
+                              columnFilters.urusan.push(val)
+                            } else {
+                              columnFilters.urusan = columnFilters.urusan.filter(v => v !== val)
+                            }
+                          }" class="cursor-pointer" />
+                          <span class="text-xs">{{ val }}</span>
+                        </label>
+                      </div>
+                      <button @click="columnFilters.urusan = []" class="w-full px-2 py-1 bg-gray-300 hover:bg-gray-400 rounded text-xs">Clear</button>
+                    </div>
+                  </div>
+                </th>
                 <th class="py-3 px-4 text-left font-medium border-r border-white/10">Mulai</th>
                 <th class="py-3 px-4 text-left font-medium border-r border-white/10">Berakhir</th>
                 <th class="py-3 px-4 text-left font-medium border-r border-white/10">Jangka Waktu</th>
@@ -91,7 +175,7 @@
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-100">
-              <tr v-for="(k, idx) in kerjasama.data" :key="k.id_kerjasama" class="hover:bg-gray-50 transition-colors">
+              <tr v-for="(k, idx) in filteredKerjasama" :key="k.id_kerjasama" class="hover:bg-gray-50 transition-colors">
                 <td class="py-3 px-4 text-gray-500 text-xs">{{ indexOffset + idx + 1 }}</td>
                 <td class="py-3 px-4 text-gray-600 whitespace-nowrap">{{ k.tahun }}</td>
                 <td class="py-3 px-4 max-w-[130px] truncate font-medium">{{ k.mitra }}</td>
@@ -280,10 +364,54 @@ const local = ref({
 
 // Column filters state
 const columnFilters = ref({
-  mitra: '',
-  jenis_kerjasama: '',
-  jenis_dokumen: '',
-  urusan: '',
+  mitra: [],
+  jenis_kerjasama: [],
+  jenis_dokumen: [],
+  urusan: [],
+})
+
+// Get unique values for each column
+const uniqueMitra = computed(() => {
+  const values = kerjasama.value.data.map(item => item.mitra)
+  return [...new Set(values)].filter(Boolean).sort()
+})
+
+const uniqueJenisKerjasama = computed(() => {
+  const values = kerjasama.value.data.map(item => item.jenis_kerjasama)
+  return [...new Set(values)].filter(Boolean).sort()
+})
+
+const uniqueJenisDokumen = computed(() => {
+  const values = kerjasama.value.data.map(item => item.jenis_dokumen)
+  return [...new Set(values)].filter(Boolean).sort()
+})
+
+const uniqueUrusan = computed(() => {
+  const values = kerjasama.value.data.map(item => item.urusan)
+  return [...new Set(values)].filter(Boolean).sort()
+})
+
+// Filtered data based on column filters
+const filteredKerjasama = computed(() => {
+  let data = [...kerjasama.value.data]
+
+  if (columnFilters.value.mitra.length > 0) {
+    data = data.filter(item => columnFilters.value.mitra.includes(item.mitra))
+  }
+
+  if (columnFilters.value.jenis_kerjasama.length > 0) {
+    data = data.filter(item => columnFilters.value.jenis_kerjasama.includes(item.jenis_kerjasama))
+  }
+
+  if (columnFilters.value.jenis_dokumen.length > 0) {
+    data = data.filter(item => columnFilters.value.jenis_dokumen.includes(item.jenis_dokumen))
+  }
+
+  if (columnFilters.value.urusan.length > 0) {
+    data = data.filter(item => columnFilters.value.urusan.includes(item.urusan))
+  }
+
+  return data
 })
 
 // Add menu state

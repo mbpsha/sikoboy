@@ -1,5 +1,5 @@
 <script setup>
-import { onBeforeUnmount, ref, watch } from "vue";
+import { onBeforeUnmount, ref, watch, computed } from "vue";
 import { router, Link, usePage } from "@inertiajs/vue3";
 import {
     MagnifyingGlassIcon,
@@ -81,6 +81,7 @@ watch(
 );
 
 const filter = () => {
+    console.log("🔍 FILTER CALLED - search:", search.value, "tahun:", tahun.value);
     router.get(
         route("admin.riwayat-kerjasama.mitra"),
         {
@@ -91,20 +92,80 @@ const filter = () => {
     );
 };
 
+// =========================
+// COLUMN FILTERS
+// =========================
+const columnFilters = ref({
+    tahun: [],
+    tipe: [],
+    mitra: [],
+    jenis_kerjasama: [],
+    status: [],
+});
+
+const uniqueTahun = computed(() => {
+    const values = (props.data?.data || []).map(item => String(item.tahun));
+    return [...new Set(values)].sort().reverse();
+});
+
+const uniqueTipe = computed(() => {
+    const values = (props.data?.data || []).map(item => item.tipe);
+    return [...new Set(values)].filter(Boolean).sort();
+});
+
+const uniqueMitra = computed(() => {
+    const values = (props.data?.data || []).map(item => item.mitra);
+    return [...new Set(values)].filter(Boolean).sort();
+});
+
+const uniqueJenisKerjasama = computed(() => {
+    const values = (props.data?.data || []).map(item => item.jenis_kerjasama);
+    return [...new Set(values)].filter(Boolean).sort();
+});
+
+const uniqueStatus = computed(() => {
+    const values = (props.data?.data || []).map(item => item.status);
+    return [...new Set(values)].filter(Boolean).sort();
+});
+
+const filteredTableData = computed(() => {
+    let data = [...(props.data?.data || [])];
+
+    // COLUMN FILTERS
+    if (columnFilters.value.tahun.length > 0) {
+        data = data.filter(item =>
+            columnFilters.value.tahun.includes(String(item.tahun))
+        );
+    }
+
+    if (columnFilters.value.tipe.length > 0) {
+        data = data.filter(item =>
+            columnFilters.value.tipe.includes(item.tipe)
+        );
+    }
+
+    if (columnFilters.value.mitra.length > 0) {
+        data = data.filter(item =>
+            columnFilters.value.mitra.includes(item.mitra)
+        );
+    }
+
+    if (columnFilters.value.jenis_kerjasama.length > 0) {
+        data = data.filter(item =>
+            columnFilters.value.jenis_kerjasama.includes(item.jenis_kerjasama)
+        );
+    }
+
+    if (columnFilters.value.status.length > 0) {
+        data = data.filter(item =>
+            columnFilters.value.status.includes(item.status)
+        );
+    }
+
+    return data;
+});
+
 let debounceTimer = null;
-
-// Single watcher for search with debounce
-watch(search, () => {
-    clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(() => {
-        filter();
-    }, 500);
-});
-
-// Direct filter on tahun change (no debounce needed)
-watch(tahun, () => {
-    filter();
-});
 
 onBeforeUnmount(() => {
     if (debounceTimer) clearTimeout(debounceTimer);
@@ -327,28 +388,38 @@ onBeforeUnmount(() => {
             <div class="max-w-7xl mx-auto">
                 <!-- SEARCH -->
                 <div
-                    class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex gap-3 items-center overflow-x-auto"
+                    class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100"
                 >
-                    <div
-                        class="flex items-center gap-2 flex-1 min-w-[220px] rounded-full px-4 py-2.5 border border-gray-200 bg-gray-50 focus-within:border-teal-600 focus-within:ring-1 focus-within:ring-teal-600 transition"
-                    >
-                        <MagnifyingGlassIcon class="w-5 h-5 text-gray-400" />
-                        <input
-                            v-model="search"
-                            placeholder="Cari berdasarkan tahun, nama mitra, atau judul kerjasama..."
-                            class="w-full bg-transparent outline-none text-sm text-gray-700 placeholder-gray-400"
-                        />
-                    </div>
+                    <div class="flex gap-3 items-center overflow-x-auto mb-3">
+                        <div
+                            class="flex items-center gap-2 flex-1 min-w-[220px] rounded-full px-4 py-2.5 border border-gray-200 bg-gray-50 focus-within:border-teal-600 focus-within:ring-1 focus-within:ring-teal-600 transition"
+                        >
+                            <MagnifyingGlassIcon class="w-5 h-5 text-gray-400" />
+                            <input
+                                v-model="search"
+                                placeholder="Cari berdasarkan tahun, nama mitra, atau judul kerjasama..."
+                                class="w-full bg-transparent outline-none text-sm text-gray-700 placeholder-gray-400"
+                            />
+                        </div>
 
-                    <select
-                        v-model="tahun"
-                        class="rounded-full px-4 py-2.5 text-sm border border-gray-200 bg-gray-50 focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition min-w-[180px]"
-                    >
-                        <option value="">Semua Tahun</option>
-                        <option v-for="y in years" :key="y" :value="y">
-                            {{ y }}
-                        </option>
-                    </select>
+                        <select
+                            v-model="tahun"
+                            class="rounded-full px-4 py-2.5 text-sm border border-gray-200 bg-gray-50 focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition min-w-[180px]"
+                        >
+                            <option value="">Semua Tahun</option>
+                            <option v-for="y in years" :key="y" :value="y">
+                                {{ y }}
+                            </option>
+                        </select>
+
+                        <button @click="filter" class="bg-teal-700 hover:bg-teal-800 text-white text-sm px-5 py-2.5 rounded-full font-medium transition">
+                            Filter
+                        </button>
+
+                        <button v-if="search || tahun" @click="() => { search = ''; tahun = ''; filter(); }" class="bg-gray-300 hover:bg-gray-400 text-gray-700 text-sm px-5 py-2.5 rounded-full font-medium transition">
+                            Reset
+                        </button>
+                    </div>
                 </div>
 
                 <!-- TAB -->
@@ -416,19 +487,112 @@ onBeforeUnmount(() => {
                                         No
                                     </th>
                                     <th
-                                        class="px-4 py-3 text-left whitespace-nowrap border-r border-gray-200"
+                                        class="px-4 py-3 text-left whitespace-nowrap border-r border-gray-200 relative group cursor-pointer"
                                     >
-                                        Tahun
+                                        <div class="flex items-center justify-between gap-1">
+                                            <span>Tahun</span>
+                                            <button class="text-yellow-300 hover:text-yellow-100">⚙️</button>
+                                        </div>
+                                        <!-- FILTER DROPDOWN TAHUN -->
+                                        <div
+                                            class="hidden group-hover:block absolute left-0 top-full mt-1 bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200"
+                                        >
+                                            <div class="mb-2 max-h-40 overflow-y-auto">
+                                                <label v-for="val in uniqueTahun" :key="val" class="flex items-center gap-2 mb-1 cursor-pointer hover:bg-gray-100 p-1 rounded">
+                                                    <input
+                                                        type="checkbox"
+                                                        :checked="columnFilters.tahun.includes(val)"
+                                                        @change="(e) => {
+                                                            if (e.target.checked) {
+                                                                columnFilters.tahun.push(val)
+                                                            } else {
+                                                                columnFilters.tahun = columnFilters.tahun.filter(v => v !== val)
+                                                            }
+                                                        }"
+                                                        class="cursor-pointer"
+                                                    />
+                                                    <span class="text-xs">{{ val }}</span>
+                                                </label>
+                                            </div>
+                                            <button
+                                                @click="columnFilters.tahun = []"
+                                                class="w-full px-2 py-1 bg-gray-300 hover:bg-gray-400 rounded text-xs"
+                                            >
+                                                Clear
+                                            </button>
+                                        </div>
                                     </th>
                                     <th
-                                        class="px-4 py-3 text-left whitespace-nowrap border-r border-gray-200"
+                                        class="px-4 py-3 text-left whitespace-nowrap border-r border-gray-200 relative group cursor-pointer"
                                     >
-                                        Tipe
+                                        <div class="flex items-center justify-between gap-1">
+                                            <span>Tipe</span>
+                                            <button class="text-yellow-300 hover:text-yellow-100">⚙️</button>
+                                        </div>
+                                        <!-- FILTER DROPDOWN TIPE -->
+                                        <div
+                                            class="hidden group-hover:block absolute left-0 top-full mt-1 bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200"
+                                        >
+                                            <div class="mb-2 max-h-40 overflow-y-auto">
+                                                <label v-for="val in uniqueTipe" :key="val" class="flex items-center gap-2 mb-1 cursor-pointer hover:bg-gray-100 p-1 rounded">
+                                                    <input
+                                                        type="checkbox"
+                                                        :checked="columnFilters.tipe.includes(val)"
+                                                        @change="(e) => {
+                                                            if (e.target.checked) {
+                                                                columnFilters.tipe.push(val)
+                                                            } else {
+                                                                columnFilters.tipe = columnFilters.tipe.filter(v => v !== val)
+                                                            }
+                                                        }"
+                                                        class="cursor-pointer"
+                                                    />
+                                                    <span class="text-xs">{{ val }}</span>
+                                                </label>
+                                            </div>
+                                            <button
+                                                @click="columnFilters.tipe = []"
+                                                class="w-full px-2 py-1 bg-gray-300 hover:bg-gray-400 rounded text-xs"
+                                            >
+                                                Clear
+                                            </button>
+                                        </div>
                                     </th>
                                     <th
-                                        class="px-4 py-3 text-left whitespace-nowrap border-r border-gray-200"
+                                        class="px-4 py-3 text-left whitespace-nowrap border-r border-gray-200 relative group cursor-pointer"
                                     >
-                                        Mitra
+                                        <div class="flex items-center justify-between gap-1">
+                                            <span>Mitra</span>
+                                            <button class="text-yellow-300 hover:text-yellow-100">⚙️</button>
+                                        </div>
+                                        <!-- FILTER DROPDOWN MITRA -->
+                                        <div
+                                            class="hidden group-hover:block absolute left-0 top-full mt-1 bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200 max-w-xs"
+                                        >
+                                            <div class="mb-2 max-h-40 overflow-y-auto">
+                                                <label v-for="val in uniqueMitra" :key="val" class="flex items-center gap-2 mb-1 cursor-pointer hover:bg-gray-100 p-1 rounded">
+                                                    <input
+                                                        type="checkbox"
+                                                        :checked="columnFilters.mitra.includes(val)"
+                                                        @change="(e) => {
+                                                            if (e.target.checked) {
+                                                                columnFilters.mitra.push(val)
+                                                            } else {
+                                                                columnFilters.mitra = columnFilters.mitra.filter(v => v !== val)
+                                                            }
+                                                        }"
+                                                        class="cursor-pointer"
+                                                    />
+                                                    <span class="text-xs">{{ val }}</span>
+                                                </label>
+                                            </div>
+                                            <button
+                                                @click="columnFilters.mitra = []"
+                                                class="w-full px-2 py-1 bg-gray-300 hover:bg-gray-400 rounded text-xs"
+                                            >
+                                                Clear
+                                            </button>
+                                        </div>
                                     </th>
                                     <th
                                         class="px-4 py-3 text-left border-r border-gray-200"
@@ -436,9 +600,40 @@ onBeforeUnmount(() => {
                                         Judul
                                     </th>
                                     <th
-                                        class="px-4 py-3 text-left whitespace-nowrap border-r border-gray-200"
+                                        class="px-4 py-3 text-left whitespace-nowrap border-r border-gray-200 relative group cursor-pointer"
                                     >
-                                        Jenis Kerjasama
+                                        <div class="flex items-center justify-between gap-1">
+                                            <span>Jenis Kerjasama</span>
+                                            <button class="text-yellow-300 hover:text-yellow-100">⚙️</button>
+                                        </div>
+                                        <!-- FILTER DROPDOWN JENIS KERJASAMA -->
+                                        <div
+                                            class="hidden group-hover:block absolute left-0 top-full mt-1 bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200"
+                                        >
+                                            <div class="mb-2 max-h-40 overflow-y-auto">
+                                                <label v-for="val in uniqueJenisKerjasama" :key="val" class="flex items-center gap-2 mb-1 cursor-pointer hover:bg-gray-100 p-1 rounded">
+                                                    <input
+                                                        type="checkbox"
+                                                        :checked="columnFilters.jenis_kerjasama.includes(val)"
+                                                        @change="(e) => {
+                                                            if (e.target.checked) {
+                                                                columnFilters.jenis_kerjasama.push(val)
+                                                            } else {
+                                                                columnFilters.jenis_kerjasama = columnFilters.jenis_kerjasama.filter(v => v !== val)
+                                                            }
+                                                        }"
+                                                        class="cursor-pointer"
+                                                    />
+                                                    <span class="text-xs">{{ val }}</span>
+                                                </label>
+                                            </div>
+                                            <button
+                                                @click="columnFilters.jenis_kerjasama = []"
+                                                class="w-full px-2 py-1 bg-gray-300 hover:bg-gray-400 rounded text-xs"
+                                            >
+                                                Clear
+                                            </button>
+                                        </div>
                                     </th>
                                     <th
                                         class="px-4 py-3 text-left whitespace-nowrap border-r border-gray-200"
@@ -475,7 +670,7 @@ onBeforeUnmount(() => {
 
                             <tbody>
                                 <tr
-                                    v-for="item in data?.data || []"
+                                    v-for="item in filteredTableData"
                                     :key="item.no"
                                     class="border-b border-gray-200 align-middle"
                                 >
