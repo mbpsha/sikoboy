@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Support\KerjasamaDuration;
+use Carbon\Carbon;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -54,5 +56,26 @@ class StoreKerjasamaPemerintahRequest extends FormRequest
         return [
             'tanggal_selesai.after' => 'Tanggal berakhir harus setelah tanggal mulai.',
         ];
+    }
+
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator): void {
+            if (! $this->filled('tanggal_mulai') || ! $this->filled('tanggal_selesai')) {
+                return;
+            }
+
+            $start = Carbon::parse($this->input('tanggal_mulai'));
+            $end = Carbon::parse($this->input('tanggal_selesai'));
+
+            if ((int) $this->input('tahun') !== $start->year) {
+                $validator->errors()->add('tahun', 'Tahun kerjasama harus sama dengan tahun tanggal mulai.');
+            }
+
+            $actualMonths = KerjasamaDuration::months($start, $end);
+            if ((int) $this->input('jangka_waktu_bulan') !== $actualMonths) {
+                $validator->errors()->add('jangka_waktu_bulan', 'Jangka waktu tidak sesuai dengan rentang tanggal mulai dan selesai.');
+            }
+        });
     }
 }
