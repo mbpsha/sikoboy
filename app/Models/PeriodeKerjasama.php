@@ -29,6 +29,13 @@ class PeriodeKerjasama extends Model
     protected static function booted(): void
     {
         static::saved(function (self $periode): void {
+            if (
+                ! $periode->wasRecentlyCreated
+                && ! $periode->wasChanged(['id_kerjasama', 'tanggal_mulai', 'tanggal_berakhir'])
+            ) {
+                return;
+            }
+
             $periode->syncKerjasamaJangkaWaktu();
         });
 
