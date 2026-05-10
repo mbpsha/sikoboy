@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use Carbon\Carbon;
+use App\Support\KerjasamaDuration;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -62,8 +62,10 @@ class PeriodeKerjasama extends Model
             return;
         }
 
-        $jangkaWaktu = Carbon::parse($latestPeriode->tanggal_mulai)
-            ->diffInMonths(Carbon::parse($latestPeriode->tanggal_berakhir));
+        $jangkaWaktu = KerjasamaDuration::months(
+            $latestPeriode->tanggal_mulai,
+            $latestPeriode->tanggal_berakhir
+        );
 
         Kerjasama::query()
             ->where('id_kerjasama', $this->id_kerjasama)
