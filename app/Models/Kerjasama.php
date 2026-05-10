@@ -31,6 +31,7 @@ class Kerjasama extends Model
         'urusan',
         'daerah',
         'status_aktif',
+        'jangka_waktu',
         'pembiayaan',
         'pemrakarsa',
         'jenis_kerjasama',
@@ -51,6 +52,7 @@ class Kerjasama extends Model
         return [
             'is_finalized' => 'boolean',
             'created_at' => 'datetime',
+            'jangka_waktu' => 'integer',
             'status_persetujuan' => StatusPersetujuan::class,
         ];
     }
