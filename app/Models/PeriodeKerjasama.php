@@ -11,7 +11,9 @@ class PeriodeKerjasama extends Model
     use HasFactory;
 
     protected $table = 'periode_kerjasama';
+
     protected $primaryKey = 'id_periode';
+
     public $timestamps = false;
 
     /**
