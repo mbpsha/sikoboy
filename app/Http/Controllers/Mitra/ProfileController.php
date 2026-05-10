@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Mitra;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Inertia;
 
@@ -20,11 +21,54 @@ class ProfileController extends Controller
             return redirect()->route('mitra.profile.complete');
         }
 
+        $mitra = $user->mitra;
+        
+        // Get kerjasama statistics
+        $kerjasama = $mitra->kerjasama()->where('is_finalized', true)->get();
+        $stats = [
+            'total_pengajuan' => $kerjasama->count(),
+            'disetujui' => $kerjasama->where('status_persetujuan', 'disetujui')->count(),
+            'dalam_proses' => $kerjasama->where('status_persetujuan', 'dalam_proses')->count(),
+            'pending' => $kerjasama->where('status_persetujuan', null)->count(),
+        ];
+
+        // Get latest kerjasama with periode info
+        $latestKerjasama = $mitra->kerjasama()
+            ->with('kategori', 'periodes')
+            ->where('is_finalized', true)
+            ->orderBy('created_at', 'desc')
+            ->limit(5)
+            ->get()
+            ->map(function ($k) {
+                // Calculate periode duration from latest periode
+                $lastPeriode = collect($k->periodes)->sortByDesc('tanggal_berakhir')->first();
+                $periodeText = '-';
+                
+                if ($lastPeriode) {
+                    $start = Carbon::parse($lastPeriode->tanggal_mulai);
+                    $end = Carbon::parse($lastPeriode->tanggal_berakhir);
+                    $years = (int) $start->diffInYears($end);
+                    $periodeText = $years > 0 ? $years . ' Tahun' : '< 1 Tahun';
+                }
+                
+                return [
+                    'id_kerjasama' => $k->id_kerjasama,
+                    'judul' => $k->judul,
+                    'status' => $k->status_persetujuan ?? 'pending',
+                    'kategori' => $k->kategori?->nama_kategori ?? '-',
+                    'urusan' => $k->urusan ?? '-',
+                    'tanggal_daftar' => $k->created_at?->format('d M Y') ?? '-',
+                    'periode' => $periodeText,
+                ];
+            });
+
         return Inertia::render('Mitra/Profile/Profile', [
             'user' => [
                 'email' => $user->email,
             ],
-            'mitra' => $user->mitra,
+            'mitra' => $mitra,
+            'stats' => $stats,
+            'kerjasama_list' => $latestKerjasama,
         ]);
     }
 

@@ -19,6 +19,11 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        // Seed kategori kerjasama templates
+        $this->call([
+            KategoriKerjasamaSeeder::class,
+        ]);
+
         // Create default admin login requested by team.
         $admin = User::updateOrCreate(
             ['email' => 'AdminSikoboy123@admin.com'],
@@ -90,12 +95,5 @@ class DatabaseSeeder extends Seeder
             'pic' => 'Ahmad Dahlan',
             'alamat' => 'Jl. Pemuda No. 78, Boyolali',
         ]);
-
-        // Seed kategori kerjasama templates
-        $this->call(KategoriKerjasamaSeeder::class);
-        // Backfill template_dokumen from legacy file_template data
-        $this->call(TemplateDokumenSeeder::class);
-        // Seed riwayat kerjasama
-        $this->call(RiwayatKerjasamaSeeder::class);
     }
 }

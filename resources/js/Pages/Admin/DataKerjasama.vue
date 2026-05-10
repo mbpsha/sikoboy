@@ -2,20 +2,52 @@
   <AdminLayout title="Ajuan Kerjasama">
     <div class="max-w-7xl mx-auto px-4 py-6 space-y-6">
 
+      <!-- Header with Add Button -->
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-2xl font-bold text-gray-800">Ajuan Kerjasama</h2>
+          <p class="text-sm text-gray-500 mt-1">Kelola dan pantau semua data kerjasama</p>
+        </div>
+        <div class="relative">
+          <button
+            @click="showAddMenu = !showAddMenu"
+            class="bg-teal-600 hover:bg-teal-700 text-white px-5 py-2.5 rounded-lg font-medium flex items-center gap-2 transition"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+            </svg>
+            Tambah Kerjasama
+          </button>
+          <div
+            v-if="showAddMenu"
+            class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-100 overflow-hidden z-10"
+          >
+            <Link href="/admin/riwayat-kerjasama/pemerintah" class="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 font-medium transition">
+              ➕ Pemerintah
+            </Link>
+            <Link href="/admin/riwayat-kerjasama/mitra" class="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 font-medium transition border-t">
+              ➕ Mitra
+            </Link>
+            <Link href="/admin/riwayat-kerjasama/gabungan" class="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 font-medium transition border-t">
+              ➕ Gabungan
+            </Link>
+          </div>
+        </div>
+      </div>
+
       <!-- Search & Filter Bar -->
       <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
         <div class="flex flex-wrap items-center gap-3">
           <input
             v-model="local.search"
-            @keyup.enter="applyFilters"
             placeholder="Cari berdasarkan mitra atau nama kerjasama..."
             class="flex-1 min-w-[220px] rounded-full px-4 py-2.5 text-sm border border-gray-200 bg-gray-50 focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition"
           />
-          <select v-model="local.tahun" class="rounded-full px-4 py-2.5 text-sm border border-gray-200 bg-gray-50 focus:outline-none focus:border-teal-600">
+          <select v-model="local.tahun" @change="applyFilters" class="rounded-full px-4 py-2.5 text-sm border border-gray-200 bg-gray-50 focus:outline-none focus:border-teal-600">
             <option value="">Semua Tahun</option>
             <option v-for="y in years" :key="y" :value="y">{{ y }}</option>
           </select>
-          <select v-model="local.status" class="rounded-full px-4 py-2.5 text-sm border border-gray-200 bg-gray-50 focus:outline-none focus:border-teal-600">
+          <select v-model="local.status" @change="applyFilters" class="rounded-full px-4 py-2.5 text-sm border border-gray-200 bg-gray-50 focus:outline-none focus:border-teal-600">
             <option value="">Semua Status</option>
             <option value="aktif">Aktif</option>
             <option value="segera berakhir">Segera Berakhir</option>
@@ -23,6 +55,9 @@
           </select>
           <button @click="applyFilters" class="bg-teal-700 hover:bg-teal-800 text-white text-sm px-5 py-2.5 rounded-full font-medium transition">
             Filter
+          </button>
+          <button v-if="local.search || local.tahun || local.status" @click="resetAllFilters" class="bg-gray-300 hover:bg-gray-400 text-gray-700 text-sm px-5 py-2.5 rounded-full font-medium transition">
+            Reset
           </button>
         </div>
       </div>
@@ -34,22 +69,113 @@
             <thead>
               <tr class="bg-teal-700 text-white text-xs uppercase tracking-wide">
                 <th class="py-3 px-4 text-left font-medium border-r border-white/10">No</th>
-                <th class="py-3 px-4 text-left font-medium border-r border-white/10">Tahun</th>
-                <th class="py-3 px-4 text-left font-medium border-r border-white/10">Mitra</th>
+                <th class="py-3 px-4 text-left font-medium border-r border-white/10">
+                  <div class="flex items-center justify-between gap-1">
+                    <span>Tahun</span>
+                    <button v-if="local.tahun" @click="local.tahun = ''; applyFilters()" class="text-yellow-300 hover:text-yellow-100" title="Clear filter">✕</button>
+                  </div>
+                </th>
+                <th class="py-3 px-4 text-left font-medium border-r border-white/10">
+                  <div class="flex items-center justify-between gap-1 group relative cursor-pointer">
+                    <span>Mitra</span>
+                    <button class="text-yellow-300 hover:text-yellow-100">⚙️</button>
+                    <!-- MITRA FILTER DROPDOWN -->
+                    <div class="hidden group-hover:block absolute left-0 top-full mt-1 bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200 max-w-xs">
+                      <div class="mb-2 max-h-40 overflow-y-auto">
+                        <label v-for="val in uniqueMitra" :key="val" class="flex items-center gap-2 mb-1 cursor-pointer hover:bg-gray-100 p-1 rounded">
+                          <input type="checkbox" :checked="columnFilters.mitra.includes(val)" @change="(e) => {
+                            if (e.target.checked) {
+                              columnFilters.mitra.push(val)
+                            } else {
+                              columnFilters.mitra = columnFilters.mitra.filter(v => v !== val)
+                            }
+                          }" class="cursor-pointer" />
+                          <span class="text-xs">{{ val }}</span>
+                        </label>
+                      </div>
+                      <button @click="columnFilters.mitra = []" class="w-full px-2 py-1 bg-gray-300 hover:bg-gray-400 rounded text-xs">Clear</button>
+                    </div>
+                  </div>
+                </th>
                 <th class="py-3 px-4 text-left font-medium border-r border-white/10">Judul</th>
-                <th class="py-3 px-4 text-left font-medium border-r border-white/10">Jenis Kerjasama</th>
-                <th class="py-3 px-4 text-left font-medium border-r border-white/10">Jenis Dokumen</th>
-                <th class="py-3 px-4 text-left font-medium border-r border-white/10">Urusan</th>
+                <th class="py-3 px-4 text-left font-medium border-r border-white/10">
+                  <div class="flex items-center justify-between gap-1 group relative cursor-pointer">
+                    <span>Jenis Kerjasama</span>
+                    <button class="text-yellow-300 hover:text-yellow-100">⚙️</button>
+                    <!-- JENIS KERJASAMA FILTER DROPDOWN -->
+                    <div class="hidden group-hover:block absolute left-0 top-full mt-1 bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200">
+                      <div class="mb-2 max-h-40 overflow-y-auto">
+                        <label v-for="val in uniqueJenisKerjasama" :key="val" class="flex items-center gap-2 mb-1 cursor-pointer hover:bg-gray-100 p-1 rounded">
+                          <input type="checkbox" :checked="columnFilters.jenis_kerjasama.includes(val)" @change="(e) => {
+                            if (e.target.checked) {
+                              columnFilters.jenis_kerjasama.push(val)
+                            } else {
+                              columnFilters.jenis_kerjasama = columnFilters.jenis_kerjasama.filter(v => v !== val)
+                            }
+                          }" class="cursor-pointer" />
+                          <span class="text-xs">{{ val }}</span>
+                        </label>
+                      </div>
+                      <button @click="columnFilters.jenis_kerjasama = []" class="w-full px-2 py-1 bg-gray-300 hover:bg-gray-400 rounded text-xs">Clear</button>
+                    </div>
+                  </div>
+                </th>
+                <th class="py-3 px-4 text-left font-medium border-r border-white/10">
+                  <div class="flex items-center justify-between gap-1 group relative cursor-pointer">
+                    <span>Jenis Dokumen</span>
+                    <button class="text-yellow-300 hover:text-yellow-100">⚙️</button>
+                    <!-- JENIS DOKUMEN FILTER DROPDOWN -->
+                    <div class="hidden group-hover:block absolute left-0 top-full mt-1 bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200">
+                      <div class="mb-2 max-h-40 overflow-y-auto">
+                        <label v-for="val in uniqueJenisDokumen" :key="val" class="flex items-center gap-2 mb-1 cursor-pointer hover:bg-gray-100 p-1 rounded">
+                          <input type="checkbox" :checked="columnFilters.jenis_dokumen.includes(val)" @change="(e) => {
+                            if (e.target.checked) {
+                              columnFilters.jenis_dokumen.push(val)
+                            } else {
+                              columnFilters.jenis_dokumen = columnFilters.jenis_dokumen.filter(v => v !== val)
+                            }
+                          }" class="cursor-pointer" />
+                          <span class="text-xs">{{ val }}</span>
+                        </label>
+                      </div>
+                      <button @click="columnFilters.jenis_dokumen = []" class="w-full px-2 py-1 bg-gray-300 hover:bg-gray-400 rounded text-xs">Clear</button>
+                    </div>
+                  </div>
+                </th>
+                <th class="py-3 px-4 text-left font-medium border-r border-white/10">
+                  <div class="flex items-center justify-between gap-1 group relative cursor-pointer">
+                    <span>Urusan</span>
+                    <button class="text-yellow-300 hover:text-yellow-100">⚙️</button>
+                    <!-- URUSAN FILTER DROPDOWN -->
+                    <div class="hidden group-hover:block absolute left-0 top-full mt-1 bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200">
+                      <div class="mb-2 max-h-40 overflow-y-auto">
+                        <label v-for="val in uniqueUrusan" :key="val" class="flex items-center gap-2 mb-1 cursor-pointer hover:bg-gray-100 p-1 rounded">
+                          <input type="checkbox" :checked="columnFilters.urusan.includes(val)" @change="(e) => {
+                            if (e.target.checked) {
+                              columnFilters.urusan.push(val)
+                            } else {
+                              columnFilters.urusan = columnFilters.urusan.filter(v => v !== val)
+                            }
+                          }" class="cursor-pointer" />
+                          <span class="text-xs">{{ val }}</span>
+                        </label>
+                      </div>
+                      <button @click="columnFilters.urusan = []" class="w-full px-2 py-1 bg-gray-300 hover:bg-gray-400 rounded text-xs">Clear</button>
+                    </div>
+                  </div>
+                </th>
                 <th class="py-3 px-4 text-left font-medium border-r border-white/10">Mulai</th>
                 <th class="py-3 px-4 text-left font-medium border-r border-white/10">Berakhir</th>
                 <th class="py-3 px-4 text-left font-medium border-r border-white/10">Jangka Waktu</th>
                 <th class="py-3 px-4 text-left font-medium border-r border-white/10">File</th>
+                <th class="py-3 px-4 text-left font-medium border-r border-white/10">Pembiayaan</th>
+                <th class="py-3 px-4 text-left font-medium border-r border-white/10">No. Surat Mitra</th>
                 <th class="py-3 px-4 text-left font-medium border-r border-white/10">Proses</th>
                 <th class="py-3 px-4 text-left font-medium">Status</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-100">
-              <tr v-for="(k, idx) in kerjasama.data" :key="k.id_kerjasama" class="hover:bg-gray-50 transition-colors">
+              <tr v-for="(k, idx) in filteredKerjasama" :key="k.id_kerjasama" class="hover:bg-gray-50 transition-colors">
                 <td class="py-3 px-4 text-gray-500 text-xs">{{ indexOffset + idx + 1 }}</td>
                 <td class="py-3 px-4 text-gray-600 whitespace-nowrap">{{ k.tahun }}</td>
                 <td class="py-3 px-4 max-w-[130px] truncate font-medium">{{ k.mitra }}</td>
@@ -66,6 +192,8 @@
                     Lihat
                   </Link>
                 </td>
+                <td class="py-3 px-4 text-gray-600 whitespace-nowrap">{{ k.pembiayaan ?? '—' }}</td>
+                <td class="py-3 px-4 text-gray-600 whitespace-nowrap">{{ k.nomor_suratM ?? k.nomor_surat ?? '—' }}</td>
 
                 <!-- Proses column -->
                 <td class="py-3 px-4 align-top">
@@ -93,6 +221,7 @@
                       <div class="flex gap-2">
                         <button @click.prevent="addProcess(k)" class="flex-1 bg-teal-600 hover:bg-teal-700 text-white text-xs px-3 py-1.5 rounded-lg transition">Tambah</button>
                         <button @click.prevent="cancelAdd(k.id_kerjasama)" class="flex-1 bg-white border border-gray-200 text-gray-600 text-xs px-3 py-1.5 rounded-lg transition">Batal</button>
+                        <button @click.prevent="finishAddProcess(k)" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1.5 rounded-lg transition">Selesai Proses</button>
                       </div>
                     </div>
                   </div>
@@ -190,6 +319,7 @@
           <div class="flex justify-end gap-2 pt-2">
             <button @click="closeProcessModal" class="px-4 py-2 text-sm rounded-lg border border-gray-200 hover:bg-gray-50 transition">Batal</button>
             <button @click.prevent="saveProcessUpdate" class="px-4 py-2 text-sm rounded-lg bg-teal-600 hover:bg-teal-700 text-white font-medium transition">Simpan</button>
+            <button @click.prevent="endProcess" class="px-4 py-2 text-sm rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-medium transition">Selesai & Simpan ke Riwayat</button>
           </div>
         </div>
       </div>
@@ -200,7 +330,8 @@
 <script setup>
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import { Link, router, usePage } from '@inertiajs/vue3'
-import { ref, computed, reactive } from 'vue'
+import { ref, computed, reactive, watch } from 'vue'
+import Swal from 'sweetalert2'
 
 const props = defineProps({
   kerjasama: Object,
@@ -218,13 +349,12 @@ const kerjasama = computed(() => props.kerjasama ?? {
   current_page: 1,
 })
 
-const filters = computed(() => props.filters ?? {})
-
-const indexOffset = computed(() => (
+const filters   = computed(() => props.filters ?? {})
+const indexOffset = computed(() =>
   kerjasama.value.current_page
-    ? ((kerjasama.value.current_page - 1) * kerjasama.value.per_page)
+    ? (kerjasama.value.current_page - 1) * kerjasama.value.per_page
     : 0
-))
+)
 
 const local = ref({
   search: filters.value?.search ?? '',
@@ -232,9 +362,74 @@ const local = ref({
   status: filters.value?.status ?? '',
 })
 
+// Column filters state
+const columnFilters = ref({
+  mitra: [],
+  jenis_kerjasama: [],
+  jenis_dokumen: [],
+  urusan: [],
+})
+
+// Get unique values for each column
+const uniqueMitra = computed(() => {
+  const values = kerjasama.value.data.map(item => item.mitra)
+  return [...new Set(values)].filter(Boolean).sort()
+})
+
+const uniqueJenisKerjasama = computed(() => {
+  const values = kerjasama.value.data.map(item => item.jenis_kerjasama)
+  return [...new Set(values)].filter(Boolean).sort()
+})
+
+const uniqueJenisDokumen = computed(() => {
+  const values = kerjasama.value.data.map(item => item.jenis_dokumen)
+  return [...new Set(values)].filter(Boolean).sort()
+})
+
+const uniqueUrusan = computed(() => {
+  const values = kerjasama.value.data.map(item => item.urusan)
+  return [...new Set(values)].filter(Boolean).sort()
+})
+
+// Filtered data based on column filters
+const filteredKerjasama = computed(() => {
+  let data = [...kerjasama.value.data]
+
+  if (columnFilters.value.mitra.length > 0) {
+    data = data.filter(item => columnFilters.value.mitra.includes(item.mitra))
+  }
+
+  if (columnFilters.value.jenis_kerjasama.length > 0) {
+    data = data.filter(item => columnFilters.value.jenis_kerjasama.includes(item.jenis_kerjasama))
+  }
+
+  if (columnFilters.value.jenis_dokumen.length > 0) {
+    data = data.filter(item => columnFilters.value.jenis_dokumen.includes(item.jenis_dokumen))
+  }
+
+  if (columnFilters.value.urusan.length > 0) {
+    data = data.filter(item => columnFilters.value.urusan.includes(item.urusan))
+  }
+
+  return data
+})
+
+// Add menu state
+const showAddMenu = ref(false)
+
+let searchTimeout = null
+
 const years = computed(() => {
   const now = new Date().getFullYear()
   return Array.from({ length: 6 }).map((_, i) => now - i)
+})
+
+// Auto-search dengan debounce
+watch(() => local.value.search, () => {
+  clearTimeout(searchTimeout)
+  searchTimeout = setTimeout(() => {
+    applyFilters()
+  }, 500)
 })
 
 function applyFilters() {
@@ -245,69 +440,130 @@ function applyFilters() {
   router.visit(route('admin.data-kerjasama.index'), { method: 'get', data: params })
 }
 
+function applyColumnFilter(column, value) {
+  if (!value) return
+  local.value.search = value
+  columnFilters.value[column] = value
+  applyFilters()
+}
+
+function resetAllFilters() {
+  local.value.search = ''
+  local.value.tahun = ''
+  local.value.status = ''
+  columnFilters.value = { mitra: '', jenis_kerjasama: '', jenis_dokumen: '', urusan: '' }
+  router.visit(route('admin.data-kerjasama.index'), { method: 'get', data: {} })
+}
+
 function goTo(url) {
   if (!url) return
   router.visit(url, { preserveState: false })
 }
 
+// ─── Add process form ────────────────────────────────────────────────────────
 const showAddFormFor = reactive({})
 const newProcessForm = reactive({})
 
-function toggleAddForm(id_kerjasama) {
-  showAddFormFor[id_kerjasama] = !showAddFormFor[id_kerjasama]
-  if (!newProcessForm[id_kerjasama]) {
-    newProcessForm[id_kerjasama] = { title: '' }
-  }
+function toggleAddForm(id) {
+  showAddFormFor[id] = !showAddFormFor[id]
+  if (!newProcessForm[id]) newProcessForm[id] = { title: '' }
 }
 
-function cancelAdd(id_kerjasama) {
-  showAddFormFor[id_kerjasama] = false
-  if (newProcessForm[id_kerjasama]) newProcessForm[id_kerjasama].title = ''
+function cancelAdd(id) {
+  showAddFormFor[id] = false
+  if (newProcessForm[id]) newProcessForm[id].title = ''
 }
 
-const showProcessModal = ref(false)
-const activeProcess = ref(null)
-const activeKerjasama = ref(null)
+// Tambah proses baru — kirim ke server, reload data
+function addProcess(k) {
+  const id    = k.id_kerjasama
+  const title = (newProcessForm[id]?.title || '').trim()
+  if (!title) return
+
+  router.post(
+    route('admin.data-kerjasama.proses.store', id),
+    { title },
+    {
+      preserveScroll: true,
+      onSuccess: () => {
+        newProcessForm[id].title = ''
+        showAddFormFor[id] = false
+      },
+      onError: (e) => {
+        console.error('Gagal tambah proses:', e)
+      },
+    }
+  )
+}
+
+// Selesaikan semua proses dan simpan ke riwayat
+async function finishAddProcess(k) {
+  const confirmed = await Swal.fire({
+    title: 'Konfirmasi',
+    text: 'Tandai semua proses selesai dan simpan ke riwayat kerjasama?',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Ya, selesai',
+    cancelButtonText: 'Batal',
+  }).then(r => r.isConfirmed)
+
+  if (!confirmed) return
+
+  const id    = k.id_kerjasama
+  const title = (newProcessForm[id]?.title || '').trim() || 'Proses Selesai'
+
+  const fd = new FormData()
+  fd.append('title',       title)
+  fd.append('catatan',     'Semua proses telah diselesaikan.')
+  fd.append('penanggung',  currentUsername.value)
+  fd.append('is_finished', '1')   // flag untuk controller simpan ke riwayat
+
+  router.post(
+    route('admin.data-kerjasama.proses.store', id),
+    fd,
+    {
+      preserveScroll: true,
+      onSuccess: () => {
+        newProcessForm[id].title = ''
+        showAddFormFor[id] = false
+      },
+    }
+  )
+}
+
+// ─── Process Modal ────────────────────────────────────────────────────────────
+const showProcessModal  = ref(false)
+const activeProcess     = ref(null)
+const activeKerjasama   = ref(null)
+const fileToUpload      = ref(null)
+const fileName          = ref('')
+const processFileInput  = ref(null)
 
 function openProcessModal(k, p) {
   activeKerjasama.value = k
-  activeProcess.value = {
+  activeProcess.value   = {
     ...p,
     penanggung: p.penanggung || currentUsername.value,
+    catatan:    p.catatan    || '',
   }
   showProcessModal.value = true
+  // reset file setiap buka modal
+  fileToUpload.value = null
+  fileName.value     = ''
 }
 
 function closeProcessModal() {
   showProcessModal.value = false
-  activeProcess.value = null
-  activeKerjasama.value = null
+  activeProcess.value    = null
+  activeKerjasama.value  = null
+  fileToUpload.value     = null
+  fileName.value         = ''
 }
-
-async function addProcess(k) {
-  const id = k.id_kerjasama
-  const title = (newProcessForm[id].title || '').trim()
-  if (!title) return
-
-  k.proses = k.proses || []
-  k.proses.unshift({ id: Date.now(), title, label: title })
-
-  newProcessForm[id].title = ''
-  showAddFormFor[id] = false
-
-  try {
-    await router.post(route('admin.kerjasama.proses.store', k.id_kerjasama), { title })
-  } catch (e) {}
-}
-
-const fileToUpload = ref(null)
-const fileName = ref('')
-const processFileInput = ref(null)
 
 function onFileSelect(e) {
   const f = e.target.files?.[0] ?? null
   fileToUpload.value = f
-  fileName.value = f ? f.name : ''
+  fileName.value     = f ? f.name : ''
 }
 
 function triggerProcessFileInput() {
@@ -316,32 +572,76 @@ function triggerProcessFileInput() {
 
 function handleProcessDrop(e) {
   const file = e.dataTransfer.files?.[0] ?? null
-  if (file && file.type === 'application/pdf') {
+  if (file?.type === 'application/pdf') {
     fileToUpload.value = file
-    fileName.value = file.name
+    fileName.value     = file.name
   }
 }
 
-async function saveProcessUpdate() {
+// Simpan update proses (catatan + file) — pakai POST + FormData
+function saveProcessUpdate() {
   const k = activeKerjasama.value
   const p = activeProcess.value
   if (!k || !p) return
 
-  k.proses = k.proses || []
-  const existing = k.proses.findIndex(x => x.id === p.id)
-  existing >= 0 ? k.proses.splice(existing, 1, { ...p }) : k.proses.unshift({ ...p })
+  const fd = new FormData()
+  fd.append('title',      p.title      ?? '')
+  fd.append('penanggung', p.penanggung ?? currentUsername.value)
+  fd.append('catatan',    p.catatan    ?? '')
+  if (fileToUpload.value) {
+    fd.append('file', fileToUpload.value)
+  }
 
-  const title = (p.title || '').toLowerCase()
-  k.status_persetujuan = title.includes('diterima') ? 'disetujui'
-    : title.includes('ditolak') ? 'ditolak'
-    : p.title || null
+  router.post(
+    route('admin.data-kerjasama.proses.update', [k.id_kerjasama, p.id]),
+    fd,
+    {
+      preserveScroll: true,
+      onSuccess: () => {
+        closeProcessModal()
+      },
+      onError: (e) => {
+        console.error('Gagal simpan proses:', e)
+      },
+    }
+  )
+}
 
-  try {
-    const url = route('admin.kerjasama.proses.update', [k.id_kerjasama, p.id])
-    await router.put(url, { title: p.title, penanggung: p.penanggung ?? null, catatan: p.catatan ?? null })
-  } catch (e) {}
+// Selesai & Simpan ke Riwayat dari modal
+async function endProcess() {
+  const k = activeKerjasama.value
+  const p = activeProcess.value
+  if (!k || !p) return
 
-  fileToUpload.value = null
-  closeProcessModal()
+  const confirmed = await Swal.fire({
+    title: 'Selesaikan Proses?',
+    text: 'Data akan disimpan ke riwayat kerjasama.',
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonText: 'Ya, selesaikan',
+    cancelButtonText: 'Batal',
+  }).then(r => r.isConfirmed)
+
+  if (!confirmed) return
+
+  const fd = new FormData()
+  fd.append('title',       p.title      ?? 'Selesai')
+  fd.append('penanggung',  p.penanggung ?? currentUsername.value)
+  fd.append('catatan',     p.catatan    ?? '')
+  fd.append('is_finished', '1')
+  if (fileToUpload.value) {
+    fd.append('file', fileToUpload.value)
+  }
+
+  router.post(
+    route('admin.data-kerjasama.proses.update', [k.id_kerjasama, p.id]),
+    fd,
+    {
+      preserveScroll: true,
+      onSuccess: () => {
+        closeProcessModal()
+      },
+    }
+  )
 }
 </script>

@@ -42,64 +42,76 @@ class ManajemenPotensiController extends Controller
             return Inertia::render('Admin/ManajemenPotensi', [
                 'kategori_list' => [],
                 'active_kategori' => null,
-                'potensi' => null,
+                'potensi_list' => [],
             ]);
         }
 
-        $potensi = Potensi::query()
-            ->where('kategori', $activeKategori)
+        // Get all potensi for all categories
+        $allPotensi = Potensi::query()
             ->with('poin')
-            ->first();
+            ->orderBy('kategori')
+            ->orderBy('id_potensi')
+            ->get()
+            ->map(fn (Potensi $p) => [
+                'id_potensi' => $p->id_potensi,
+                'kategori' => $p->kategori,
+                'judul' => $p->judul,
+                'deskripsi' => $p->deskripsi,
+                'gambar_url' => $p->gambar_path ? asset('storage/'.$p->gambar_path) : null,
+                'status_tampil' => $p->status_tampil,
+                'poin' => $p->poin->map(fn ($pt) => [
+                    'id' => $pt->id_potensi_poin,
+                    'isi' => $pt->isi,
+                ])->values(),
+            ])
+            ->values();
 
         return Inertia::render('Admin/ManajemenPotensi', [
             'kategori_list' => $kategoriList,
             'active_kategori' => $activeKategori,
-            'potensi' => $potensi ? $this->formatPotensi($potensi) : null,
+            'potensi_list' => $allPotensi,
+        ]);
+    }
+
+    public function list()
+    {
+        $items = Potensi::query()
+            ->with('poin')
+            ->orderBy('kategori')
+            ->orderBy('id_potensi')
+            ->get()
+            ->map(fn (Potensi $potensi) => $this->formatPotensi($potensi))
+            ->values();
+
+        return response()->json([
+            'data' => $items,
         ]);
     }
 
     public function store(Request $request)
-{
-    $request->validate([
-        'kategori' => 'required|string',
-        'potensi' => 'required|array',
-    ]);
+    {
+        $request->validate([
+            'kategori' => 'required|string',
+            'judul' => 'required|string|max:255',
+            'deskripsi' => 'required|string',
+            'gambar' => 'nullable|image|mimes:jpeg,png,jpg|max:5120',
+        ]);
 
-    DB::transaction(function () use ($request) {
+        $potensi = Potensi::create([
+            'kategori' => $request->kategori,
+            'judul' => $request->judul,
+            'deskripsi' => $request->deskripsi,
+            'status_tampil' => true,
+        ]);
 
-        foreach ($request->potensi as $item) {
-
-            $potensi = Potensi::create([
-                'kategori' => $request->kategori,
-                'judul' => $item['judul'],
-                'deskripsi' => $item['deskripsi'],
-                'status_tampil' => true
-            ]);
-
-            // poin
-            if (isset($item['poin'])) {
-                foreach ($item['poin'] as $i => $p) {
-                    $potensi->poin()->create([
-                        'isi' => $p,
-                        'urutan' => $i + 1
-                    ]);
-                }
-            }
-
-            // gambar
-            if (isset($item['gambar'])) {
-                $path = $item['gambar']->store('potensi', 'public');
-
-                $potensi->update([
-                    'gambar_path' => $path
-                ]);
-            }
+        // Save image if provided
+        if ($request->hasFile('gambar')) {
+            $path = $request->file('gambar')->store('potensi', 'public');
+            $potensi->update(['gambar_path' => $path]);
         }
 
-    });
-
-    return back()->with('success', 'Berhasil simpan banyak potensi');
-}
+        return back()->with('success', 'Potensi berhasil ditambahkan.');
+    }
     public function update(int $id, UpdatePotensiRequest $request)
     {
         $potensi = Potensi::with('poin')->findOrFail($id);

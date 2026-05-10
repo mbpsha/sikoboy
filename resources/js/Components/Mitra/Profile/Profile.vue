@@ -6,22 +6,37 @@ import Footer from '@/Components/Footer.vue';
 import KerjasamaProgressModal from '@/Components/Mitra/KerjasamaProgressModal.vue';
 
 const page = usePage();
-const mitra = computed(() => page.props.value?.mitra);
+
+// Safely access props dengan fallback
+const mitra = computed(() => {
+  try {
+    return page.props?.mitra || page.props?.value?.mitra || null;
+  } catch (e) {
+    console.error('Error accessing mitra props:', e);
+    return null;
+  }
+});
+
+const stats = computed(() => {
+  try {
+    return page.props?.stats || page.props?.value?.stats || { total_pengajuan: 0, disetujui: 0, dalam_proses: 0, pending: 0 };
+  } catch (e) {
+    return { total_pengajuan: 0, disetujui: 0, dalam_proses: 0, pending: 0 };
+  }
+});
+
+const kerjasamaList = computed(() => {
+  try {
+    return page.props?.kerjasama_list || page.props?.value?.kerjasama_list || [];
+  } catch (e) {
+    return [];
+  }
+});
 
 // Modal state
 const isProgressModalOpen = ref(false);
 const showLogoutConfirm = ref(false);
-
-// Data mock untuk preview tampilan
-const mockKerjasama = {
-  id_kerjasama: 1,
-  nama_kerjasama: 'Digitalisasi Sistem Administrasi Kependudukan',
-  status: 'pengajuan',
-  kategori: 'Kerjasama dengan Pihak Ketiga',
-  urusan: 'Urusan Lainnya',
-  created_at: '2026-04-18',
-  periode: '5 Tahun'
-};
+const selectedKerjasama = ref(null);
 
 // Tab state
 const activeTab = ref('riwayat');
@@ -45,6 +60,41 @@ const openLogoutConfirm = () => {
 
 const cancelLogout = () => {
   showLogoutConfirm.value = false;
+};
+
+const openProgressModal = (kerjasama) => {
+  selectedKerjasama.value = kerjasama;
+  isProgressModalOpen.value = true;
+};
+
+// Status badge styling
+const getStatusClass = (status) => {
+  switch(status?.toLowerCase?.()) {
+    case 'disetujui':
+      return 'bg-green-300 text-green-700';
+    case 'dalam_proses':
+      return 'bg-yellow-300 text-yellow-700';
+    case 'ditolak':
+      return 'bg-red-300 text-red-700';
+    case 'pending':
+    default:
+      return 'bg-blue-300 text-blue-700';
+  }
+};
+
+const getStatusLabel = (status) => {
+  switch(status?.toLowerCase?.()) {
+    case 'disetujui':
+      return 'Disetujui';
+    case 'dalam_proses':
+      return 'Dalam Proses';
+    case 'ditolak':
+      return 'Ditolak';
+    case 'pending':
+      return 'Pending';
+    default:
+      return 'Pending';
+  }
 };
 </script>
 
@@ -100,10 +150,10 @@ const cancelLogout = () => {
             <div class="bg-[#E7F0F1] rounded-2xl p-5 shadow-md">
               <h3 class="text-sm font-semibold text-[#17464E] mb-3">Statistik</h3>
               <div class="space-y-2 text-sm text-[#17464E]">
-                <div class="flex justify-between"><span>Total Pengajuan</span><span>0</span></div>
-                <div class="flex justify-between"><span>Disetujui</span><span>0</span></div>
-                <div class="flex justify-between"><span>Dalam Proses</span><span>0</span></div>
-                <div class="flex justify-between"><span>Pending</span><span>0</span></div>
+                <div class="flex justify-between"><span>Total Pengajuan</span><span class="font-bold">{{ stats.total_pengajuan }}</span></div>
+                <div class="flex justify-between"><span>Disetujui</span><span class="font-bold">{{ stats.disetujui }}</span></div>
+                <div class="flex justify-between"><span>Dalam Proses</span><span class="font-bold">{{ stats.dalam_proses }}</span></div>
+                <div class="flex justify-between"><span>Pending</span><span class="font-bold">{{ stats.pending }}</span></div>
               </div>
             </div>
 
@@ -199,16 +249,28 @@ const cancelLogout = () => {
 
                 <div v-show="activeTab === 'riwayat'" class="py-6">
                   <div class="space-y-5">
+                    <!-- Pesan jika tidak ada kerjasama -->
+                    <div v-if="kerjasamaList.length === 0" class="text-center py-12">
+                      <p class="text-[#40676f] text-sm mb-3">Anda belum memiliki kerjasama yang selesai diajukan</p>
+                      <Link
+                        :href="route('mitra.pengajuan.step1')"
+                        class="inline-flex items-center gap-2 px-6 py-2 bg-[#2f6f73] text-white rounded-full text-sm font-semibold hover:bg-[#1e565a] transition"
+                      >
+                        <span>+</span>
+                        Ajukan Baru
+                      </Link>
+                    </div>
+
                     <!-- Kartu Kerjasama -->
-                    <div class="bg-[#D4E9ED] rounded-3xl p-8 shadow-md">
+                    <div v-for="kerjasama in kerjasamaList" :key="kerjasama.id_kerjasama" class="bg-[#D4E9ED] rounded-3xl p-8 shadow-md">
                       
                       <!-- Header dengan judul dan status -->
                       <div class="flex items-start justify-between mb-6">
                         <h2 class="text-2xl font-bold text-[#17464E] flex-1">
-                          {{ mockKerjasama.nama_kerjasama }}
+                          {{ kerjasama.judul }}
                         </h2>
-                        <span class="inline-block text-xs px-4 py-1 rounded-full font-semibold bg-blue-300 text-blue-700 ml-4 whitespace-nowrap">
-                          Pending
+                        <span :class="['inline-block text-xs px-4 py-1 rounded-full font-semibold ml-4 whitespace-nowrap', getStatusClass(kerjasama.status)]">
+                          {{ getStatusLabel(kerjasama.status) }}
                         </span>
                       </div>
 
@@ -217,31 +279,31 @@ const cancelLogout = () => {
                         <div class="flex items-center">
                           <span class="text-sm text-[#40676f] font-medium w-40">Jenis Kerjasama</span>
                           <span class="text-sm text-[#40676f] font-medium mx-4">:</span>
-                          <span class="text-sm font-bold text-[#17464E]">{{ mockKerjasama.kategori }}</span>
+                          <span class="text-sm font-bold text-[#17464E]">{{ kerjasama.kategori }}</span>
                         </div>
                         
                         <div class="flex items-center">
                           <span class="text-sm text-[#40676f] font-medium w-40">Urusan</span>
                           <span class="text-sm text-[#40676f] font-medium mx-4">:</span>
-                          <span class="text-sm font-bold text-[#17464E]">{{ mockKerjasama.urusan }}</span>
+                          <span class="text-sm font-bold text-[#17464E]">{{ kerjasama.urusan }}</span>
                         </div>
 
                         <div class="flex items-center">
                           <span class="text-sm text-[#40676f] font-medium w-40">Tanggal Diajukan</span>
                           <span class="text-sm text-[#40676f] font-medium mx-4">:</span>
-                          <span class="text-sm font-bold text-[#17464E]">5 Juni 2027</span>
+                          <span class="text-sm font-bold text-[#17464E]">{{ kerjasama.tanggal_daftar }}</span>
                         </div>
 
                         <div class="flex items-center">
                           <span class="text-sm text-[#40676f] font-medium w-40">Periode</span>
                           <span class="text-sm text-[#40676f] font-medium mx-4">:</span>
-                          <span class="text-sm font-bold text-[#17464E]">{{ mockKerjasama.periode }}</span>
+                          <span class="text-sm font-bold text-[#17464E]">{{ kerjasama.periode }}</span>
                         </div>
                       </div>
 
                       <!-- Lihat Progres Kerjasama Button -->
                       <div class="flex justify-center mb-6">
-                        <button @click="isProgressModalOpen = true" class="w-full py-2 text-center text-sm font-semibold text-[#2f6f73] hover:text-[#1e565a] rounded-lg transition flex items-center justify-center gap-2 bg-white/60 hover:bg-white">
+                        <button @click="openProgressModal(kerjasama)" class="w-full py-2 text-center text-sm font-semibold text-[#2f6f73] hover:text-[#1e565a] rounded-lg transition flex items-center justify-center gap-2 bg-white/60 hover:bg-white">
                           <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                             <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"></path>
                             <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"></path>
@@ -302,7 +364,7 @@ const cancelLogout = () => {
     <!-- Progress Modal -->
     <KerjasamaProgressModal 
       :isOpen="isProgressModalOpen"
-      :kerjasamaNama="mockKerjasama.nama_kerjasama"
+      :kerjasamaNama="selectedKerjasama?.judul || ''"
       @close="isProgressModalOpen = false"
     />
 

@@ -81,13 +81,29 @@ const user = computed(() => page.props.value?.auth?.user ?? null);
           <a href="tel:+62276321021" class="underline">(0276) 321021</a>
         </div>
 
-        <div class="mt-2">
-          <a href="https://maps.app.goo.gl/d1YXQzuPidoQ4rmQA" target="_blank" rel="noopener noreferrer" class="text-sm text-white/80 underline">Lihat di Google Maps</a>
-        </div>
-
       </div>
     </div>
 
+  </div>
+
+  <!-- MAPS SECTION -->
+  <div class="mt-10 pt-8 border-t border-white/20">
+    <div class="max-w-6xl mx-auto">
+      <h3 class="text-sm font-semibold mb-4 text-white">
+        Lokasi
+      </h3>
+      <iframe 
+        width="100%" 
+        height="350" 
+        style="border:0; border-radius: 8px;" 
+        loading="lazy" 
+        referrerpolicy="no-referrer-when-downgrade"
+        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3955.275006401413!2d110.6111086!3d-7.544959399999999!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e7a6956d45e1475%3A0x590dca8e8b6867ec!2sSekretariat%20Daerah%20Kabupaten%20Boyolali!5e0!3m2!1sid!2sid!4v1778244811391!5m2!1sid!2sid"
+        allowfullscreen="" 
+        aria-hidden="false" 
+        tabindex="0">
+      </iframe>
+    </div>
   </div>
 </footer>
 </template>

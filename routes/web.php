@@ -15,8 +15,10 @@ use App\Http\Controllers\Auth\VerificationController;
 use App\Http\Controllers\Mitra\DashboardController as MitraDashboardController;
 use App\Http\Controllers\Mitra\KerjasamaController as MitraKerjasamaController;
 use App\Http\Controllers\Mitra\ProfileController as MitraProfileController;
+use App\Http\Controllers\PotensiController;
 use App\Http\Controllers\TemplateDokumenController;
 use App\Models\Peraturan;
+use App\Models\Potensi;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -27,7 +29,70 @@ use Illuminate\Support\Facades\DB;
 // ========================================
 
 // Home / Welcome
-Route::get('/', fn() => Inertia::render('Welcome'))->name('home');
+Route::get('/', function () {
+    $potensi = Potensi::query()
+        ->with('poin')
+        ->where('status_tampil', true)
+        ->orderBy('kategori')
+        ->orderBy('id_potensi')
+        ->get()
+        ->groupBy('kategori')
+        ->map(function ($items) {
+            return $items->map(function (Potensi $p) {
+                return [
+                    'id_potensi' => $p->id_potensi,
+                    'kategori' => $p->kategori,
+                    'judul' => $p->judul,
+                    'deskripsi' => $p->deskripsi,
+                    'gambar_url' => $p->gambar_path ? asset('storage/'.$p->gambar_path) : null,
+                    'poin' => $p->poin->map(fn ($pt) => [
+                        'id' => $pt->id_potensi_poin,
+                        'isi' => $pt->isi,
+                    ])->values(),
+                ];
+            })->values();
+        });
+
+    // STATISTIK DINAMIS
+    $today = now();
+    $sixMonthsLater = now()->addMonths(6);
+    $threeMonthsLater = now()->addMonths(3);
+    
+    $totalKerjasama = DB::table('kerjasama')->count();
+    
+    $lessThanSixMonths = DB::table('kerjasama')
+        ->join('periode_kerjasama', 'kerjasama.id_kerjasama', '=', 'periode_kerjasama.id_kerjasama')
+        ->whereBetween('periode_kerjasama.tanggal_berakhir', [$today, $sixMonthsLater])
+        ->where('kerjasama.status_aktif', true)
+        ->distinct('kerjasama.id_kerjasama')
+        ->count('kerjasama.id_kerjasama');
+    
+    $lessThanThreeMonths = DB::table('kerjasama')
+        ->join('periode_kerjasama', 'kerjasama.id_kerjasama', '=', 'periode_kerjasama.id_kerjasama')
+        ->whereBetween('periode_kerjasama.tanggal_berakhir', [$today, $threeMonthsLater])
+        ->where('kerjasama.status_aktif', true)
+        ->distinct('kerjasama.id_kerjasama')
+        ->count('kerjasama.id_kerjasama');
+    
+    $expired = DB::table('kerjasama')
+        ->join('periode_kerjasama', 'kerjasama.id_kerjasama', '=', 'periode_kerjasama.id_kerjasama')
+        ->where('periode_kerjasama.tanggal_berakhir', '<', $today)
+        ->where('kerjasama.status_aktif', true)
+        ->distinct('kerjasama.id_kerjasama')
+        ->count('kerjasama.id_kerjasama');
+
+    $stats = [
+        ['label' => 'Jumlah Kerja Sama', 'value' => $totalKerjasama],
+        ['label' => 'Masa Berlaku <6 Bulan', 'value' => $lessThanSixMonths],
+        ['label' => 'Masa Berlaku <3 Bulan', 'value' => $lessThanThreeMonths],
+        ['label' => 'Masa Berlaku Habis', 'value' => $expired],
+    ];
+
+    return Inertia::render('Welcome', [
+        'potensiData' => $potensi,
+        'stats' => $stats,
+    ]);
+})->name('home');
 
 // About
 Route::get('/about', fn () => Inertia::render('About'))->name('about');
@@ -41,6 +106,10 @@ Route::get('/peraturan', function () {
         'peraturans' => Peraturan::latest()->get(),
     ]);
 })->name('peraturan');
+
+// Potensi (public JSON)
+Route::get('/potensi', [PotensiController::class, 'index'])
+    ->name('potensi.index');
 
 // Dokumen (dengan data kategori)
 Route::get('/dokumen', function () {
@@ -251,11 +320,20 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
         ->name('data-kerjasama.mitra');
     Route::post('/data-kerjasama', [DataKerjasamaController::class, 'store'])
         ->name('data-kerjasama.store');
+    // Proses Kerjasama — gunakan POST untuk semua karena ada file upload
+    Route::post('/data-kerjasama/{id}/proses',
+        [DataKerjasamaController::class, 'storeProcess'])
+        ->name('data-kerjasama.proses.store');
+    Route::post('/data-kerjasama/{id}/proses/{prosesId}',
+        [DataKerjasamaController::class, 'updateProcess'])
+        ->name('data-kerjasama.proses.update');
 
     // Manajemen Potensi
     Route::get('/manajemen-potensi', [ManajemenPotensiController::class, 'index'])
         ->middleware('throttle:120,1')
         ->name('manajemen-potensi.index');
+    Route::get('/manajemen-potensi/list', [ManajemenPotensiController::class, 'list'])
+        ->name('manajemen-potensi.list');
     Route::post('/manajemen-potensi', [ManajemenPotensiController::class, 'store'])
         ->name('manajemen-potensi.store');
     Route::put('/manajemen-potensi/{id}', [ManajemenPotensiController::class, 'update'])
@@ -267,8 +345,12 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('/manajemen-dokumen', [ManajemenDokumenController::class, 'index'])
         ->middleware('throttle:120,1')
         ->name('manajemen-dokumen.index');
+    Route::get('/manajemen-dokumen/list', [ManajemenDokumenController::class, 'list'])
+        ->name('manajemen-dokumen.list');
     Route::post('/manajemen-dokumen', [ManajemenDokumenController::class, 'store'])
         ->name('manajemen-dokumen.store');
+    Route::put('/manajemen-dokumen/{id}', [ManajemenDokumenController::class, 'update'])
+        ->name('manajemen-dokumen.update');
     Route::get('/manajemen-dokumen/{id}/download', [ManajemenDokumenController::class, 'download'])
         ->name('manajemen-dokumen.download');
     Route::get('/manajemen-dokumen/{id}/preview', [ManajemenDokumenController::class, 'preview'])
@@ -279,6 +361,8 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     // Manajemen Peraturan
     Route::get('/manajemen-peraturan', [\App\Http\Controllers\Admin\PeraturanController::class, 'index'])
         ->name('manajemen-peraturan.index');
+    Route::get('/manajemen-peraturan/list', [\App\Http\Controllers\Admin\PeraturanController::class, 'list'])
+        ->name('manajemen-peraturan.list');
     Route::post('/manajemen-peraturan', [\App\Http\Controllers\Admin\PeraturanController::class, 'store'])
         ->name('manajemen-peraturan.store');
     Route::post('/manajemen-peraturan/{peraturan}', [\App\Http\Controllers\Admin\PeraturanController::class, 'update'])

@@ -123,6 +123,10 @@ class RiwayatKerjasamaController extends Controller
     {
         $validated = $request->validated();
         $admin = $request->user()->admin;
+        
+        // Validate admin exists
+        abort_if($admin === null, 403, 'User harus memiliki akses admin.');
+        
         $idKategori = $validated['id_kategori']
             ?? DB::table('kategori_kerjasama')->orderBy('id_kategori')->value('id_kategori');
 
@@ -252,6 +256,10 @@ class RiwayatKerjasamaController extends Controller
         ]);
 
         $admin = $request->user()->admin;
+        
+        // Validate admin exists
+        abort_if($admin === null, 403, 'User harus memiliki akses admin.');
+        
         $idKategori = DB::table('kategori_kerjasama')->orderBy('id_kategori')->value('id_kategori');
 
         if (! $idKategori) {
@@ -355,6 +363,10 @@ class RiwayatKerjasamaController extends Controller
         ]);
 
         $admin = $request->user()->admin;
+        
+        // Validate admin exists
+        abort_if($admin === null, 403, 'User harus memiliki akses admin.');
+        
         $idKategori = DB::table('kategori_kerjasama')->orderBy('id_kategori')->value('id_kategori');
 
         if (! $idKategori) {
@@ -646,6 +658,11 @@ class RiwayatKerjasamaController extends Controller
         if ($request->filled('search')) {
 
             $search = trim($request->search);
+            
+            \Log::info("🔍 SEARCH FILTER", [
+                'search' => $search,
+                'filled' => $request->filled('search'),
+            ]);
 
             $query->where(function ($q) use ($search) {
 

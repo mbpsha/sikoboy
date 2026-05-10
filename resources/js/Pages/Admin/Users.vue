@@ -239,6 +239,29 @@ function verifyMitra(id) {
   verifyingUserId.value = id
   router.put(route('admin.pengguna.verify', id), {}, {
     preserveScroll: true,
+    onSuccess: () => {
+      Swal.fire({
+        icon: 'success',
+        title: 'Berhasil',
+        text: 'Akun mitra berhasil diverifikasi',
+        timer: 1200,
+        showConfirmButton: false,
+      }).then(() => {
+        try {
+          router.visit(route('admin.pengguna.index'), { preserveState: false })
+        } catch (e) {
+          router.reload()
+        }
+      })
+    },
+    onError: () => {
+      Swal.fire({
+        icon: 'error',
+        title: 'Gagal',
+        text: 'Gagal memverifikasi akun mitra',
+      })
+      verifyingUserId.value = null
+    },
     onFinish: () => {
       verifyingUserId.value = null
     },
@@ -258,9 +281,6 @@ function verifyMitra(id) {
           <div class="flex items-center gap-3">
             <div class="flex items-center gap-2 flex-1">
               <input v-model="local.search" @input="onSearchInput" placeholder="Cari Berdasarkan nama, email, instansi..." class="rounded-full bg-white px-4 py-2 text-sm w-full" />
-              <button @click="applyFilters" title="Apply filters" class="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 18h4"/><path d="M6 6h12"/><path d="M8 12h8"/></svg>
-              </button>
             </div>
 
             <select v-model="local.role" @change="onRoleChange" class="rounded-full px-3 py-2 text-sm bg-white">
@@ -268,6 +288,10 @@ function verifyMitra(id) {
               <option value="admin">Admin</option>
               <option value="mitra">Mitra</option>
             </select>
+
+              <button @click="applyFilters" title="Apply filters" class="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"> <polygon points="3 4 21 4 14 12 14 19 10 21 10 12 3 4"></polygon> </svg>
+              </button>
 
             <button type="button" @click.prevent="openCreateMitra" class="bg-teal-400 text-white px-4 py-2 rounded-full text-sm">+ Tambah Mitra</button>
             <button type="button" @click.prevent="openCreateAdmin" class="bg-indigo-500 text-white px-4 py-2 rounded-full text-sm">+ Tambah Admin</button>

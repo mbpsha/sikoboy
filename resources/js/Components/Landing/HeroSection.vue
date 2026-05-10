@@ -1,5 +1,8 @@
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { usePage } from '@inertiajs/vue3'
+
+const page = usePage()
 const landing = "/storage/images/beranda.png";
 
 defineProps({
@@ -12,6 +15,15 @@ defineProps({
         default: 'Sistem Kolaborasi Boyolali',
     },
 });
+
+// Check if user is logged in
+const isLoggedIn = computed(() => {
+    try {
+        return !!(page.props.auth?.user)
+    } catch (e) {
+        return false
+    }
+})
 
 // 🔥 PARALLAX
 const offset = ref(0)
@@ -80,7 +92,7 @@ onUnmounted(() => {
 
             <!-- BUTTON -->
             <div class="mt-12 flex items-center justify-center gap-6 relative z-20">
-                <a href="/register"
+                <a v-if="!isLoggedIn" href="/register"
                    class="rounded-full px-10 py-3 text-sm font-semibold text-[#17464E] bg-white shadow-2xl hover:scale-105 transition">
                     Daftar
                 </a>
