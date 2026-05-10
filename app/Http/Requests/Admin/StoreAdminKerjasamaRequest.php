@@ -23,7 +23,7 @@ class StoreAdminKerjasamaRequest extends FormRequest
             'tanggal_mulai' => ['required', 'date'],
             'tanggal_selesai' => ['required', 'date', 'after:tanggal_mulai'],
             'dokumen_file' => ['required', 'file', 'mimes:pdf', 'max:10240'],
-            'nomor_suratP' => ['nullable', 'string', 'max:100'],
+            'nomor_suratM' => ['nullable', 'string', 'max:100'],
             'jenis_kerjasama' => ['nullable', 'string', 'max:100'],
             'jenis_dokumen' => ['nullable', 'string', Rule::in([
                 'KSB',

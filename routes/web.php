@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\DataKerjasamaController;
 use App\Http\Controllers\Admin\ManajemenDokumenController;
 use App\Http\Controllers\Admin\ManajemenPotensiController;
+use App\Http\Controllers\Admin\ProfileController as AdminProfileController;
 use App\Http\Controllers\Admin\RiwayatKerjasamaController;
 use App\Http\Controllers\Admin\StatusKontrakController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
@@ -57,23 +58,23 @@ Route::get('/', function () {
     $today = now();
     $sixMonthsLater = now()->addMonths(6);
     $threeMonthsLater = now()->addMonths(3);
-    
+
     $totalKerjasama = DB::table('kerjasama')->count();
-    
+
     $lessThanSixMonths = DB::table('kerjasama')
         ->join('periode_kerjasama', 'kerjasama.id_kerjasama', '=', 'periode_kerjasama.id_kerjasama')
         ->whereBetween('periode_kerjasama.tanggal_berakhir', [$today, $sixMonthsLater])
         ->where('kerjasama.status_aktif', true)
         ->distinct('kerjasama.id_kerjasama')
         ->count('kerjasama.id_kerjasama');
-    
+
     $lessThanThreeMonths = DB::table('kerjasama')
         ->join('periode_kerjasama', 'kerjasama.id_kerjasama', '=', 'periode_kerjasama.id_kerjasama')
         ->whereBetween('periode_kerjasama.tanggal_berakhir', [$today, $threeMonthsLater])
         ->where('kerjasama.status_aktif', true)
         ->distinct('kerjasama.id_kerjasama')
         ->count('kerjasama.id_kerjasama');
-    
+
     $expired = DB::table('kerjasama')
         ->join('periode_kerjasama', 'kerjasama.id_kerjasama', '=', 'periode_kerjasama.id_kerjasama')
         ->where('periode_kerjasama.tanggal_berakhir', '<', $today)
@@ -267,10 +268,20 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
         ->name('pengguna.show');
     Route::put('/pengguna/{id}', [AdminUserController::class, 'update'])
         ->name('pengguna.update');
+    Route::put('/pengguna/{id}/status', [AdminUserController::class, 'updateStatus'])
+        ->name('pengguna.status');
     Route::put('/pengguna/{id}/verify', [AdminUserController::class, 'verifyMitra'])
         ->name('pengguna.verify');
     Route::delete('/pengguna/{id}', [AdminUserController::class, 'destroy'])
         ->name('pengguna.destroy');
+
+    // Profil Admin
+    Route::get('/profile', [AdminProfileController::class, 'show'])
+        ->name('profile.show');
+    Route::put('/profile', [AdminProfileController::class, 'update'])
+        ->name('profile.update');
+    Route::put('/profile/password', [AdminProfileController::class, 'updatePassword'])
+        ->name('profile.password');
 
     // Status Kontrak
     Route::get('/status-kontrak', [StatusKontrakController::class, 'index'])
@@ -320,6 +331,8 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
         ->name('data-kerjasama.mitra');
     Route::post('/data-kerjasama', [DataKerjasamaController::class, 'store'])
         ->name('data-kerjasama.store');
+    Route::put('/data-kerjasama/{id}/nomor-surat', [DataKerjasamaController::class, 'updateNomorSurat'])
+        ->name('data-kerjasama.nomor-surat');
     // Proses Kerjasama — gunakan POST untuk semua karena ada file upload
     Route::post('/data-kerjasama/{id}/proses',
         [DataKerjasamaController::class, 'storeProcess'])

@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Admin;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreKerjasamaPemerintahRequest extends FormRequest
 {
@@ -13,25 +14,45 @@ class StoreKerjasamaPemerintahRequest extends FormRequest
 
     public function rules(): array
     {
+        $documentRule = $this->isMethod('post') ? 'required' : 'nullable';
+
         return [
-            'judul'            => ['required', 'string', 'max:255'],
-            'nomor_surat'      => ['required', 'string', 'max:100'],
-            'urusan'           => ['required', 'string', 'max:255'],
-            'daerah'           => ['required', 'string', 'max:255'],
-            'jenis_kerjasama'  => ['required', 'string', 'max:100'],
-            'jenis_dokumen'    => ['required', 'string', 'max:100'],
-            'nama_pihak_luar'  => ['required', 'string', 'max:255'],
-            'tanggal_mulai'    => ['required', 'date'],
-            'tanggal_berakhir' => ['required', 'date', 'after:tanggal_mulai'],
-            'keterangan'       => ['nullable', 'string'],
-            'id_kategori'      => ['nullable', 'integer', 'exists:kategori_kerjasama,id_kategori'],
+            'tahun' => ['required', 'integer', 'min:1900', 'max:2100'],
+            'judul' => ['required', 'string', 'max:255'],
+            'jangka_waktu_bulan' => ['required', 'integer', 'min:1'],
+            'tanggal_mulai' => ['required', 'date'],
+            'tanggal_selesai' => ['required', 'date', 'after:tanggal_mulai'],
+            'dokumen_file' => [$documentRule, 'file', 'mimes:pdf', 'max:10240'],
+            'nomor_suratP' => ['nullable', 'string', 'max:100'],
+            'jenis_kerjasama' => ['nullable', 'string', 'max:100'],
+            'jenis_dokumen' => ['nullable', 'string', Rule::in([
+                'KSB',
+                'Nota Kesepakatan',
+                'Perjanjian Teknis',
+                'PKS',
+                'Rencana Kerja',
+                'MOU',
+                'RKT',
+                'LOI',
+            ])],
+            'pembiayaan' => ['nullable', 'string', Rule::in([
+                'APBN',
+                'APBD',
+                'PIHAK KETIGA',
+                'PARA PIHAK',
+                'SESUAI DENGAN PERATURAN PERUNDANG-UNDANGAN',
+            ])],
+            'nama_pihak_luar' => ['nullable', 'string', 'max:255'],
+            'urusan' => ['nullable', 'string', 'max:255'],
+            'daerah' => ['nullable', 'string', 'max:255'],
+            'id_kategori' => ['nullable', 'integer', 'exists:kategori_kerjasama,id_kategori'],
         ];
     }
 
     public function messages(): array
     {
         return [
-            'tanggal_berakhir.after' => 'Tanggal berakhir harus setelah tanggal mulai.',
+            'tanggal_selesai.after' => 'Tanggal berakhir harus setelah tanggal mulai.',
         ];
     }
 }

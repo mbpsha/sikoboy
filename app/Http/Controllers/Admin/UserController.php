@@ -5,10 +5,12 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreUserRequest;
 use App\Http\Requests\Admin\UpdateUserRequest;
+use App\Http\Requests\Admin\UpdateUserStatusRequest;
 use App\Models\Admin;
 use App\Models\User;
 use App\Models\Mitra;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -33,18 +35,24 @@ class UserController extends Controller
         if ($request->filled('status')) {
             $status = (string) $request->input('status');
 
-            match ($status) {
-                'aktif' => $query->where(function ($q) {
-                        $q->where('role', 'admin')
-                        ->orWhere(function ($mitra) {
-                            $mitra->where('role', 'mitra')
-                            ->where('status_verifikasi', 'disetujui');
-                        });
-                    }),
-                'menunggu_verifikasi' => $query->where('role', 'mitra')->where('status_verifikasi', 'pending'),
-                'ditolak' => $query->where('role', 'mitra')->where('status_verifikasi', 'ditolak'),
-                default => null,
-            };
+            if ($status === 'nonaktif') {
+                $query->where('is_active', false);
+            } else {
+                $query->where('is_active', true);
+
+                match ($status) {
+                    'aktif' => $query->where(function ($q) {
+                            $q->where('role', 'admin')
+                            ->orWhere(function ($mitra) {
+                                $mitra->where('role', 'mitra')
+                                ->where('status_verifikasi', 'disetujui');
+                            });
+                        }),
+                    'menunggu_verifikasi' => $query->where('role', 'mitra')->where('status_verifikasi', 'pending'),
+                    'ditolak' => $query->where('role', 'mitra')->where('status_verifikasi', 'ditolak'),
+                    default => null,
+                };
+            }
         }
 
         // Keyword search: email, admin.nama/divisi, mitra.nama_perusahaan/pic
@@ -189,6 +197,29 @@ class UserController extends Controller
     }
 
     /**
+     * Activate or deactivate a user account.
+     */
+    public function updateStatus(UpdateUserStatusRequest $request, int $id)
+    {
+        $validated = $request->validated();
+
+        $user = User::with(['admin', 'mitra'])->findOrFail($id);
+
+        if (Auth::check() && Auth::id() === $user->id_user && $validated['is_active'] === false) {
+            return back()->with('error', 'Anda tidak dapat menonaktifkan akun yang sedang digunakan.');
+        }
+
+        $user->update([
+            'is_active' => (bool) $validated['is_active'],
+        ]);
+
+        return back()->with(
+            'success',
+            $validated['is_active'] ? 'Pengguna berhasil diaktifkan.' : 'Pengguna berhasil dinonaktifkan.'
+        );
+    }
+
+    /**
      * Verify a mitra account so it can access the system.
      */
     public function verifyMitra(int $id)
@@ -215,7 +246,7 @@ class UserController extends Controller
         $user = User::with(['admin', 'mitra.kerjasama.periodes', 'mitra.kerjasama.dokumen', 'mitra.kerjasama.riwayatStatus'])->where('id_user', $id)->firstOrFail();
 
         // Prevent accidental deletion of the currently authenticated admin
-        if (auth()->check() && auth()->id() === $user->id_user) {
+        if (Auth::check() && Auth::id() === $user->id_user) {
             return back()->with('error', 'Anda tidak dapat menghapus akun yang sedang digunakan.');
         }
 
@@ -260,8 +291,9 @@ class UserController extends Controller
             default => null,
         };
 
-        $statusLabel = 'aktif';
-        if ($user->role === 'mitra') {
+        $isActive = $user->is_active !== false;
+        $statusLabel = $isActive ? 'aktif' : 'nonaktif';
+        if ($isActive && $user->role === 'mitra') {
             $statusLabel = match ($user->status_verifikasi) {
                 'pending' => 'menunggu_verifikasi',
                 'ditolak' => 'ditolak',
@@ -274,6 +306,7 @@ class UserController extends Controller
             'email' => $user->email,
             'role' => $user->role,
             'status' => $statusLabel,
+            'is_active' => $isActive,
             'status_verifikasi' => $user->status_verifikasi,
             'can_verify' => $user->role === 'mitra' && $user->status_verifikasi !== 'disetujui',
             'instansi' => $instansi,

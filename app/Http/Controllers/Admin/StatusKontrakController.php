@@ -58,7 +58,7 @@ class StatusKontrakController extends Controller
 
         RiwayatStatus::recordStatus(
             idKerjasama: (int) $kerjasama->id_kerjasama,
-            jenisStatus: 'proses',
+            jenisStatus: $statusNegosiasi,
             idAdmin: (int) $admin->id_admin,
             catatan: $statusNegosiasi,
             penanggungJawab: $penanggungJawab !== '' ? $penanggungJawab : null,
