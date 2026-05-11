@@ -203,10 +203,10 @@ class UserController extends Controller
     {
         $validated = $request->validated();
 
-        $user = User::with(['admin', 'mitra'])->findOrFail($id);
+        $user = User::query()->findOrFail($id);
 
-        if ($user->role !== 'mitra') {
-            return back()->with('error', 'Status aktif hanya dapat diubah untuk akun mitra.');
+        if ($response = $this->rejectUnlessMitra($user, 'Status aktif hanya dapat diubah untuk akun mitra.')) {
+            return $response;
         }
 
         if (Auth::check() && Auth::id() === $user->id_user && $validated['is_active'] === false) {
@@ -344,8 +344,8 @@ class UserController extends Controller
     {
         $user = User::query()->findOrFail($id);
 
-        if ($user->role !== 'mitra') {
-            return back()->with('error', 'Terminasi hanya dapat dilakukan untuk akun mitra.');
+        if ($response = $this->rejectUnlessMitra($user, 'Terminasi hanya dapat dilakukan untuk akun mitra.')) {
+            return $response;
         }
 
         $user->load(['mitra.kerjasama.periodes', 'mitra.kerjasama.dokumen', 'mitra.kerjasama.riwayatStatus']);
@@ -370,5 +370,14 @@ class UserController extends Controller
 
             $user->delete();
         });
+    }
+
+    private function rejectUnlessMitra(User $user, string $message)
+    {
+        if ($user->role === 'mitra') {
+            return null;
+        }
+
+        return back()->with('error', $message);
     }
 }
