@@ -161,7 +161,7 @@ class UserController extends Controller
     {
         $validated = $request->validated();
 
-        $user = User::with(['admin', 'mitra'])->findOrFail($id);
+        $user = User::query()->findOrFail($id);
 
         $user->email = $validated['email'];
 
@@ -342,14 +342,13 @@ class UserController extends Controller
 
     private function terminateMitraUser(int $id)
     {
-        $user = User::with(['mitra.kerjasama.periodes', 'mitra.kerjasama.dokumen', 'mitra.kerjasama.riwayatStatus'])
-            ->where('id_user', $id)
-            ->firstOrFail();
+        $user = User::query()->findOrFail($id);
 
         if ($user->role !== 'mitra') {
             return back()->with('error', 'Terminasi hanya dapat dilakukan untuk akun mitra.');
         }
 
+        $user->load(['mitra.kerjasama.periodes', 'mitra.kerjasama.dokumen', 'mitra.kerjasama.riwayatStatus']);
         $this->deleteMitraHierarchy($user);
 
         return back()->with('success', 'Akun mitra berhasil diterminasi.');
