@@ -80,6 +80,12 @@ class LoginController extends Controller
             return back()->withErrors(['login' => 'Email/Username atau password salah.']);
         }
 
+        if ($user->is_active === false) {
+            return back()->withErrors([
+                'login' => 'Akun Anda sedang dinonaktifkan.',
+            ]);
+        }
+
         if ($user->role === 'mitra' && !$user->isMitraVerified()) {
             return back()->withErrors([
                 'login' => 'Akun mitra Anda belum diverifikasi admin.',

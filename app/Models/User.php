@@ -22,6 +22,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'password',
         'role',
         'status_verifikasi',
+        'is_active',
     ];
 
     /**
@@ -38,6 +39,7 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return [
             'password' => 'hashed',
+            'is_active' => 'boolean',
         ];
     }
 

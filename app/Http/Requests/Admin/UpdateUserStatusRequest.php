@@ -4,7 +4,7 @@ namespace App\Http\Requests\Admin;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class UpdateStatusKontrakRequest extends FormRequest
+class UpdateUserStatusRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -14,7 +14,7 @@ class UpdateStatusKontrakRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'status_negosiasi' => ['required', 'string', 'max:255'],
+            'is_active' => ['required', 'boolean'],
         ];
     }
 }
