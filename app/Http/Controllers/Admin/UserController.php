@@ -6,8 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreUserRequest;
 use App\Http\Requests\Admin\UpdateUserRequest;
 use App\Http\Requests\Admin\UpdateUserStatusRequest;
-use App\Models\Mitra;
 use App\Models\Admin;
+use App\Models\Mitra;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -42,12 +42,12 @@ class UserController extends Controller
 
                 match ($status) {
                     'aktif' => $query->where(function ($q) {
-                            $q->where('role', 'admin')
+                        $q->where('role', 'admin')
                             ->orWhere(function ($mitra) {
                                 $mitra->where('role', 'mitra')
-                                ->where('status_verifikasi', 'disetujui');
+                                    ->where('status_verifikasi', 'disetujui');
                             });
-                        }),
+                    }),
                     'menunggu_verifikasi' => $query->where('role', 'mitra')->where('status_verifikasi', 'pending'),
                     'ditolak' => $query->where('role', 'mitra')->where('status_verifikasi', 'ditolak'),
                     default => null,
@@ -165,7 +165,7 @@ class UserController extends Controller
 
         $user->email = $validated['email'];
 
-        if (!empty($validated['password'])) {
+        if (! empty($validated['password'])) {
             $user->password = $validated['password'];
         }
 
@@ -186,9 +186,9 @@ class UserController extends Controller
             $updates = array_filter([
                 'pic' => $validated['username'] ?? null,
                 'nama_perusahaan' => $validated['instansi'] ?? null,
-            ], fn($value) => $value !== null);
+            ], fn ($value) => $value !== null);
 
-            if (!empty($updates)) {
+            if (! empty($updates)) {
                 $user->mitra->fill($updates)->save();
             }
         }
@@ -331,7 +331,7 @@ class UserController extends Controller
         if ($detail && $user->role === 'mitra' && $user->mitra) {
             $base['kerjasama'] = $user->mitra->kerjasama
                 ->where('is_finalized', true)
-                ->map(fn($k) => [
+                ->map(fn ($k) => [
                     'id_kerjasama' => $k->id_kerjasama,
                     'judul' => $k->judul,
                     'jenis_kerjasama' => $k->jenis_kerjasama,
@@ -350,7 +350,7 @@ class UserController extends Controller
         $allowedSort = ['created_at', 'email', 'role'];
 
         $sortBy = (string) $request->input('sort_by', 'created_at');
-        if (!in_array($sortBy, $allowedSort, true)) {
+        if (! in_array($sortBy, $allowedSort, true)) {
             $sortBy = 'created_at';
         }
 
