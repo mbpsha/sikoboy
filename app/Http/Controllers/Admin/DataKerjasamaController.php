@@ -308,13 +308,13 @@ class DataKerjasamaController extends Controller
                 'id_admin'           => $admin->id_admin,
                 'id_kategori'        => $validated['id_kategori'] ?? null,
                 'judul'              => $validated['judul'],
-                'nomor_suratP'       => $validated['nomor_suratP'] ?? null,
+                'nomor_suratM'       => $validated['nomor_suratM'] ?? null,
                 'urusan'             => $validated['urusan'] ?? '-',
                 'daerah'             => $validated['daerah'] ?? '-',
                 'status_aktif'       => 'aktif',
                 'pembiayaan'         => $validated['pembiayaan'] ?? 'APBN',
-                'pemrakarsa'         => 'P',
-                'tipe'               => 'pemerintah',
+                'pemrakarsa'         => 'M',
+                'tipe'               => 'mitra',
                 'jenis_kerjasama'    => $validated['jenis_kerjasama'] ?? null,
                 'jenis_dokumen'      => $jenisDokumen,
                 'is_finalized'       => true,
@@ -344,13 +344,41 @@ class DataKerjasamaController extends Controller
                 idKerjasama: (int) $kerjasama->id_kerjasama,
                 jenisStatus: 'disetujui',
                 idAdmin:     (int) $admin->id_admin,
-                catatan:     'Data kerjasama pemerintah ditambahkan admin',
+                catatan:     'Data kerjasama mitra ditambahkan admin',
             );
         });
 
         return redirect()
             ->route('admin.data-kerjasama.index')
             ->with('success', 'Data kerjasama berhasil ditambahkan.');
+    }
+
+    public function updateNomorSurat(Request $request, int $id)
+    {
+        $validated = $request->validate([
+            'nomor_suratM' => ['nullable', 'string', 'max:100'],
+            'nomor_suratP' => ['nullable', 'string', 'max:100'],
+        ]);
+
+        $kerjasama = Kerjasama::findOrFail($id);
+
+        $updates = [];
+        if (array_key_exists('nomor_suratM', $validated) && $validated['nomor_suratM'] !== null) {
+            $updates['nomor_suratM'] = $validated['nomor_suratM'];
+        }
+        if (array_key_exists('nomor_suratP', $validated) && $validated['nomor_suratP'] !== null) {
+            $updates['nomor_suratP'] = $validated['nomor_suratP'];
+        }
+
+        if ($updates === []) {
+            return back()->withErrors([
+                'nomor_surat' => 'Nomor surat belum diisi.',
+            ]);
+        }
+
+        $kerjasama->update($updates);
+
+        return back()->with('success', 'Nomor surat berhasil diperbarui.');
     }
 
     // -------------------------------------------------------------------------

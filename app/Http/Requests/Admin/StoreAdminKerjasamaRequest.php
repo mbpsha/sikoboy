@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Support\KerjasamaDuration;
 use Carbon\Carbon;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -23,7 +24,7 @@ class StoreAdminKerjasamaRequest extends FormRequest
             'tanggal_mulai' => ['required', 'date'],
             'tanggal_selesai' => ['required', 'date', 'after:tanggal_mulai'],
             'dokumen_file' => ['required', 'file', 'mimes:pdf', 'max:10240'],
-            'nomor_suratP' => ['nullable', 'string', 'max:100'],
+            'nomor_suratM' => ['nullable', 'string', 'max:100'],
             'jenis_kerjasama' => ['nullable', 'string', 'max:100'],
             'jenis_dokumen' => ['nullable', 'string', Rule::in([
                 'KSB',
@@ -62,7 +63,7 @@ class StoreAdminKerjasamaRequest extends FormRequest
                 $validator->errors()->add('tahun', 'Tahun kerjasama harus sama dengan tahun tanggal mulai.');
             }
 
-            $actualMonths = $start->diffInMonths($end);
+            $actualMonths = KerjasamaDuration::months($start, $end);
             if ((int) $this->input('jangka_waktu_bulan') !== $actualMonths) {
                 $validator->errors()->add('jangka_waktu_bulan', 'Jangka waktu tidak sesuai dengan rentang tanggal mulai dan selesai.');
             }

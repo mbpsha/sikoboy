@@ -14,6 +14,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
@@ -136,13 +137,9 @@ class RiwayatKerjasamaController extends Controller
             ]);
         }
 
-        $path = null;
-        $originalFileName = null;
-
-        if ($request->hasFile('file')) {
-            $originalFileName = $request->file('file')->getClientOriginalName();
-            $path = $request->file('file')->store('cooperation_docs', 'public');
-        }
+        $file = $validated['dokumen_file'];
+        $originalFileName = $file->getClientOriginalName();
+        $path = $file->store('cooperation_docs', 'public');
 
         DB::transaction(function () use ($validated, $admin, $path, $idKategori, $originalFileName) {
             $kerjasama = Kerjasama::create([
@@ -150,16 +147,15 @@ class RiwayatKerjasamaController extends Controller
                 'id_admin' => $admin->id_admin,
                 'id_kategori' => $idKategori,
                 'judul' => $validated['judul'],
-                'nomor_suratM' => $validated['nomor_suratM'],
-                'nomor_suratP' => $validated['nomor_suratP'],
-                'pembiayaan' => $validated['pembiayaan'],
-                'urusan' => $validated['urusan'],
-                'daerah' => $validated['daerah'],
-                'jenis_kerjasama' => $validated['jenis_kerjasama'],
-                'jenis_dokumen' => $validated['jenis_dokumen'],
+                'nomor_suratP' => $validated['nomor_suratP'] ?? null,
+                'urusan' => $validated['urusan'] ?? '-',
+                'daerah' => $validated['daerah'] ?? '-',
+                'jenis_kerjasama' => $validated['jenis_kerjasama'] ?? null,
+                'jenis_dokumen' => $validated['jenis_dokumen'] ?? null,
+                'pembiayaan' => $validated['pembiayaan'] ?? 'APBN',
                 'pemrakarsa' => 'P',
                 'tipe' => 'pemerintah',
-                'nama_pihak_luar' => $validated['nama_pihak_luar'],
+                'nama_pihak_luar' => $validated['nama_pihak_luar'] ?? null,
                 'status_aktif' => 'aktif',
                 'is_finalized' => true,
                 'status_persetujuan' => 'disetujui',
@@ -168,19 +164,18 @@ class RiwayatKerjasamaController extends Controller
             PeriodeKerjasama::create([
                 'id_kerjasama' => $kerjasama->id_kerjasama,
                 'tanggal_mulai' => $validated['tanggal_mulai'],
-                'tanggal_berakhir' => $validated['tanggal_berakhir'],
+                'tanggal_berakhir' => $validated['tanggal_selesai'],
                 'keterangan' => $path,
             ]);
 
-            if ($path && $originalFileName) {
-                Dokumen::create([
-                    'id_kerjasama' => $kerjasama->id_kerjasama,
-                    'nama_file' => $originalFileName,
-                    'lokasi_file' => $path,
-                    'versi_dokumen' => 1,
-                    'created_by' => $admin->id_user,
-                ]);
-            }
+            Dokumen::create([
+                'id_kerjasama' => $kerjasama->id_kerjasama,
+                'jenis_dokumen' => $kerjasama->jenis_dokumen,
+                'nama_file' => $originalFileName,
+                'lokasi_file' => $path,
+                'versi_dokumen' => 1,
+                'created_by' => $admin->id_user,
+            ]);
 
             RiwayatStatus::recordStatus(
                 idKerjasama: (int) $kerjasama->id_kerjasama,
@@ -204,29 +199,30 @@ class RiwayatKerjasamaController extends Controller
     {
         $kerjasama = Kerjasama::pemerintahTipe()->findOrFail($id);
         $validated = $request->validated();
-        $request->validate([
-            'dokumen_file' => ['nullable', 'file', 'mimes:pdf', 'max:10240'],
-        ]);
         $file = $request->file('dokumen_file');
 
         DB::transaction(function () use ($kerjasama, $validated, $file, $request) {
             $kerjasama->update([
                 'judul' => $validated['judul'],
-                'nomor_suratP' => $validated['nomor_surat'],
-                'urusan' => $validated['urusan'],
-                'daerah' => $validated['daerah'],
-                'jenis_kerjasama' => $validated['jenis_kerjasama'],
-                'jenis_dokumen' => $validated['jenis_dokumen'],
-                'nama_pihak_luar' => $validated['nama_pihak_luar'],
+                'nomor_suratP' => $validated['nomor_suratP'] ?? $kerjasama->nomor_suratP,
+                'urusan' => $validated['urusan'] ?? $kerjasama->urusan,
+                'daerah' => $validated['daerah'] ?? $kerjasama->daerah,
+                'jenis_kerjasama' => $validated['jenis_kerjasama'] ?? $kerjasama->jenis_kerjasama,
+                'jenis_dokumen' => $validated['jenis_dokumen'] ?? $kerjasama->jenis_dokumen,
+                'pembiayaan' => $validated['pembiayaan'] ?? $kerjasama->pembiayaan,
+                'nama_pihak_luar' => $validated['nama_pihak_luar'] ?? $kerjasama->nama_pihak_luar,
                 'id_kategori' => $validated['id_kategori'] ?? $kerjasama->id_kategori,
             ]);
 
             // Replace the latest periode with the updated dates
-            $kerjasama->periodes()->orderByDesc('tanggal_mulai')->first()?->update([
-                'tanggal_mulai' => $validated['tanggal_mulai'],
-                'tanggal_berakhir' => $validated['tanggal_berakhir'],
-                'keterangan' => $validated['keterangan'] ?? '',
-            ]);
+            $periode = $kerjasama->periodes()->orderByDesc('tanggal_mulai')->first();
+            if ($periode) {
+                $periode->update([
+                    'tanggal_mulai' => $validated['tanggal_mulai'],
+                    'tanggal_berakhir' => $validated['tanggal_selesai'],
+                    'keterangan' => $periode->keterangan,
+                ]);
+            }
 
             if ($file !== null) {
                 $this->storeDokumenVersion($kerjasama, $file, (int) $request->user()->id_user);
@@ -647,6 +643,42 @@ class RiwayatKerjasamaController extends Controller
         return back()->with('success', 'Adendum berhasil ditambahkan.');
     }
 
+    /**
+     * Update status kerjasama.
+     */
+    public function updateStatus(int $id, Request $request)
+    {
+        $validated = $request->validate([
+            'status' => ['required', 'string', 'in:Aktif,Segera Berakhir,Berakhir'],
+        ]);
+
+        $kerjasama = Kerjasama::findOrFail($id);
+        $admin = $request->user()->admin;
+
+        abort_if($admin === null, 403, 'User harus memiliki akses admin.');
+
+        // Find id_status from status table
+        $statusRecord = \App\Models\Status::where('jenis_status', $validated['status'])->firstOrFail();
+
+        DB::transaction(function () use ($kerjasama, $validated, $admin, $statusRecord) {
+            // Update status di kerjasama - simpan string status, bukan boolean!
+            $kerjasama->update([
+                'status_aktif' => $validated['status'],
+            ]);
+
+            // Catat perubahan status di riwayat_status
+            RiwayatStatus::create([
+                'id_kerjasama' => $kerjasama->id_kerjasama,
+                'id_status' => $statusRecord->id_status,
+                'id_admin' => $admin->id_admin,
+                'catatan' => '',
+                'tanggal' => now(),
+            ]);
+        });
+
+        return back()->with('success', 'Status kerjasama berhasil diperbarui.');
+    }
+
     // =========================================================================
     // Helpers
     // =========================================================================
@@ -668,160 +700,87 @@ class RiwayatKerjasamaController extends Controller
     private function applyFilters($query, Request $request): void
     {
         if ($request->filled('search')) {
-
             $search = trim($request->search);
+            $searchLower = strtolower($search);
+            $isNumeric = is_numeric($search);
 
-            \Log::info("🔍 SEARCH FILTER", [
+            Log::info("🔍 SEARCH FILTER", [
                 'search' => $search,
                 'filled' => $request->filled('search'),
             ]);
 
-            $query->where(function ($q) use ($search) {
-
-                // SEARCH KOLOM KERJASAMA
+            $query->where(function ($q) use ($search, $searchLower, $isNumeric) {
+                // ===== SEARCH PADA KOLOM KERJASAMA LANGSUNG =====
                 $q->where('judul', 'like', "%{$search}%")
                     ->orWhere('nomor_suratM', 'like', "%{$search}%")
                     ->orWhere('nomor_suratP', 'like', "%{$search}%")
                     ->orWhere('urusan', 'like', "%{$search}%")
-                    ->orWhere('daerah', 'like', "%{$search}%")
-                    ->orWhere('nama_pihak_luar', 'like', "%{$search}%")
                     ->orWhere('jenis_kerjasama', 'like', "%{$search}%")
-                    ->orWhere('jenis_dokumen', 'like', "%{$search}%")
-                    ->orWhere('status_aktif', 'like', "%{$search}%")
-                    ->orWhere('pemrakarsa', 'like', "%{$search}%")
-                    ->orWhere('tipe', 'like', "%{$search}%")
                     ->orWhere('pembiayaan', 'like', "%{$search}%")
+                    ->orWhere('tipe', 'like', "%{$search}%")
+                    ->orWhere('status_aktif', 'like', "%{$search}%");
 
-                    // SEARCH RELASI MITRA
-                    ->orWhereHas('mitra', function ($mitra) use ($search) {
-                        $mitra->where('nama_perusahaan', 'like', "%{$search}%");
-                    })
+                // ===== SEARCH MITRA (NAMA PERUSAHAAN) =====
+                $q->orWhereHas('mitra', function ($mitra) use ($search) {
+                    $mitra->where('nama_perusahaan', 'like', "%{$search}%");
+                });
 
-                    // SEARCH RELASI KATEGORI
-                    ->orWhereHas('kategori', function ($kategori) use ($search) {
-                        $kategori->where('nama_kategori', 'like', "%{$search}%");
-                    })
-
-                    // SEARCH TAHUN
-                    ->orWhereHas('latestPeriode', function ($periode) use ($search) {
-
-                    // SEARCH TAHUN
-                    if (is_numeric($search)) {
-                        $periode->orWhereYear('tanggal_mulai', $search);
-                    }
-
-                    // SEARCH TANGGAL MULAI
-                    $periode->orWhereRaw(
-                        "DATE_FORMAT(tanggal_mulai, '%d %M %Y') LIKE ?",
-                        ["%{$search}%"]
-                    );
-
-                    // SEARCH TANGGAL BERAKHIR
-                    $periode->orWhereRaw(
-                        "DATE_FORMAT(tanggal_berakhir, '%d %M %Y') LIKE ?",
-                        ["%{$search}%"]
-                    );
-
-                    // SEARCH JANGKA WAKTU
-                    $periode->orWhereRaw("
-                        CASE
-                            WHEN TIMESTAMPDIFF(MONTH, tanggal_mulai, tanggal_berakhir) BETWEEN 12 AND 23
-                                THEN '1 Tahun'
-
-                            WHEN TIMESTAMPDIFF(MONTH, tanggal_mulai, tanggal_berakhir) BETWEEN 24 AND 35
-                                THEN '2 Tahun'
-
-                            WHEN TIMESTAMPDIFF(MONTH, tanggal_mulai, tanggal_berakhir) < 12
-                                THEN CONCAT(
-                                    TIMESTAMPDIFF(MONTH, tanggal_mulai, tanggal_berakhir),
-                                    ' Bulan'
-                                )
-                        END LIKE ?
-                    ", ["%{$search}%"]);
-                    });
-
-                    // SEARCH STATUS DINAMIS
-                    if (strtolower($search) === 'aktif') {
-
-                        $q->orWhereHas('latestPeriode', function ($periode) {
-
-                            $today = now()->toDateString();
-                            $threshold = now()->addDays(30)->toDateString();
-
-                            $periode->where('tanggal_mulai', '<=', $today)
-                                ->where('tanggal_berakhir', '>', $threshold);
-                        });
-                    }
-
-                    if (
-                        strtolower($search) === 'segera berakhir' ||
-                        strtolower($search) === 'akan berakhir'
-                    ) {
-
-                        $q->orWhereHas('latestPeriode', function ($periode) {
-
-                            $today = now()->toDateString();
-                            $threshold = now()->addDays(30)->toDateString();
-
-                            $periode->where('tanggal_berakhir', '>', $today)
-                                ->where('tanggal_berakhir', '<=', $threshold);
-                        });
-                    }
-
-                    if (strtolower($search) === 'berakhir') {
-
-                        $q->orWhereHas('latestPeriode', function ($periode) {
-
-                            $today = now()->toDateString();
-
-                            $periode->where('tanggal_berakhir', '<=', $today);
-                        });
-                    }
-
-                    // SEARCH TANGGAL FLEXIBLE
+                // ===== SEARCH PERIODE - TAHUN SAJA (4-digit) =====
+                // Only search by year if search is exactly 4-digit number
+                if ($isNumeric && strlen($search) === 4) {
                     $q->orWhereHas('latestPeriode', function ($periode) use ($search) {
-
-                    $searchLower = strtolower($search);
-
-                    $bulanMap = [
-                        'januari' => '01',
-                        'februari' => '02',
-                        'maret' => '03',
-                        'april' => '04',
-                        'mei' => '05',
-                        'juni' => '06',
-                        'juli' => '07',
-                        'agustus' => '08',
-                        'september' => '09',
-                        'oktober' => '10',
-                        'november' => '11',
-                        'desember' => '12',
-                    ];
-
-                    $formattedSearch = $searchLower;
-
-                    foreach ($bulanMap as $nama => $angka) {
-                        $formattedSearch = str_replace($nama, $angka, $formattedSearch);
-                    }
-
-                    // ubah:
-                    // 27 oktober 2025
-                    // menjadi:
-                    // 27 10 2025
-
-                    $formattedSearch = preg_replace('/\s+/', '-', trim($formattedSearch));
-
-                    // hasil:
-                    // 27-10-2025
-
-                    $periode->whereRaw("
-                        DATE_FORMAT(tanggal_mulai, '%d-%m-%Y') LIKE ?
-                    ", ["%{$formattedSearch}%"])
-
-                    ->orWhereRaw("
-                        DATE_FORMAT(tanggal_berakhir, '%d-%m-%Y') LIKE ?
-                    ", ["%{$formattedSearch}%"]);
+                        $periode->whereYear('tanggal_mulai', (int) $search);
                     });
+                }
+
+                // ===== SEARCH PERIODE - TANGGAL & JANGKA WAKTU =====
+                // Only search if search contains date separators (not just 4-digit year)
+                if (preg_match('/[-\/]|\s/', $search)) {
+                    $q->orWhereHas('latestPeriode', function ($periode) use ($search) {
+                        // CARI TANGGAL MULAI (berbagai format)
+                        $periode->orWhereRaw("DATE_FORMAT(tanggal_mulai, '%Y-%m-%d') LIKE ?", ["%{$search}%"])
+                            ->orWhereRaw("DATE_FORMAT(tanggal_mulai, '%d-%m-%Y') LIKE ?", ["%{$search}%"])
+                            ->orWhereRaw("DATE_FORMAT(tanggal_mulai, '%d/%m/%Y') LIKE ?", ["%{$search}%"]);
+
+                        // CARI TANGGAL BERAKHIR (berbagai format)
+                        $periode->orWhereRaw("DATE_FORMAT(tanggal_berakhir, '%Y-%m-%d') LIKE ?", ["%{$search}%"])
+                            ->orWhereRaw("DATE_FORMAT(tanggal_berakhir, '%d-%m-%Y') LIKE ?", ["%{$search}%"])
+                            ->orWhereRaw("DATE_FORMAT(tanggal_berakhir, '%d/%m/%Y') LIKE ?", ["%{$search}%"]);
+
+                        // CARI JANGKA WAKTU BERDASARKAN PERHITUNGAN
+                        $periode->orWhereRaw("
+                            CASE
+                                WHEN TIMESTAMPDIFF(YEAR, tanggal_mulai, tanggal_berakhir) = 1
+                                    THEN CONCAT(TIMESTAMPDIFF(YEAR, tanggal_mulai, tanggal_berakhir), ' Tahun')
+                                WHEN TIMESTAMPDIFF(YEAR, tanggal_mulai, tanggal_berakhir) > 1
+                                    THEN CONCAT(TIMESTAMPDIFF(YEAR, tanggal_mulai, tanggal_berakhir), ' Tahun')
+                                WHEN TIMESTAMPDIFF(MONTH, tanggal_mulai, tanggal_berakhir) > 0
+                                    THEN CONCAT(TIMESTAMPDIFF(MONTH, tanggal_mulai, tanggal_berakhir), ' Bulan')
+                                ELSE '0'
+                            END LIKE ?
+                        ", ["%{$search}%"]);
+                    });
+                }
+
+                // ===== SEARCH STATUS DINAMIS =====
+                $today = now()->toDateString();
+                $threshold = now()->addDays(30)->toDateString();
+
+                if ($searchLower === 'aktif') {
+                    $q->orWhereHas('latestPeriode', function ($periode) use ($today, $threshold) {
+                        $periode->where('tanggal_mulai', '<=', $today)
+                            ->where('tanggal_berakhir', '>', $threshold);
+                    });
+                } elseif ($searchLower === 'segera berakhir' || $searchLower === 'akan berakhir') {
+                    $q->orWhereHas('latestPeriode', function ($periode) use ($today, $threshold) {
+                        $periode->where('tanggal_berakhir', '>', $today)
+                            ->where('tanggal_berakhir', '<=', $threshold);
+                    });
+                } elseif ($searchLower === 'berakhir') {
+                    $q->orWhereHas('latestPeriode', function ($periode) use ($today) {
+                        $periode->where('tanggal_berakhir', '<=', $today);
+                    });
+                }
             });
         }
 
@@ -840,12 +799,10 @@ class RiwayatKerjasamaController extends Controller
         }
 
         if ($request->filled('status')) {
-
             $today = Carbon::today()->toDateString();
             $threshold = Carbon::today()->addDays(30)->toDateString();
 
             match ($request->status) {
-
                 'aktif' => $query->whereHas('latestPeriode', function ($q) use ($today) {
                     $q->where('tanggal_mulai', '<=', $today)
                         ->where('tanggal_berakhir', '>', $today);
@@ -874,18 +831,8 @@ class RiwayatKerjasamaController extends Controller
 
         $tahun = $mulai ? Carbon::parse($mulai)->year : null;
 
-        // 🔥 STATUS OTOMATIS
-        $status = 'Aktif';
-        if ($berakhir) {
-            $today = Carbon::today();
-            $end = Carbon::parse($berakhir);
-
-            if ($today->gte($end)) {
-                $status = 'Berakhir';
-            } elseif ($end->greaterThan($today) && $today->diffInDays($end, false) <= 30) {
-                $status = 'Segera Berakhir';
-            }
-        }
+        // 🔥 AMBIL STATUS DARI DATABASE (bukan otomatis dari tanggal)
+        $status = $k->status_aktif ?? 'Aktif';
 
         $jangkaWaktu = '-';
         if ($mulai && $berakhir) {
@@ -929,6 +876,14 @@ class RiwayatKerjasamaController extends Controller
 
         $hasAdendum = $k->relationLoaded('adendum') && $k->adendum->count() > 0;
 
+        // 🔥 HITUNG SISA HARI
+        $daysRemaining = null;
+        if ($berakhir) {
+            $today = Carbon::today();
+            $end = Carbon::parse($berakhir);
+            $daysRemaining = $today->diffInDays($end, false);
+        }
+
         return [
             'no' => $index + 1,
             'id_kerjasama' => $k->id_kerjasama,
@@ -945,6 +900,7 @@ class RiwayatKerjasamaController extends Controller
             'file_name' => $storedFileName,
             'file_url' => $this->resolveFileUrl($storedFilePath),
             'status' => $status,
+            'days_remaining' => $daysRemaining,
             'jenis_kerjasama' => $k->jenis_kerjasama,
             'has_adendum' => $hasAdendum,
             'nomor_suratM' => $k->nomor_suratM,

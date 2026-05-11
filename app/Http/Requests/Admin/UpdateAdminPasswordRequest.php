@@ -4,7 +4,7 @@ namespace App\Http\Requests\Admin;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class UpdateStatusKontrakRequest extends FormRequest
+class UpdateAdminPasswordRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -14,7 +14,8 @@ class UpdateStatusKontrakRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'status_negosiasi' => ['required', 'string', 'max:255'],
+            'current_password' => ['required', 'current_password'],
+            'new_password' => ['required', 'string', 'min:8', 'max:255', 'confirmed'],
         ];
     }
 }

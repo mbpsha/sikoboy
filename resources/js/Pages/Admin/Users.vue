@@ -308,6 +308,7 @@ function verifyMitra(id) {
                   <th class="py-3 px-4 text-left">Username</th>
                   <th class="py-3 px-4 text-left">Email</th>
                   <th class="py-3 px-4 text-left">Role</th>
+                  <th class="py-3 px-4 text-left">ID Mitra</th>
                   <th class="py-3 px-4 text-left">Perusahaan / Divisi</th>
                   <th class="py-3 px-4 text-left">Status</th>
                   <th class="py-3 px-4 text-left">Tanggal Daftar</th>
@@ -326,6 +327,12 @@ function verifyMitra(id) {
                   <td class="py-4 px-4">
                     <span v-if="user.role==='admin'" class="px-3 py-1 rounded-full bg-purple-200 text-purple-800 text-xs">Admin</span>
                     <span v-else class="px-3 py-1 rounded-full bg-sky-100 text-sky-800 text-xs">Mitra</span>
+                  </td>
+                  <!-- Tampilkan ID Mitra (id_mitra) -->
+                  <td class="py-4 px-4 text-gray-700">
+                    <span v-if="user.role === 'mitra' && user.mitra?.id_mitra" class="font-semibold text-teal-600">{{ user.mitra.id_mitra }}</span>
+                    <span v-else-if="user.role === 'mitra'" class="text-gray-400 text-xs">-</span>
+                    <span v-else>-</span>
                   </td>
                   <!-- Tampilkan nama_perusahaan dari relasi mitra -->
                   <td class="py-4 px-4 text-gray-700">{{ user.mitra?.nama_perusahaan ?? user.instansi ?? '-' }}</td>
@@ -508,8 +515,8 @@ function verifyMitra(id) {
 </template>
 
 <style scoped>
-.card-header { 
-  background-color: #0C9AA0 
+.card-header {
+  background-color: #0C9AA0
 }
 
 .table-lines thead th {

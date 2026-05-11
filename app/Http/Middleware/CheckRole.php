@@ -24,6 +24,16 @@ class CheckRole
 
         $user = Auth::user();
 
+        if ($user?->is_active === false) {
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return redirect()->route('login')->withErrors([
+                'email' => 'Akun Anda sedang dinonaktifkan.',
+            ]);
+        }
+
         // Check if user has the required role
         if (!in_array(strtolower(trim($user->role)), array_map('strtolower', $roles))) {
             abort(403, 'Unauthorized access.');
