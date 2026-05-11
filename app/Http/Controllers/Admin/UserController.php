@@ -247,17 +247,7 @@ class UserController extends Controller
      */
     public function terminate(int $id)
     {
-        $user = User::with(['mitra.kerjasama.periodes', 'mitra.kerjasama.dokumen', 'mitra.kerjasama.riwayatStatus'])
-            ->where('id_user', $id)
-            ->firstOrFail();
-
-        if ($user->role !== 'mitra') {
-            return back()->with('error', 'Terminasi hanya dapat dilakukan untuk akun mitra.');
-        }
-
-        $this->deleteUserHierarchy($user);
-
-        return back()->with('success', 'Akun mitra berhasil diterminasi.');
+        return $this->terminateMitraUser($id);
     }
 
     /**
@@ -265,17 +255,7 @@ class UserController extends Controller
      */
     public function destroy(int $id)
     {
-        $user = User::with(['mitra.kerjasama.periodes', 'mitra.kerjasama.dokumen', 'mitra.kerjasama.riwayatStatus'])
-            ->where('id_user', $id)
-            ->firstOrFail();
-
-        if ($user->role !== 'mitra') {
-            return back()->with('error', 'Terminasi hanya dapat dilakukan untuk akun mitra.');
-        }
-
-        $this->deleteUserHierarchy($user);
-
-        return back()->with('success', 'Akun mitra berhasil diterminasi.');
+        return $this->terminateMitraUser($id);
     }
 
     // -------------------------------------------------------------------------
@@ -360,13 +340,24 @@ class UserController extends Controller
         return [$sortBy, $sortDir];
     }
 
-    private function deleteUserHierarchy(User $user): void
+    private function terminateMitraUser(int $id)
+    {
+        $user = User::with(['mitra.kerjasama.periodes', 'mitra.kerjasama.dokumen', 'mitra.kerjasama.riwayatStatus'])
+            ->where('id_user', $id)
+            ->firstOrFail();
+
+        if ($user->role !== 'mitra') {
+            return back()->with('error', 'Terminasi hanya dapat dilakukan untuk akun mitra.');
+        }
+
+        $this->deleteMitraHierarchy($user);
+
+        return back()->with('success', 'Akun mitra berhasil diterminasi.');
+    }
+
+    private function deleteMitraHierarchy(User $user): void
     {
         DB::transaction(function () use ($user) {
-            if ($user->admin) {
-                $user->admin->delete();
-            }
-
             if ($user->mitra) {
                 foreach ($user->mitra->kerjasama as $k) {
                     $k->dokumen()->delete();
