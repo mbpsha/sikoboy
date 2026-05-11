@@ -247,7 +247,7 @@ class UserController extends Controller
      */
     public function terminate(int $id)
     {
-        $user = User::with(['admin', 'mitra.kerjasama.periodes', 'mitra.kerjasama.dokumen', 'mitra.kerjasama.riwayatStatus'])
+        $user = User::with(['mitra.kerjasama.periodes', 'mitra.kerjasama.dokumen', 'mitra.kerjasama.riwayatStatus'])
             ->where('id_user', $id)
             ->firstOrFail();
 
@@ -265,7 +265,7 @@ class UserController extends Controller
      */
     public function destroy(int $id)
     {
-        $user = User::with(['admin', 'mitra.kerjasama.periodes', 'mitra.kerjasama.dokumen', 'mitra.kerjasama.riwayatStatus'])
+        $user = User::with(['mitra.kerjasama.periodes', 'mitra.kerjasama.dokumen', 'mitra.kerjasama.riwayatStatus'])
             ->where('id_user', $id)
             ->firstOrFail();
 
