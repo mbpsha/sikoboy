@@ -235,6 +235,10 @@ Route::middleware(['auth', 'role:mitra'])->prefix('mitra')->name('mitra.')->grou
         ->name('profile.update');
     Route::put('/profile/password', [MitraProfileController::class, 'updatePassword'])
         ->name('profile.password');
+    
+    // 🔔 Notifikasi (DITAMBAHKAN)
+    Route::get('/notifications', [MitraProfileController::class, 'notifications'])
+        ->name('notifications');
 
     // Pengajuan Kerjasama
     Route::get('/pengajuan/step1', [MitraKerjasamaController::class, 'createStep1'])
