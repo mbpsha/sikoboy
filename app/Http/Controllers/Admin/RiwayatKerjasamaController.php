@@ -123,10 +123,10 @@ class RiwayatKerjasamaController extends Controller
     {
         $validated = $request->validated();
         $admin = $request->user()->admin;
-        
+
         // Validate admin exists
         abort_if($admin === null, 403, 'User harus memiliki akses admin.');
-        
+
         $idKategori = $validated['id_kategori']
             ?? DB::table('kategori_kerjasama')->orderBy('id_kategori')->value('id_kategori');
 
@@ -150,7 +150,9 @@ class RiwayatKerjasamaController extends Controller
                 'id_admin' => $admin->id_admin,
                 'id_kategori' => $idKategori,
                 'judul' => $validated['judul'],
-                'nomor_suratP' => $validated['nomor_surat'],
+                'nomor_suratM' => $validated['nomor_suratM'],
+                'nomor_suratP' => $validated['nomor_suratP'],
+                'pembiayaan' => $validated['pembiayaan'],
                 'urusan' => $validated['urusan'],
                 'daerah' => $validated['daerah'],
                 'jenis_kerjasama' => $validated['jenis_kerjasama'],
@@ -244,7 +246,9 @@ class RiwayatKerjasamaController extends Controller
             'tahun' => ['required', 'numeric'],
             'judul' => ['required', 'string'],
             'jangka' => ['required', 'string'],
-            'nomor_surat' => ['required', 'string'],
+            'nomor_suratM' => ['required', 'string'],
+            'nomor_suratP' => ['required', 'string'],
+            'pembiayaan' => ['required','in:APBN,APBD,PIHAK KETIGA,PARA PIHAK,SESUAI DENGAN PERATURAN PERUNDANG-UNDANGAN'],
             'urusan' => ['required', 'string'],
             'daerah' => ['required', 'string'],
             'jenis_kerjasama' => ['required', 'string'],
@@ -256,10 +260,10 @@ class RiwayatKerjasamaController extends Controller
         ]);
 
         $admin = $request->user()->admin;
-        
+
         // Validate admin exists
         abort_if($admin === null, 403, 'User harus memiliki akses admin.');
-        
+
         $idKategori = DB::table('kategori_kerjasama')->orderBy('id_kategori')->value('id_kategori');
 
         if (! $idKategori) {
@@ -291,7 +295,9 @@ class RiwayatKerjasamaController extends Controller
                 'id_admin' => $admin->id_admin,
                 'id_kategori' => $idKategori,
                 'judul' => $validated['judul'],
-                'nomor_suratM' => $validated['nomor_surat'],
+                'nomor_suratM' => $validated['nomor_suratM'],
+                'nomor_suratP' => $validated['nomor_suratP'],
+                'pembiayaan' => $validated['pembiayaan'],
                 'urusan' => $validated['urusan'],
                 'daerah' => $validated['daerah'],
                 'jenis_kerjasama' => $validated['jenis_kerjasama'],
@@ -346,7 +352,9 @@ class RiwayatKerjasamaController extends Controller
             'tahun' => ['required', 'numeric'],
             'judul' => ['required', 'string'],
             'jangka' => ['required', 'string'],
-            'nomor_surat' => ['required', 'string'],
+            'nomor_suratM' => ['required', 'string'],
+            'nomor_suratP' => ['required', 'string'],
+            'pembiayaan' => ['required','in:APBN,APBD,PIHAK KETIGA,PARA PIHAK,SESUAI DENGAN PERATURAN PERUNDANG-UNDANGAN'],
             'urusan' => ['required', 'string'],
             'daerah' => ['required', 'string'],
             'jenis_kerjasama' => [
@@ -363,10 +371,10 @@ class RiwayatKerjasamaController extends Controller
         ]);
 
         $admin = $request->user()->admin;
-        
+
         // Validate admin exists
         abort_if($admin === null, 403, 'User harus memiliki akses admin.');
-        
+
         $idKategori = DB::table('kategori_kerjasama')->orderBy('id_kategori')->value('id_kategori');
 
         if (! $idKategori) {
@@ -401,7 +409,9 @@ class RiwayatKerjasamaController extends Controller
                     'id_admin' => $admin->id_admin,
                     'id_kategori' => $idKategori,
                     'judul' => $validated['judul'],
-                    'nomor_suratM' => $validated['nomor_surat'],
+                    'nomor_suratM' => $validated['nomor_suratM'],
+                    'nomor_suratP' => $validated['nomor_suratP'],
+                    'pembiayaan' => $validated['pembiayaan'],
                     'urusan' => $validated['urusan'],
                     'daerah' => $validated['daerah'],
                     'jenis_kerjasama' => $validated['jenis_kerjasama'],
@@ -446,7 +456,9 @@ class RiwayatKerjasamaController extends Controller
                     'id_admin' => $admin->id_admin,
                     'id_kategori' => $idKategori,
                     'judul' => $validated['judul'],
-                    'nomor_suratP' => $validated['nomor_surat'],
+                    'nomor_suratM' => $validated['nomor_suratM'],
+                    'nomor_suratP' => $validated['nomor_suratP'],
+                    'pembiayaan' => $validated['pembiayaan'],
                     'urusan' => $validated['urusan'],
                     'daerah' => $validated['daerah'],
                     'jenis_kerjasama' => $validated['jenis_kerjasama'],
@@ -658,7 +670,7 @@ class RiwayatKerjasamaController extends Controller
         if ($request->filled('search')) {
 
             $search = trim($request->search);
-            
+
             \Log::info("🔍 SEARCH FILTER", [
                 'search' => $search,
                 'filled' => $request->filled('search'),
@@ -678,6 +690,7 @@ class RiwayatKerjasamaController extends Controller
                     ->orWhere('status_aktif', 'like', "%{$search}%")
                     ->orWhere('pemrakarsa', 'like', "%{$search}%")
                     ->orWhere('tipe', 'like', "%{$search}%")
+                    ->orWhere('pembiayaan', 'like', "%{$search}%")
 
                     // SEARCH RELASI MITRA
                     ->orWhereHas('mitra', function ($mitra) use ($search) {
@@ -934,6 +947,10 @@ class RiwayatKerjasamaController extends Controller
             'status' => $status,
             'jenis_kerjasama' => $k->jenis_kerjasama,
             'has_adendum' => $hasAdendum,
+            'nomor_suratM' => $k->nomor_suratM,
+            'nomor_suratP' => $k->nomor_suratP,
+            'urusan' => $k->urusan,
+            'pembiayaan' => $k->pembiayaan,
         ];
     }
 

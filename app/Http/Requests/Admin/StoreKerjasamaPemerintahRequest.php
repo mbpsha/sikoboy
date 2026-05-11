@@ -15,7 +15,9 @@ class StoreKerjasamaPemerintahRequest extends FormRequest
     {
         return [
             'judul'            => ['required', 'string', 'max:255'],
-            'nomor_surat'      => ['required', 'string', 'max:100'],
+            'nomor_suratM' => ['required', 'string', 'max:100'],
+            'nomor_suratP' => ['required', 'string', 'max:100'],
+            'pembiayaan' => ['required', 'in:APBN,APBD,PIHAK KETIGA,PARA PIHAK,SESUAI DENGAN PERATURAN PERUNDANG-UNDANGAN'],
             'urusan'           => ['required', 'string', 'max:255'],
             'daerah'           => ['required', 'string', 'max:255'],
             'jenis_kerjasama'  => ['required', 'string', 'max:100'],

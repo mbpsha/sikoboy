@@ -144,6 +144,10 @@ const form = ref({
     selesai: "",
     jenis_kerjasama: "KSDD",
     tipe_pengajuan: "pemerintah",
+    nomor_suratM: '',
+    nomor_suratP: '',
+    urusan: '',
+    pembiayaan: '',
     file: null,
 });
 
@@ -162,16 +166,16 @@ const calculateEndDate = () => {
   if (form.value.mulai && form.value.jangka) {
     const startDate = new Date(form.value.mulai);
     const years = parseInt(form.value.jangka, 10);
-    
+
     if (!isNaN(years)) {
       const endDate = new Date(startDate);
       endDate.setFullYear(endDate.getFullYear() + years);
-      
+
       // Format ke YYYY-MM-DD
       const year = endDate.getFullYear();
       const month = String(endDate.getMonth() + 1).padStart(2, '0');
       const day = String(endDate.getDate()).padStart(2, '0');
-      
+
       form.value.selesai = `${year}-${month}-${day}`;
     }
   }
@@ -192,12 +196,16 @@ const validate = () => {
     if (!form.value.mitra) errors.value.mitra = "Mitra wajib diisi";
     if (!form.value.tahun) errors.value.tahun = "Tahun wajib diisi";
     if (!form.value.judul) errors.value.judul = "Judul wajib diisi";
+    if (!form.value.nomor_suratM) errors.value.nomor_SuratM = "Nomor surat mitra wajib diisi";
+    if (!form.value.nomor_suratP) errors.value.nomor_SuratP = "Nomor surat pemerintah wajib diisi";
+    if (!form.value.urusan) errors.value.urusan = "Urusan wajib diisi";
     if (!form.value.jangka) errors.value.jangka = "Jangka waktu wajib diisi";
     if (!form.value.mulai) errors.value.mulai = "Tanggal mulai wajib diisi";
     if (!form.value.selesai)
         errors.value.selesai = "Tanggal selesai wajib diisi";
     if (!form.value.jenis_kerjasama) errors.value.jenis_kerjasama = "Jenis kerjasama wajib diisi";
     if (!form.value.tipe_pengajuan) errors.value.tipe_pengajuan = "Tipe pengajuan wajib diisi";
+    if (!form.value.pembiayaan) errors.value.pembiayaan = "Pembiayaan wajib diisi";
     if (!form.value.file) errors.value.file = "File wajib diupload";
 
     return Object.keys(errors.value).length === 0;
@@ -239,36 +247,33 @@ const handleAdendumDrop = (e) => {
 const submit = () => {
     if (!validate()) {
         Swal.fire({
-            icon: 'error',
-            title: 'Validasi Gagal',
-            html: '<div style="text-align: left">' + 
-                  Object.values(errors.value).map(err => `• ${err}`).join('<br>') + 
-                  '</div>',
-            confirmButtonText: 'OK',
-            confirmButtonColor: '#0d9488'
+            icon: "error",
+            title: "Validasi Gagal",
+            html:
+                '<div style="text-align: left">' +
+                Object.values(errors.value)
+                    .map((err) => `• ${err}`)
+                    .join("<br>") +
+                "</div>",
+            confirmButtonText: "OK",
+            confirmButtonColor: "#0d9488",
         });
+
         return;
     }
 
     isSubmitting.value = true;
 
     const formData = new FormData();
-    const tahun = String(form.value.tahun || new Date().getFullYear());
-    const judulSlug = String(form.value.judul || "KERJASAMA")
-        .toUpperCase()
-        .replace(/[^A-Z0-9]+/g, "-")
-        .replace(/^-+|-+$/g, "")
-        .slice(0, 24);
 
     formData.append("mitra", form.value.mitra);
-    formData.append("tahun", tahun);
+    formData.append("tahun", form.value.tahun);
     formData.append("judul", form.value.judul);
     formData.append("jangka", form.value.jangka);
-    formData.append(
-        "nomor_surat",
-        `RIW-P/${tahun}/${judulSlug || "KERJASAMA"}`,
-    );
-    formData.append("urusan", "Kerjasama Daerah");
+    formData.append("nomor_suratM", form.value.nomor_suratM);
+    formData.append("nomor_suratP", form.value.nomor_suratP);
+    formData.append("urusan", form.value.urusan);
+    formData.append("pembiayaan", form.value.pembiayaan);
     formData.append("daerah", "Boyolali");
     formData.append("jenis_kerjasama", form.value.jenis_kerjasama);
     formData.append("jenis_dokumen", "PDF");
@@ -280,47 +285,69 @@ const submit = () => {
         formData.append("file", form.value.file);
     }
 
-    router.post(route("admin.riwayat-kerjasama.pemerintah.store"), formData, {
-        preserveScroll: true,
-        onSuccess: () => {
-            isSubmitting.value = false;
-            Swal.fire({
-                icon: 'success',
-                title: 'Berhasil!',
-                text: 'Data kerjasama pemerintah berhasil disimpan',
-                confirmButtonText: 'OK',
-                confirmButtonColor: '#0d9488'
-            }).then(() => {
-                closeModal();
-                router.visit(route('admin.riwayat-kerjasama.pemerintah'), { preserveState: false });
-            });
-        },
-        onError: (err) => {
-            isSubmitting.value = false;
-            console.error('Error:', err);
-            
-            let errorHtml = '<div style="text-align: left; font-size: 0.9rem;">';
-            if (typeof err === 'object') {
-                Object.entries(err).forEach(([key, value]) => {
-                    const errorMsg = Array.isArray(value) ? value[0] : value;
-                    errorHtml += `<strong>${key}:</strong> ${errorMsg}<br>`;
-                });
-            } else {
-                errorHtml += String(err);
-            }
-            errorHtml += '</div>';
+    router.post(
+        route("admin.riwayat-kerjasama.pemerintah.store"),
+        formData,
+        {
+            preserveScroll: true,
 
-            Swal.fire({
-                icon: 'error',
-                title: 'Gagal Menyimpan Data',
-                html: errorHtml,
-                confirmButtonText: 'OK',
-                confirmButtonColor: '#0d9488'
-            });
-            
-            errors.value = err;
-        },
-    });
+            onSuccess: () => {
+                isSubmitting.value = false;
+
+                Swal.fire({
+                    icon: "success",
+                    title: "Berhasil!",
+                    text: "Data kerjasama pemerintah berhasil disimpan",
+                    confirmButtonText: "OK",
+                    confirmButtonColor: "#0d9488",
+                }).then(() => {
+                    closeModal();
+
+                    router.visit(
+                        route("admin.riwayat-kerjasama.pemerintah"),
+                        {
+                            preserveState: false,
+                        }
+                    );
+                });
+            },
+
+            onError: (err) => {
+                isSubmitting.value = false;
+
+                console.error("Error:", err);
+
+                let errorHtml =
+                    '<div style="text-align: left; font-size: 0.9rem;">';
+
+                if (typeof err === "object") {
+                    Object.entries(err).forEach(([key, value]) => {
+                        const errorMsg = Array.isArray(value)
+                            ? value[0]
+                            : value;
+
+                        errorHtml += `
+                            <strong>${key}:</strong> ${errorMsg}<br>
+                        `;
+                    });
+                } else {
+                    errorHtml += String(err);
+                }
+
+                errorHtml += "</div>";
+
+                Swal.fire({
+                    icon: "error",
+                    title: "Gagal Menyimpan Data",
+                    html: errorHtml,
+                    confirmButtonText: "OK",
+                    confirmButtonColor: "#0d9488",
+                });
+
+                errors.value = err;
+            },
+        }
+    );
 };
 
 // SUBMIT ADENDUM
@@ -354,6 +381,10 @@ const closeModal = () => {
         selesai: "",
         jenis_kerjasama: "KSDD",
         tipe_pengajuan: "pemerintah",
+        nomor_suratM: '',
+        nomor_suratP: '',
+        urusan: '',
+        pembiayaan: '',
         file: null,
     };
     errors.value = {};
@@ -603,6 +634,21 @@ onBeforeUnmount(() => {
                                         Judul
                                     </th>
                                     <th
+                                        class="px-4 py-3 text-left border-r border-gray-200"
+                                    >
+                                        Nomor Surat Mitra
+                                    </th>
+                                    <th
+                                        class="px-4 py-3 text-left border-r border-gray-200"
+                                    >
+                                        Nomor Surat Pemerintah
+                                    </th>
+                                    <th
+                                        class="px-4 py-3 text-left border-r border-gray-200"
+                                    >
+                                        Urusan
+                                    </th>
+                                    <th
                                         class="px-4 py-3 text-left whitespace-nowrap border-r border-gray-200 relative group cursor-pointer"
                                     >
                                         <div class="flex items-center justify-between gap-1">
@@ -652,6 +698,11 @@ onBeforeUnmount(() => {
                                         class="px-4 py-3 text-left whitespace-nowrap border-r border-gray-200"
                                     >
                                         Jangka
+                                    </th>
+                                    <th
+                                        class="px-4 py-3 text-left border-r border-gray-200"
+                                    >
+                                        Pembiayaan
                                     </th>
                                     <th
                                         class="px-4 py-3 text-left whitespace-nowrap border-r border-gray-200"
@@ -711,6 +762,21 @@ onBeforeUnmount(() => {
                                     >
                                         {{ item.judul || "-" }}
                                     </td>
+                                    <td
+                                        class="px-4 py-3 whitespace-nowrap border-r border-gray-200"
+                                    >
+                                        {{ item.nomor_SuratM }}
+                                    </td>
+                                    <td
+                                        class="px-4 py-3 whitespace-nowrap border-r border-gray-200"
+                                    >
+                                        {{ item.nomor_SuratP }}
+                                    </td>
+                                    <td
+                                        class="px-4 py-3 whitespace-nowrap border-r border-gray-200"
+                                    >
+                                        {{ item.urusan }}
+                                    </td>
                                     <td class="px-6 py-4">
                                         <span
                                             class="px-3 py-1 text-xs font-semibold rounded-lg bg-blue-100 text-blue-700"
@@ -732,6 +798,11 @@ onBeforeUnmount(() => {
                                         class="px-4 py-3 whitespace-nowrap min-w-[120px] border-r border-gray-200"
                                     >
                                         {{ item.jangka_waktu || "-" }}
+                                    </td>
+                                    <td
+                                        class="px-4 py-3 whitespace-nowrap border-r border-gray-200"
+                                    >
+                                        {{ item.pembiayaan }}
                                     </td>
                                     <td
                                         class="px-4 py-3 whitespace-nowrap min-w-[90px] border-r border-gray-200"
@@ -914,6 +985,63 @@ onBeforeUnmount(() => {
                         </p>
                     </div>
 
+                    <!-- NOMOR SURAT MITRA -->
+                    <div>
+                        <label class="text-sm font-medium">
+                            Nomor Surat Mitra <span class="text-red-500">*</span>
+                        </label>
+                        <input
+                            v-model="form.nomor_suratM"
+                            type="text"
+                            class="w-full border rounded-lg px-3 py-2 mt-1"
+                            placeholder="Masukkan nomor surat mitra"
+                        />
+                        <p
+                            v-if="errors.nomor_SuratM"
+                            class="text-red-500 text-xs mt-1"
+                        >
+                            {{ errors.nomor_SuratM }}
+                        </p>
+                    </div>
+
+                    <!-- Nomor Surat Pemerintah -->
+                    <div>
+                        <label class="text-sm font-medium">
+                            Nomor Surat Pemerintah <span class="text-red-500">*</span>
+                        </label>
+                        <input
+                            v-model="form.nomor_suratP"
+                            type="text"
+                            class="w-full border rounded-lg px-3 py-2 mt-1"
+                            placeholder="Masukkan nomor surat pemerintah"
+                        />
+                        <p
+                            v-if="errors.nomor_SuratP"
+                            class="text-red-500 text-xs mt-1"
+                        >
+                            {{ errors.nomor_SuratP }}
+                        </p>
+                    </div>
+
+                    <!-- Urusan -->
+                    <div>
+                        <label class="text-sm font-medium">
+                            Urusan <span class="text-red-500">*</span>
+                        </label>
+                        <textarea
+                            v-model="form.urusan"
+                            rows="3"
+                            class="w-full border rounded-lg px-3 py-2 mt-1"
+                            placeholder="Masukkan urusan kerjasama"
+                        ></textarea>
+                        <p
+                            v-if="errors.urusan"
+                            class="text-red-500 text-xs mt-1"
+                        >
+                            {{ errors.urusan }}
+                        </p>
+                    </div>
+
                     <!-- JANGKA -->
                     <div>
                         <label class="text-sm font-medium">
@@ -1012,6 +1140,29 @@ onBeforeUnmount(() => {
                                 {{ errors.selesai }}
                             </p>
                         </div>
+                    </div>
+
+                    <!-- PEMBIAYAAN -->
+                    <div>
+                        <label class="text-sm font-medium">
+                            Pembiayaan <span class="text-red-500">*</span>
+                        </label>
+                        <select
+                            v-model="form.pembiayaan"
+                            class="w-full border rounded-lg px-3 py-2 mt-1"
+                        >
+                            <option value="APBN">APBN</option>
+                            <option value="APBD">APBD</option>
+                            <option value="PIHAK KETIGA">PIHAK KETIGA</option>
+                            <option value="PARA PIHAK">PARA PIHAK</option>
+                            <option value="SESUAI DENGAN PERATURAN PERUNDANG-UNDANGAN">SESUAI DENGAN PERATURAN PERUNDANG-UNDANGAN</option>
+                        </select>
+                        <p
+                            v-if="errors.pembiayaan"
+                            class="text-red-500 text-xs mt-1"
+                        >
+                            {{ errors.pembiayaan }}
+                        </p>
                     </div>
 
                     <!-- UPLOAD -->
