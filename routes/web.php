@@ -324,7 +324,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::post('/data-kerjasama/{id}/proses',
         [DataKerjasamaController::class, 'storeProcess'])
         ->name('data-kerjasama.proses.store');
-    Route::post('/data-kerjasama/{id}/proses/{prosesId}',
+    Route::put('/data-kerjasama/{id}/proses/{prosesId}',
         [DataKerjasamaController::class, 'updateProcess'])
         ->name('data-kerjasama.proses.update');
 
