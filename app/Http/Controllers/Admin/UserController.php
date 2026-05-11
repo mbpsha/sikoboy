@@ -197,7 +197,7 @@ class UserController extends Controller
     }
 
     /**
-     * Activate or deactivate a user account.
+     * active or deactive user account.
      */
     public function updateStatus(UpdateUserStatusRequest $request, int $id)
     {

@@ -407,7 +407,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::delete('/manajemen-peraturan/{peraturan}', [PeraturanController::class, 'destroy'])
         ->name('manajemen-peraturan.destroy');
 
-    // Legacy routes (backward compatibility)
+    // Legacy routes (backward Compability)
     Route::get('/partners', [AdminDashboardController::class, 'partners'])
         ->name('partners.index');
     Route::get('/partners/{id}', [AdminDashboardController::class, 'showPartner'])
