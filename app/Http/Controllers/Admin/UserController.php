@@ -6,16 +6,16 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreUserRequest;
 use App\Http\Requests\Admin\UpdateUserRequest;
 use App\Http\Requests\Admin\UpdateUserStatusRequest;
+use App\Models\Mitra;
 use App\Models\Admin;
 use App\Models\User;
-use App\Models\Mitra;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\DB;
 
 class UserController extends Controller
 {
@@ -205,6 +205,10 @@ class UserController extends Controller
 
         $user = User::with(['admin', 'mitra'])->findOrFail($id);
 
+        if ($user->role !== 'mitra') {
+            return back()->with('error', 'Status aktif hanya dapat diubah untuk akun mitra.');
+        }
+
         if (Auth::check() && Auth::id() === $user->id_user && $validated['is_active'] === false) {
             return back()->with('error', 'Anda tidak dapat menonaktifkan akun yang sedang digunakan.');
         }
@@ -239,41 +243,39 @@ class UserController extends Controller
     }
 
     /**
+     * Terminate a mitra user and related records.
+     */
+    public function terminate(int $id)
+    {
+        $user = User::with(['admin', 'mitra.kerjasama.periodes', 'mitra.kerjasama.dokumen', 'mitra.kerjasama.riwayatStatus'])
+            ->where('id_user', $id)
+            ->firstOrFail();
+
+        if ($user->role !== 'mitra') {
+            return back()->with('error', 'Terminasi hanya dapat dilakukan untuk akun mitra.');
+        }
+
+        $this->deleteUserHierarchy($user);
+
+        return back()->with('success', 'Akun mitra berhasil diterminasi.');
+    }
+
+    /**
      * Remove the specified user and related records from storage.
      */
     public function destroy(int $id)
     {
-        $user = User::with(['admin', 'mitra.kerjasama.periodes', 'mitra.kerjasama.dokumen', 'mitra.kerjasama.riwayatStatus'])->where('id_user', $id)->firstOrFail();
+        $user = User::with(['admin', 'mitra.kerjasama.periodes', 'mitra.kerjasama.dokumen', 'mitra.kerjasama.riwayatStatus'])
+            ->where('id_user', $id)
+            ->firstOrFail();
 
-        // Prevent accidental deletion of the currently authenticated admin
-        if (Auth::check() && Auth::id() === $user->id_user) {
-            return back()->with('error', 'Anda tidak dapat menghapus akun yang sedang digunakan.');
+        if ($user->role !== 'mitra') {
+            return back()->with('error', 'Terminasi hanya dapat dilakukan untuk akun mitra.');
         }
 
-        DB::transaction(function () use ($user) {
-            // Delete admin profile if exists
-            if ($user->admin) {
-                $user->admin->delete();
-            }
+        $this->deleteUserHierarchy($user);
 
-            // Delete mitra and their kerjasama, periodes, dokumen, riwayatStatus if exists
-            if ($user->mitra) {
-                foreach ($user->mitra->kerjasama as $k) {
-                    // delete related dokumen, periodes and riwayatStatus
-                    $k->dokumen()->delete();
-                    $k->periodes()->delete();
-                    $k->riwayatStatus()->delete();
-                    $k->delete();
-                }
-
-                $user->mitra->delete();
-            }
-
-            // Finally delete the user
-            $user->delete();
-        });
-
-        return back()->with('success', 'Pengguna berhasil dihapus.');
+        return back()->with('success', 'Akun mitra berhasil diterminasi.');
     }
 
     // -------------------------------------------------------------------------
@@ -308,6 +310,8 @@ class UserController extends Controller
             'status' => $statusLabel,
             'is_active' => $isActive,
             'status_verifikasi' => $user->status_verifikasi,
+            'can_toggle_active' => $user->role === 'mitra',
+            'can_terminate' => $user->role === 'mitra',
             'can_verify' => $user->role === 'mitra' && $user->status_verifikasi !== 'disetujui',
             'instansi' => $instansi,
             'tanggal_daftar' => $user->created_at?->format('d/m/Y'),
@@ -354,5 +358,27 @@ class UserController extends Controller
         $sortDir = $sortDir === 'asc' ? 'asc' : 'desc';
 
         return [$sortBy, $sortDir];
+    }
+
+    private function deleteUserHierarchy(User $user): void
+    {
+        DB::transaction(function () use ($user) {
+            if ($user->admin) {
+                $user->admin->delete();
+            }
+
+            if ($user->mitra) {
+                foreach ($user->mitra->kerjasama as $k) {
+                    $k->dokumen()->delete();
+                    $k->periodes()->delete();
+                    $k->riwayatStatus()->delete();
+                    $k->delete();
+                }
+
+                $user->mitra->delete();
+            }
+
+            $user->delete();
+        });
     }
 }

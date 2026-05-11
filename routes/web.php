@@ -272,8 +272,29 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
         ->name('pengguna.status');
     Route::put('/pengguna/{id}/verify', [AdminUserController::class, 'verifyMitra'])
         ->name('pengguna.verify');
+    Route::delete('/pengguna/{id}/terminate', [AdminUserController::class, 'terminate'])
+        ->name('pengguna.terminate');
     Route::delete('/pengguna/{id}', [AdminUserController::class, 'destroy'])
         ->name('pengguna.destroy');
+
+    // Legacy route names for backward compatibility
+    Route::get('/pengguna', [AdminUserController::class, 'index'])
+        ->middleware('throttle:120,1')
+        ->name('users.index');
+    Route::post('/pengguna', [AdminUserController::class, 'store'])
+        ->name('users.store');
+    Route::get('/pengguna/{id}', [AdminUserController::class, 'show'])
+        ->name('users.show');
+    Route::put('/pengguna/{id}', [AdminUserController::class, 'update'])
+        ->name('users.update');
+    Route::put('/pengguna/{id}/status', [AdminUserController::class, 'updateStatus'])
+        ->name('users.status');
+    Route::put('/pengguna/{id}/verify', [AdminUserController::class, 'verifyMitra'])
+        ->name('users.verify');
+    Route::delete('/pengguna/{id}/terminate', [AdminUserController::class, 'terminate'])
+        ->name('users.terminate');
+    Route::delete('/pengguna/{id}', [AdminUserController::class, 'destroy'])
+        ->name('users.destroy');
 
     // Profil Admin
     Route::get('/profile', [AdminProfileController::class, 'show'])
