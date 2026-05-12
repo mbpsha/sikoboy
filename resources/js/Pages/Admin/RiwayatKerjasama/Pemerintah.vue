@@ -160,35 +160,14 @@ const filteredMitraOptions = computed(() => {
     return mitras.filter((mitra) => String(mitra.id_mitra).includes(query));
 });
 
-watch(
-    () => form.value.id_mitra,
-    (idMitra) => {
-        const selected = (props.mitras || []).find(
-            (mitra) => String(mitra.id_mitra) === String(idMitra),
-        );
-
-        form.value.mitra = selected?.nama_perusahaan || "";
-    },
-);
-
-watch(mitraIdSearch, (query) => {
-    const normalized = String(query || "").trim();
-
-    if (!normalized) {
-        form.value.id_mitra = "";
-        form.value.mitra = "";
-        return;
-    }
-
-    const exactMatch = (props.mitras || []).find(
-        (mitra) => String(mitra.id_mitra) === normalized,
+const applySelectedMitra = (idMitra) => {
+    const selected = (props.mitras || []).find(
+        (mitra) => String(mitra.id_mitra) === String(idMitra),
     );
 
-    if (exactMatch) {
-        form.value.id_mitra = String(exactMatch.id_mitra);
-        form.value.mitra = exactMatch.nama_perusahaan;
-    }
-});
+    form.value.id_mitra = selected ? String(selected.id_mitra) : "";
+    form.value.mitra = selected?.nama_perusahaan || "";
+};
 
 const adendumForm = ref({
     judul_adendum: "",
@@ -917,6 +896,7 @@ onBeforeUnmount(() => {
                             />
                             <select
                                 v-model="form.id_mitra"
+                                @change="applySelectedMitra(form.id_mitra)"
                                 class="w-full border rounded-lg px-3 py-2 mt-1 bg-white"
                             >
                                 <option value="">Pilih ID mitra</option>
