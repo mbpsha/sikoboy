@@ -7,15 +7,15 @@ use App\Http\Requests\Admin\StoreUserRequest;
 use App\Http\Requests\Admin\UpdateUserRequest;
 use App\Http\Requests\Admin\UpdateUserStatusRequest;
 use App\Models\Admin;
-use App\Models\User;
 use App\Models\Mitra;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\DB;
 
 class UserController extends Controller
 {
@@ -42,12 +42,12 @@ class UserController extends Controller
 
                 match ($status) {
                     'aktif' => $query->where(function ($q) {
-                            $q->where('role', 'admin')
+                        $q->where('role', 'admin')
                             ->orWhere(function ($mitra) {
                                 $mitra->where('role', 'mitra')
-                                ->where('status_verifikasi', 'disetujui');
+                                    ->where('status_verifikasi', 'disetujui');
                             });
-                        }),
+                    }),
                     'menunggu_verifikasi' => $query->where('role', 'mitra')->where('status_verifikasi', 'pending'),
                     'ditolak' => $query->where('role', 'mitra')->where('status_verifikasi', 'ditolak'),
                     default => null,
@@ -169,11 +169,11 @@ class UserController extends Controller
     {
         $validated = $request->validated();
 
-        $user = User::with(['admin', 'mitra'])->findOrFail($id);
+        $user = User::query()->findOrFail($id);
 
         $user->email = $validated['email'];
 
-        if (!empty($validated['password'])) {
+        if (! empty($validated['password'])) {
             $user->password = $validated['password'];
         }
 
@@ -194,9 +194,9 @@ class UserController extends Controller
             $updates = array_filter([
                 'pic' => $validated['username'] ?? null,
                 'nama_perusahaan' => $validated['instansi'] ?? null,
-            ], fn($value) => $value !== null);
+            ], fn ($value) => $value !== null);
 
-            if (!empty($updates)) {
+            if (! empty($updates)) {
                 $user->mitra->fill($updates)->save();
             }
         }
@@ -205,13 +205,17 @@ class UserController extends Controller
     }
 
     /**
-     * Activate or deactivate a user account.
+     * active or deactive user account.
      */
     public function updateStatus(UpdateUserStatusRequest $request, int $id)
     {
         $validated = $request->validated();
 
-        $user = User::with(['admin', 'mitra'])->findOrFail($id);
+        $user = User::query()->findOrFail($id);
+
+        if ($response = $this->rejectUnlessMitra($user, 'Status aktif hanya dapat diubah untuk akun mitra.')) {
+            return $response;
+        }
 
         if (Auth::check() && Auth::id() === $user->id_user && $validated['is_active'] === false) {
             return back()->with('error', 'Anda tidak dapat menonaktifkan akun yang sedang digunakan.');
@@ -241,44 +245,25 @@ class UserController extends Controller
             return back()->with('success', 'Akun mitra sudah terverifikasi.');
         }
 
-        DB::transaction(function () use ($user) {
-            // Update status verifikasi
-            $user->update(['status_verifikasi' => 'disetujui']);
+        $user->update(['status_verifikasi' => 'disetujui']);
 
-            // Generate id_mitra otomatis (dimulai dari 1, 2, 3, dst)
-            if ($user->mitra && is_null($user->mitra->id_mitra)) {
-                $maxIdMitra = Mitra::whereNotNull('id_mitra')->max('id_mitra') ?? 0;
-                $newIdMitra = $maxIdMitra + 1;
+        return back()->with('success', 'Akun mitra berhasil diverifikasi.');
+    }
 
-                $user->mitra->update(['id_mitra' => $newIdMitra]);
-            }
-        });
+    /**
+     * Terminate a mitra user and related records.
+     */
+    public function terminate(int $id)
+    {
+        return $this->terminateMitraUser($id);
+    }
 
-        $idMitra = $user->mitra->id_mitra;
-        return back()->with('success', 'Akun mitra berhasil diverifikasi. ID Mitra: ' . $idMitra);
-            // Delete admin profile if exists
-            if ($user->admin) {
-                $user->admin->delete();
-            }
-
-            // Delete mitra and their kerjasama, periodes, dokumen, riwayatStatus if exists
-            if ($user->mitra) {
-                foreach ($user->mitra->kerjasama as $k) {
-                    // delete related dokumen, periodes and riwayatStatus
-                    $k->dokumen()->delete();
-                    $k->periodes()->delete();
-                    $k->riwayatStatus()->delete();
-                    $k->delete();
-                }
-
-                $user->mitra->delete();
-            }
-
-            // Finally delete the user
-            $user->delete();
-        
-
-        return back()->with('success', 'Pengguna berhasil dihapus.');
+    /**
+     * Remove the specified user and related records from storage.
+     */
+    public function destroy(int $id)
+    {
+        return $this->terminateMitraUser($id);
     }
 
     // -------------------------------------------------------------------------
@@ -313,6 +298,8 @@ class UserController extends Controller
             'status' => $statusLabel,
             'is_active' => $isActive,
             'status_verifikasi' => $user->status_verifikasi,
+            'can_toggle_active' => $user->role === 'mitra',
+            'can_terminate' => $user->role === 'mitra',
             'can_verify' => $user->role === 'mitra' && $user->status_verifikasi !== 'disetujui',
             'instansi' => $instansi,
             'tanggal_daftar' => $user->created_at?->format('d/m/Y'),
@@ -332,7 +319,7 @@ class UserController extends Controller
         if ($detail && $user->role === 'mitra' && $user->mitra) {
             $base['kerjasama'] = $user->mitra->kerjasama
                 ->where('is_finalized', true)
-                ->map(fn($k) => [
+                ->map(fn ($k) => [
                     'id_kerjasama' => $k->id_kerjasama,
                     'judul' => $k->judul,
                     'jenis_kerjasama' => $k->jenis_kerjasama,
@@ -351,7 +338,7 @@ class UserController extends Controller
         $allowedSort = ['created_at', 'email', 'role'];
 
         $sortBy = (string) $request->input('sort_by', 'created_at');
-        if (!in_array($sortBy, $allowedSort, true)) {
+        if (! in_array($sortBy, $allowedSort, true)) {
             $sortBy = 'created_at';
         }
 
@@ -359,5 +346,46 @@ class UserController extends Controller
         $sortDir = $sortDir === 'asc' ? 'asc' : 'desc';
 
         return [$sortBy, $sortDir];
+    }
+
+    private function terminateMitraUser(int $id)
+    {
+        $user = User::query()->findOrFail($id);
+
+        if ($response = $this->rejectUnlessMitra($user, 'Terminasi hanya dapat dilakukan untuk akun mitra.')) {
+            return $response;
+        }
+
+        $user->load(['mitra.kerjasama.periodes', 'mitra.kerjasama.dokumen', 'mitra.kerjasama.riwayatStatus']);
+        $this->deleteMitraHierarchy($user);
+
+        return back()->with('success', 'Akun mitra berhasil diterminasi.');
+    }
+
+    private function deleteMitraHierarchy(User $user): void
+    {
+        DB::transaction(function () use ($user) {
+            if ($user->mitra) {
+                foreach ($user->mitra->kerjasama as $k) {
+                    $k->dokumen()->delete();
+                    $k->periodes()->delete();
+                    $k->riwayatStatus()->delete();
+                    $k->delete();
+                }
+
+                $user->mitra->delete();
+            }
+
+            $user->delete();
+        });
+    }
+
+    private function rejectUnlessMitra(User $user, string $message)
+    {
+        if ($user->role === 'mitra') {
+            return null;
+        }
+
+        return back()->with('error', $message);
     }
 }

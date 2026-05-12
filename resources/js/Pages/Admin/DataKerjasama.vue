@@ -231,13 +231,9 @@
                 <td class="py-3 px-4">
                   <span
                     class="inline-block px-2.5 py-1 rounded-full text-xs font-medium"
-                    :class="{
-                      'bg-green-100 text-green-800': k.status_persetujuan === 'disetujui',
-                      'bg-red-100 text-red-800': k.status_persetujuan === 'ditolak',
-                      'bg-amber-100 text-amber-800': !['disetujui','ditolak'].includes(k.status_persetujuan),
-                    }"
+                    :class="statusBadgeClass(k)"
                   >
-                    {{ k.status_persetujuan === 'disetujui' ? 'Diterima' : k.status_persetujuan === 'ditolak' ? 'Ditolak' : (k.status_persetujuan ?? 'Proses') }}
+                    {{ k.status_display ?? (k.status_persetujuan === 'disetujui' ? 'Diterima' : (k.status_persetujuan ?? 'Proses')) }}
                   </span>
                 </td>
               </tr>
@@ -319,7 +315,6 @@
           <div class="flex justify-end gap-2 pt-2">
             <button @click="closeProcessModal" class="px-4 py-2 text-sm rounded-lg border border-gray-200 hover:bg-gray-50 transition">Batal</button>
             <button @click.prevent="saveProcessUpdate" class="px-4 py-2 text-sm rounded-lg bg-teal-600 hover:bg-teal-700 text-white font-medium transition">Simpan</button>
-            <button @click.prevent="endProcess" class="px-4 py-2 text-sm rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-medium transition">Selesai & Simpan ke Riwayat</button>
           </div>
         </div>
       </div>
@@ -424,6 +419,16 @@ const years = computed(() => {
   return Array.from({ length: 6 }).map((_, i) => now - i)
 })
 
+function statusBadgeClass(k) {
+  if (k?.status_display && String(k.status_display).startsWith('Proses')) {
+    return 'bg-blue-100 text-blue-800'
+  }
+  if (k?.status_persetujuan === 'disetujui') {
+    return 'bg-green-100 text-green-800'
+  }
+  return 'bg-amber-100 text-amber-800'
+}
+
 // Auto-search dengan debounce
 watch(() => local.value.search, () => {
   clearTimeout(searchTimeout)
@@ -480,30 +485,29 @@ function addProcess(k) {
   const title = (newProcessForm[id]?.title || '').trim()
   if (!title) return
 
-  router.post(
-    route('admin.data-kerjasama.proses.store', id),
-    { title },
-    {
-      preserveScroll: true,
-      onSuccess: () => {
-        newProcessForm[id].title = ''
-        showAddFormFor[id] = false
-      },
-      onError: (e) => {
-        console.error('Gagal tambah proses:', e)
-      },
-    }
-  )
+  // Add a temporary process entry locally. Persist when user opens it and saves.
+  if (!k.proses) k.proses = []
+  k.proses.push({
+    id: null,
+    label: title,
+    title: title,
+    catatan: '',
+    penanggung: currentUsername.value,
+    __temp: true,
+  })
+
+  newProcessForm[id].title = ''
+  showAddFormFor[id] = false
 }
 
 // Selesaikan semua proses dan simpan ke riwayat
 async function finishAddProcess(k) {
   const confirmed = await Swal.fire({
-    title: 'Konfirmasi',
-    text: 'Tandai semua proses selesai dan simpan ke riwayat kerjasama?',
-    icon: 'warning',
+    title: 'Selesaikan Proses?',
+    text: 'Data akan disimpan ke riwayat kerjasama.',
+    icon: 'question',
     showCancelButton: true,
-    confirmButtonText: 'Ya, selesai',
+    confirmButtonText: 'Ya, selesaikan',
     cancelButtonText: 'Batal',
   }).then(r => r.isConfirmed)
 
@@ -527,6 +531,7 @@ async function finishAddProcess(k) {
         newProcessForm[id].title = ''
         showAddFormFor[id] = false
       },
+      onError: (e) => console.error('Gagal selesai semua proses:', e),
     }
   )
 }
@@ -544,7 +549,8 @@ function openProcessModal(k, p) {
   activeProcess.value   = {
     ...p,
     penanggung: p.penanggung || currentUsername.value,
-    catatan:    p.catatan    || '',
+    // If this is a temporary process (just a title), keep catatan empty
+    catatan:    p.id ? (p.catatan || '') : '',
   }
   showProcessModal.value = true
   // reset file setiap buka modal
@@ -579,7 +585,7 @@ function handleProcessDrop(e) {
 }
 
 // Simpan update proses (catatan + file) — pakai POST + FormData
-function saveProcessUpdate() {
+async function saveProcessUpdate() {
   const k = activeKerjasama.value
   const p = activeProcess.value
   if (!k || !p) return
@@ -592,19 +598,35 @@ function saveProcessUpdate() {
     fd.append('file', fileToUpload.value)
   }
 
-  router.post(
-    route('admin.data-kerjasama.proses.update', [k.id_kerjasama, p.id]),
-    fd,
-    {
-      preserveScroll: true,
-      onSuccess: () => {
-        closeProcessModal()
-      },
-      onError: (e) => {
-        console.error('Gagal simpan proses:', e)
-      },
-    }
-  )
+  // If this process is not yet persisted, call store (POST). Otherwise use update (PUT).
+  if (!p.id) {
+    router.post(
+      route('admin.data-kerjasama.proses.store', k.id_kerjasama),
+      fd,
+      {
+        preserveScroll: true,
+        onSuccess: () => {
+          fileToUpload.value = null
+          closeProcessModal()
+        },
+        onError: (e) => console.error('Gagal simpan proses baru:', e),
+      }
+    )
+  } else {
+    fd.append('_method', 'PUT')
+    router.post(
+      route('admin.data-kerjasama.proses.update', [k.id_kerjasama, p.id]),
+      fd,
+      {
+        preserveScroll: true,
+        onSuccess: () => {
+          fileToUpload.value = null
+          closeProcessModal()
+        },
+        onError: (e) => console.error('Gagal simpan proses:', e),
+      }
+    )
+  }
 }
 
 // Selesai & Simpan ke Riwayat dari modal
@@ -632,16 +654,34 @@ async function endProcess() {
   if (fileToUpload.value) {
     fd.append('file', fileToUpload.value)
   }
-
-  router.post(
-    route('admin.data-kerjasama.proses.update', [k.id_kerjasama, p.id]),
-    fd,
-    {
-      preserveScroll: true,
-      onSuccess: () => {
-        closeProcessModal()
-      },
-    }
-  )
+  // If the process is new, call store; otherwise update
+  if (!p.id) {
+    router.post(
+      route('admin.data-kerjasama.proses.store', k.id_kerjasama),
+      fd,
+      {
+        preserveScroll: true,
+        onSuccess: () => {
+          fileToUpload.value = null
+          closeProcessModal()
+        },
+        onError: (e) => console.error('Gagal selesai proses baru:', e),
+      }
+    )
+  } else {
+    fd.append('_method', 'PUT')
+    router.post(
+      route('admin.data-kerjasama.proses.update', [k.id_kerjasama, p.id]),
+      fd,
+      {
+        preserveScroll: true,
+        onSuccess: () => {
+          fileToUpload.value = null
+          closeProcessModal()
+        },
+        onError: (e) => console.error('Gagal selesai proses:', e),
+      }
+    )
+  }
 }
 </script>

@@ -699,126 +699,45 @@ class RiwayatKerjasamaController extends Controller
 
     private function applyFilters($query, Request $request): void
     {
+        // SIMPLE SEARCH - Focus on main fields
         if ($request->filled('search')) {
             $search = trim($request->search);
-            $searchLower = strtolower($search);
-            $isNumeric = is_numeric($search);
 
-            Log::info("🔍 SEARCH FILTER", [
+            \Log::info("🔍 SEARCH FILTER", [
                 'search' => $search,
                 'filled' => $request->filled('search'),
             ]);
 
-            $query->where(function ($q) use ($search, $searchLower, $isNumeric) {
-                // ===== SEARCH PADA KOLOM KERJASAMA LANGSUNG =====
+            $query->where(function ($q) use ($search) {
+                // Main table fields
                 $q->where('judul', 'like', "%{$search}%")
-                    ->orWhere('nomor_suratM', 'like', "%{$search}%")
-                    ->orWhere('nomor_suratP', 'like', "%{$search}%")
-                    ->orWhere('urusan', 'like', "%{$search}%")
-                    ->orWhere('jenis_kerjasama', 'like', "%{$search}%")
-                    ->orWhere('pembiayaan', 'like', "%{$search}%")
-                    ->orWhere('tipe', 'like', "%{$search}%")
-                    ->orWhere('status_aktif', 'like', "%{$search}%");
+                  ->orWhere('nomor_suratM', 'like', "%{$search}%")
+                  ->orWhere('nomor_suratP', 'like', "%{$search}%")
+                  ->orWhere('urusan', 'like', "%{$search}%")
+                  ->orWhere('daerah', 'like', "%{$search}%")
+                  ->orWhere('nama_pihak_luar', 'like', "%{$search}%")
+                  ->orWhere('jenis_kerjasama', 'like', "%{$search}%")
+                  ->orWhere('jenis_dokumen', 'like', "%{$search}%");
 
-                // ===== SEARCH MITRA (NAMA PERUSAHAAN) =====
+                // Mitra name search
                 $q->orWhereHas('mitra', function ($mitra) use ($search) {
                     $mitra->where('nama_perusahaan', 'like', "%{$search}%");
                 });
 
-                // ===== SEARCH PERIODE - TAHUN SAJA (4-digit) =====
-                // Only search by year if search is exactly 4-digit number
-                if ($isNumeric && strlen($search) === 4) {
+                // Year search
+                if (is_numeric($search)) {
                     $q->orWhereHas('latestPeriode', function ($periode) use ($search) {
-                        $periode->whereYear('tanggal_mulai', (int) $search);
-                    });
-                }
-
-                // ===== SEARCH PERIODE - TANGGAL & JANGKA WAKTU =====
-                // Only search if search contains date separators (not just 4-digit year)
-                if (preg_match('/[-\/]|\s/', $search)) {
-                    $q->orWhereHas('latestPeriode', function ($periode) use ($search) {
-                        // CARI TANGGAL MULAI (berbagai format)
-                        $periode->orWhereRaw("DATE_FORMAT(tanggal_mulai, '%Y-%m-%d') LIKE ?", ["%{$search}%"])
-                            ->orWhereRaw("DATE_FORMAT(tanggal_mulai, '%d-%m-%Y') LIKE ?", ["%{$search}%"])
-                            ->orWhereRaw("DATE_FORMAT(tanggal_mulai, '%d/%m/%Y') LIKE ?", ["%{$search}%"]);
-
-                        // CARI TANGGAL BERAKHIR (berbagai format)
-                        $periode->orWhereRaw("DATE_FORMAT(tanggal_berakhir, '%Y-%m-%d') LIKE ?", ["%{$search}%"])
-                            ->orWhereRaw("DATE_FORMAT(tanggal_berakhir, '%d-%m-%Y') LIKE ?", ["%{$search}%"])
-                            ->orWhereRaw("DATE_FORMAT(tanggal_berakhir, '%d/%m/%Y') LIKE ?", ["%{$search}%"]);
-
-                        // CARI JANGKA WAKTU BERDASARKAN PERHITUNGAN
-                        $periode->orWhereRaw("
-                            CASE
-                                WHEN TIMESTAMPDIFF(YEAR, tanggal_mulai, tanggal_berakhir) = 1
-                                    THEN CONCAT(TIMESTAMPDIFF(YEAR, tanggal_mulai, tanggal_berakhir), ' Tahun')
-                                WHEN TIMESTAMPDIFF(YEAR, tanggal_mulai, tanggal_berakhir) > 1
-                                    THEN CONCAT(TIMESTAMPDIFF(YEAR, tanggal_mulai, tanggal_berakhir), ' Tahun')
-                                WHEN TIMESTAMPDIFF(MONTH, tanggal_mulai, tanggal_berakhir) > 0
-                                    THEN CONCAT(TIMESTAMPDIFF(MONTH, tanggal_mulai, tanggal_berakhir), ' Bulan')
-                                ELSE '0'
-                            END LIKE ?
-                        ", ["%{$search}%"]);
-                    });
-                }
-
-                // ===== SEARCH STATUS DINAMIS =====
-                $today = now()->toDateString();
-                $threshold = now()->addDays(30)->toDateString();
-
-                if ($searchLower === 'aktif') {
-                    $q->orWhereHas('latestPeriode', function ($periode) use ($today, $threshold) {
-                        $periode->where('tanggal_mulai', '<=', $today)
-                            ->where('tanggal_berakhir', '>', $threshold);
-                    });
-                } elseif ($searchLower === 'segera berakhir' || $searchLower === 'akan berakhir') {
-                    $q->orWhereHas('latestPeriode', function ($periode) use ($today, $threshold) {
-                        $periode->where('tanggal_berakhir', '>', $today)
-                            ->where('tanggal_berakhir', '<=', $threshold);
-                    });
-                } elseif ($searchLower === 'berakhir') {
-                    $q->orWhereHas('latestPeriode', function ($periode) use ($today) {
-                        $periode->where('tanggal_berakhir', '<=', $today);
+                        $periode->whereYear('tanggal_mulai', $search);
                     });
                 }
             });
         }
 
+        // TAHUN FILTER
         if ($request->filled('tahun')) {
             $query->whereHas('latestPeriode', function ($q) use ($request) {
                 $q->whereYear('tanggal_mulai', $request->tahun);
             });
-        }
-
-        if ($request->filled('jenis_kerjasama')) {
-            $query->where('jenis_kerjasama', $request->jenis_kerjasama);
-        }
-
-        if ($request->filled('jenis_dokumen')) {
-            $query->where('jenis_dokumen', $request->jenis_dokumen);
-        }
-
-        if ($request->filled('status')) {
-            $today = Carbon::today()->toDateString();
-            $threshold = Carbon::today()->addDays(30)->toDateString();
-
-            match ($request->status) {
-                'aktif' => $query->whereHas('latestPeriode', function ($q) use ($today) {
-                    $q->where('tanggal_mulai', '<=', $today)
-                        ->where('tanggal_berakhir', '>', $today);
-                }),
-
-                'akan_berakhir' => $query->whereHas('latestPeriode', function ($q) use ($today, $threshold) {
-                    $q->where('tanggal_berakhir', '>', $today)
-                        ->where('tanggal_berakhir', '<=', $threshold);
-                }),
-
-                'berakhir' => $query->whereHas('latestPeriode', function ($q) use ($today) {
-                    $q->where('tanggal_berakhir', '<=', $today);
-                }),
-
-                default => null,
-            };
         }
     }
 
