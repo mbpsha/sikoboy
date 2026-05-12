@@ -236,7 +236,7 @@ Route::middleware(['auth', 'role:mitra'])->prefix('mitra')->name('mitra.')->grou
     Route::put('/profile/password', [MitraProfileController::class, 'updatePassword'])
         ->name('profile.password');
     
-    // 🔔 Notifikasi (DITAMBAHKAN)
+    // 🔔 Notifikasi
     Route::get('/notifications', [MitraProfileController::class, 'notifications'])
         ->name('notifications');
 
@@ -257,11 +257,16 @@ Route::middleware(['auth', 'role:mitra'])->prefix('mitra')->name('mitra.')->grou
 
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
 
-    // Dashboard
+    // 🔹 Dashboard
     Route::get('/dashboard', [AdminDashboardController::class, 'index'])
         ->name('dashboard');
 
-    // Pengguna (Users) - Gunakan prefix 'pengguna' untuk konsistensi
+    // 🔹 NOTIFIKASI ADMIN (DUMMY DATA) ← INI YANG DITAMBAHKAN
+    Route::get('/notifikasi', function () {
+        return Inertia::render('Admin/NotifAdmin');
+    })->name('notifications.index');
+
+    // 🔹 Pengguna (Users)
     Route::get('/pengguna', [AdminUserController::class, 'index'])
         ->middleware('throttle:120,1')
         ->name('pengguna.index');
@@ -276,7 +281,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::delete('/pengguna/{id}', [AdminUserController::class, 'destroy'])
         ->name('pengguna.destroy');
 
-    // Status Kontrak
+    // 🔹 Status Kontrak
     Route::get('/status-kontrak', [StatusKontrakController::class, 'index'])
         ->middleware('throttle:120,1')
         ->name('status-kontrak.index');
@@ -287,7 +292,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::put('/status-kontrak/{id}/finalize', [StatusKontrakController::class, 'finalize'])
         ->name('status-kontrak.finalize');
 
-    // Riwayat Kerjasama
+    // 🔹 Riwayat Kerjasama
     Route::get('/riwayat-kerjasama/gabungan', [RiwayatKerjasamaController::class, 'index'])
         ->middleware('throttle:120,1')
         ->name('riwayat-kerjasama.gabungan');
@@ -310,7 +315,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::post('/riwayat-kerjasama/adendum', [RiwayatKerjasamaController::class, 'storeAdendum'])
         ->name('riwayat-kerjasama.adendum.store');
 
-    // Data Kerjasama
+    // 🔹 Data Kerjasama
     Route::get('/data-kerjasama', [DataKerjasamaController::class, 'index'])
         ->middleware('throttle:120,1')
         ->name('data-kerjasama.index');
@@ -324,7 +329,6 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
         ->name('data-kerjasama.mitra');
     Route::post('/data-kerjasama', [DataKerjasamaController::class, 'store'])
         ->name('data-kerjasama.store');
-    // Proses Kerjasama — gunakan POST untuk semua karena ada file upload
     Route::post('/data-kerjasama/{id}/proses',
         [DataKerjasamaController::class, 'storeProcess'])
         ->name('data-kerjasama.proses.store');
@@ -332,7 +336,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
         [DataKerjasamaController::class, 'updateProcess'])
         ->name('data-kerjasama.proses.update');
 
-    // Manajemen Potensi
+    // 🔹 Manajemen Potensi
     Route::get('/manajemen-potensi', [ManajemenPotensiController::class, 'index'])
         ->middleware('throttle:120,1')
         ->name('manajemen-potensi.index');
@@ -345,7 +349,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::delete('/manajemen-potensi/{id}', [ManajemenPotensiController::class, 'destroy'])
         ->name('manajemen-potensi.destroy');
 
-    // Manajemen Dokumen
+    // 🔹 Manajemen Dokumen
     Route::get('/manajemen-dokumen', [ManajemenDokumenController::class, 'index'])
         ->middleware('throttle:120,1')
         ->name('manajemen-dokumen.index');
@@ -362,7 +366,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::delete('/manajemen-dokumen/{id}', [ManajemenDokumenController::class, 'destroy'])
         ->name('manajemen-dokumen.destroy');
 
-    // Manajemen Peraturan
+    // 🔹 Manajemen Peraturan
     Route::get('/manajemen-peraturan', [\App\Http\Controllers\Admin\PeraturanController::class, 'index'])
         ->name('manajemen-peraturan.index');
     Route::get('/manajemen-peraturan/list', [\App\Http\Controllers\Admin\PeraturanController::class, 'list'])
@@ -374,9 +378,15 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::delete('/manajemen-peraturan/{peraturan}', [\App\Http\Controllers\Admin\PeraturanController::class, 'destroy'])
         ->name('manajemen-peraturan.destroy');
 
-    // Legacy routes (backward compatibility)
+    // 🔹 Legacy routes (backward compatibility)
     Route::get('/partners', [AdminDashboardController::class, 'partners'])
         ->name('partners.index');
     Route::get('/partners/{id}', [AdminDashboardController::class, 'showPartner'])
         ->name('partners.show');
+
+        // Detail Notifikasi
+Route::get('/notifikasi/{id}', function ($id) {
+    return Inertia::render('Admin/DetailNotifAdmin', ['id' => $id]);
+})->name('notifications.show');
+
 });
