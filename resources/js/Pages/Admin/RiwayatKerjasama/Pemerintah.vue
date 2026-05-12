@@ -79,6 +79,14 @@ const columnFilters = ref({
     status: [],
 });
 
+// Track which column filter is open
+const openFilterColumn = ref(null)
+
+// Close filter when clicking outside
+const closeAllFilters = () => {
+    openFilterColumn.value = null
+}
+
 const uniqueTahun = computed(() => {
     const values = (props.data?.data || []).map(item => String(item.tahun));
     return [...new Set(values)].sort().reverse();
@@ -409,7 +417,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-    <AdminLayout title="Riwayat Kerjasama - Boyolali">
+    <AdminLayout title="Riwayat Kerjasama - Boyolali" @click="closeAllFilters">
         <div class="p-6">
             <div class="max-w-7xl mx-auto">
                 <!-- SEARCH + FILTER CARD -->

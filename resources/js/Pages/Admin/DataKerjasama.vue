@@ -1,5 +1,5 @@
 <template>
-  <AdminLayout title="Ajuan Kerjasama">
+  <AdminLayout title="Ajuan Kerjasama" @click="closeAllFilters">
     <div class="max-w-7xl mx-auto px-4 py-6 space-y-6">
 
       <!-- Header with Add Button -->
@@ -76,11 +76,11 @@
                   </div>
                 </th>
                 <th class="py-3 px-4 text-left font-medium border-r border-white/10">
-                  <div class="flex items-center justify-between gap-1 group relative cursor-pointer">
+                  <div class="flex items-center justify-between gap-1 relative">
                     <span>Mitra</span>
-                    <button class="text-yellow-300 hover:text-yellow-100">⚙️</button>
+                    <button @click.stop="openFilterColumn = openFilterColumn === 'mitra' ? null : 'mitra'" class="text-yellow-300 hover:text-yellow-100">⚙️</button>
                     <!-- MITRA FILTER DROPDOWN -->
-                    <div class="hidden group-hover:block absolute left-0 top-full mt-1 bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200 max-w-xs">
+                    <div v-show="openFilterColumn === 'mitra'" @click.stop class="absolute left-0 top-full mt-1 bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200 max-w-xs">
                       <div class="mb-2 max-h-40 overflow-y-auto">
                         <label v-for="val in uniqueMitra" :key="val" class="flex items-center gap-2 mb-1 cursor-pointer hover:bg-gray-100 p-1 rounded">
                           <input type="checkbox" :checked="columnFilters.mitra.includes(val)" @change="(e) => {
@@ -99,11 +99,11 @@
                 </th>
                 <th class="py-3 px-4 text-left font-medium border-r border-white/10">Judul</th>
                 <th class="py-3 px-4 text-left font-medium border-r border-white/10">
-                  <div class="flex items-center justify-between gap-1 group relative cursor-pointer">
+                  <div class="flex items-center justify-between gap-1 relative">
                     <span>Jenis Kerjasama</span>
-                    <button class="text-yellow-300 hover:text-yellow-100">⚙️</button>
+                    <button @click.stop="openFilterColumn = openFilterColumn === 'jenis_kerjasama' ? null : 'jenis_kerjasama'" class="text-yellow-300 hover:text-yellow-100">⚙️</button>
                     <!-- JENIS KERJASAMA FILTER DROPDOWN -->
-                    <div class="hidden group-hover:block absolute left-0 top-full mt-1 bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200">
+                    <div v-show="openFilterColumn === 'jenis_kerjasama'" @click.stop class="absolute left-0 top-full mt-1 bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200">
                       <div class="mb-2 max-h-40 overflow-y-auto">
                         <label v-for="val in uniqueJenisKerjasama" :key="val" class="flex items-center gap-2 mb-1 cursor-pointer hover:bg-gray-100 p-1 rounded">
                           <input type="checkbox" :checked="columnFilters.jenis_kerjasama.includes(val)" @change="(e) => {
@@ -121,11 +121,11 @@
                   </div>
                 </th>
                 <th class="py-3 px-4 text-left font-medium border-r border-white/10">
-                  <div class="flex items-center justify-between gap-1 group relative cursor-pointer">
+                  <div class="flex items-center justify-between gap-1 relative">
                     <span>Jenis Dokumen</span>
-                    <button class="text-yellow-300 hover:text-yellow-100">⚙️</button>
+                    <button @click.stop="openFilterColumn = openFilterColumn === 'jenis_dokumen' ? null : 'jenis_dokumen'" class="text-yellow-300 hover:text-yellow-100">⚙️</button>
                     <!-- JENIS DOKUMEN FILTER DROPDOWN -->
-                    <div class="hidden group-hover:block absolute left-0 top-full mt-1 bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200">
+                    <div v-show="openFilterColumn === 'jenis_dokumen'" @click.stop class="absolute left-0 top-full mt-1 bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200">
                       <div class="mb-2 max-h-40 overflow-y-auto">
                         <label v-for="val in uniqueJenisDokumen" :key="val" class="flex items-center gap-2 mb-1 cursor-pointer hover:bg-gray-100 p-1 rounded">
                           <input type="checkbox" :checked="columnFilters.jenis_dokumen.includes(val)" @change="(e) => {
@@ -143,11 +143,11 @@
                   </div>
                 </th>
                 <th class="py-3 px-4 text-left font-medium border-r border-white/10">
-                  <div class="flex items-center justify-between gap-1 group relative cursor-pointer">
+                  <div class="flex items-center justify-between gap-1 relative">
                     <span>Urusan</span>
-                    <button class="text-yellow-300 hover:text-yellow-100">⚙️</button>
+                    <button @click.stop="openFilterColumn = openFilterColumn === 'urusan' ? null : 'urusan'" class="text-yellow-300 hover:text-yellow-100">⚙️</button>
                     <!-- URUSAN FILTER DROPDOWN -->
-                    <div class="hidden group-hover:block absolute left-0 top-full mt-1 bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200">
+                    <div v-show="openFilterColumn === 'urusan'" @click.stop class="absolute left-0 top-full mt-1 bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200">
                       <div class="mb-2 max-h-40 overflow-y-auto">
                         <label v-for="val in uniqueUrusan" :key="val" class="flex items-center gap-2 mb-1 cursor-pointer hover:bg-gray-100 p-1 rounded">
                           <input type="checkbox" :checked="columnFilters.urusan.includes(val)" @change="(e) => {
@@ -364,6 +364,14 @@ const columnFilters = ref({
   jenis_dokumen: [],
   urusan: [],
 })
+
+// Track which column filter is open
+const openFilterColumn = ref(null)
+
+// Close filter when clicking outside
+const closeAllFilters = () => {
+  openFilterColumn.value = null
+}
 
 // Get unique values for each column
 const uniqueMitra = computed(() => {

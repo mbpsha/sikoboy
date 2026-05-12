@@ -346,6 +346,14 @@ const columnFilters = ref({
     status: [],
 });
 
+// Track which column filter is open
+const openFilterColumn = ref(null)
+
+// Close filter when clicking outside
+const closeAllFilters = () => {
+    openFilterColumn.value = null
+}
+
 const uniqueTahun = computed(() => {
     const values = (props.data?.data || []).map(item => String(item.tahun));
     return [...new Set(values)].sort().reverse();
@@ -410,7 +418,7 @@ const filteredTableData = computed(() => {
 </script>
 
 <template>
-    <AdminLayout title="Riwayat Kerjasama - Semua Kerjasama">
+    <AdminLayout title="Riwayat Kerjasama - Semua Kerjasama" @click="closeAllFilters">
         <div class="p-6">
             <div class="max-w-7xl mx-auto">
                 <!-- SEARCH -->
@@ -515,15 +523,17 @@ const filteredTableData = computed(() => {
                                         No
                                     </th>
                                     <th
-                                        class="px-4 py-3 text-left whitespace-nowrap border-r border-gray-200 relative group cursor-pointer"
+                                        class="px-4 py-3 text-left whitespace-nowrap border-r border-gray-200 relative"
                                     >
-                                        <div class="flex items-center justify-between">
+                                        <div class="flex items-center justify-between cursor-pointer">
                                             Tahun
-                                            <span class="ml-2">⚙️</span>
+                                            <span class="ml-2 cursor-pointer" @click.stop="openFilterColumn = openFilterColumn === 'tahun' ? null : 'tahun'">⚙️</span>
                                         </div>
                                         <!-- FILTER DROPDOWN TAHUN -->
                                         <div
-                                            class="absolute left-0 top-full mt-1 hidden group-hover:block bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200"
+                                            v-show="openFilterColumn === 'tahun'"
+                                            @click.stop
+                                            class="absolute left-0 top-full mt-1 bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200"
                                         >
                                             <div class="mb-2 max-h-40 overflow-y-auto">
                                                 <label v-for="val in uniqueTahun" :key="val" class="flex items-center gap-2 mb-1 cursor-pointer hover:bg-gray-100 p-1 rounded">
@@ -551,15 +561,17 @@ const filteredTableData = computed(() => {
                                         </div>
                                     </th>
                                     <th
-                                        class="px-4 py-3 text-left whitespace-nowrap border-r border-gray-200 relative group cursor-pointer"
+                                        class="px-4 py-3 text-left whitespace-nowrap border-r border-gray-200 relative"
                                     >
-                                        <div class="flex items-center justify-between">
+                                        <div class="flex items-center justify-between cursor-pointer">
                                             Tipe
-                                            <span class="ml-2">⚙️</span>
+                                            <span class="ml-2 cursor-pointer" @click.stop="openFilterColumn = openFilterColumn === 'tipe' ? null : 'tipe'">⚙️</span>
                                         </div>
                                         <!-- FILTER DROPDOWN TIPE -->
                                         <div
-                                            class="absolute left-0 top-full mt-1 hidden group-hover:block bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200"
+                                            v-show="openFilterColumn === 'tipe'"
+                                            @click.stop
+                                            class="absolute left-0 top-full mt-1 bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200"
                                         >
                                             <div class="mb-2 max-h-40 overflow-y-auto">
                                                 <label v-for="val in uniqueTipe" :key="val" class="flex items-center gap-2 mb-1 cursor-pointer hover:bg-gray-100 p-1 rounded">
@@ -587,15 +599,17 @@ const filteredTableData = computed(() => {
                                         </div>
                                     </th>
                                     <th
-                                        class="px-4 py-3 text-left whitespace-nowrap border-r border-gray-200 relative group cursor-pointer"
+                                        class="px-4 py-3 text-left whitespace-nowrap border-r border-gray-200 relative"
                                     >
-                                        <div class="flex items-center justify-between">
+                                        <div class="flex items-center justify-between cursor-pointer">
                                             Mitra
-                                            <span class="ml-2">⚙️</span>
+                                            <span class="ml-2 cursor-pointer" @click.stop="openFilterColumn = openFilterColumn === 'mitra' ? null : 'mitra'">⚙️</span>
                                         </div>
                                         <!-- FILTER DROPDOWN MITRA -->
                                         <div
-                                            class="absolute left-0 top-full mt-1 hidden group-hover:block bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200 max-w-xs"
+                                            v-show="openFilterColumn === 'mitra'"
+                                            @click.stop
+                                            class="absolute left-0 top-full mt-1 bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200 max-w-xs"
                                         >
                                             <div class="mb-2 max-h-40 overflow-y-auto">
                                                 <label v-for="val in uniqueMitra" :key="val" class="flex items-center gap-2 mb-1 cursor-pointer hover:bg-gray-100 p-1 rounded">
@@ -628,15 +642,17 @@ const filteredTableData = computed(() => {
                                         Judul
                                     </th>
                                     <th
-                                        class="px-4 py-3 text-left whitespace-nowrap border-r border-gray-200 relative group cursor-pointer"
+                                        class="px-4 py-3 text-left whitespace-nowrap border-r border-gray-200 relative"
                                     >
-                                        <div class="flex items-center justify-between">
+                                        <div class="flex items-center justify-between cursor-pointer">
                                             Jenis Kerjasama
-                                            <span class="ml-2">⚙️</span>
+                                            <span class="ml-2 cursor-pointer" @click.stop="openFilterColumn = openFilterColumn === 'jenis_kerjasama' ? null : 'jenis_kerjasama'">⚙️</span>
                                         </div>
                                         <!-- FILTER DROPDOWN JENIS KERJASAMA -->
                                         <div
-                                            class="absolute left-0 top-full mt-1 hidden group-hover:block bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200"
+                                            v-show="openFilterColumn === 'jenis_kerjasama'"
+                                            @click.stop
+                                            class="absolute left-0 top-full mt-1 bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200"
                                         >
                                             <div class="mb-2 max-h-40 overflow-y-auto">
                                                 <label v-for="val in uniqueJenisKerjasama" :key="val" class="flex items-center gap-2 mb-1 cursor-pointer hover:bg-gray-100 p-1 rounded">
@@ -689,15 +705,17 @@ const filteredTableData = computed(() => {
                                         Adendum
                                     </th>
                                     <th
-                                        class="px-4 py-3 text-left whitespace-nowrap relative group cursor-pointer"
+                                        class="px-4 py-3 text-left whitespace-nowrap relative"
                                     >
-                                        <div class="flex items-center justify-between">
+                                        <div class="flex items-center justify-between cursor-pointer">
                                             Status
-                                            <span class="ml-2">⚙️</span>
+                                            <span class="ml-2 cursor-pointer" @click.stop="openFilterColumn = openFilterColumn === 'status' ? null : 'status'">⚙️</span>
                                         </div>
                                         <!-- FILTER DROPDOWN STATUS -->
                                         <div
-                                            class="absolute left-0 top-full mt-1 hidden group-hover:block bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200"
+                                            v-show="openFilterColumn === 'status'"
+                                            @click.stop
+                                            class="absolute left-0 top-full mt-1 bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200"
                                         >
                                             <div class="mb-2 max-h-40 overflow-y-auto">
                                                 <label v-for="val in uniqueStatus" :key="val" class="flex items-center gap-2 mb-1 cursor-pointer hover:bg-gray-100 p-1 rounded">
