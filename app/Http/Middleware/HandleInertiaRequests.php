@@ -33,6 +33,7 @@ class HandleInertiaRequests extends Middleware
             ...parent::share($request),
             'auth' => [
                 // Only share minimal identity info: username and role (plus id/email)
+                // Also include admin.divisi so front-end can show department names.
                 'user' => $request->user() ? [
                     'id' => $request->user()->id_user,
                     'email' => $request->user()->email,
@@ -41,6 +42,12 @@ class HandleInertiaRequests extends Middleware
                     'username' => $request->user()->admin?->nama
                         ?? $request->user()->mitra?->pic
                         ?? preg_replace('/@.*$/', '', $request->user()->email),
+                    // include admin divisi if the authenticated user is an admin
+                    'admin' => $request->user()->admin ? [
+                        'id_admin' => $request->user()->admin->id_admin,
+                        'divisi' => $request->user()->admin->divisi,
+                        'nama' => $request->user()->admin->nama,
+                    ] : null,
                 ] : null,
             ],
             'flash' => [
