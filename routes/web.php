@@ -4,6 +4,8 @@ use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\DataKerjasamaController;
 use App\Http\Controllers\Admin\ManajemenDokumenController;
 use App\Http\Controllers\Admin\ManajemenPotensiController;
+use App\Http\Controllers\Admin\PeraturanController;
+use App\Http\Controllers\Admin\ProfileController as AdminProfileController;
 use App\Http\Controllers\Admin\RiwayatKerjasamaController;
 use App\Http\Controllers\Admin\StatusKontrakController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
@@ -20,9 +22,9 @@ use App\Http\Controllers\TemplateDokumenController;
 use App\Models\Peraturan;
 use App\Models\Potensi;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
-use Illuminate\Support\Facades\DB;
 
 // ========================================
 // PUBLIC ROUTES
@@ -57,23 +59,23 @@ Route::get('/', function () {
     $today = now();
     $sixMonthsLater = now()->addMonths(6);
     $threeMonthsLater = now()->addMonths(3);
-    
+
     $totalKerjasama = DB::table('kerjasama')->count();
-    
+
     $lessThanSixMonths = DB::table('kerjasama')
         ->join('periode_kerjasama', 'kerjasama.id_kerjasama', '=', 'periode_kerjasama.id_kerjasama')
         ->whereBetween('periode_kerjasama.tanggal_berakhir', [$today, $sixMonthsLater])
         ->where('kerjasama.status_aktif', true)
         ->distinct('kerjasama.id_kerjasama')
         ->count('kerjasama.id_kerjasama');
-    
+
     $lessThanThreeMonths = DB::table('kerjasama')
         ->join('periode_kerjasama', 'kerjasama.id_kerjasama', '=', 'periode_kerjasama.id_kerjasama')
         ->whereBetween('periode_kerjasama.tanggal_berakhir', [$today, $threeMonthsLater])
         ->where('kerjasama.status_aktif', true)
         ->distinct('kerjasama.id_kerjasama')
         ->count('kerjasama.id_kerjasama');
-    
+
     $expired = DB::table('kerjasama')
         ->join('periode_kerjasama', 'kerjasama.id_kerjasama', '=', 'periode_kerjasama.id_kerjasama')
         ->where('periode_kerjasama.tanggal_berakhir', '<', $today)
@@ -117,11 +119,12 @@ Route::get('/dokumen', function () {
         $file = $k->file_template ?? '';
         $filename = basename($file);
         $pdfname = preg_replace('/\.(docx|doc|xlsx|pptx)$/i', '.pdf', $filename);
-        $pdfPath = storage_path('app/public/docs/' . $pdfname);
+        $pdfPath = storage_path('app/public/docs/'.$pdfname);
         $preview = null;
         if ($filename && file_exists($pdfPath)) {
-            $preview = '/storage/docs/' . $pdfname;
+            $preview = '/storage/docs/'.$pdfname;
         }
+
         return (array) array_merge((array) $k, ['preview' => $preview]);
     })->all();
 
@@ -152,7 +155,7 @@ Route::middleware('auth')->get('/portal-mitra', function (Request $request) {
 // Login
 Route::get('/role-selection', fn () => redirect()->route('login'))->name('login.select');
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
-Route::get('/login/{role}', fn() => redirect()->route('login'))
+Route::get('/login/{role}', fn () => redirect()->route('login'))
     ->whereIn('role', ['admin', 'mitra'])
     ->name('login.role');
 Route::post('/login', [LoginController::class, 'login'])
@@ -200,6 +203,7 @@ Route::get('/dev/verify-email', function () {
 
 Route::middleware('auth')->get('/profile', function (Request $request) {
     $user = $request->user();
+
     return Inertia::render('Profile/UserProfil', [
         'user' => $user,
         'mitra' => $user?->mitra,
@@ -267,10 +271,41 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
         ->name('pengguna.show');
     Route::put('/pengguna/{id}', [AdminUserController::class, 'update'])
         ->name('pengguna.update');
+    Route::put('/pengguna/{id}/status', [AdminUserController::class, 'updateStatus'])
+        ->name('pengguna.status');
     Route::put('/pengguna/{id}/verify', [AdminUserController::class, 'verifyMitra'])
         ->name('pengguna.verify');
+    Route::delete('/pengguna/{id}/terminate', [AdminUserController::class, 'terminate'])
+        ->name('pengguna.terminate');
     Route::delete('/pengguna/{id}', [AdminUserController::class, 'destroy'])
         ->name('pengguna.destroy');
+
+    // Legacy route names for backward compatibility
+    Route::get('/users', [AdminUserController::class, 'index'])
+        ->middleware('throttle:120,1')
+        ->name('users.index');
+    Route::post('/users', [AdminUserController::class, 'store'])
+        ->name('users.store');
+    Route::get('/users/{id}', [AdminUserController::class, 'show'])
+        ->name('users.show');
+    Route::put('/users/{id}', [AdminUserController::class, 'update'])
+        ->name('users.update');
+    Route::put('/users/{id}/status', [AdminUserController::class, 'updateStatus'])
+        ->name('users.status');
+    Route::put('/users/{id}/verify', [AdminUserController::class, 'verifyMitra'])
+        ->name('users.verify');
+    Route::delete('/users/{id}/terminate', [AdminUserController::class, 'terminate'])
+        ->name('users.terminate');
+    Route::delete('/users/{id}', [AdminUserController::class, 'destroy'])
+        ->name('users.destroy');
+
+    // Profil Admin
+    Route::get('/profile', [AdminProfileController::class, 'show'])
+        ->name('profile.show');
+    Route::put('/profile', [AdminProfileController::class, 'update'])
+        ->name('profile.update');
+    Route::put('/profile/password', [AdminProfileController::class, 'updatePassword'])
+        ->name('profile.password');
 
     // Status Kontrak
     Route::get('/status-kontrak', [StatusKontrakController::class, 'index'])
@@ -320,11 +355,13 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
         ->name('data-kerjasama.mitra');
     Route::post('/data-kerjasama', [DataKerjasamaController::class, 'store'])
         ->name('data-kerjasama.store');
+    Route::put('/data-kerjasama/{id}/nomor-surat', [DataKerjasamaController::class, 'updateNomorSurat'])
+        ->name('data-kerjasama.nomor-surat');
     // Proses Kerjasama — gunakan POST untuk semua karena ada file upload
     Route::post('/data-kerjasama/{id}/proses',
         [DataKerjasamaController::class, 'storeProcess'])
         ->name('data-kerjasama.proses.store');
-    Route::post('/data-kerjasama/{id}/proses/{prosesId}',
+    Route::put('/data-kerjasama/{id}/proses/{prosesId}',
         [DataKerjasamaController::class, 'updateProcess'])
         ->name('data-kerjasama.proses.update');
 
@@ -359,18 +396,18 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
         ->name('manajemen-dokumen.destroy');
 
     // Manajemen Peraturan
-    Route::get('/manajemen-peraturan', [\App\Http\Controllers\Admin\PeraturanController::class, 'index'])
+    Route::get('/manajemen-peraturan', [PeraturanController::class, 'index'])
         ->name('manajemen-peraturan.index');
-    Route::get('/manajemen-peraturan/list', [\App\Http\Controllers\Admin\PeraturanController::class, 'list'])
+    Route::get('/manajemen-peraturan/list', [PeraturanController::class, 'list'])
         ->name('manajemen-peraturan.list');
-    Route::post('/manajemen-peraturan', [\App\Http\Controllers\Admin\PeraturanController::class, 'store'])
+    Route::post('/manajemen-peraturan', [PeraturanController::class, 'store'])
         ->name('manajemen-peraturan.store');
-    Route::post('/manajemen-peraturan/{peraturan}', [\App\Http\Controllers\Admin\PeraturanController::class, 'update'])
+    Route::post('/manajemen-peraturan/{peraturan}', [PeraturanController::class, 'update'])
         ->name('manajemen-peraturan.update');
-    Route::delete('/manajemen-peraturan/{peraturan}', [\App\Http\Controllers\Admin\PeraturanController::class, 'destroy'])
+    Route::delete('/manajemen-peraturan/{peraturan}', [PeraturanController::class, 'destroy'])
         ->name('manajemen-peraturan.destroy');
 
-    // Legacy routes (backward compatibility)
+    // Legacy routes (backward Compability)
     Route::get('/partners', [AdminDashboardController::class, 'partners'])
         ->name('partners.index');
     Route::get('/partners/{id}', [AdminDashboardController::class, 'showPartner'])

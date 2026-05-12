@@ -123,10 +123,10 @@ class RiwayatKerjasamaController extends Controller
     {
         $validated = $request->validated();
         $admin = $request->user()->admin;
-        
+
         // Validate admin exists
         abort_if($admin === null, 403, 'User harus memiliki akses admin.');
-        
+
         $idKategori = $validated['id_kategori']
             ?? DB::table('kategori_kerjasama')->orderBy('id_kategori')->value('id_kategori');
 
@@ -136,13 +136,9 @@ class RiwayatKerjasamaController extends Controller
             ]);
         }
 
-        $path = null;
-        $originalFileName = null;
-
-        if ($request->hasFile('file')) {
-            $originalFileName = $request->file('file')->getClientOriginalName();
-            $path = $request->file('file')->store('cooperation_docs', 'public');
-        }
+        $file = $validated['dokumen_file'];
+        $originalFileName = $file->getClientOriginalName();
+        $path = $file->store('cooperation_docs', 'public');
 
         DB::transaction(function () use ($validated, $admin, $path, $idKategori, $originalFileName) {
             $kerjasama = Kerjasama::create([
@@ -150,14 +146,15 @@ class RiwayatKerjasamaController extends Controller
                 'id_admin' => $admin->id_admin,
                 'id_kategori' => $idKategori,
                 'judul' => $validated['judul'],
-                'nomor_suratP' => $validated['nomor_surat'],
-                'urusan' => $validated['urusan'],
-                'daerah' => $validated['daerah'],
-                'jenis_kerjasama' => $validated['jenis_kerjasama'],
-                'jenis_dokumen' => $validated['jenis_dokumen'],
+                'nomor_suratP' => $validated['nomor_suratP'] ?? null,
+                'urusan' => $validated['urusan'] ?? '-',
+                'daerah' => $validated['daerah'] ?? '-',
+                'jenis_kerjasama' => $validated['jenis_kerjasama'] ?? null,
+                'jenis_dokumen' => $validated['jenis_dokumen'] ?? null,
+                'pembiayaan' => $validated['pembiayaan'] ?? 'APBN',
                 'pemrakarsa' => 'P',
                 'tipe' => 'pemerintah',
-                'nama_pihak_luar' => $validated['nama_pihak_luar'],
+                'nama_pihak_luar' => $validated['nama_pihak_luar'] ?? null,
                 'status_aktif' => 'aktif',
                 'is_finalized' => true,
                 'status_persetujuan' => 'disetujui',
@@ -166,19 +163,18 @@ class RiwayatKerjasamaController extends Controller
             PeriodeKerjasama::create([
                 'id_kerjasama' => $kerjasama->id_kerjasama,
                 'tanggal_mulai' => $validated['tanggal_mulai'],
-                'tanggal_berakhir' => $validated['tanggal_berakhir'],
+                'tanggal_berakhir' => $validated['tanggal_selesai'],
                 'keterangan' => $path,
             ]);
 
-            if ($path && $originalFileName) {
-                Dokumen::create([
-                    'id_kerjasama' => $kerjasama->id_kerjasama,
-                    'nama_file' => $originalFileName,
-                    'lokasi_file' => $path,
-                    'versi_dokumen' => 1,
-                    'created_by' => $admin->id_user,
-                ]);
-            }
+            Dokumen::create([
+                'id_kerjasama' => $kerjasama->id_kerjasama,
+                'jenis_dokumen' => $kerjasama->jenis_dokumen,
+                'nama_file' => $originalFileName,
+                'lokasi_file' => $path,
+                'versi_dokumen' => 1,
+                'created_by' => $admin->id_user,
+            ]);
 
             RiwayatStatus::recordStatus(
                 idKerjasama: (int) $kerjasama->id_kerjasama,
@@ -202,29 +198,30 @@ class RiwayatKerjasamaController extends Controller
     {
         $kerjasama = Kerjasama::pemerintahTipe()->findOrFail($id);
         $validated = $request->validated();
-        $request->validate([
-            'dokumen_file' => ['nullable', 'file', 'mimes:pdf', 'max:10240'],
-        ]);
         $file = $request->file('dokumen_file');
 
         DB::transaction(function () use ($kerjasama, $validated, $file, $request) {
             $kerjasama->update([
                 'judul' => $validated['judul'],
-                'nomor_suratP' => $validated['nomor_surat'],
-                'urusan' => $validated['urusan'],
-                'daerah' => $validated['daerah'],
-                'jenis_kerjasama' => $validated['jenis_kerjasama'],
-                'jenis_dokumen' => $validated['jenis_dokumen'],
-                'nama_pihak_luar' => $validated['nama_pihak_luar'],
+                'nomor_suratP' => $validated['nomor_suratP'] ?? $kerjasama->nomor_suratP,
+                'urusan' => $validated['urusan'] ?? $kerjasama->urusan,
+                'daerah' => $validated['daerah'] ?? $kerjasama->daerah,
+                'jenis_kerjasama' => $validated['jenis_kerjasama'] ?? $kerjasama->jenis_kerjasama,
+                'jenis_dokumen' => $validated['jenis_dokumen'] ?? $kerjasama->jenis_dokumen,
+                'pembiayaan' => $validated['pembiayaan'] ?? $kerjasama->pembiayaan,
+                'nama_pihak_luar' => $validated['nama_pihak_luar'] ?? $kerjasama->nama_pihak_luar,
                 'id_kategori' => $validated['id_kategori'] ?? $kerjasama->id_kategori,
             ]);
 
             // Replace the latest periode with the updated dates
-            $kerjasama->periodes()->orderByDesc('tanggal_mulai')->first()?->update([
-                'tanggal_mulai' => $validated['tanggal_mulai'],
-                'tanggal_berakhir' => $validated['tanggal_berakhir'],
-                'keterangan' => $validated['keterangan'] ?? '',
-            ]);
+            $periode = $kerjasama->periodes()->orderByDesc('tanggal_mulai')->first();
+            if ($periode) {
+                $periode->update([
+                    'tanggal_mulai' => $validated['tanggal_mulai'],
+                    'tanggal_berakhir' => $validated['tanggal_selesai'],
+                    'keterangan' => $periode->keterangan,
+                ]);
+            }
 
             if ($file !== null) {
                 $this->storeDokumenVersion($kerjasama, $file, (int) $request->user()->id_user);
@@ -256,10 +253,10 @@ class RiwayatKerjasamaController extends Controller
         ]);
 
         $admin = $request->user()->admin;
-        
+
         // Validate admin exists
         abort_if($admin === null, 403, 'User harus memiliki akses admin.');
-        
+
         $idKategori = DB::table('kategori_kerjasama')->orderBy('id_kategori')->value('id_kategori');
 
         if (! $idKategori) {
@@ -363,10 +360,10 @@ class RiwayatKerjasamaController extends Controller
         ]);
 
         $admin = $request->user()->admin;
-        
+
         // Validate admin exists
         abort_if($admin === null, 403, 'User harus memiliki akses admin.');
-        
+
         $idKategori = DB::table('kategori_kerjasama')->orderBy('id_kategori')->value('id_kategori');
 
         if (! $idKategori) {
@@ -658,7 +655,7 @@ class RiwayatKerjasamaController extends Controller
         if ($request->filled('search')) {
 
             $search = trim($request->search);
-            
+
             \Log::info("🔍 SEARCH FILTER", [
                 'search' => $search,
                 'filled' => $request->filled('search'),
