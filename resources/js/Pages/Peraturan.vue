@@ -19,6 +19,13 @@ defineProps({
         <section class="bg-white py-16">
             <div class="mx-auto max-w-6xl px-6">
 
+                <!-- INTRO TEXT -->
+                <div class="pb-8 mb-8">
+                    <p class="text-4xl sm:text-5xl md:text-3xl text-[#0C505C] font-bold text-center">
+                        Peraturan-Peraturan Terkait Kerja Sama
+                    </p>
+                </div>
+
                 <div
                     v-if="peraturans.length"
                     class="grid gap-6 sm:grid-cols-2"

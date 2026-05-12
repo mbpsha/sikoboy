@@ -24,6 +24,7 @@ const filters = props.filters
 const verifyingUserId = ref(null)
 const showCreateModal = ref(false)
 const createType      = ref(null)
+const togglingUserId  = ref(null)
 
 const mitraForm = useForm({
   role: 'mitra', email: '', password: '',
@@ -93,9 +94,25 @@ async function toggleActive(id, isActive) {
 
   if (!confirmed) return
 
+  // optimistic update: apply change locally, rollback on error
+  const idx = users.data.findIndex(u => u.id === id)
+  const prev = idx !== -1 ? users.data[idx].is_active : null
+  const newIsActive = !isActive
+
+  if (idx !== -1) {
+    users.data[idx].is_active = newIsActive
+    users.data[idx].status = newIsActive ? 'aktif' : 'ditolak'
+  }
+  if (selectedUser.value && selectedUser.value.id === id) {
+    selectedUser.value.is_active = newIsActive
+    selectedUser.value.status = newIsActive ? 'aktif' : 'ditolak'
+  }
+
+  togglingUserId.value = id
+
   router.put(
-    route('admin.pengguna.toggle-active', id),
-    {},
+    route('admin.pengguna.update-status', id),
+    { is_active: newIsActive },
     {
       preserveScroll: true,
       onSuccess: () => {
@@ -108,7 +125,19 @@ async function toggleActive(id, isActive) {
         closeDetail()
       },
       onError: () => {
+        // rollback
+        if (idx !== -1 && prev !== null) {
+          users.data[idx].is_active = prev
+          users.data[idx].status = prev ? 'aktif' : 'ditolak'
+        }
+        if (selectedUser.value && selectedUser.value.id === id && prev !== null) {
+          selectedUser.value.is_active = prev
+          selectedUser.value.status = prev ? 'aktif' : 'ditolak'
+        }
         Swal.fire({ icon: 'error', title: 'Gagal mengubah status pengguna' })
+      },
+      onFinish: () => {
+        togglingUserId.value = null
       },
     }
   )
@@ -316,12 +345,13 @@ function verifyMitra(id) {
                       <button
                         v-if="user.id !== currentUserId"
                         @click.prevent="toggleActive(user.id, user.is_active)"
+                        :disabled="togglingUserId === user.id"
                         class="px-3 py-1 rounded-md text-xs font-medium transition border"
                         :class="user.is_active
                           ? 'bg-orange-50 text-orange-600 hover:bg-orange-100 border-orange-200'
                           : 'bg-green-50 text-green-700 hover:bg-green-100 border-green-200'"
                       >
-                        {{ user.is_active ? 'Nonaktifkan' : 'Aktifkan' }}
+                        {{ togglingUserId === user.id ? 'Memproses...' : (user.is_active ? 'Nonaktifkan' : 'Aktifkan') }}
                       </button>
                     </div>
                   </td>
@@ -511,12 +541,13 @@ function verifyMitra(id) {
               <button
                 v-if="selectedUser?.id !== currentUserId"
                 @click="toggleActive(selectedUser?.id, selectedUser?.is_active)"
+                :disabled="togglingUserId === selectedUser?.id"
                 class="px-4 py-2 text-sm rounded-lg font-medium transition border"
                 :class="selectedUser?.is_active
                   ? 'bg-orange-50 text-orange-600 hover:bg-orange-100 border-orange-200'
                   : 'bg-green-50 text-green-700 hover:bg-green-100 border-green-200'"
               >
-                {{ selectedUser?.is_active ? 'Nonaktifkan' : 'Aktifkan' }}
+                {{ togglingUserId === selectedUser?.id ? 'Memproses...' : (selectedUser?.is_active ? 'Nonaktifkan' : 'Aktifkan') }}
               </button>
 
               <button

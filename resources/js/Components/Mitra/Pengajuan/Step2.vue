@@ -7,6 +7,7 @@ const page = usePage();
 const props = defineProps({
   step1Data: Object,
   kategoris: Array,
+  jenisDokumen: Array,
 });
 
 const form = useForm({
@@ -94,7 +95,7 @@ const submit = () => {
                       class="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-[#17464E]/20 outline-none transition-all"
                     >
                       <option value="">Pilih jenis kerjasama</option>
-                      <option v-for="kat in kategoris" :key="kat.id_kategori" :value="kat.id_kategori">
+                      <option v-for="kat in kategoris" :key="kat.id_kategori" :value="kat.nama_kategori">
                         {{ kat.nama_kategori }}
                       </option>
                     </select>
@@ -110,14 +111,9 @@ const submit = () => {
                       class="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-[#17464E]/20 outline-none transition-all"
                     >
                       <option value="">Pilih jenis dokumen</option>
-                      <option value="KSB">KSB</option>
-                      <option value="Nota Kesepakatan">Nota Kesepakatan</option>
-                      <option value="Perjanjian Teknis">Perjanjian Teknis</option>
-                      <option value="PKS">PKS</option>
-                      <option value="Rencana Kerja">Rencana Kerja</option>
-                      <option value="MOU">MOU</option>
-                      <option value="RKT">RKT</option>
-                      <option value="LOI">LOI</option>
+                      <option v-for="jenis in jenisDokumen" :key="jenis" :value="jenis">
+                        {{ jenis }}
+                      </option>
                     </select>
                     <p v-if="form.errors.jenis_dokumen" class="text-red-500 text-xs mt-1">{{ form.errors.jenis_dokumen }}</p>
                   </div>

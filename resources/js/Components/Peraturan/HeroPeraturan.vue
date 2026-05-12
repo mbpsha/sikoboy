@@ -22,61 +22,57 @@ onUnmounted(() => {
 </script>
 
 <template>
-    <section
-        class="relative overflow-hidden text-white min-h-[100vh] flex flex-col"
-    >
-        <!-- BACKGROUND -->
-        <div class="absolute inset-0 pointer-events-none">
-            <!-- PARALLAX IMAGE -->
-            <div
-                class="w-full h-[100%] bg-cover bg-[center_30%]"
-                :style="{
-                    backgroundImage: `url(${heroTentang})`,
-                    transform: `translateY(${offset}px)`,
-                }"
-            ></div>
+  <section class="relative overflow-hidden text-white min-h-[85vh] md:min-h-[100vh] flex items-center">
+    
+    <!-- BACKGROUND -->
+    <div class="absolute inset-0 pointer-events-none">
+      
+      <!-- PARALLAX IMAGE -->
+      <div
+        class="w-full h-[120%] bg-cover bg-[center_30%] md:h-[140%]"
+        :style="{
+          backgroundImage: `url(${heroTentang})`,
+          transform: `translateY(${offset}px)`
+        }"
+      ></div>
 
-            <!-- gradient bawah -->
-            <div
-                class="absolute inset-0"
-                style="
-                    background: linear-gradient(
-                        to bottom,
-                        rgba(255, 255, 255, 0.05) 20%,
-                        rgba(255, 255, 255, 0.6) 70%,
-                        rgba(255, 255, 255, 1) 100%
-                    );
-                "
-            ></div>
-        </div>
+      <!-- Gradient bawah -->
+      <div
+        class="absolute inset-0"
+        style="
+          background: linear-gradient(
+            to bottom,
+            rgba(138, 180, 187, 0.3) 10%,
+            rgba(138, 180, 187, 0.9) 60%,
+            rgba(255, 255, 255, 1) 100%
+          );
+        "
+      ></div>
+    </div>
 
-        <!-- CONTENT UTAMA (CENTERED DI TENGAH HERO) -->
-        <div
-            class="relative z-10 flex-1 flex items-center justify-center"
-        >
-            <div class="mx-auto max-w-6xl px-6 text-center animate-fadeUp">
-                <h1 class="text-4xl md:text-5xl font-bold mb-3 tracking-widest">
-                    PERATURAN
-                </h1>
+    <!-- CONTENT -->
+    <div class="relative z-10 mx-auto max-w-6xl px-6 text-center animate-fadeUp">
+      
+      <h1 class="text-5xl sm:text-4xl md:text-5xl font-extrabold mb-3 tracking-widest">
+        P E R A T U R A N
+      </h1>
 
-                <div class="mx-auto mb-2 w-40 h-px bg-white/50"></div>
+      <div class="mx-auto mb-4 w-120 h-px bg-white/50"></div>
 
-                <!-- DESKRIPSI PANJANG -->
-                <p
-                    class="mt-4 max-w-2xl mx-auto text-sm md:text-base text-white/80 leading-relaxed"
-                >
-                    Dokumen peraturan-peraturan terkait yang berlaku yang menjadi dasar pelaksanaan kerja sama
-                </p>
-            </div>
-        </div>
+      <p class="text-base sm:text-lg md:text-xl text-white/90 font-medium mb-2">
+        SIKOBOY (Sistem Kolaboratif Boyolali)
+      </p>
 
-        <!-- TEKS BAWAH (DEKAT FADE) -->
-        <div class="relative z-10 pb-20 mb-5">
-            <p class="text-3xl md:text-4xl text-[#0C505C] font-bold text-center animate-fadeUp" style="animation-delay: 0.3s;">
-                Peraturan-Peraturan Terkait Kerja Sama
-            </p>
-        </div>
-    </section>
+      <!-- DESKRIPSI PANJANG -->
+      <p class="mt-4 max-w-xl md:max-w-2xl mx-auto text-sm sm:text-md lg:text-base font-bold text-white/80 leading-relaxed px-2">
+        Dokumen peraturan-peraturan terkait yang berlaku yang menjadi dasar pelaksanaan kerja sama
+      </p>
+
+    </div>
+
+    <!-- TEKS BAWAH moved to next section -->
+
+  </section>
 </template>
 
 <style>

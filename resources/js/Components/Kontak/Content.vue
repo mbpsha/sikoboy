@@ -10,9 +10,40 @@ const instagramHtml = `
 </script>
 
 <template>
-  <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+  <!-- CONTACT INFO CARDS SECTION -->
+  <section class="relative bg-gray-50 py-12">
+    <div class="max-w-6xl mx-auto px-6">
+      <div class="flex flex-col md:flex-row items-center justify-center gap-8">
+        <InfoCard
+          title="Telepon"
+          description="(0276) 321021"
+          variant="phone"
+        />
+
+        <InfoCard
+          title="Alamat"
+          description="Biro Kerja Sama Daerah<br/>Jl. merdeka Barat, Kemiri, Boyolali"
+          variant="location"
+        />
+
+        <InfoCard
+          title="Email"
+          description="setda@boyolali.go.id"
+          variant="email"
+        />
+      </div>
+
+      <div class="mt-20 flex justify-center">
+        <button class="bg-[#0C505C] text-white px-12 py-3 rounded-full shadow-2xl text-lg hover:bg-[#0A3D48] transition">
+          Hubungi Kami
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ADDITIONAL INFO SECTION -->
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
     <div class="mx-auto w-full max-w-4xl">
-      <div class="mx-auto my-6 w-32 sm:w-40 h-px bg-slate-200"></div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-8 sm:gap-10 place-items-center">
         <InfoCard
