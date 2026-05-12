@@ -109,13 +109,23 @@ class DataKerjasamaController extends Controller
 
             $prosesList = $k->riwayatStatus->map(function ($r) {
                 $label = $r->catatan ?: ($r->status?->jenis_status ?? null);
+                
+                // Get divisi from admin user
+                $divisi = null;
+                if ($r->penanggung_jawab) {
+                    $adminUser = Admin::whereHas('user', function ($q) use ($r) {
+                        $q->where('email', $r->penanggung_jawab);
+                    })->first();
+                    $divisi = $adminUser?->divisi ?? $r->penanggung_jawab;
+                }
+                
                 return [
                     'id' => $r->id_riwayat,
                     // show the stored catatan (which will be the entered title when created)
                     'title' => $label,
                     'label' => $label,
                     'catatan' => $r->catatan,
-                    'penanggung' => $r->penanggung_jawab,
+                    'penanggung' => $divisi,
                     'tanggal' => $r->tanggal,
                 ];
             })->toArray();
@@ -279,7 +289,14 @@ class DataKerjasamaController extends Controller
             ]);
 
             if ($isFinished) {
-                $kerjasama->update(['status_negosiasi' => 'Selesai']);
+                // mark negotiation finished and move to riwayat (finalized)
+                $kerjasama->update([
+                    'status_negosiasi' => 'Selesai',
+                    'is_finalized'     => true,
+                    'tipe'             => 'mitra',
+                    'status_aktif'     => 'aktif',
+                    'pemrakarsa'       => 'M',
+                ]);
             }
         });
 
@@ -360,7 +377,14 @@ class DataKerjasamaController extends Controller
             ]);
 
             if ($isFinished) {
-                $kerjasama->update(['status_negosiasi' => 'Selesai']);
+                // mark negotiation finished and move to riwayat (finalized)
+                $kerjasama->update([
+                    'status_negosiasi' => 'Selesai',
+                    'is_finalized'     => true,
+                    'tipe'             => 'mitra',
+                    'status_aktif'     => 'aktif',
+                    'pemrakarsa'       => 'M',
+                ]);
             }
         });
 

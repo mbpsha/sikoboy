@@ -551,7 +551,11 @@ const filteredTableData = computed(() => {
                                     >
                                         <div class="flex items-center justify-between cursor-pointer">
                                             Tahun
-                                            <span class="ml-2 cursor-pointer" @click.stop="openFilterColumn = openFilterColumn === 'tahun' ? null : 'tahun'">⚙️</span>
+                                                                                        <button @click.stop="openFilterColumn = openFilterColumn === 'tahun' ? null : 'tahun'" class="text-yellow-300 hover:text-yellow-100 flex items-center justify-center w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 ml-2">
+                                                                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                                                                <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.293l3.71-4.06a.75.75 0 111.08 1.04l-4.25 4.657a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+                                                                                            </svg>
+                                                                                        </button>
                                         </div>
                                         <!-- FILTER DROPDOWN TAHUN -->
                                         <div
@@ -589,7 +593,11 @@ const filteredTableData = computed(() => {
                                     >
                                         <div class="flex items-center justify-between cursor-pointer">
                                             Tipe
-                                            <span class="ml-2 cursor-pointer" @click.stop="openFilterColumn = openFilterColumn === 'tipe' ? null : 'tipe'">⚙️</span>
+                                                                                        <button @click.stop="openFilterColumn = openFilterColumn === 'tipe' ? null : 'tipe'" class="text-yellow-300 hover:text-yellow-100 flex items-center justify-center w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 ml-2">
+                                                                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                                                                <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.293l3.71-4.06a.75.75 0 111.08 1.04l-4.25 4.657a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+                                                                                            </svg>
+                                                                                        </button>
                                         </div>
                                         <!-- FILTER DROPDOWN TIPE -->
                                         <div
@@ -627,7 +635,11 @@ const filteredTableData = computed(() => {
                                     >
                                         <div class="flex items-center justify-between cursor-pointer">
                                             Mitra
-                                            <span class="ml-2 cursor-pointer" @click.stop="openFilterColumn = openFilterColumn === 'mitra' ? null : 'mitra'">⚙️</span>
+                                                                                        <button @click.stop="openFilterColumn = openFilterColumn === 'mitra' ? null : 'mitra'" class="text-yellow-300 hover:text-yellow-100 flex items-center justify-center w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 ml-2">
+                                                                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                                                                <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.293l3.71-4.06a.75.75 0 111.08 1.04l-4.25 4.657a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+                                                                                            </svg>
+                                                                                        </button>
                                         </div>
                                         <!-- FILTER DROPDOWN MITRA -->
                                         <div
@@ -670,7 +682,11 @@ const filteredTableData = computed(() => {
                                     >
                                         <div class="flex items-center justify-between cursor-pointer">
                                             Jenis Kerjasama
-                                            <span class="ml-2 cursor-pointer" @click.stop="openFilterColumn = openFilterColumn === 'jenis_kerjasama' ? null : 'jenis_kerjasama'">⚙️</span>
+                                                                                        <button @click.stop="openFilterColumn = openFilterColumn === 'jenis_kerjasama' ? null : 'jenis_kerjasama'" class="text-yellow-300 hover:text-yellow-100 flex items-center justify-center w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 ml-2">
+                                                                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                                                                <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.293l3.71-4.06a.75.75 0 111.08 1.04l-4.25 4.657a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+                                                                                            </svg>
+                                                                                        </button>
                                         </div>
                                         <!-- FILTER DROPDOWN JENIS KERJASAMA -->
                                         <div
@@ -733,7 +749,11 @@ const filteredTableData = computed(() => {
                                     >
                                         <div class="flex items-center justify-between cursor-pointer">
                                             Status
-                                            <span class="ml-2 cursor-pointer" @click.stop="openFilterColumn = openFilterColumn === 'status' ? null : 'status'">⚙️</span>
+                                                                                        <button @click.stop="openFilterColumn = openFilterColumn === 'status' ? null : 'status'" class="text-yellow-300 hover:text-yellow-100 flex items-center justify-center w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 ml-2">
+                                                                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                                                                <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.293l3.71-4.06a.75.75 0 111.08 1.04l-4.25 4.657a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+                                                                                            </svg>
+                                                                                        </button>
                                         </div>
                                         <!-- FILTER DROPDOWN STATUS -->
                                         <div

@@ -1,5 +1,14 @@
 <template>
     <section class="py-16 md:py-20 px-4 md:px-10 bg-gray-50">
+        <!-- HERO INTRO TEXT -->
+        <div class="mx-auto max-w-6xl text-center mb-16 py-3">
+            <p class="text-3xl sm:text-4xl md:text-2xl text-black mb-4">
+                Ayo Berkenalan Dengan
+                <span class="text-[#31717C] font-medium">SIKOBOY</span>
+            </p>
+            <div class="mx-auto w-80 h-px bg-black/50"></div>
+        </div>
+
         <div
             class="relative max-w-5xl mx-auto bg-white rounded-2xl shadow-md p-6 sm:p-8 md:p-10"
         >

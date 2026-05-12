@@ -95,12 +95,24 @@ class KerjasamaController extends Controller
             ];
         })->values();
 
+        $jenisDokumen = [
+            'KSB',
+            'Nota Kesepakatan',
+            'Perjanjian Teknis',
+            'PKS',
+            'Rencana Kerja',
+            'MOU',
+            'RKT',
+            'LOI',
+        ];
+
         return Inertia::render('Mitra/Pengajuan/Step2', [
             'mitra' => $mitra ? [
                 'id_mitra' => $mitra->id_mitra,
                 'nama_perusahaan' => $mitra->nama_perusahaan,
             ] : null,
             'kategoris' => $kategoris,
+            'jenisDokumen' => $jenisDokumen,
         ]);
     }
 

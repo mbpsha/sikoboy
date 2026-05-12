@@ -17,14 +17,13 @@ class ProfileController extends Controller
     {
         $user = $request->user();
 
-        return response()->json([
-            'user' => [
+        // Render the Inertia admin profile page with the profile data
+        return \Inertia\Inertia::render('Admin/Profile', [
+            'profile' => [
                 'email' => $user->email,
+                'nama' => $user->admin->nama ?? $user->name ?? '',
+                'divisi' => $user->admin->divisi ?? '',
             ],
-            'admin' => $user->admin ? [
-                'nama' => $user->admin->nama,
-                'divisi' => $user->admin->divisi,
-            ] : null,
         ]);
     }
 

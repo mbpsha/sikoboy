@@ -1,13 +1,87 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { usePage, Link, router } from '@inertiajs/vue3';
 import Header from '@/Components/Header.vue';
 import Footer from '@/Components/Footer.vue';
 import KerjasamaProgressModal from '@/Components/Mitra/KerjasamaProgressModal.vue';
+import DetailNotif from '@/Components/Mitra/Profile/DetailNotif.vue'; 
 
 const page = usePage();
 
-// Safely access props dengan fallback
+// 🔔 DUMMY NOTIFICATIONS (Hardcoded - 2 notifikasi) - HANYA untuk alert banner
+const dummyNotifications = [
+  {
+    id: 1,
+    type: 'expiring_soon',
+    status_type: 'expiring_soon',
+    title: 'Kerjasama Anda akan berakhir dalam 90 hari',
+    message: 'Masa kerjasama dengan SETDA Boyolali akan berakhir pada tanggal 2 Januari 2027. Harap perhatikan tanggal berakhir kerjasama Anda.',
+    days_left: 90,
+    kerjasama_id: 1,
+    kerjasama_judul: '"Perjanjian Kerja Sama antara Dinas Pemberdayaan Masyarakat dan Desa dan PT BPR Bank Boyolali (Perseroda) tentang Pengelolaan Atas Rekening Kas Desa Melalui PT BPR Bank Boyolali (Perseroda)" akan berakhir dalam 90 hari',
+    nomor_kerjasama: '012/SP-KS/PT-ABC/V/2026',
+    tanggal_mulai: '2026-01-02',
+    tanggal_berakhir: '2027-01-02',
+    status: 'Aktif',
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 2,
+    type: 'expiring_soon',
+    status_type: 'expiring_soon',
+    title: 'Kerjasama Anda akan berakhir dalam 30 hari',
+    message: 'Masa kerjasama dengan SETDA Boyolali akan berakhir pada tanggal 15 Desember 2026. Harap perhatikan tanggal berakhir kerjasama Anda.',
+    days_left: 30,
+    kerjasama_id: 2,
+    kerjasama_judul: 'Kerjasama Pengelolaan Aset Daerah antara PT Hamaz Sejahtera Group dengan Dinas Kesehatan Kabupaten Boyolali',
+    nomor_kerjasama: '045/SP-KS/DINKES/VI/2026',
+    tanggal_mulai: '2025-12-15',
+    tanggal_berakhir: '2026-12-15',
+    status: 'Aktif',
+    created_at: new Date().toISOString(),
+  }
+];
+
+// 🔔 State untuk notifikasi yang sudah ditutup (disimpan di localStorage)
+const closedNotifications = ref([]);
+
+// 🔔 Load closed notifications dari localStorage saat component mount
+onMounted(() => {
+  try {
+    const stored = localStorage.getItem('closed_notifications');
+    if (stored) {
+      closedNotifications.value = JSON.parse(stored);
+    }
+  } catch (e) {
+    console.error('Error loading closed notifications:', e);
+  }
+});
+
+// 🔔 Function tutup notifikasi
+const closeNotification = (notifId) => {
+  if (!closedNotifications.value.includes(notifId)) {
+    closedNotifications.value.push(notifId);
+    // Simpan ke localStorage
+    localStorage.setItem('closed_notifications', JSON.stringify(closedNotifications.value));
+  }
+};
+
+// 🔔 Filter notifikasi yang belum ditutup
+const visibleNotifications = computed(() => {
+  return dummyNotifications.filter(notif => !closedNotifications.value.includes(notif.id));
+});
+
+// 🔔 Modal state untuk Detail Notif
+const isDetailNotifOpen = ref(false);
+const selectedNotification = ref(null);
+
+// 🔔 Function buka detail notifikasi (dipakai oleh banner alert)
+const openDetailNotif = (notification) => {
+  selectedNotification.value = notification;
+  isDetailNotifOpen.value = true;
+};
+
+// Safely access props dengan fallback (untuk data mitra/stats)
 const mitra = computed(() => {
   try {
     return page.props?.mitra || page.props?.value?.mitra || null;
@@ -43,6 +117,9 @@ const activeTab = ref('riwayat');
 
 // Logout function
 const handleLogout = () => {
+  // ✅ Clear closed notifications saat logout agar muncul lagi saat login berikutnya
+  localStorage.removeItem('closed_notifications');
+  
   router.post(route('logout'), {}, {
     onSuccess: () => {
       // Redirect akan otomatis dilakukan oleh Laravel setelah logout
@@ -101,7 +178,8 @@ const getStatusLabel = (status) => {
 <template>
   <div class="min-h-screen bg-gradient-to-br from-[#8AB4BB] to-[#6B9BA5] flex flex-col">
 
-    <Header />
+  <!-- Header (lonceng notifikasi tetap ada, tapi tidak dipake di halaman ini) -->
+  <Header />
 
     <main class="flex-1 pt-32 pb-10 px-8">
       <div class="max-w-7xl mx-auto">
@@ -112,6 +190,56 @@ const getStatusLabel = (status) => {
             Kelola informasi dan pantau status pengajuan kerjasama Anda
           </p>
         </div>
+
+        <!-- 🔔 NOTIFICATION ALERT BANNER (DUMMY - DENGAN TOMBOL SILANG) -->
+        <div v-if="visibleNotifications && visibleNotifications.length > 0" class="mb-6 space-y-3">
+          <div 
+            v-for="(notif, index) in visibleNotifications" 
+            :key="notif.id"
+            class="bg-gradient-to-r from-yellow-50 to-amber-50 border-l-4 border-yellow-400 rounded-r-xl p-5 shadow-md hover:shadow-lg transition-shadow relative"
+          >
+            <!-- 🔴 TOMBOL SILANG (Close Button) -->
+            <button 
+              @click="closeNotification(notif.id)"
+              class="absolute top-3 right-3 w-7 h-7 flex items-center justify-center rounded-full bg-yellow-200 hover:bg-yellow-300 text-yellow-700 transition-colors"
+              title="Tutup notifikasi ini"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            <div class="flex gap-4 pr-8">
+              <div class="flex-shrink-0">
+                <div class="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                </div>
+              </div>
+              <div class="flex-1">
+                <h4 class="text-sm font-bold text-yellow-800 mb-1">
+                  {{ notif.title }}
+                </h4>
+                <p class="text-sm text-yellow-700 leading-relaxed">
+                  {{ notif.message }}
+                </p>
+                <div class="mt-3 flex gap-3 items-center">
+                  <button 
+                    @click="openDetailNotif(notif)"
+                    class="text-xs font-semibold text-yellow-800 hover:text-yellow-900 underline cursor-pointer bg-transparent border-none p-0"
+                  >
+                    Lihat Kerjasama
+                  </button>
+                  <span class="text-xs text-yellow-600">
+                    • {{ notif.days_left }} hari lagi
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- 🔔 END NOTIFICATION ALERT BANNER -->
 
         <div class="grid grid-cols-12 gap-6">
 
@@ -366,6 +494,13 @@ const getStatusLabel = (status) => {
       :isOpen="isProgressModalOpen"
       :kerjasamaNama="selectedKerjasama?.judul || ''"
       @close="isProgressModalOpen = false"
+    />
+
+    <!-- 🔔 Detail Notifikasi Modal (dipakai oleh alert banner) -->
+    <DetailNotif 
+      :is-open="isDetailNotifOpen"
+      :notification="selectedNotification"
+      @close="isDetailNotifOpen = false"
     />
 
     <Footer />
