@@ -21,6 +21,7 @@ class DatabaseSeeder extends Seeder
     {
         // Seed kategori kerjasama templates
         $this->call([
+            StatusSeeder::class,
             KategoriKerjasamaSeeder::class,
         ]);
 

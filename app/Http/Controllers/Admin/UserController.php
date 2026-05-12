@@ -120,13 +120,21 @@ class UserController extends Controller
             }
 
             if ($validated['role'] === 'mitra') {
-                Mitra::create([
+                $mitraData = [
                     'id_user' => $user->id_user,
                     'nama_perusahaan' => $validated['nama_perusahaan'],
                     'pic' => $validated['pic'],
                     'no_handphone' => $validated['no_handphone'],
                     'alamat' => $validated['alamat'],
-                ]);
+                ];
+
+                // Jika admin membuat mitra dengan status langsung disetujui, generate id_mitra
+                if ($user->status_verifikasi === 'disetujui') {
+                    $maxIdMitra = Mitra::whereNotNull('id_mitra')->max('id_mitra') ?? 0;
+                    $mitraData['id_mitra'] = $maxIdMitra + 1;
+                }
+
+                Mitra::create($mitraData);
             }
         });
 

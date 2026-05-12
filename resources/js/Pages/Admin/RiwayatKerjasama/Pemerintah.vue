@@ -5,6 +5,7 @@ import {
     MagnifyingGlassIcon,
     FunnelIcon,
     DocumentTextIcon,
+    EllipsisVerticalIcon,
 } from "@heroicons/vue/24/outline";
 import AdminLayout from "@/Layouts/AdminLayout.vue";
 import Swal from "sweetalert2";
@@ -29,6 +30,7 @@ const fileInput = ref(null);
 const showAdendumModal = ref(false);
 const adendumFileInput = ref(null);
 const selectedKerjasama = ref(null);
+const openStatusDropdown = ref(null);
 
 const filter = () => {
     console.log("🔍 PEMERINTAH FILTER CALLED - search:", search.value, "tahun:", tahun.value);
@@ -38,7 +40,10 @@ const filter = () => {
             search: search.value,
             tahun: tahun.value,
         },
-        { preserveState: true },
+        {
+            preserveState: false,
+            preserveScroll: false
+        },
     );
 };
 
@@ -78,14 +83,6 @@ const columnFilters = ref({
     jenis_kerjasama: [],
     status: [],
 });
-
-// Track which column filter is open
-const openFilterColumn = ref(null)
-
-// Close filter when clicking outside
-const closeAllFilters = () => {
-    openFilterColumn.value = null
-}
 
 const uniqueTahun = computed(() => {
     const values = (props.data?.data || []).map(item => String(item.tahun));
@@ -178,6 +175,10 @@ const form = ref({
     selesai: "",
     jenis_kerjasama: "KSDD",
     tipe_pengajuan: "pemerintah",
+    nomor_suratM: '',
+    nomor_suratP: '',
+    urusan: '',
+    pembiayaan: '',
     file: null,
 });
 
@@ -196,16 +197,16 @@ const calculateEndDate = () => {
   if (form.value.mulai && form.value.jangka) {
     const startDate = new Date(form.value.mulai);
     const years = parseInt(form.value.jangka, 10);
-    
+
     if (!isNaN(years)) {
       const endDate = new Date(startDate);
       endDate.setFullYear(endDate.getFullYear() + years);
-      
+
       // Format ke YYYY-MM-DD
       const year = endDate.getFullYear();
       const month = String(endDate.getMonth() + 1).padStart(2, '0');
       const day = String(endDate.getDate()).padStart(2, '0');
-      
+
       form.value.selesai = `${year}-${month}-${day}`;
     }
   }
@@ -226,12 +227,16 @@ const validate = () => {
     if (!form.value.mitra) errors.value.mitra = "Mitra wajib diisi";
     if (!form.value.tahun) errors.value.tahun = "Tahun wajib diisi";
     if (!form.value.judul) errors.value.judul = "Judul wajib diisi";
+    if (!form.value.nomor_suratM) errors.value.nomor_suratM = "Nomor surat mitra wajib diisi";
+    if (!form.value.nomor_suratP) errors.value.nomor_suratP = "Nomor surat pemerintah wajib diisi";
+    if (!form.value.urusan) errors.value.urusan = "Urusan wajib diisi";
     if (!form.value.jangka) errors.value.jangka = "Jangka waktu wajib diisi";
     if (!form.value.mulai) errors.value.mulai = "Tanggal mulai wajib diisi";
     if (!form.value.selesai)
         errors.value.selesai = "Tanggal selesai wajib diisi";
     if (!form.value.jenis_kerjasama) errors.value.jenis_kerjasama = "Jenis kerjasama wajib diisi";
     if (!form.value.tipe_pengajuan) errors.value.tipe_pengajuan = "Tipe pengajuan wajib diisi";
+    if (!form.value.pembiayaan) errors.value.pembiayaan = "Pembiayaan wajib diisi";
     if (!form.value.file) errors.value.file = "File wajib diupload";
 
     return Object.keys(errors.value).length === 0;
@@ -273,36 +278,33 @@ const handleAdendumDrop = (e) => {
 const submit = () => {
     if (!validate()) {
         Swal.fire({
-            icon: 'error',
-            title: 'Validasi Gagal',
-            html: '<div style="text-align: left">' + 
-                  Object.values(errors.value).map(err => `• ${err}`).join('<br>') + 
-                  '</div>',
-            confirmButtonText: 'OK',
-            confirmButtonColor: '#0d9488'
+            icon: "error",
+            title: "Validasi Gagal",
+            html:
+                '<div style="text-align: left">' +
+                Object.values(errors.value)
+                    .map((err) => `• ${err}`)
+                    .join("<br>") +
+                "</div>",
+            confirmButtonText: "OK",
+            confirmButtonColor: "#0d9488",
         });
+
         return;
     }
 
     isSubmitting.value = true;
 
     const formData = new FormData();
-    const tahun = String(form.value.tahun || new Date().getFullYear());
-    const judulSlug = String(form.value.judul || "KERJASAMA")
-        .toUpperCase()
-        .replace(/[^A-Z0-9]+/g, "-")
-        .replace(/^-+|-+$/g, "")
-        .slice(0, 24);
 
     formData.append("mitra", form.value.mitra);
-    formData.append("tahun", tahun);
+    formData.append("tahun", form.value.tahun);
     formData.append("judul", form.value.judul);
     formData.append("jangka", form.value.jangka);
-    formData.append(
-        "nomor_surat",
-        `RIW-P/${tahun}/${judulSlug || "KERJASAMA"}`,
-    );
-    formData.append("urusan", "Kerjasama Daerah");
+    formData.append("nomor_suratM", form.value.nomor_suratM);
+    formData.append("nomor_suratP", form.value.nomor_suratP);
+    formData.append("urusan", form.value.urusan);
+    formData.append("pembiayaan", form.value.pembiayaan);
     formData.append("daerah", "Boyolali");
     formData.append("jenis_kerjasama", form.value.jenis_kerjasama);
     formData.append("jenis_dokumen", "PDF");
@@ -314,47 +316,69 @@ const submit = () => {
         formData.append("file", form.value.file);
     }
 
-    router.post(route("admin.riwayat-kerjasama.pemerintah.store"), formData, {
-        preserveScroll: true,
-        onSuccess: () => {
-            isSubmitting.value = false;
-            Swal.fire({
-                icon: 'success',
-                title: 'Berhasil!',
-                text: 'Data kerjasama pemerintah berhasil disimpan',
-                confirmButtonText: 'OK',
-                confirmButtonColor: '#0d9488'
-            }).then(() => {
-                closeModal();
-                router.visit(route('admin.riwayat-kerjasama.pemerintah'), { preserveState: false });
-            });
-        },
-        onError: (err) => {
-            isSubmitting.value = false;
-            console.error('Error:', err);
-            
-            let errorHtml = '<div style="text-align: left; font-size: 0.9rem;">';
-            if (typeof err === 'object') {
-                Object.entries(err).forEach(([key, value]) => {
-                    const errorMsg = Array.isArray(value) ? value[0] : value;
-                    errorHtml += `<strong>${key}:</strong> ${errorMsg}<br>`;
-                });
-            } else {
-                errorHtml += String(err);
-            }
-            errorHtml += '</div>';
+    router.post(
+        route("admin.riwayat-kerjasama.pemerintah.store"),
+        formData,
+        {
+            preserveScroll: true,
 
-            Swal.fire({
-                icon: 'error',
-                title: 'Gagal Menyimpan Data',
-                html: errorHtml,
-                confirmButtonText: 'OK',
-                confirmButtonColor: '#0d9488'
-            });
-            
-            errors.value = err;
-        },
-    });
+            onSuccess: () => {
+                isSubmitting.value = false;
+
+                Swal.fire({
+                    icon: "success",
+                    title: "Berhasil!",
+                    text: "Data kerjasama pemerintah berhasil disimpan",
+                    confirmButtonText: "OK",
+                    confirmButtonColor: "#0d9488",
+                }).then(() => {
+                    closeModal();
+
+                    router.visit(
+                        route("admin.riwayat-kerjasama.pemerintah"),
+                        {
+                            preserveState: false,
+                        }
+                    );
+                });
+            },
+
+            onError: (err) => {
+                isSubmitting.value = false;
+
+                console.error("Error:", err);
+
+                let errorHtml =
+                    '<div style="text-align: left; font-size: 0.9rem;">';
+
+                if (typeof err === "object") {
+                    Object.entries(err).forEach(([key, value]) => {
+                        const errorMsg = Array.isArray(value)
+                            ? value[0]
+                            : value;
+
+                        errorHtml += `
+                            <strong>${key}:</strong> ${errorMsg}<br>
+                        `;
+                    });
+                } else {
+                    errorHtml += String(err);
+                }
+
+                errorHtml += "</div>";
+
+                Swal.fire({
+                    icon: "error",
+                    title: "Gagal Menyimpan Data",
+                    html: errorHtml,
+                    confirmButtonText: "OK",
+                    confirmButtonColor: "#0d9488",
+                });
+
+                errors.value = err;
+            },
+        }
+    );
 };
 
 // SUBMIT ADENDUM
@@ -388,6 +412,10 @@ const closeModal = () => {
         selesai: "",
         jenis_kerjasama: "KSDD",
         tipe_pengajuan: "pemerintah",
+        nomor_suratM: '',
+        nomor_suratP: '',
+        urusan: '',
+        pembiayaan: '',
         file: null,
     };
     errors.value = {};
@@ -411,13 +439,76 @@ const openAdendumModal = (item) => {
     showAdendumModal.value = true;
 };
 
+// CLOSE STATUS DROPDOWN
+const closeStatusDropdown = () => {
+    openStatusDropdown.value = null;
+};
+
+// TOGGLE STATUS DROPDOWN
+const toggleStatusDropdown = (idKerjasama) => {
+    if (openStatusDropdown.value === idKerjasama) {
+        openStatusDropdown.value = null;
+    } else {
+        openStatusDropdown.value = idKerjasama;
+    }
+};
+
+// UPDATE STATUS
+const handleStatusUpdate = (idKerjasama, newStatus) => {
+    Swal.fire({
+        title: "Ubah Status",
+        text: `Apakah Anda yakin ingin mengubah status menjadi "${newStatus}"?`,
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#0d9488",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Ya, ubah status",
+        cancelButtonText: "Batal",
+    }).then((result) => {
+        if (result.isConfirmed) {
+            router.put(
+                route("admin.riwayat-kerjasama.update-status", idKerjasama),
+                { status: newStatus },
+                {
+                    preserveScroll: true,
+                    onSuccess: () => {
+                        closeStatusDropdown();
+                        Swal.fire({
+                            icon: "success",
+                            title: "Berhasil!",
+                            text: "Status kerjasama berhasil diperbarui",
+                            confirmButtonText: "OK",
+                            confirmButtonColor: "#0d9488",
+                        }).then(() => {
+                            router.visit(
+                                route("admin.riwayat-kerjasama.pemerintah"),
+                                { preserveState: true }
+                            );
+                        });
+                    },
+                    onError: (err) => {
+                        console.error("Error updating status:", err);
+                        Swal.fire({
+                            icon: "error",
+                            title: "Gagal",
+                            text: "Gagal mengubah status kerjasama",
+                            confirmButtonText: "OK",
+                            confirmButtonColor: "#0d9488",
+                        });
+                    },
+                }
+            );
+        }
+    });
+};
+
 onBeforeUnmount(() => {
     if (debounceTimer) clearTimeout(debounceTimer);
 });
 </script>
 
 <template>
-    <AdminLayout title="Riwayat Kerjasama - Boyolali" @click="closeAllFilters">
+    <AdminLayout title="Riwayat Kerjasama - Boyolali">
         <div class="p-6">
             <div class="max-w-7xl mx-auto">
                 <!-- SEARCH + FILTER CARD -->
@@ -525,21 +616,15 @@ onBeforeUnmount(() => {
                                         No
                                     </th>
                                     <th
-                                        class="px-4 py-3 text-left whitespace-nowrap border-r border-gray-200 relative"
+                                        class="px-4 py-3 text-left whitespace-nowrap border-r border-gray-200 relative group cursor-pointer"
                                     >
                                         <div class="flex items-center justify-between gap-1">
                                             <span>Tahun</span>
-                                                                                        <button @click.stop="openFilterColumn = openFilterColumn === 'tahun' ? null : 'tahun'" class="text-yellow-300 hover:text-yellow-100 flex items-center justify-center w-6 h-6 rounded-full bg-white/10 hover:bg-white/20">
-                                                                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                                                                                <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.293l3.71-4.06a.75.75 0 111.08 1.04l-4.25 4.657a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
-                                                                                            </svg>
-                                                                                        </button>
+                                            <button class="text-yellow-300 hover:text-yellow-100">⚙️</button>
                                         </div>
                                         <!-- FILTER DROPDOWN TAHUN -->
                                         <div
-                                            v-show="openFilterColumn === 'tahun'"
-                                            @click.stop
-                                            class="absolute left-0 top-full mt-1 bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200"
+                                            class="hidden group-hover:block absolute left-0 top-full mt-1 bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200"
                                         >
                                             <div class="mb-2 max-h-40 overflow-y-auto">
                                                 <label v-for="val in uniqueTahun" :key="val" class="flex items-center gap-2 mb-1 cursor-pointer hover:bg-gray-100 p-1 rounded">
@@ -567,21 +652,15 @@ onBeforeUnmount(() => {
                                         </div>
                                     </th>
                                     <th
-                                        class="px-4 py-3 text-left whitespace-nowrap border-r border-gray-200 relative"
+                                        class="px-4 py-3 text-left whitespace-nowrap border-r border-gray-200 relative group cursor-pointer"
                                     >
                                         <div class="flex items-center justify-between gap-1">
                                             <span>Tipe</span>
-                                                                                        <button @click.stop="openFilterColumn = openFilterColumn === 'tipe' ? null : 'tipe'" class="text-yellow-300 hover:text-yellow-100 flex items-center justify-center w-6 h-6 rounded-full bg-white/10 hover:bg-white/20">
-                                                                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                                                                                <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.293l3.71-4.06a.75.75 0 111.08 1.04l-4.25 4.657a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
-                                                                                            </svg>
-                                                                                        </button>
+                                            <button class="text-yellow-300 hover:text-yellow-100">⚙️</button>
                                         </div>
                                         <!-- FILTER DROPDOWN TIPE -->
                                         <div
-                                            v-show="openFilterColumn === 'tipe'"
-                                            @click.stop
-                                            class="absolute left-0 top-full mt-1 bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200"
+                                            class="hidden group-hover:block absolute left-0 top-full mt-1 bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200"
                                         >
                                             <div class="mb-2 max-h-40 overflow-y-auto">
                                                 <label v-for="val in uniqueTipe" :key="val" class="flex items-center gap-2 mb-1 cursor-pointer hover:bg-gray-100 p-1 rounded">
@@ -609,21 +688,15 @@ onBeforeUnmount(() => {
                                         </div>
                                     </th>
                                     <th
-                                        class="px-4 py-3 text-left whitespace-nowrap border-r border-gray-200 relative"
+                                        class="px-4 py-3 text-left whitespace-nowrap border-r border-gray-200 relative group cursor-pointer"
                                     >
                                         <div class="flex items-center justify-between gap-1">
                                             <span>Mitra</span>
-                                                                                        <button @click.stop="openFilterColumn = openFilterColumn === 'mitra' ? null : 'mitra'" class="text-yellow-300 hover:text-yellow-100 flex items-center justify-center w-6 h-6 rounded-full bg-white/10 hover:bg-white/20">
-                                                                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                                                                                <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.293l3.71-4.06a.75.75 0 111.08 1.04l-4.25 4.657a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
-                                                                                            </svg>
-                                                                                        </button>
+                                            <button class="text-yellow-300 hover:text-yellow-100">⚙️</button>
                                         </div>
                                         <!-- FILTER DROPDOWN MITRA -->
                                         <div
-                                            v-show="openFilterColumn === 'mitra'"
-                                            @click.stop
-                                            class="absolute left-0 top-full mt-1 bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200 max-w-xs"
+                                            class="hidden group-hover:block absolute left-0 top-full mt-1 bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200 max-w-xs"
                                         >
                                             <div class="mb-2 max-h-40 overflow-y-auto">
                                                 <label v-for="val in uniqueMitra" :key="val" class="flex items-center gap-2 mb-1 cursor-pointer hover:bg-gray-100 p-1 rounded">
@@ -656,21 +729,30 @@ onBeforeUnmount(() => {
                                         Judul
                                     </th>
                                     <th
-                                        class="px-4 py-3 text-left whitespace-nowrap border-r border-gray-200 relative"
+                                        class="px-4 py-3 text-left border-r border-gray-200"
+                                    >
+                                        Nomor Surat Mitra
+                                    </th>
+                                    <th
+                                        class="px-4 py-3 text-left border-r border-gray-200"
+                                    >
+                                        Nomor Surat Pemerintah
+                                    </th>
+                                    <th
+                                        class="px-4 py-3 text-left border-r border-gray-200"
+                                    >
+                                        Urusan
+                                    </th>
+                                    <th
+                                        class="px-4 py-3 text-left whitespace-nowrap border-r border-gray-200 relative group cursor-pointer"
                                     >
                                         <div class="flex items-center justify-between gap-1">
                                             <span>Jenis Kerjasama</span>
-                                                                                        <button @click.stop="openFilterColumn = openFilterColumn === 'jenis_kerjasama' ? null : 'jenis_kerjasama'" class="text-yellow-300 hover:text-yellow-100 flex items-center justify-center w-6 h-6 rounded-full bg-white/10 hover:bg-white/20">
-                                                                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                                                                                <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.293l3.71-4.06a.75.75 0 111.08 1.04l-4.25 4.657a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
-                                                                                            </svg>
-                                                                                        </button>
+                                            <button class="text-yellow-300 hover:text-yellow-100">⚙️</button>
                                         </div>
                                         <!-- FILTER DROPDOWN JENIS KERJASAMA -->
                                         <div
-                                            v-show="openFilterColumn === 'jenis_kerjasama'"
-                                            @click.stop
-                                            class="absolute left-0 top-full mt-1 bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200"
+                                            class="hidden group-hover:block absolute left-0 top-full mt-1 bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200"
                                         >
                                             <div class="mb-2 max-h-40 overflow-y-auto">
                                                 <label v-for="val in uniqueJenisKerjasama" :key="val" class="flex items-center gap-2 mb-1 cursor-pointer hover:bg-gray-100 p-1 rounded">
@@ -715,6 +797,16 @@ onBeforeUnmount(() => {
                                     <th
                                         class="px-4 py-3 text-left whitespace-nowrap border-r border-gray-200"
                                     >
+                                        Sisa Waktu
+                                    </th>
+                                    <th
+                                        class="px-4 py-3 text-left border-r border-gray-200"
+                                    >
+                                        Pembiayaan
+                                    </th>
+                                    <th
+                                        class="px-4 py-3 text-left whitespace-nowrap border-r border-gray-200"
+                                    >
                                         File
                                     </th>
                                     <th
@@ -730,16 +822,16 @@ onBeforeUnmount(() => {
                                 </tr>
                             </thead>
 
-                            <tbody>
+                            <tbody @click="closeStatusDropdown()">
                                 <tr
                                     v-for="item in filteredTableData"
-                                    :key="item.no"
+                                    :key="item.id_kerjasama"
                                     class="border-b border-gray-200 align-middle"
                                 >
                                     <td
                                         class="px-4 py-3 whitespace-nowrap border-r border-gray-200"
                                     >
-                                        {{ item.no }}
+                                        {{ item.id_kerjasama }}
                                     </td>
                                     <td
                                         class="px-4 py-3 whitespace-nowrap border-r border-gray-200"
@@ -752,7 +844,7 @@ onBeforeUnmount(() => {
                                         <span
                                             class="px-2 py-1 rounded text-xs font-semibold"
                                             :class="
-                                                item.tipe === 'Mitra'
+                                                item.tipe === 'mitra'
                                                     ? 'bg-blue-100 text-blue-800'
                                                     : 'bg-green-100 text-green-800'
                                             "
@@ -770,7 +862,22 @@ onBeforeUnmount(() => {
                                     >
                                         {{ item.judul || "-" }}
                                     </td>
-                                    <td class="px-6 py-4">
+                                    <td
+                                        class="px-4 py-3 whitespace-nowrap border-r border-gray-200"
+                                    >
+                                        {{ item.nomor_suratM }}
+                                    </td>
+                                    <td
+                                        class="px-4 py-3 whitespace-nowrap border-r border-gray-200"
+                                    >
+                                        {{ item.nomor_suratP }}
+                                    </td>
+                                    <td
+                                        class="px-4 py-3 whitespace-nowrap border-r border-gray-200"
+                                    >
+                                        {{ item.urusan }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap border-r border-gray-200">
                                         <span
                                             class="px-3 py-1 text-xs font-semibold rounded-lg bg-blue-100 text-blue-700"
                                         >
@@ -791,6 +898,23 @@ onBeforeUnmount(() => {
                                         class="px-4 py-3 whitespace-nowrap min-w-[120px] border-r border-gray-200"
                                     >
                                         {{ item.jangka_waktu || "-" }}
+                                    </td>
+                                    <td
+                                        class="px-4 py-3 whitespace-nowrap border-r border-gray-200"
+                                    >
+                                        <span v-if="item.days_remaining !== null" :class="{
+                                            'text-green-600 font-semibold': item.days_remaining > 30,
+                                            'text-orange-600 font-semibold': item.days_remaining > 0 && item.days_remaining <= 30,
+                                            'text-red-600 font-semibold': item.days_remaining <= 0
+                                        }">
+                                            {{ item.days_remaining > 0 ? item.days_remaining + ' hari' : 'Berakhir' }}
+                                        </span>
+                                        <span v-else class="text-gray-400">-</span>
+                                    </td>
+                                    <td
+                                        class="px-4 py-3 whitespace-nowrap border-r border-gray-200"
+                                    >
+                                        {{ item.pembiayaan }}
                                     </td>
                                     <td
                                         class="px-4 py-3 whitespace-nowrap min-w-[90px] border-r border-gray-200"
@@ -842,22 +966,60 @@ onBeforeUnmount(() => {
                                         </div>
                                     </td>
                                     <td
-                                        class="px-4 py-3 whitespace-nowrap min-w-[140px]"
+                                        class="px-4 py-3 whitespace-nowrap min-w-[140px] relative"
                                     >
-                                        <span
-                                            class="inline-flex items-center px-3 py-1 rounded-full text-xs leading-none"
-                                            :class="{
-                                                'bg-green-100 text-green-700':
-                                                    item.status === 'Aktif',
-                                                'bg-red-100 text-red-600':
-                                                    item.status === 'Berakhir',
-                                                'bg-yellow-100 text-yellow-700':
-                                                    item.status ===
-                                                    'Segera Berakhir',
-                                            }"
-                                        >
-                                            {{ item.status }}
-                                        </span>
+                                        <div class="flex items-center justify-between gap-2">
+                                            <span
+                                                class="inline-flex items-center px-3 py-1 rounded-full text-xs leading-none"
+                                                :class="{
+                                                    'bg-green-100 text-green-700':
+                                                        item.status === 'Aktif',
+                                                    'bg-red-100 text-red-600':
+                                                        item.status === 'Berakhir',
+                                                    'bg-yellow-100 text-yellow-700':
+                                                        item.status ===
+                                                        'Segera Berakhir',
+                                                }"
+                                            >
+                                                {{ item.status }}
+                                            </span>
+                                            <div class="relative">
+                                                <button
+                                                    @click.stop="toggleStatusDropdown(item.id_kerjasama)"
+                                                    class="p-1 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded transition"
+                                                >
+                                                    <EllipsisVerticalIcon class="w-5 h-5" />
+                                                </button>
+                                                <!-- DROPDOWN STATUS MENU -->
+                                                <div
+                                                    v-if="openStatusDropdown === item.id_kerjasama"
+                                                    class="absolute right-0 top-full mt-1 bg-white text-black text-sm rounded-lg shadow-2xl z-50 border border-gray-200 min-w-max"
+                                                    @click.stop
+                                                >
+                                                    <button
+                                                        @click.stop="handleStatusUpdate(item.id_kerjasama, 'Aktif')"
+                                                        :disabled="item.status === 'Aktif'"
+                                                        class="block w-full text-left px-4 py-2 hover:bg-gray-100 transition first:rounded-t-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                                                    >
+                                                        Aktif
+                                                    </button>
+                                                    <button
+                                                        @click.stop="handleStatusUpdate(item.id_kerjasama, 'Segera Berakhir')"
+                                                        :disabled="item.status === 'Segera Berakhir'"
+                                                        class="block w-full text-left px-4 py-2 hover:bg-gray-100 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                                                    >
+                                                        Segera Berakhir
+                                                    </button>
+                                                    <button
+                                                        @click.stop="handleStatusUpdate(item.id_kerjasama, 'Berakhir')"
+                                                        :disabled="item.status === 'Berakhir'"
+                                                        class="block w-full text-left px-4 py-2 hover:bg-gray-100 transition last:rounded-b-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                                                    >
+                                                        Berakhir
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </td>
                                 </tr>
                             </tbody>
@@ -973,6 +1135,63 @@ onBeforeUnmount(() => {
                         </p>
                     </div>
 
+                    <!-- NOMOR SURAT MITRA -->
+                    <div>
+                        <label class="text-sm font-medium">
+                            Nomor Surat Mitra <span class="text-red-500">*</span>
+                        </label>
+                        <input
+                            v-model="form.nomor_suratM"
+                            type="text"
+                            class="w-full border rounded-lg px-3 py-2 mt-1"
+                            placeholder="Masukkan nomor surat mitra"
+                        />
+                        <p
+                            v-if="errors.nomor_suratM"
+                            class="text-red-500 text-xs mt-1"
+                        >
+                            {{ errors.nomor_suratM }}
+                        </p>
+                    </div>
+
+                    <!-- Nomor Surat Pemerintah -->
+                    <div>
+                        <label class="text-sm font-medium">
+                            Nomor Surat Pemerintah <span class="text-red-500">*</span>
+                        </label>
+                        <input
+                            v-model="form.nomor_suratP"
+                            type="text"
+                            class="w-full border rounded-lg px-3 py-2 mt-1"
+                            placeholder="Masukkan nomor surat pemerintah"
+                        />
+                        <p
+                            v-if="errors.nomor_suratP"
+                            class="text-red-500 text-xs mt-1"
+                        >
+                            {{ errors.nomor_suratP }}
+                        </p>
+                    </div>
+
+                    <!-- Urusan -->
+                    <div>
+                        <label class="text-sm font-medium">
+                            Urusan <span class="text-red-500">*</span>
+                        </label>
+                        <textarea
+                            v-model="form.urusan"
+                            rows="3"
+                            class="w-full border rounded-lg px-3 py-2 mt-1"
+                            placeholder="Masukkan urusan kerjasama"
+                        ></textarea>
+                        <p
+                            v-if="errors.urusan"
+                            class="text-red-500 text-xs mt-1"
+                        >
+                            {{ errors.urusan }}
+                        </p>
+                    </div>
+
                     <!-- JANGKA -->
                     <div>
                         <label class="text-sm font-medium">
@@ -1071,6 +1290,29 @@ onBeforeUnmount(() => {
                                 {{ errors.selesai }}
                             </p>
                         </div>
+                    </div>
+
+                    <!-- PEMBIAYAAN -->
+                    <div>
+                        <label class="text-sm font-medium">
+                            Pembiayaan <span class="text-red-500">*</span>
+                        </label>
+                        <select
+                            v-model="form.pembiayaan"
+                            class="w-full border rounded-lg px-3 py-2 mt-1"
+                        >
+                            <option value="APBN">APBN</option>
+                            <option value="APBD">APBD</option>
+                            <option value="PIHAK KETIGA">PIHAK KETIGA</option>
+                            <option value="PARA PIHAK">PARA PIHAK</option>
+                            <option value="SESUAI DENGAN PERATURAN PERUNDANG-UNDANGAN">SESUAI DENGAN PERATURAN PERUNDANG-UNDANGAN</option>
+                        </select>
+                        <p
+                            v-if="errors.pembiayaan"
+                            class="text-red-500 text-xs mt-1"
+                        >
+                            {{ errors.pembiayaan }}
+                        </p>
                     </div>
 
                     <!-- UPLOAD -->

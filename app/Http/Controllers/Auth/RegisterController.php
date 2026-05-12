@@ -42,6 +42,8 @@ class RegisterController extends Controller
             'status_verifikasi' => 'pending',
         ]);
 
+        // Create Mitra record but without assigning id_mitra - let it auto-increment for now
+        // When admin verifies, we'll reassign id_mitra based on verification order
         Mitra::create([
             'id_user' => $user->id_user,
             'nama_perusahaan' => $request->nama_perusahaan,
