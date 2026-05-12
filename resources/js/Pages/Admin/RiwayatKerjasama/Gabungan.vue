@@ -21,6 +21,8 @@ const props = defineProps({
     filters: Object,
     years: Array,
     mitras: Array,
+    jenisKerjasamaOptions: Array,
+    jenisDokumenOptions: Array,
 });
 
 const search = ref(props.filters?.search || "");
@@ -99,6 +101,7 @@ const form = ref({
     mulai: "",
     selesai: "",
     jenis_kerjasama: "KSDD",
+    jenis_dokumen: "KSB",
     tipe_pengajuan: "mitra",
     nomor_suratM: '',
     nomor_suratP: '',
@@ -180,6 +183,7 @@ const validate = () => {
     if (!form.value.selesai)
         errors.value.selesai = "Tanggal selesai wajib diisi";
     if (!form.value.jenis_kerjasama) errors.value.jenis_kerjasama = "Jenis kerjasama wajib diisi";
+    if (!form.value.jenis_dokumen) errors.value.jenis_dokumen = "Jenis dokumen wajib diisi";
     if (!form.value.tipe_pengajuan) errors.value.tipe_pengajuan = "Tipe pengajuan wajib diisi";
     if (!form.value.pembiayaan) errors.value.pembiayaan = "Pembiayaan wajib diisi";
     if (!form.value.file) errors.value.file = "File wajib diupload";
@@ -253,7 +257,7 @@ const submit = () => {
     formData.append("daerah", "Boyolali");
     formData.append("jenis_kerjasama", form.value.jenis_kerjasama);
     formData.append("tipe_pengajuan", form.value.tipe_pengajuan);
-    formData.append("jenis_dokumen", "PDF");
+    formData.append("jenis_dokumen", form.value.jenis_dokumen);
     formData.append("nama_pihak_luar", form.value.mitra);
     formData.append("tanggal_mulai", form.value.mulai);
     formData.append("tanggal_berakhir", form.value.selesai);
@@ -359,6 +363,7 @@ const closeModal = () => {
         mulai: "",
         selesai: "",
         jenis_kerjasama: "KSDD",
+        jenis_dokumen: "KSB",
         tipe_pengajuan: "mitra",
         nomor_suratM: '',
         nomor_suratP: '',
@@ -833,6 +838,11 @@ const filteredTableData = computed(() => {
                                     <th
                                         class="px-4 py-3 text-left whitespace-nowrap border-r border-gray-200"
                                     >
+                                        Jenis Dokumen
+                                    </th>
+                                    <th
+                                        class="px-4 py-3 text-left whitespace-nowrap border-r border-gray-200"
+                                    >
                                         Mulai
                                     </th>
                                     <th
@@ -971,6 +981,11 @@ const filteredTableData = computed(() => {
                                         >
                                             {{ item.jenis_kerjasama || '-' }}
                                         </span>
+                                    </td>
+                                    <td
+                                        class="px-4 py-3 whitespace-nowrap border-r border-gray-200"
+                                    >
+                                        {{ item.jenis_dokumen || '-' }}
                                     </td>
                                     <td
                                         class="px-4 py-3 whitespace-nowrap border-r border-gray-200"
@@ -1203,8 +1218,7 @@ const filteredTableData = computed(() => {
                             <input
                                 v-model="form.mitra"
                                 class="w-full border rounded-lg px-3 py-2 mt-1"
-                                placeholder="Nama mitra terpilih"
-                                readonly
+                                placeholder="Masukkan nama mitra"
                             />
                             <p
                                 v-if="errors.mitra"
@@ -1334,18 +1348,43 @@ const filteredTableData = computed(() => {
                             v-model="form.jenis_kerjasama"
                             class="w-full border rounded-lg px-3 py-2 mt-1"
                         >
-                            <option value="KSDD">Kerjasama Daerah Antar Daerah (KSDD)</option>
-                            <option value="KSDPK">Kerjasama Dengan Pihak Ketiga (KSDPK)</option>
-                            <option value="NK/RK">Sinergi Dengan Pemerintah Pusat/Lembaga (NK/RK)</option>
-                            <option value="PERTEK">Perjanjian Teknis (PERTEK)</option>
-                            <option value="KSDPL">Kerjasama Daerah Dengan Pemerintah Daerah Di Luar Negeri (KSDPL)</option>
-                            <option value="KSDLL">Kerjasama Daerah Dengan Lembaga Di Luar Negeri (KSDLL)</option>
+                            <option
+                                v-for="option in (jenisKerjasamaOptions || [])"
+                                :key="option.value"
+                                :value="option.value"
+                            >
+                                {{ option.label }}
+                            </option>
                         </select>
                         <p
                             v-if="errors.jenis_kerjasama"
                             class="text-red-500 text-xs mt-1"
                         >
                             {{ errors.jenis_kerjasama }}
+                        </p>
+                    </div>
+
+                    <div>
+                        <label class="text-sm font-medium">
+                            Jenis Dokumen <span class="text-red-500">*</span>
+                        </label>
+                        <select
+                            v-model="form.jenis_dokumen"
+                            class="w-full border rounded-lg px-3 py-2 mt-1"
+                        >
+                            <option
+                                v-for="option in (jenisDokumenOptions || [])"
+                                :key="option"
+                                :value="option"
+                            >
+                                {{ option }}
+                            </option>
+                        </select>
+                        <p
+                            v-if="errors.jenis_dokumen"
+                            class="text-red-500 text-xs mt-1"
+                        >
+                            {{ errors.jenis_dokumen }}
                         </p>
                     </div>
 

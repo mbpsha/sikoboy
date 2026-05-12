@@ -15,6 +15,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
@@ -50,6 +51,8 @@ class RiwayatKerjasamaController extends Controller
                 ->orderBy('tahun', 'desc')
                 ->pluck('tahun'),
             'mitras' => $this->mitraOptions(),
+            'jenisKerjasamaOptions' => $this->jenisKerjasamaOptions(),
+            'jenisDokumenOptions' => $this->jenisDokumenOptions(),
         ]);
     }
 
@@ -84,6 +87,8 @@ class RiwayatKerjasamaController extends Controller
                 ->orderBy('tahun', 'desc')
                 ->pluck('tahun'),
             'mitras' => $this->mitraOptions(),
+            'jenisKerjasamaOptions' => $this->jenisKerjasamaOptions(),
+            'jenisDokumenOptions' => $this->jenisDokumenOptions(),
         ]);
     }
 
@@ -117,7 +122,35 @@ class RiwayatKerjasamaController extends Controller
                 ->orderBy('tahun', 'desc')
                 ->pluck('tahun'),
             'mitras' => $this->mitraOptions(),
+            'jenisKerjasamaOptions' => $this->jenisKerjasamaOptions(),
+            'jenisDokumenOptions' => $this->jenisDokumenOptions(),
         ]);
+    }
+
+    private function jenisKerjasamaOptions(): array
+    {
+        return [
+            ['value' => 'KSDD', 'label' => 'Kerjasama Daerah Antar Daerah (KSDD)'],
+            ['value' => 'KSDPK', 'label' => 'Kerjasama Dengan Pihak Ketiga (KSDPK)'],
+            ['value' => 'NK/RK', 'label' => 'Sinergi Dengan Pemerintah Pusat/Lembaga (NK/RK)'],
+            ['value' => 'PERTEK', 'label' => 'Perjanjian Teknis (PERTEK)'],
+            ['value' => 'KSDPL', 'label' => 'Kerjasama Daerah Dengan Pemerintah Daerah Di Luar Negeri (KSDPL)'],
+            ['value' => 'KSDLL', 'label' => 'Kerjasama Daerah Dengan Lembaga Di Luar Negeri (KSDLL)'],
+        ];
+    }
+
+    private function jenisDokumenOptions(): array
+    {
+        return [
+            'KSB',
+            'Nota Kesepakatan',
+            'Perjanjian Teknis',
+            'PKS',
+            'Rencana Kerja',
+            'MOU',
+            'RKT',
+            'LOI',
+        ];
     }
 
     private function mitraOptions()
@@ -257,7 +290,8 @@ class RiwayatKerjasamaController extends Controller
     public function storeMitra(Request $request)
     {
         $validated = $request->validate([
-            'id_mitra' => ['required', 'integer', 'exists:mitras,id_mitra'],
+            'id_mitra' => ['nullable', 'integer', 'exists:mitras,id_mitra'],
+            'mitra' => ['required', 'string', 'max:255'],
             'tahun' => ['required', 'numeric'],
             'judul' => ['required', 'string'],
             'jangka' => ['required', 'string'],
@@ -266,8 +300,8 @@ class RiwayatKerjasamaController extends Controller
             'pembiayaan' => ['required','in:APBN,APBD,PIHAK KETIGA,PARA PIHAK,SESUAI DENGAN PERATURAN PERUNDANG-UNDANGAN'],
             'urusan' => ['required', 'string'],
             'daerah' => ['required', 'string'],
-            'jenis_kerjasama' => ['required', 'string'],
-            'jenis_dokumen' => ['required', 'string'],
+            'jenis_kerjasama' => ['required', 'string', Rule::in(array_column($this->jenisKerjasamaOptions(), 'value'))],
+            'jenis_dokumen' => ['required', 'string', Rule::in($this->jenisDokumenOptions())],
             'tanggal_mulai' => ['required', 'date'],
             'tanggal_berakhir' => ['required', 'date'],
             'file' => ['required', 'file', 'mimes:pdf', 'max:10240'],
@@ -286,7 +320,12 @@ class RiwayatKerjasamaController extends Controller
             ]);
         }
 
-        $mitra = Mitra::findOrFail((int) $validated['id_mitra']);
+        $mitra = ! empty($validated['id_mitra'])
+            ? Mitra::findOrFail((int) $validated['id_mitra'])
+            : Mitra::firstOrCreate(
+                ['nama_perusahaan' => trim((string) $validated['mitra'])],
+                ['alamat' => '-']
+            );
 
         $path = null;
         $originalFileName = null;
@@ -311,7 +350,7 @@ class RiwayatKerjasamaController extends Controller
                 'jenis_dokumen' => $validated['jenis_dokumen'],
                 'pemrakarsa' => 'M',
                 'tipe' => 'mitra',
-                'nama_pihak_luar' => $mitra->nama_perusahaan,
+                'nama_pihak_luar' => $validated['mitra'],
                 'status_aktif' => 'aktif',
                 'is_finalized' => true,
                 'status_persetujuan' => 'disetujui',
@@ -327,6 +366,7 @@ class RiwayatKerjasamaController extends Controller
             if ($path && $originalFileName) {
                 Dokumen::create([
                     'id_kerjasama' => $kerjasama->id_kerjasama,
+                    'jenis_dokumen' => $validated['jenis_dokumen'],
                     'nama_file' => $originalFileName,
                     'lokasi_file' => $path,
                     'versi_dokumen' => 1,
@@ -370,7 +410,7 @@ class RiwayatKerjasamaController extends Controller
                 'in:KSDD,KSDPK,NK/RK,PERTEK,KSDPL,KSDLL'
             ],
             'tipe_pengajuan' => ['required', 'in:mitra,pemerintah'],
-            'jenis_dokumen' => ['required', 'string'],
+            'jenis_dokumen' => ['required', 'string', Rule::in($this->jenisDokumenOptions())],
             'nama_pihak_luar' => ['required', 'string'],
             'tanggal_mulai' => ['required', 'date'],
             'tanggal_berakhir' => ['required', 'date'],
@@ -441,6 +481,7 @@ class RiwayatKerjasamaController extends Controller
                 if ($path && $originalFileName) {
                     Dokumen::create([
                         'id_kerjasama' => $kerjasama->id_kerjasama,
+                        'jenis_dokumen' => $validated['jenis_dokumen'],
                         'nama_file' => $originalFileName,
                         'lokasi_file' => $path,
                         'versi_dokumen' => 1,
@@ -488,6 +529,7 @@ class RiwayatKerjasamaController extends Controller
                 if ($path && $originalFileName) {
                     Dokumen::create([
                         'id_kerjasama' => $kerjasama->id_kerjasama,
+                        'jenis_dokumen' => $validated['jenis_dokumen'],
                         'nama_file' => $originalFileName,
                         'lokasi_file' => $path,
                         'versi_dokumen' => 1,
@@ -698,9 +740,11 @@ class RiwayatKerjasamaController extends Controller
     {
         $nextVersion = ((int) $kerjasama->dokumen()->max('versi_dokumen')) + 1;
         $path = $file->store('dokumen-kerjasama', 'public');
+        $jenisDokumen = $kerjasama->jenis_dokumen ?: ($kerjasama->finalDokumen?->jenis_dokumen ?: 'KSB');
 
         Dokumen::create([
             'id_kerjasama' => $kerjasama->id_kerjasama,
+            'jenis_dokumen' => $jenisDokumen,
             'nama_file' => $file->getClientOriginalName(),
             'lokasi_file' => $path,
             'versi_dokumen' => $nextVersion,
@@ -832,6 +876,7 @@ class RiwayatKerjasamaController extends Controller
             'status' => $status,
             'days_remaining' => $daysRemaining,
             'jenis_kerjasama' => $k->jenis_kerjasama,
+            'jenis_dokumen' => $k->jenis_dokumen,
             'has_adendum' => $hasAdendum,
             'nomor_suratM' => $k->nomor_suratM,
             'nomor_suratP' => $k->nomor_suratP,
