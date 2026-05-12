@@ -81,6 +81,18 @@ class RiwayatKerjasamaController extends Controller
                 ->distinct()
                 ->orderBy('tahun', 'desc')
                 ->pluck('tahun'),
+            'mitras' => Mitra::query()
+                ->orderBy('nama_perusahaan')
+                ->get()
+                ->map(fn (Mitra $mitra) => [
+                    'id_mitra' => $mitra->id_mitra,
+                    'nama_perusahaan' => $mitra->nama_perusahaan,
+                    'npwp' => $mitra->getAttribute('npwp'),
+                    'pic' => $mitra->pic,
+                    'no_handphone' => $mitra->no_handphone,
+                    'alamat' => $mitra->alamat,
+                ])
+                ->values(),
         ]);
     }
 
@@ -237,7 +249,7 @@ class RiwayatKerjasamaController extends Controller
     public function storeMitra(Request $request)
     {
         $validated = $request->validate([
-            'mitra' => ['required', 'string'],
+            'id_mitra' => ['required', 'integer', 'exists:mitras,id_mitra'],
             'tahun' => ['required', 'numeric'],
             'judul' => ['required', 'string'],
             'jangka' => ['required', 'string'],
@@ -246,7 +258,6 @@ class RiwayatKerjasamaController extends Controller
             'daerah' => ['required', 'string'],
             'jenis_kerjasama' => ['required', 'string'],
             'jenis_dokumen' => ['required', 'string'],
-            'nama_pihak_luar' => ['required', 'string'],
             'tanggal_mulai' => ['required', 'date'],
             'tanggal_berakhir' => ['required', 'date'],
             'file' => ['required', 'file', 'mimes:pdf', 'max:10240'],
@@ -265,14 +276,7 @@ class RiwayatKerjasamaController extends Controller
             ]);
         }
 
-        // Find or create mitra
-        $mitra = Mitra::where('nama_perusahaan', $validated['mitra'])->first();
-        if (! $mitra) {
-            $mitra = Mitra::create([
-                'nama_perusahaan' => $validated['mitra'],
-                'alamat' => '-',
-            ]);
-        }
+        $mitra = Mitra::findOrFail((int) $validated['id_mitra']);
 
         $path = null;
         $originalFileName = null;
@@ -295,7 +299,7 @@ class RiwayatKerjasamaController extends Controller
                 'jenis_dokumen' => $validated['jenis_dokumen'],
                 'pemrakarsa' => 'M',
                 'tipe' => 'mitra',
-                'nama_pihak_luar' => $validated['nama_pihak_luar'],
+                'nama_pihak_luar' => $mitra->nama_perusahaan,
                 'status_aktif' => 'aktif',
                 'is_finalized' => true,
                 'status_persetujuan' => 'disetujui',

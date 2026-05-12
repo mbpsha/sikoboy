@@ -19,6 +19,7 @@ const props = defineProps({
     data: Object,
     filters: Object,
     years: Array,
+    mitras: Array,
 });
 
 const search = ref(props.filters?.search || "");
@@ -31,7 +32,7 @@ const adendumFileInput = ref(null);
 const selectedKerjasama = ref(null);
 
 const form = ref({
-    mitra: "",
+    id_mitra: "",
     tahun: "",
     judul: "",
     jangka: "",
@@ -40,6 +41,13 @@ const form = ref({
     jenis_kerjasama: "KSDD",
     tipe_pengajuan: "mitra",
     file: null,
+});
+
+const selectedMitra = computed(() => {
+    if (!form.value.id_mitra) return null;
+    return (props.mitras || []).find(
+        (mitra) => String(mitra.id_mitra) === String(form.value.id_mitra),
+    ) || null;
 });
 
 const adendumForm = ref({
@@ -189,7 +197,7 @@ const goToPage = (page) => {
 const validate = () => {
     errors.value = {};
 
-    if (!form.value.mitra) errors.value.mitra = "Mitra wajib diisi";
+    if (!form.value.id_mitra) errors.value.id_mitra = "Mitra wajib dipilih";
     if (!form.value.tahun) errors.value.tahun = "Tahun wajib diisi";
     if (!form.value.judul) errors.value.judul = "Judul wajib diisi";
     if (!form.value.jangka) errors.value.jangka = "Jangka waktu wajib diisi";
@@ -260,7 +268,7 @@ const submit = () => {
         .replace(/^-+|-+$/g, "")
         .slice(0, 24);
 
-    formData.append("mitra", form.value.mitra);
+    formData.append("id_mitra", String(form.value.id_mitra));
     formData.append("tahun", tahun);
     formData.append("judul", form.value.judul);
     formData.append("jangka", form.value.jangka);
@@ -272,7 +280,7 @@ const submit = () => {
     formData.append("daerah", "Boyolali");
     formData.append("jenis_kerjasama", form.value.jenis_kerjasama);
     formData.append("jenis_dokumen", "PDF");
-    formData.append("nama_pihak_luar", form.value.mitra);
+    formData.append("nama_pihak_luar", selectedMitra.value?.nama_perusahaan || "");
     formData.append("tanggal_mulai", form.value.mulai);
     formData.append("tanggal_berakhir", form.value.selesai);
 
@@ -346,7 +354,7 @@ const submitAdendum = () => {
 const closeModal = () => {
     showModal.value = false;
     form.value = {
-        mitra: "",
+        id_mitra: "",
         tahun: "",
         judul: "",
         jangka: "",
@@ -863,17 +871,35 @@ onBeforeUnmount(() => {
                             <label class="text-sm font-medium">
                                 Mitra <span class="text-red-500">*</span>
                             </label>
-                            <input
-                                v-model="form.mitra"
-                                class="w-full border rounded-lg px-3 py-2 mt-1"
-                                placeholder="Masukkan nama mitra"
-                            />
+                            <select
+                                v-model="form.id_mitra"
+                                class="w-full border rounded-lg px-3 py-2 mt-1 bg-white"
+                            >
+                                <option value="">Pilih ID mitra</option>
+                                <option
+                                    v-for="mitraOption in (props.mitras || [])"
+                                    :key="mitraOption.id_mitra"
+                                    :value="String(mitraOption.id_mitra)"
+                                >
+                                    {{ mitraOption.id_mitra }} - {{ mitraOption.nama_perusahaan }}
+                                </option>
+                            </select>
                             <p
-                                v-if="errors.mitra"
+                                v-if="errors.id_mitra"
                                 class="text-red-500 text-xs mt-1"
                             >
-                                {{ errors.mitra }}
+                                {{ errors.id_mitra }}
                             </p>
+                            <div
+                                v-if="selectedMitra"
+                                class="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700 space-y-1"
+                            >
+                                <p><span class="font-semibold">Nama Perusahaan:</span> {{ selectedMitra.nama_perusahaan || '-' }}</p>
+                                <p><span class="font-semibold">NPWP:</span> {{ selectedMitra.npwp || '-' }}</p>
+                                <p><span class="font-semibold">PIC:</span> {{ selectedMitra.pic || '-' }}</p>
+                                <p><span class="font-semibold">No. HP:</span> {{ selectedMitra.no_handphone || '-' }}</p>
+                                <p><span class="font-semibold">Alamat:</span> {{ selectedMitra.alamat || '-' }}</p>
+                            </div>
                         </div>
 
                         <div>
