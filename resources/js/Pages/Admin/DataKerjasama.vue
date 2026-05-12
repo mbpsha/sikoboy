@@ -351,6 +351,7 @@ const props = defineProps({
 
 const page = usePage()
 const currentUsername = computed(() => page.props.auth?.user?.username ?? '')
+const currentUserDivisi = computed(() => page.props.auth?.user?.admin?.divisi ?? currentUsername.value)
 
 const kerjasama = computed(() => props.kerjasama ?? {
   data: [],
@@ -444,12 +445,24 @@ const years = computed(() => {
 })
 
 function statusBadgeClass(k) {
-  if (k?.status_display && String(k.status_display).startsWith('Proses')) {
+  const status = (k?.status_display || '').toString().toLowerCase()
+
+  if (status.startsWith('proses')) {
     return 'bg-blue-100 text-blue-800'
   }
-  if (k?.status_persetujuan === 'disetujui') {
+
+  if (status === 'aktif' || (k?.status_persetujuan === 'disetujui')) {
     return 'bg-green-100 text-green-800'
   }
+
+  if (status === 'segera berakhir') {
+    return 'bg-yellow-100 text-yellow-800'
+  }
+
+  if (status === 'berakhir') {
+    return 'bg-red-100 text-red-800'
+  }
+
   return 'bg-amber-100 text-amber-800'
 }
 
@@ -511,14 +524,14 @@ function addProcess(k) {
 
   // Add a temporary process entry locally. Persist when user opens it and saves.
   if (!k.proses) k.proses = []
-  k.proses.push({
-    id: null,
-    label: title,
-    title: title,
-    catatan: '',
-    penanggung: currentUsername.value,
-    __temp: true,
-  })
+    k.proses.push({
+      id: null,
+      label: title,
+      title: title,
+      catatan: '',
+      penanggung: currentUserDivisi.value,
+      __temp: true,
+    })
 
   newProcessForm[id].title = ''
   showAddFormFor[id] = false
@@ -543,7 +556,7 @@ async function finishAddProcess(k) {
   const fd = new FormData()
   fd.append('title',       title)
   fd.append('catatan',     'Semua proses telah diselesaikan.')
-  fd.append('penanggung',  currentUsername.value)
+  fd.append('penanggung',  currentUserDivisi.value)
   fd.append('is_finished', '1')   // flag untuk controller simpan ke riwayat
 
   router.post(
@@ -572,7 +585,7 @@ function openProcessModal(k, p) {
   activeKerjasama.value = k
   activeProcess.value   = {
     ...p,
-    penanggung: p.penanggung || currentUsername.value,
+    penanggung: p.penanggung || currentUserDivisi.value,
     // If this is a temporary process (just a title), keep catatan empty
     catatan:    p.id ? (p.catatan || '') : '',
   }
@@ -616,7 +629,7 @@ async function saveProcessUpdate() {
 
   const fd = new FormData()
   fd.append('title',      p.title      ?? '')
-  fd.append('penanggung', p.penanggung ?? currentUsername.value)
+  fd.append('penanggung', p.penanggung ?? currentUserDivisi.value)
   fd.append('catatan',    p.catatan    ?? '')
   if (fileToUpload.value) {
     fd.append('file', fileToUpload.value)
@@ -672,7 +685,7 @@ async function endProcess() {
 
   const fd = new FormData()
   fd.append('title',       p.title      ?? 'Selesai')
-  fd.append('penanggung',  p.penanggung ?? currentUsername.value)
+  fd.append('penanggung',  p.penanggung ?? currentUserDivisi.value)
   fd.append('catatan',     p.catatan    ?? '')
   fd.append('is_finished', '1')
   if (fileToUpload.value) {
