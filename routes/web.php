@@ -239,6 +239,10 @@ Route::middleware(['auth', 'role:mitra'])->prefix('mitra')->name('mitra.')->grou
         ->name('profile.update');
     Route::put('/profile/password', [MitraProfileController::class, 'updatePassword'])
         ->name('profile.password');
+    
+    // 🔔 Notifikasi
+    Route::get('/notifications', [MitraProfileController::class, 'notifications'])
+        ->name('notifications');
 
     // Pengajuan Kerjasama
     Route::get('/pengajuan/step1', [MitraKerjasamaController::class, 'createStep1'])
@@ -257,11 +261,16 @@ Route::middleware(['auth', 'role:mitra'])->prefix('mitra')->name('mitra.')->grou
 
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
 
-    // Dashboard
+    // 🔹 Dashboard
     Route::get('/dashboard', [AdminDashboardController::class, 'index'])
         ->name('dashboard');
 
-    // Pengguna (Users) - Gunakan prefix 'pengguna' untuk konsistensi
+    // 🔹 NOTIFIKASI ADMIN (DUMMY DATA) ← INI YANG DITAMBAHKAN
+    Route::get('/notifikasi', function () {
+        return Inertia::render('Admin/NotifAdmin');
+    })->name('notifications.index');
+
+    // 🔹 Pengguna (Users)
     Route::get('/pengguna', [AdminUserController::class, 'index'])
         ->middleware('throttle:120,1')
         ->name('pengguna.index');
@@ -318,7 +327,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::put('/status-kontrak/{id}/finalize', [StatusKontrakController::class, 'finalize'])
         ->name('status-kontrak.finalize');
 
-    // Riwayat Kerjasama
+    // 🔹 Riwayat Kerjasama
     Route::get('/riwayat-kerjasama/gabungan', [RiwayatKerjasamaController::class, 'index'])
         ->middleware('throttle:120,1')
         ->name('riwayat-kerjasama.gabungan');
@@ -341,7 +350,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::post('/riwayat-kerjasama/adendum', [RiwayatKerjasamaController::class, 'storeAdendum'])
         ->name('riwayat-kerjasama.adendum.store');
 
-    // Data Kerjasama
+    // 🔹 Data Kerjasama
     Route::get('/data-kerjasama', [DataKerjasamaController::class, 'index'])
         ->middleware('throttle:120,1')
         ->name('data-kerjasama.index');
@@ -365,7 +374,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
         [DataKerjasamaController::class, 'updateProcess'])
         ->name('data-kerjasama.proses.update');
 
-    // Manajemen Potensi
+    // 🔹 Manajemen Potensi
     Route::get('/manajemen-potensi', [ManajemenPotensiController::class, 'index'])
         ->middleware('throttle:120,1')
         ->name('manajemen-potensi.index');
@@ -378,7 +387,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::delete('/manajemen-potensi/{id}', [ManajemenPotensiController::class, 'destroy'])
         ->name('manajemen-potensi.destroy');
 
-    // Manajemen Dokumen
+    // 🔹 Manajemen Dokumen
     Route::get('/manajemen-dokumen', [ManajemenDokumenController::class, 'index'])
         ->middleware('throttle:120,1')
         ->name('manajemen-dokumen.index');
@@ -412,4 +421,10 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
         ->name('partners.index');
     Route::get('/partners/{id}', [AdminDashboardController::class, 'showPartner'])
         ->name('partners.show');
+
+        // Detail Notifikasi
+Route::get('/notifikasi/{id}', function ($id) {
+    return Inertia::render('Admin/DetailNotifAdmin', ['id' => $id]);
+})->name('notifications.show');
+
 });
