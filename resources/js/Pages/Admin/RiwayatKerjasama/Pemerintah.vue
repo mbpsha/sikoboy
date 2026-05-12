@@ -42,6 +42,32 @@ const filter = () => {
     );
 };
 
+const applyFilters = () => {
+    console.log("✅ PEMERINTAH APPLY FILTERS - search:", search.value, "tahun:", tahun.value);
+    router.get(
+        route("admin.riwayat-kerjasama.pemerintah"),
+        {
+            search: search.value,
+            tahun: tahun.value,
+        },
+        { preserveState: true },
+    );
+};
+
+const resetAllFilters = () => {
+    search.value = "";
+    tahun.value = "";
+    applyFilters();
+};
+
+// Watch search with debounce
+watch(search, () => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+        applyFilters();
+    }, 500);
+});
+
 // =========================
 // COLUMN FILTERS
 // =========================
@@ -406,6 +432,7 @@ onBeforeUnmount(() => {
                         <!-- DROPDOWN -->
                         <select
                             v-model="tahun"
+                            @change="applyFilters"
                             class="rounded-full px-4 py-2.5 text-sm border border-gray-200 bg-gray-50 focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition min-w-[180px]"
                         >
                             <option value="">Semua Tahun</option>
@@ -414,11 +441,11 @@ onBeforeUnmount(() => {
                             </option>
                         </select>
 
-                        <button @click="filter" class="bg-teal-700 hover:bg-teal-800 text-white text-sm px-5 py-2.5 rounded-full font-medium transition">
+                        <button @click="applyFilters" class="bg-teal-700 hover:bg-teal-800 text-white text-sm px-5 py-2.5 rounded-full font-medium transition">
                             Filter
                         </button>
 
-                        <button v-if="search || tahun" @click="() => { search = ''; tahun = ''; filter(); }" class="bg-gray-300 hover:bg-gray-400 text-gray-700 text-sm px-5 py-2.5 rounded-full font-medium transition">
+                        <button v-if="search || tahun" @click="resetAllFilters" class="bg-gray-300 hover:bg-gray-400 text-gray-700 text-sm px-5 py-2.5 rounded-full font-medium transition">
                             Reset
                         </button>
                     </div>

@@ -652,200 +652,45 @@ class RiwayatKerjasamaController extends Controller
 
     private function applyFilters($query, Request $request): void
     {
+        // SIMPLE SEARCH - Focus on main fields
         if ($request->filled('search')) {
-
             $search = trim($request->search);
-
+            
             \Log::info("🔍 SEARCH FILTER", [
                 'search' => $search,
                 'filled' => $request->filled('search'),
             ]);
 
             $query->where(function ($q) use ($search) {
-
-                // SEARCH KOLOM KERJASAMA
+                // Main table fields
                 $q->where('judul', 'like', "%{$search}%")
-                    ->orWhere('nomor_suratM', 'like', "%{$search}%")
-                    ->orWhere('nomor_suratP', 'like', "%{$search}%")
-                    ->orWhere('urusan', 'like', "%{$search}%")
-                    ->orWhere('daerah', 'like', "%{$search}%")
-                    ->orWhere('nama_pihak_luar', 'like', "%{$search}%")
-                    ->orWhere('jenis_kerjasama', 'like', "%{$search}%")
-                    ->orWhere('jenis_dokumen', 'like', "%{$search}%")
-                    ->orWhere('status_aktif', 'like', "%{$search}%")
-                    ->orWhere('pemrakarsa', 'like', "%{$search}%")
-                    ->orWhere('tipe', 'like', "%{$search}%")
-
-                    // SEARCH RELASI MITRA
-                    ->orWhereHas('mitra', function ($mitra) use ($search) {
-                        $mitra->where('nama_perusahaan', 'like', "%{$search}%");
-                    })
-
-                    // SEARCH RELASI KATEGORI
-                    ->orWhereHas('kategori', function ($kategori) use ($search) {
-                        $kategori->where('nama_kategori', 'like', "%{$search}%");
-                    })
-
-                    // SEARCH TAHUN
-                    ->orWhereHas('latestPeriode', function ($periode) use ($search) {
-
-                    // SEARCH TAHUN
-                    if (is_numeric($search)) {
-                        $periode->orWhereYear('tanggal_mulai', $search);
-                    }
-
-                    // SEARCH TANGGAL MULAI
-                    $periode->orWhereRaw(
-                        "DATE_FORMAT(tanggal_mulai, '%d %M %Y') LIKE ?",
-                        ["%{$search}%"]
-                    );
-
-                    // SEARCH TANGGAL BERAKHIR
-                    $periode->orWhereRaw(
-                        "DATE_FORMAT(tanggal_berakhir, '%d %M %Y') LIKE ?",
-                        ["%{$search}%"]
-                    );
-
-                    // SEARCH JANGKA WAKTU
-                    $periode->orWhereRaw("
-                        CASE
-                            WHEN TIMESTAMPDIFF(MONTH, tanggal_mulai, tanggal_berakhir) BETWEEN 12 AND 23
-                                THEN '1 Tahun'
-
-                            WHEN TIMESTAMPDIFF(MONTH, tanggal_mulai, tanggal_berakhir) BETWEEN 24 AND 35
-                                THEN '2 Tahun'
-
-                            WHEN TIMESTAMPDIFF(MONTH, tanggal_mulai, tanggal_berakhir) < 12
-                                THEN CONCAT(
-                                    TIMESTAMPDIFF(MONTH, tanggal_mulai, tanggal_berakhir),
-                                    ' Bulan'
-                                )
-                        END LIKE ?
-                    ", ["%{$search}%"]);
-                    });
-
-                    // SEARCH STATUS DINAMIS
-                    if (strtolower($search) === 'aktif') {
-
-                        $q->orWhereHas('latestPeriode', function ($periode) {
-
-                            $today = now()->toDateString();
-                            $threshold = now()->addDays(30)->toDateString();
-
-                            $periode->where('tanggal_mulai', '<=', $today)
-                                ->where('tanggal_berakhir', '>', $threshold);
-                        });
-                    }
-
-                    if (
-                        strtolower($search) === 'segera berakhir' ||
-                        strtolower($search) === 'akan berakhir'
-                    ) {
-
-                        $q->orWhereHas('latestPeriode', function ($periode) {
-
-                            $today = now()->toDateString();
-                            $threshold = now()->addDays(30)->toDateString();
-
-                            $periode->where('tanggal_berakhir', '>', $today)
-                                ->where('tanggal_berakhir', '<=', $threshold);
-                        });
-                    }
-
-                    if (strtolower($search) === 'berakhir') {
-
-                        $q->orWhereHas('latestPeriode', function ($periode) {
-
-                            $today = now()->toDateString();
-
-                            $periode->where('tanggal_berakhir', '<=', $today);
-                        });
-                    }
-
-                    // SEARCH TANGGAL FLEXIBLE
+                  ->orWhere('nomor_suratM', 'like', "%{$search}%")
+                  ->orWhere('nomor_suratP', 'like', "%{$search}%")
+                  ->orWhere('urusan', 'like', "%{$search}%")
+                  ->orWhere('daerah', 'like', "%{$search}%")
+                  ->orWhere('nama_pihak_luar', 'like', "%{$search}%")
+                  ->orWhere('jenis_kerjasama', 'like', "%{$search}%")
+                  ->orWhere('jenis_dokumen', 'like', "%{$search}%");
+                
+                // Mitra name search
+                $q->orWhereHas('mitra', function ($mitra) use ($search) {
+                    $mitra->where('nama_perusahaan', 'like', "%{$search}%");
+                });
+                
+                // Year search
+                if (is_numeric($search)) {
                     $q->orWhereHas('latestPeriode', function ($periode) use ($search) {
-
-                    $searchLower = strtolower($search);
-
-                    $bulanMap = [
-                        'januari' => '01',
-                        'februari' => '02',
-                        'maret' => '03',
-                        'april' => '04',
-                        'mei' => '05',
-                        'juni' => '06',
-                        'juli' => '07',
-                        'agustus' => '08',
-                        'september' => '09',
-                        'oktober' => '10',
-                        'november' => '11',
-                        'desember' => '12',
-                    ];
-
-                    $formattedSearch = $searchLower;
-
-                    foreach ($bulanMap as $nama => $angka) {
-                        $formattedSearch = str_replace($nama, $angka, $formattedSearch);
-                    }
-
-                    // ubah:
-                    // 27 oktober 2025
-                    // menjadi:
-                    // 27 10 2025
-
-                    $formattedSearch = preg_replace('/\s+/', '-', trim($formattedSearch));
-
-                    // hasil:
-                    // 27-10-2025
-
-                    $periode->whereRaw("
-                        DATE_FORMAT(tanggal_mulai, '%d-%m-%Y') LIKE ?
-                    ", ["%{$formattedSearch}%"])
-
-                    ->orWhereRaw("
-                        DATE_FORMAT(tanggal_berakhir, '%d-%m-%Y') LIKE ?
-                    ", ["%{$formattedSearch}%"]);
+                        $periode->whereYear('tanggal_mulai', $search);
                     });
+                }
             });
         }
 
+        // TAHUN FILTER
         if ($request->filled('tahun')) {
             $query->whereHas('latestPeriode', function ($q) use ($request) {
                 $q->whereYear('tanggal_mulai', $request->tahun);
             });
-        }
-
-        if ($request->filled('jenis_kerjasama')) {
-            $query->where('jenis_kerjasama', $request->jenis_kerjasama);
-        }
-
-        if ($request->filled('jenis_dokumen')) {
-            $query->where('jenis_dokumen', $request->jenis_dokumen);
-        }
-
-        if ($request->filled('status')) {
-
-            $today = Carbon::today()->toDateString();
-            $threshold = Carbon::today()->addDays(30)->toDateString();
-
-            match ($request->status) {
-
-                'aktif' => $query->whereHas('latestPeriode', function ($q) use ($today) {
-                    $q->where('tanggal_mulai', '<=', $today)
-                        ->where('tanggal_berakhir', '>', $today);
-                }),
-
-                'akan_berakhir' => $query->whereHas('latestPeriode', function ($q) use ($today, $threshold) {
-                    $q->where('tanggal_berakhir', '>', $today)
-                        ->where('tanggal_berakhir', '<=', $threshold);
-                }),
-
-                'berakhir' => $query->whereHas('latestPeriode', function ($q) use ($today) {
-                    $q->where('tanggal_berakhir', '<=', $today);
-                }),
-
-                default => null,
-            };
         }
     }
 
