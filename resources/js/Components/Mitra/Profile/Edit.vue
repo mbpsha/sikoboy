@@ -27,6 +27,21 @@ const showCurrent = ref(false)
 const showNew = ref(false)
 const showConfirm = ref(false)
 
+function toggleShowCurrent() {
+  showCurrent.value = !showCurrent.value
+  console.log('toggleShowCurrent ->', showCurrent.value)
+}
+
+function toggleShowNew() {
+  showNew.value = !showNew.value
+  console.log('toggleShowNew ->', showNew.value)
+}
+
+function toggleShowConfirm() {
+  showConfirm.value = !showConfirm.value
+  console.log('toggleShowConfirm ->', showConfirm.value)
+}
+
 const updateProfile = () => {
   // If we're completing profile for the first time, use store route
   if (mode === 'complete') {
@@ -247,10 +262,17 @@ watch(mitra, (v) => {
                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#17464E] focus:border-transparent"
                   placeholder="Masukkan password saat ini"
                 />
-                <button type="button" @click="showCurrent = !showCurrent" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">
-                  <svg v-if="!showCurrent" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>
-                  <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.94 10.94 0 0112 20c-7 0-11-8-11-8a21.33 21.33 0 014.11-5.11"/><path d="M1 1l22 22"/></svg>
-                </button>
+              <button type="button" @click="toggleShowCurrent" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">
+                  <svg v-if="showCurrent" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z"/>
+                      <circle cx="12" cy="12" r="3"/>
+                  </svg>
+                  <svg v-else class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z"/>
+                      <circle cx="12" cy="12" r="3"/>
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M3 3l18 18"/>
+                  </svg>
+              </button>
               </div>
               <p v-if="passwordForm.errors.current_password" class="text-red-500 text-sm mt-1">
                 {{ passwordForm.errors.current_password }}
@@ -270,9 +292,19 @@ watch(mitra, (v) => {
                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#17464E] focus:border-transparent"
                   placeholder="Masukkan password baru (minimal 8 karakter)"
                 />
-                <button type="button" @click="showNew = !showNew" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">
-                  <svg v-if="!showNew" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>
-                  <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.94 10.94 0 0112 20c-7 0-11-8-11-8a21.33 21.33 0 014.11-5.11"/><path d="M1 1l22 22"/></svg>
+                <button type="button" @click="toggleShowNew" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">
+                  <svg v-if="showNew" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z"/>
+                      <circle cx="12" cy="12" r="3"/>
+                  </svg>
+                  <svg v-else class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z"/>
+                      <circle cx="12" cy="12" r="3"/>
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M3 3l18 18"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.477 0-8.268-2.943-9.542-7a10.05 10.05 0 012.042-3.182" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6.2 6.2L17.8 17.8" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.88 9.88a3 3 0 104.24 4.24" />
+                  </svg>
                 </button>
               </div>
               <p v-if="passwordForm.errors.new_password" class="text-red-500 text-sm mt-1">
@@ -293,10 +325,17 @@ watch(mitra, (v) => {
                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#17464E] focus:border-transparent"
                   placeholder="Konfirmasi password baru"
                 />
-                <button type="button" @click="showConfirm = !showConfirm" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">
-                  <svg v-if="!showConfirm" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>
-                  <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.94 10.94 0 0112 20c-7 0-11-8-11-8a21.33 21.33 0 014.11-5.11"/><path d="M1 1l22 22"/></svg>
-                </button>
+              <button type="button" @click="toggleShowConfirm" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">
+                  <svg v-if="showConfirm" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z"/>
+                      <circle cx="12" cy="12" r="3"/>
+                  </svg>
+                  <svg v-else class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z"/>
+                      <circle cx="12" cy="12" r="3"/>
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M3 3l18 18"/>
+                  </svg>
+              </button>
               </div>
               <p v-if="passwordForm.errors.new_password_confirmation" class="text-red-500 text-sm mt-1">
                 {{ passwordForm.errors.new_password_confirmation }}

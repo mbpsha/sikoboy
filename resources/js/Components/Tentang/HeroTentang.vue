@@ -79,16 +79,7 @@ onUnmounted(() => {
 
     </div>
 
-    <!-- TEKS BAWAH: absolutely positioned so it appears lower without affecting layout -->
-    <div class="absolute left-0 right-0 bottom-10 md:bottom-20 z-20">
-      <div class="mx-auto max-w-6xl px-6 text-center">
-        <p class="text-3xl sm:text-4xl md:text-2xl text-black">
-          Ayo Berkenalan Dengan
-          <span class="text-[#31717C] font-medium"> SIKOBOY</span>
-        </p>
-        <div class="mx-auto mt-2 w-80 h-px bg-black/50"></div>
-      </div>
-    </div>
+    <!-- TEKS BAWAH moved to AboutSikoboy.vue -->
 
   </section>
 </template>

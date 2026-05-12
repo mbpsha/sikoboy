@@ -35,6 +35,13 @@ const getPreview = (matchName) => {
 <template>
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
 
+      <!-- INTRO TEXT -->
+      <div class="relative z-10 pb-8 mb-8">
+        <p class="text-4xl sm:text-5xl md:text-3xl text-[#0C505C] font-bold text-center">
+          Template Dokumen Kerja Sama
+        </p>
+      </div>
+
       <div class="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
         <!-- KSDD -->
         <div class="bg-white/80 backdrop-blur rounded-3xl p-8 shadow-xl border border-white/50">

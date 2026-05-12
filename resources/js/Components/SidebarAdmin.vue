@@ -4,7 +4,7 @@
         class="text-white w-64 h-screen fixed left-0 top-0 z-40 flex flex-col justify-between overflow-hidden"
     >
         <!-- TOP -->
-        <div>
+        <div class="overflow-y-auto flex-1">
             <!-- LOGO -->
             <div class="px-6 pt-6 pb-4">
                 <div class="text-3xl font-extrabold tracking-widest">
@@ -15,267 +15,147 @@
             </div>
 
             <!-- MENU -->
-            <nav class="mt-2 space-y-2 px-3">
-                <Link
-                    :href="route('admin.dashboard')"
-                    :class="navClass('/admin/dashboard')"
-                >
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        class="w-5 h-5"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        stroke-width="1.8"
-                    >
-                        <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            d="M3 10.5L12 3l9 7.5V20a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1v-9.5z"
-                        />
+            <nav class="mt-2 space-y-1 px-3">
+                <Link :href="route('admin.dashboard')" :class="navClass('/admin/dashboard')">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 10.5L12 3l9 7.5V20a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1v-9.5z"/>
                     </svg>
                     <span class="text-sm">Beranda</span>
                 </Link>
 
-                <Link
-                    :href="route('admin.pengguna.index')"
-                    :class="navClass('/admin/pengguna')"
-                >
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        class="w-5 h-5"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        stroke-width="1.8"
-                    >
-                        <!-- Kepala utama -->
-                        <circle cx="9" cy="8" r="3" />
-                        <!-- Badan utama -->
-                        <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            d="M4 20c0-3 3-5 5-5s5 2 5 5"
-                        />
+                <Link :href="route('admin.pengguna.index')" :class="navClass('/admin/pengguna')">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                        <circle cx="9" cy="8" r="3"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 20c0-3 3-5 5-5s5 2 5 5"/>
                     </svg>
                     <span class="text-sm">Pengguna</span>
                 </Link>
 
-                <Link
-                    :href="route('admin.data-kerjasama.index')"
-                    :class="navClass('/admin/data-kerjasama')"
-                >
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        class="w-5 h-5"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        stroke-width="1.8"
-                    >
-                        <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            d="M7 3h7l5 5v13a1 1 0 01-1 1H7a1 1 0 01-1-1V4a1 1 0 011-1z"
-                        />
-                        <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            d="M14 3v5h5"
-                        />
+                <Link :href="route('admin.data-kerjasama.index')" :class="navClass('/admin/data-kerjasama')">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M7 3h7l5 5v13a1 1 0 01-1 1H7a1 1 0 01-1-1V4a1 1 0 011-1z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M14 3v5h5"/>
                     </svg>
                     <span class="text-sm">Ajuan Kerjasama</span>
                 </Link>
 
+                <!-- Riwayat Kerjasama Dropdown -->
                 <div>
                     <button
                         type="button"
                         @click="showRiwayatMenu = !showRiwayatMenu"
                         :class="navClass('/admin/riwayat-kerjasama')"
                     >
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            class="w-5 h-5"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            stroke-width="1.8"
-                        >
-                            <circle cx="12" cy="12" r="9" />
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                d="M12 7v5l3 2"
-                            />
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                            <circle cx="12" cy="12" r="9"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 7v5l3 2"/>
                         </svg>
-                        <span class="text-sm flex-1 text-left"
-                            >Riwayat Kerjasama</span
-                        >
+                        <span class="text-sm flex-1 text-left">Riwayat Kerjasama</span>
                         <svg
                             xmlns="http://www.w3.org/2000/svg"
                             class="w-4 h-4 transition-transform"
                             :class="showRiwayatMenu ? 'rotate-180' : ''"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            stroke-width="1.8"
+                            fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"
                         >
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                d="M6 9l6 6 6-6"
-                            />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 9l6 6 6-6"/>
                         </svg>
                     </button>
 
-                    <div
-                        v-if="showRiwayatMenu"
-                        class="mt-2 ml-5 space-y-1 border-l border-teal-700/50 pl-3"
-                    >
-                        <Link
-                            :href="route('admin.riwayat-kerjasama.gabungan')"
-                            :class="
-                                subNavClass('/admin/riwayat-kerjasama/gabungan')
-                            "
-                        >
+                    <div v-if="showRiwayatMenu" class="mt-1 ml-5 space-y-1 border-l border-teal-700/50 pl-3">
+                        <Link :href="route('admin.riwayat-kerjasama.gabungan')" :class="subNavClass('/admin/riwayat-kerjasama/gabungan')">
                             <span class="text-sm">Semua Kerjasama</span>
                         </Link>
-
-                        <Link
-                            :href="route('admin.riwayat-kerjasama.pemerintah')"
-                            :class="
-                                subNavClass('/admin/riwayat-kerjasama/pemerintah')
-                            "
-                        >
+                        <Link :href="route('admin.riwayat-kerjasama.pemerintah')" :class="subNavClass('/admin/riwayat-kerjasama/pemerintah')">
                             <span class="text-sm">Pemrakarsa Boyolali</span>
                         </Link>
-
-                        <Link
-                            :href="route('admin.riwayat-kerjasama.mitra')"
-                            :class="
-                                subNavClass('/admin/riwayat-kerjasama/mitra')
-                            "
-                        >
+                        <Link :href="route('admin.riwayat-kerjasama.mitra')" :class="subNavClass('/admin/riwayat-kerjasama/mitra')">
                             <span class="text-sm">Pemrakarsa Mitra</span>
                         </Link>
                     </div>
                 </div>
 
-                <Link
-                    :href="route('admin.manajemen-potensi.index')"
-                    :class="navClass('/admin/manajemen-potensi')"
-                >
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        class="w-5 h-5"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        stroke-width="1.8"
-                    >
-                        <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            d="M4 6h16M4 12h16M4 18h16"
-                        />
-                        <circle cx="9" cy="6" r="2" />
-                        <circle cx="15" cy="12" r="2" />
-                        <circle cx="11" cy="18" r="2" />
+                <Link :href="route('admin.manajemen-potensi.index')" :class="navClass('/admin/manajemen-potensi')">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
+                        <circle cx="9" cy="6" r="2"/>
+                        <circle cx="15" cy="12" r="2"/>
+                        <circle cx="11" cy="18" r="2"/>
                     </svg>
                     <span class="text-sm">Manajemen Potensi</span>
                 </Link>
 
-                <Link
-                    :href="route('admin.manajemen-dokumen.index')"
-                    :class="navClass('/admin/manajemen-dokumen')"
-                >
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        class="w-5 h-5"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        stroke-width="1.8"
-                    >
-                        <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            d="M7 3h7l5 5v13a1 1 0 01-1 1H7a1 1 0 01-1-1V4a1 1 0 011-1z"
-                        />
-                        <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            d="M14 3v5h5"
-                        />
-                        <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            d="M12 14v6M9 17h6"
-                        />
+                <Link :href="route('admin.manajemen-dokumen.index')" :class="navClass('/admin/manajemen-dokumen')">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M7 3h7l5 5v13a1 1 0 01-1 1H7a1 1 0 01-1-1V4a1 1 0 011-1z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M14 3v5h5"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 14v6M9 17h6"/>
                     </svg>
                     <span class="text-sm">Manajemen Dokumen</span>
                 </Link>
 
-                <Link
-                    :href="route('admin.manajemen-peraturan.index')"
-                    :class="navClass('/admin/manajemen-peraturan')"
-                >
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        class="w-5 h-5"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        stroke-width="1.8"
-                    >
-                    <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        d="M7 3h7l5 5v13a1 1 0 01-1 1H7a1 1 0 01-1-1V4a1 1 0 011-1z"
-                    />
-                    <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        d="M14 3v5h5"
-                    />
+                <Link :href="route('admin.manajemen-peraturan.index')" :class="navClass('/admin/manajemen-peraturan')">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M7 3h7l5 5v13a1 1 0 01-1 1H7a1 1 0 01-1-1V4a1 1 0 011-1z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M14 3v5h5"/>
                     </svg>
                     <span class="text-sm">Manajemen Peraturan</span>
                 </Link>
             </nav>
         </div>
 
-        <!-- BOTTOM (LOGOUT) -->
-        <div class="p-4">
+        <!-- BOTTOM -->
+        <div class="p-4 space-y-2">
+
+            <!-- ✅ Profile Card -->
+            <Link
+                :href="route('admin.profile.show')"
+                class="flex items-center gap-3 px-3 py-2.5 rounded-xl transition w-full group border"
+                :class="page.url?.startsWith('/admin/profile')
+                    ? 'bg-white/15 border-white/30'
+                    : 'border-transparent hover:bg-white/10 hover:border-white/10'"
+            >
+                <!-- Avatar inisial -->
+                <div
+                    class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0 transition"
+                    :class="page.url?.startsWith('/admin/profile')
+                        ? 'bg-white text-teal-800'
+                        : 'bg-white/20 text-white group-hover:bg-white/30'"
+                >
+                    {{ adminInitial }}
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-semibold text-white truncate leading-tight">{{ adminName }}</p>
+                    <p class="text-xs text-teal-300 leading-tight">Lihat Profil</p>
+                </div>
+                <svg class="w-4 h-4 text-white/40 shrink-0 group-hover:text-white/70 transition" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                </svg>
+            </Link>
+
+            <!-- Logout -->
             <button
                 @click="showConfirm = true"
-                class="w-full bg-red-600 hover:bg-red-700 transition p-3 rounded-lg font-semibold"
+                class="w-full bg-red-600 hover:bg-red-700 transition p-2.5 rounded-xl font-semibold text-sm"
             >
                 Logout
             </button>
         </div>
 
-        <!-- MODAL KONFIRMASI -->
-        <div
-            v-if="showConfirm"
-            class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-        >
-            <div class="bg-white rounded-xl p-6 w-80 text-center">
-                <h2 class="text-lg font-semibold text-gray-700 mb-4">
-                    Yakin ingin logout?
-                </h2>
-
-                <div class="flex justify-center gap-4">
-                    <button
-                        @click="showConfirm = false"
-                        class="px-4 py-2 bg-gray-600 rounded-lg"
-                    >
+        <!-- MODAL KONFIRMASI LOGOUT -->
+        <div v-if="showConfirm" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div class="bg-white rounded-xl p-6 w-80 text-center shadow-xl">
+                <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-3">
+                    <svg class="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1"/>
+                    </svg>
+                </div>
+                <h2 class="text-base font-semibold text-gray-800 mb-1">Yakin ingin logout?</h2>
+                <p class="text-sm text-gray-500 mb-5">Sesi Anda akan diakhiri.</p>
+                <div class="flex justify-center gap-3">
+                    <button @click="showConfirm = false" class="px-5 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition">
                         Batal
                     </button>
-
-                    <button
-                        @click="logout"
-                        class="px-4 py-2 bg-red-600 text-white rounded-lg"
-                    >
+                    <button @click="logout" class="px-5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition">
                         Logout
                     </button>
                 </div>
@@ -285,58 +165,55 @@
 </template>
 
 <script setup>
-import { Link, usePage, router } from "@inertiajs/vue3";
-import { ref, watch } from "vue";
+import { Link, usePage, router } from "@inertiajs/vue3"
+import { ref, watch, computed } from "vue"
 
-const page = usePage();
-const showConfirm = ref(false);
+const page          = usePage()
+const showConfirm   = ref(false)
 const showRiwayatMenu = ref(
-    page.url?.startsWith("/admin/riwayat-kerjasama") ?? false,
-);
+    page.url?.startsWith("/admin/riwayat-kerjasama") ?? false
+)
 
 watch(
     () => page.url,
     (url) => {
         if (url?.startsWith("/admin/riwayat-kerjasama")) {
-            showRiwayatMenu.value = true;
+            showRiwayatMenu.value = true
         }
-    },
-);
+    }
+)
+
+// ✅ Nama dan inisial admin dari shared auth props
+const adminName = computed(() => {
+    const auth = page.props.auth?.user
+    return auth?.username || auth?.email?.split('@')[0] || 'Admin'
+})
+
+const adminInitial = computed(() => {
+    return adminName.value.charAt(0).toUpperCase()
+})
 
 const navClass = (url) => {
-    const base =
-        "flex items-center gap-3 px-2 py-2 rounded-full transition w-full";
+    const base = "flex items-center gap-3 px-3 py-2 rounded-full transition w-full"
     if (page.url && page.url.startsWith(url)) {
-        return base + " bg-teal-100 text-teal-900 font-semibold";
+        return base + " bg-teal-100 text-teal-900 font-semibold"
     }
-    return base + " text-white/90 hover:bg-teal-700/30 hover:text-white";
-};
+    return base + " text-white/90 hover:bg-teal-700/30 hover:text-white"
+}
 
 const subNavClass = (url) => {
-    const base =
-        "flex items-center gap-3 px-3 py-2 rounded-lg transition w-full text-left";
+    const base = "flex items-center gap-3 px-3 py-2 rounded-lg transition w-full text-left"
     if (page.url && page.url.startsWith(url)) {
-        return base + " bg-white text-teal-900 font-semibold";
+        return base + " bg-white text-teal-900 font-semibold"
     }
-    return base + " text-white/80 hover:bg-teal-700/25 hover:text-white";
-};
+    return base + " text-white/80 hover:bg-teal-700/25 hover:text-white"
+}
 
-const iconClass = (url) => {
-    const base = "w-9 h-9 flex items-center justify-center rounded-md";
-    if (page.url && page.url.startsWith(url)) {
-        return base + " bg-white text-teal-900";
-    }
-    return base + " bg-white/10 text-white";
-};
-
-// LOGOUT FUNCTION
 const logout = () => {
     router.post(
         route("logout"),
         {},
-        {
-            onSuccess: () => (window.location.href = "/"),
-        },
-    );
-};
+        { onSuccess: () => (window.location.href = "/") }
+    )
+}
 </script>

@@ -272,7 +272,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::put('/pengguna/{id}', [AdminUserController::class, 'update'])
         ->name('pengguna.update');
     Route::put('/pengguna/{id}/status', [AdminUserController::class, 'updateStatus'])
-        ->name('pengguna.status');
+        ->name('pengguna.update-status');
     Route::put('/pengguna/{id}/verify', [AdminUserController::class, 'verifyMitra'])
         ->name('pengguna.verify');
     Route::delete('/pengguna/{id}/terminate', [AdminUserController::class, 'terminate'])
@@ -291,7 +291,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::put('/users/{id}', [AdminUserController::class, 'update'])
         ->name('users.update');
     Route::put('/users/{id}/status', [AdminUserController::class, 'updateStatus'])
-        ->name('users.status');
+        ->name('users.update-status');
     Route::put('/users/{id}/verify', [AdminUserController::class, 'verifyMitra'])
         ->name('users.verify');
     Route::delete('/users/{id}/terminate', [AdminUserController::class, 'terminate'])
