@@ -32,6 +32,24 @@ const selectedKerjasama = ref(null);
 
 let debounceTimer = null;
 
+const applyFilters = () => {
+    console.log("✅ APPLY FILTERS - search:", search.value, "tahun:", tahun.value);
+    router.get(
+        route("admin.riwayat-kerjasama.gabungan"),
+        {
+            search: search.value,
+            tahun: tahun.value,
+        },
+        { preserveState: true },
+    );
+};
+
+const resetAllFilters = () => {
+    search.value = "";
+    tahun.value = "";
+    applyFilters();
+};
+
 const filter = () => {
     console.log("🔍 GABUNGAN FILTER CALLED - search:", search.value, "tahun:", tahun.value);
     router.get(
@@ -43,6 +61,14 @@ const filter = () => {
         { preserveState: true },
     );
 };
+
+// Watch search with debounce
+watch(search, () => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+        applyFilters();
+    }, 500);
+});
 
 const goToPage = (page) => {
     if (!page || page === props.data?.current_page) return;
@@ -320,6 +346,14 @@ const columnFilters = ref({
     status: [],
 });
 
+// Track which column filter is open
+const openFilterColumn = ref(null)
+
+// Close filter when clicking outside
+const closeAllFilters = () => {
+    openFilterColumn.value = null
+}
+
 const uniqueTahun = computed(() => {
     const values = (props.data?.data || []).map(item => String(item.tahun));
     return [...new Set(values)].sort().reverse();
@@ -384,7 +418,7 @@ const filteredTableData = computed(() => {
 </script>
 
 <template>
-    <AdminLayout title="Riwayat Kerjasama - Semua Kerjasama">
+    <AdminLayout title="Riwayat Kerjasama - Semua Kerjasama" @click="closeAllFilters">
         <div class="p-6">
             <div class="max-w-7xl mx-auto">
                 <!-- SEARCH -->
@@ -405,6 +439,7 @@ const filteredTableData = computed(() => {
 
                         <select
                             v-model="tahun"
+                            @change="applyFilters"
                             class="rounded-full px-4 py-2.5 text-sm border border-gray-200 bg-gray-50 focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition min-w-[180px]"
                         >
                             <option value="">Semua Tahun</option>
@@ -413,11 +448,11 @@ const filteredTableData = computed(() => {
                             </option>
                         </select>
 
-                        <button @click="filter" class="bg-teal-700 hover:bg-teal-800 text-white text-sm px-5 py-2.5 rounded-full font-medium transition">
+                        <button @click="applyFilters" class="bg-teal-700 hover:bg-teal-800 text-white text-sm px-5 py-2.5 rounded-full font-medium transition">
                             Filter
                         </button>
 
-                        <button v-if="search || tahun" @click="() => { search = ''; tahun = ''; filter(); }" class="bg-gray-300 hover:bg-gray-400 text-gray-700 text-sm px-5 py-2.5 rounded-full font-medium transition">
+                        <button v-if="search || tahun" @click="resetAllFilters" class="bg-gray-300 hover:bg-gray-400 text-gray-700 text-sm px-5 py-2.5 rounded-full font-medium transition">
                             Reset
                         </button>
                     </div>
@@ -488,9 +523,9 @@ const filteredTableData = computed(() => {
                                         No
                                     </th>
                                     <th
-                                        class="px-4 py-3 text-left whitespace-nowrap border-r border-gray-200 relative group cursor-pointer"
+                                        class="px-4 py-3 text-left whitespace-nowrap border-r border-gray-200 relative"
                                     >
-                                        <div class="flex items-center justify-between">
+                                        <div class="flex items-center justify-between cursor-pointer">
                                             Tahun
                                                                                         <button class="text-yellow-300 hover:text-yellow-100 flex items-center justify-center w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 ml-2">
                                                                                             <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -500,7 +535,9 @@ const filteredTableData = computed(() => {
                                         </div>
                                         <!-- FILTER DROPDOWN TAHUN -->
                                         <div
-                                            class="absolute left-0 top-full mt-1 hidden group-hover:block bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200"
+                                            v-show="openFilterColumn === 'tahun'"
+                                            @click.stop
+                                            class="absolute left-0 top-full mt-1 bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200"
                                         >
                                             <div class="mb-2 max-h-40 overflow-y-auto">
                                                 <label v-for="val in uniqueTahun" :key="val" class="flex items-center gap-2 mb-1 cursor-pointer hover:bg-gray-100 p-1 rounded">
@@ -528,9 +565,9 @@ const filteredTableData = computed(() => {
                                         </div>
                                     </th>
                                     <th
-                                        class="px-4 py-3 text-left whitespace-nowrap border-r border-gray-200 relative group cursor-pointer"
+                                        class="px-4 py-3 text-left whitespace-nowrap border-r border-gray-200 relative"
                                     >
-                                        <div class="flex items-center justify-between">
+                                        <div class="flex items-center justify-between cursor-pointer">
                                             Tipe
                                                                                         <button class="text-yellow-300 hover:text-yellow-100 flex items-center justify-center w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 ml-2">
                                                                                             <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -540,7 +577,9 @@ const filteredTableData = computed(() => {
                                         </div>
                                         <!-- FILTER DROPDOWN TIPE -->
                                         <div
-                                            class="absolute left-0 top-full mt-1 hidden group-hover:block bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200"
+                                            v-show="openFilterColumn === 'tipe'"
+                                            @click.stop
+                                            class="absolute left-0 top-full mt-1 bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200"
                                         >
                                             <div class="mb-2 max-h-40 overflow-y-auto">
                                                 <label v-for="val in uniqueTipe" :key="val" class="flex items-center gap-2 mb-1 cursor-pointer hover:bg-gray-100 p-1 rounded">
@@ -568,9 +607,9 @@ const filteredTableData = computed(() => {
                                         </div>
                                     </th>
                                     <th
-                                        class="px-4 py-3 text-left whitespace-nowrap border-r border-gray-200 relative group cursor-pointer"
+                                        class="px-4 py-3 text-left whitespace-nowrap border-r border-gray-200 relative"
                                     >
-                                        <div class="flex items-center justify-between">
+                                        <div class="flex items-center justify-between cursor-pointer">
                                             Mitra
                                                                                         <button class="text-yellow-300 hover:text-yellow-100 flex items-center justify-center w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 ml-2">
                                                                                             <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -580,7 +619,9 @@ const filteredTableData = computed(() => {
                                         </div>
                                         <!-- FILTER DROPDOWN MITRA -->
                                         <div
-                                            class="absolute left-0 top-full mt-1 hidden group-hover:block bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200 max-w-xs"
+                                            v-show="openFilterColumn === 'mitra'"
+                                            @click.stop
+                                            class="absolute left-0 top-full mt-1 bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200 max-w-xs"
                                         >
                                             <div class="mb-2 max-h-40 overflow-y-auto">
                                                 <label v-for="val in uniqueMitra" :key="val" class="flex items-center gap-2 mb-1 cursor-pointer hover:bg-gray-100 p-1 rounded">
@@ -613,9 +654,9 @@ const filteredTableData = computed(() => {
                                         Judul
                                     </th>
                                     <th
-                                        class="px-4 py-3 text-left whitespace-nowrap border-r border-gray-200 relative group cursor-pointer"
+                                        class="px-4 py-3 text-left whitespace-nowrap border-r border-gray-200 relative"
                                     >
-                                        <div class="flex items-center justify-between">
+                                        <div class="flex items-center justify-between cursor-pointer">
                                             Jenis Kerjasama
                                                                                         <button class="text-yellow-300 hover:text-yellow-100 flex items-center justify-center w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 ml-2">
                                                                                             <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -625,7 +666,9 @@ const filteredTableData = computed(() => {
                                         </div>
                                         <!-- FILTER DROPDOWN JENIS KERJASAMA -->
                                         <div
-                                            class="absolute left-0 top-full mt-1 hidden group-hover:block bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200"
+                                            v-show="openFilterColumn === 'jenis_kerjasama'"
+                                            @click.stop
+                                            class="absolute left-0 top-full mt-1 bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200"
                                         >
                                             <div class="mb-2 max-h-40 overflow-y-auto">
                                                 <label v-for="val in uniqueJenisKerjasama" :key="val" class="flex items-center gap-2 mb-1 cursor-pointer hover:bg-gray-100 p-1 rounded">
@@ -678,9 +721,9 @@ const filteredTableData = computed(() => {
                                         Adendum
                                     </th>
                                     <th
-                                        class="px-4 py-3 text-left whitespace-nowrap relative group cursor-pointer"
+                                        class="px-4 py-3 text-left whitespace-nowrap relative"
                                     >
-                                        <div class="flex items-center justify-between">
+                                        <div class="flex items-center justify-between cursor-pointer">
                                             Status
                                                                                         <button class="text-yellow-300 hover:text-yellow-100 flex items-center justify-center w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 ml-2">
                                                                                             <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -690,7 +733,9 @@ const filteredTableData = computed(() => {
                                         </div>
                                         <!-- FILTER DROPDOWN STATUS -->
                                         <div
-                                            class="absolute left-0 top-full mt-1 hidden group-hover:block bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200"
+                                            v-show="openFilterColumn === 'status'"
+                                            @click.stop
+                                            class="absolute left-0 top-full mt-1 bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200"
                                         >
                                             <div class="mb-2 max-h-40 overflow-y-auto">
                                                 <label v-for="val in uniqueStatus" :key="val" class="flex items-center gap-2 mb-1 cursor-pointer hover:bg-gray-100 p-1 rounded">
