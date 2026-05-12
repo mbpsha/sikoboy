@@ -19,6 +19,7 @@ const props = defineProps({
     data: Object,
     filters: Object,
     years: Array,
+    mitras: Array,
 });
 
 const search = ref(props.filters?.search || "");
@@ -136,6 +137,7 @@ const goToPage = (page) => {
 };
 
 const form = ref({
+    id_mitra: "",
     mitra: "",
     tahun: "",
     judul: "",
@@ -146,6 +148,26 @@ const form = ref({
     tipe_pengajuan: "pemerintah",
     file: null,
 });
+
+const mitraIdSearch = ref("");
+
+const filteredMitraOptions = computed(() => {
+    const query = String(mitraIdSearch.value || "").trim();
+    const mitras = props.mitras || [];
+
+    if (!query) return mitras;
+
+    return mitras.filter((mitra) => String(mitra.id_mitra).includes(query));
+});
+
+const applySelectedMitra = (idMitra) => {
+    const selected = (props.mitras || []).find(
+        (mitra) => String(mitra.id_mitra) === String(idMitra),
+    );
+
+    form.value.id_mitra = selected ? String(selected.id_mitra) : "";
+    form.value.mitra = selected?.nama_perusahaan || "";
+};
 
 const adendumForm = ref({
     judul_adendum: "",
@@ -345,7 +367,9 @@ const submitAdendum = () => {
 // CLOSE MODAL
 const closeModal = () => {
     showModal.value = false;
+    mitraIdSearch.value = "";
     form.value = {
+        id_mitra: "",
         mitra: "",
         tahun: "",
         judul: "",
@@ -866,9 +890,35 @@ onBeforeUnmount(() => {
                                 Mitra <span class="text-red-500">*</span>
                             </label>
                             <input
+                                v-model="mitraIdSearch"
+                                class="w-full border rounded-lg px-3 py-2 mt-1"
+                                placeholder="Ketik ID mitra (contoh: 21)"
+                            />
+                            <select
+                                v-model="form.id_mitra"
+                                @change="applySelectedMitra(form.id_mitra)"
+                                class="w-full border rounded-lg px-3 py-2 mt-1 bg-white"
+                            >
+                                <option value="">Pilih ID mitra</option>
+                                <option
+                                    v-for="mitraOption in filteredMitraOptions"
+                                    :key="mitraOption.id_mitra"
+                                    :value="String(mitraOption.id_mitra)"
+                                >
+                                    {{ mitraOption.id_mitra }} - {{ mitraOption.nama_perusahaan }}
+                                </option>
+                            </select>
+                            <p
+                                v-if="mitraIdSearch && filteredMitraOptions.length === 0"
+                                class="text-xs text-gray-500 mt-1"
+                            >
+                                Data mitra tidak ditemukan untuk ID tersebut.
+                            </p>
+                            <input
                                 v-model="form.mitra"
                                 class="w-full border rounded-lg px-3 py-2 mt-1"
-                                placeholder="Masukkan nama mitra"
+                                placeholder="Nama mitra terpilih"
+                                readonly
                             />
                             <p
                                 v-if="errors.mitra"

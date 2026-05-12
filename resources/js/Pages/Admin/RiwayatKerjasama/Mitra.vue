@@ -43,6 +43,17 @@ const form = ref({
     file: null,
 });
 
+const mitraIdSearch = ref("");
+
+const filteredMitraOptions = computed(() => {
+    const query = String(mitraIdSearch.value || "").trim();
+    const mitras = props.mitras || [];
+
+    if (!query) return mitras;
+
+    return mitras.filter((mitra) => String(mitra.id_mitra).includes(query));
+});
+
 const selectedMitra = computed(() => {
     if (!form.value.id_mitra) return null;
     return (props.mitras || []).find(
@@ -353,6 +364,7 @@ const submitAdendum = () => {
 // CLOSE MODAL
 const closeModal = () => {
     showModal.value = false;
+    mitraIdSearch.value = "";
     form.value = {
         id_mitra: "",
         tahun: "",
@@ -871,19 +883,30 @@ onBeforeUnmount(() => {
                             <label class="text-sm font-medium">
                                 Mitra <span class="text-red-500">*</span>
                             </label>
+                            <input
+                                v-model="mitraIdSearch"
+                                class="w-full border rounded-lg px-3 py-2 mt-1"
+                                placeholder="Ketik ID mitra (contoh: 21)"
+                            />
                             <select
                                 v-model="form.id_mitra"
                                 class="w-full border rounded-lg px-3 py-2 mt-1 bg-white"
                             >
                                 <option value="">Pilih ID mitra</option>
                                 <option
-                                    v-for="mitraOption in (props.mitras || [])"
+                                    v-for="mitraOption in filteredMitraOptions"
                                     :key="mitraOption.id_mitra"
                                     :value="String(mitraOption.id_mitra)"
                                 >
                                     {{ mitraOption.id_mitra }} - {{ mitraOption.nama_perusahaan }}
                                 </option>
                             </select>
+                            <p
+                                v-if="mitraIdSearch && filteredMitraOptions.length === 0"
+                                class="text-xs text-gray-500 mt-1"
+                            >
+                                Data mitra tidak ditemukan untuk ID tersebut.
+                            </p>
                             <p
                                 v-if="errors.id_mitra"
                                 class="text-red-500 text-xs mt-1"

@@ -48,6 +48,7 @@ class RiwayatKerjasamaController extends Controller
                 ->distinct()
                 ->orderBy('tahun', 'desc')
                 ->pluck('tahun'),
+            'mitras' => $this->mitraOptions(),
         ]);
     }
 
@@ -81,18 +82,7 @@ class RiwayatKerjasamaController extends Controller
                 ->distinct()
                 ->orderBy('tahun', 'desc')
                 ->pluck('tahun'),
-            'mitras' => Mitra::query()
-                ->orderBy('nama_perusahaan')
-                ->get()
-                ->map(fn (Mitra $mitra) => [
-                    'id_mitra' => $mitra->id_mitra,
-                    'nama_perusahaan' => $mitra->nama_perusahaan,
-                    'npwp' => $mitra->getAttribute('npwp'),
-                    'pic' => $mitra->pic,
-                    'no_handphone' => $mitra->no_handphone,
-                    'alamat' => $mitra->alamat,
-                ])
-                ->values(),
+            'mitras' => $this->mitraOptions(),
         ]);
     }
 
@@ -125,7 +115,24 @@ class RiwayatKerjasamaController extends Controller
                 ->distinct()
                 ->orderBy('tahun', 'desc')
                 ->pluck('tahun'),
+            'mitras' => $this->mitraOptions(),
         ]);
+    }
+
+    private function mitraOptions()
+    {
+        return Mitra::query()
+            ->orderBy('nama_perusahaan')
+            ->get()
+            ->map(fn (Mitra $mitra) => [
+                'id_mitra' => $mitra->id_mitra,
+                'nama_perusahaan' => $mitra->nama_perusahaan,
+                'npwp' => $mitra->getAttribute('npwp'),
+                'pic' => $mitra->pic,
+                'no_handphone' => $mitra->no_handphone,
+                'alamat' => $mitra->alamat,
+            ])
+            ->values();
     }
 
     /**
