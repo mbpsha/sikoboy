@@ -1,5 +1,5 @@
 <template>
-  <AdminLayout title="Ajuan Kerjasama">
+  <AdminLayout title="Ajuan Kerjasama" @click="closeAllFilters">
     <div class="max-w-7xl mx-auto px-4 py-6 space-y-6">
 
       <!-- Header with Add Button -->
@@ -76,11 +76,11 @@
                   </div>
                 </th>
                 <th class="py-3 px-4 text-left font-medium border-r border-white/10">
-                  <div class="flex items-center justify-between gap-1 group relative cursor-pointer">
+                  <div class="flex items-center justify-between gap-1 relative">
                     <span>Mitra</span>
-                    <button class="text-yellow-300 hover:text-yellow-100">⚙️</button>
+                    <button @click.stop="openFilterColumn = openFilterColumn === 'mitra' ? null : 'mitra'" class="text-yellow-300 hover:text-yellow-100">⚙️</button>
                     <!-- MITRA FILTER DROPDOWN -->
-                    <div class="hidden group-hover:block absolute left-0 top-full mt-1 bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200 max-w-xs">
+                    <div v-show="openFilterColumn === 'mitra'" @click.stop class="absolute left-0 top-full mt-1 bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200 max-w-xs">
                       <div class="mb-2 max-h-40 overflow-y-auto">
                         <label v-for="val in uniqueMitra" :key="val" class="flex items-center gap-2 mb-1 cursor-pointer hover:bg-gray-100 p-1 rounded">
                           <input type="checkbox" :checked="columnFilters.mitra.includes(val)" @change="(e) => {
@@ -99,11 +99,11 @@
                 </th>
                 <th class="py-3 px-4 text-left font-medium border-r border-white/10">Judul</th>
                 <th class="py-3 px-4 text-left font-medium border-r border-white/10">
-                  <div class="flex items-center justify-between gap-1 group relative cursor-pointer">
+                  <div class="flex items-center justify-between gap-1 relative">
                     <span>Jenis Kerjasama</span>
-                    <button class="text-yellow-300 hover:text-yellow-100">⚙️</button>
+                    <button @click.stop="openFilterColumn = openFilterColumn === 'jenis_kerjasama' ? null : 'jenis_kerjasama'" class="text-yellow-300 hover:text-yellow-100">⚙️</button>
                     <!-- JENIS KERJASAMA FILTER DROPDOWN -->
-                    <div class="hidden group-hover:block absolute left-0 top-full mt-1 bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200">
+                    <div v-show="openFilterColumn === 'jenis_kerjasama'" @click.stop class="absolute left-0 top-full mt-1 bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200">
                       <div class="mb-2 max-h-40 overflow-y-auto">
                         <label v-for="val in uniqueJenisKerjasama" :key="val" class="flex items-center gap-2 mb-1 cursor-pointer hover:bg-gray-100 p-1 rounded">
                           <input type="checkbox" :checked="columnFilters.jenis_kerjasama.includes(val)" @change="(e) => {
@@ -121,11 +121,11 @@
                   </div>
                 </th>
                 <th class="py-3 px-4 text-left font-medium border-r border-white/10">
-                  <div class="flex items-center justify-between gap-1 group relative cursor-pointer">
+                  <div class="flex items-center justify-between gap-1 relative">
                     <span>Jenis Dokumen</span>
-                    <button class="text-yellow-300 hover:text-yellow-100">⚙️</button>
+                    <button @click.stop="openFilterColumn = openFilterColumn === 'jenis_dokumen' ? null : 'jenis_dokumen'" class="text-yellow-300 hover:text-yellow-100">⚙️</button>
                     <!-- JENIS DOKUMEN FILTER DROPDOWN -->
-                    <div class="hidden group-hover:block absolute left-0 top-full mt-1 bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200">
+                    <div v-show="openFilterColumn === 'jenis_dokumen'" @click.stop class="absolute left-0 top-full mt-1 bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200">
                       <div class="mb-2 max-h-40 overflow-y-auto">
                         <label v-for="val in uniqueJenisDokumen" :key="val" class="flex items-center gap-2 mb-1 cursor-pointer hover:bg-gray-100 p-1 rounded">
                           <input type="checkbox" :checked="columnFilters.jenis_dokumen.includes(val)" @change="(e) => {
@@ -143,11 +143,11 @@
                   </div>
                 </th>
                 <th class="py-3 px-4 text-left font-medium border-r border-white/10">
-                  <div class="flex items-center justify-between gap-1 group relative cursor-pointer">
+                  <div class="flex items-center justify-between gap-1 relative">
                     <span>Urusan</span>
-                    <button class="text-yellow-300 hover:text-yellow-100">⚙️</button>
+                    <button @click.stop="openFilterColumn = openFilterColumn === 'urusan' ? null : 'urusan'" class="text-yellow-300 hover:text-yellow-100">⚙️</button>
                     <!-- URUSAN FILTER DROPDOWN -->
-                    <div class="hidden group-hover:block absolute left-0 top-full mt-1 bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200">
+                    <div v-show="openFilterColumn === 'urusan'" @click.stop class="absolute left-0 top-full mt-1 bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200">
                       <div class="mb-2 max-h-40 overflow-y-auto">
                         <label v-for="val in uniqueUrusan" :key="val" class="flex items-center gap-2 mb-1 cursor-pointer hover:bg-gray-100 p-1 rounded">
                           <input type="checkbox" :checked="columnFilters.urusan.includes(val)" @change="(e) => {
@@ -231,13 +231,9 @@
                 <td class="py-3 px-4">
                   <span
                     class="inline-block px-2.5 py-1 rounded-full text-xs font-medium"
-                    :class="{
-                      'bg-green-100 text-green-800': k.status_persetujuan === 'disetujui',
-                      'bg-red-100 text-red-800': k.status_persetujuan === 'ditolak',
-                      'bg-amber-100 text-amber-800': !['disetujui','ditolak'].includes(k.status_persetujuan),
-                    }"
+                    :class="statusBadgeClass(k)"
                   >
-                    {{ k.status_persetujuan === 'disetujui' ? 'Diterima' : k.status_persetujuan === 'ditolak' ? 'Ditolak' : (k.status_persetujuan ?? 'Proses') }}
+                    {{ k.status_display ?? (k.status_persetujuan === 'disetujui' ? 'Diterima' : (k.status_persetujuan ?? 'Proses')) }}
                   </span>
                 </td>
               </tr>
@@ -319,7 +315,6 @@
           <div class="flex justify-end gap-2 pt-2">
             <button @click="closeProcessModal" class="px-4 py-2 text-sm rounded-lg border border-gray-200 hover:bg-gray-50 transition">Batal</button>
             <button @click.prevent="saveProcessUpdate" class="px-4 py-2 text-sm rounded-lg bg-teal-600 hover:bg-teal-700 text-white font-medium transition">Simpan</button>
-            <button @click.prevent="endProcess" class="px-4 py-2 text-sm rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-medium transition">Selesai & Simpan ke Riwayat</button>
           </div>
         </div>
       </div>
@@ -369,6 +364,14 @@ const columnFilters = ref({
   jenis_dokumen: [],
   urusan: [],
 })
+
+// Track which column filter is open
+const openFilterColumn = ref(null)
+
+// Close filter when clicking outside
+const closeAllFilters = () => {
+  openFilterColumn.value = null
+}
 
 // Get unique values for each column
 const uniqueMitra = computed(() => {
@@ -423,6 +426,16 @@ const years = computed(() => {
   const now = new Date().getFullYear()
   return Array.from({ length: 6 }).map((_, i) => now - i)
 })
+
+function statusBadgeClass(k) {
+  if (k?.status_display && String(k.status_display).startsWith('Proses')) {
+    return 'bg-blue-100 text-blue-800'
+  }
+  if (k?.status_persetujuan === 'disetujui') {
+    return 'bg-green-100 text-green-800'
+  }
+  return 'bg-amber-100 text-amber-800'
+}
 
 // Auto-search dengan debounce
 watch(() => local.value.search, () => {
@@ -480,30 +493,29 @@ function addProcess(k) {
   const title = (newProcessForm[id]?.title || '').trim()
   if (!title) return
 
-  router.post(
-    route('admin.data-kerjasama.proses.store', id),
-    { title },
-    {
-      preserveScroll: true,
-      onSuccess: () => {
-        newProcessForm[id].title = ''
-        showAddFormFor[id] = false
-      },
-      onError: (e) => {
-        console.error('Gagal tambah proses:', e)
-      },
-    }
-  )
+  // Add a temporary process entry locally. Persist when user opens it and saves.
+  if (!k.proses) k.proses = []
+  k.proses.push({
+    id: null,
+    label: title,
+    title: title,
+    catatan: '',
+    penanggung: currentUsername.value,
+    __temp: true,
+  })
+
+  newProcessForm[id].title = ''
+  showAddFormFor[id] = false
 }
 
 // Selesaikan semua proses dan simpan ke riwayat
 async function finishAddProcess(k) {
   const confirmed = await Swal.fire({
-    title: 'Konfirmasi',
-    text: 'Tandai semua proses selesai dan simpan ke riwayat kerjasama?',
-    icon: 'warning',
+    title: 'Selesaikan Proses?',
+    text: 'Data akan disimpan ke riwayat kerjasama.',
+    icon: 'question',
     showCancelButton: true,
-    confirmButtonText: 'Ya, selesai',
+    confirmButtonText: 'Ya, selesaikan',
     cancelButtonText: 'Batal',
   }).then(r => r.isConfirmed)
 
@@ -527,6 +539,7 @@ async function finishAddProcess(k) {
         newProcessForm[id].title = ''
         showAddFormFor[id] = false
       },
+      onError: (e) => console.error('Gagal selesai semua proses:', e),
     }
   )
 }
@@ -544,7 +557,8 @@ function openProcessModal(k, p) {
   activeProcess.value   = {
     ...p,
     penanggung: p.penanggung || currentUsername.value,
-    catatan:    p.catatan    || '',
+    // If this is a temporary process (just a title), keep catatan empty
+    catatan:    p.id ? (p.catatan || '') : '',
   }
   showProcessModal.value = true
   // reset file setiap buka modal
@@ -579,7 +593,7 @@ function handleProcessDrop(e) {
 }
 
 // Simpan update proses (catatan + file) — pakai POST + FormData
-function saveProcessUpdate() {
+async function saveProcessUpdate() {
   const k = activeKerjasama.value
   const p = activeProcess.value
   if (!k || !p) return
@@ -592,19 +606,35 @@ function saveProcessUpdate() {
     fd.append('file', fileToUpload.value)
   }
 
-  router.post(
-    route('admin.data-kerjasama.proses.update', [k.id_kerjasama, p.id]),
-    fd,
-    {
-      preserveScroll: true,
-      onSuccess: () => {
-        closeProcessModal()
-      },
-      onError: (e) => {
-        console.error('Gagal simpan proses:', e)
-      },
-    }
-  )
+  // If this process is not yet persisted, call store (POST). Otherwise use update (PUT).
+  if (!p.id) {
+    router.post(
+      route('admin.data-kerjasama.proses.store', k.id_kerjasama),
+      fd,
+      {
+        preserveScroll: true,
+        onSuccess: () => {
+          fileToUpload.value = null
+          closeProcessModal()
+        },
+        onError: (e) => console.error('Gagal simpan proses baru:', e),
+      }
+    )
+  } else {
+    fd.append('_method', 'PUT')
+    router.post(
+      route('admin.data-kerjasama.proses.update', [k.id_kerjasama, p.id]),
+      fd,
+      {
+        preserveScroll: true,
+        onSuccess: () => {
+          fileToUpload.value = null
+          closeProcessModal()
+        },
+        onError: (e) => console.error('Gagal simpan proses:', e),
+      }
+    )
+  }
 }
 
 // Selesai & Simpan ke Riwayat dari modal
@@ -632,16 +662,34 @@ async function endProcess() {
   if (fileToUpload.value) {
     fd.append('file', fileToUpload.value)
   }
-
-  router.post(
-    route('admin.data-kerjasama.proses.update', [k.id_kerjasama, p.id]),
-    fd,
-    {
-      preserveScroll: true,
-      onSuccess: () => {
-        closeProcessModal()
-      },
-    }
-  )
+  // If the process is new, call store; otherwise update
+  if (!p.id) {
+    router.post(
+      route('admin.data-kerjasama.proses.store', k.id_kerjasama),
+      fd,
+      {
+        preserveScroll: true,
+        onSuccess: () => {
+          fileToUpload.value = null
+          closeProcessModal()
+        },
+        onError: (e) => console.error('Gagal selesai proses baru:', e),
+      }
+    )
+  } else {
+    fd.append('_method', 'PUT')
+    router.post(
+      route('admin.data-kerjasama.proses.update', [k.id_kerjasama, p.id]),
+      fd,
+      {
+        preserveScroll: true,
+        onSuccess: () => {
+          fileToUpload.value = null
+          closeProcessModal()
+        },
+        onError: (e) => console.error('Gagal selesai proses:', e),
+      }
+    )
+  }
 }
 </script>
