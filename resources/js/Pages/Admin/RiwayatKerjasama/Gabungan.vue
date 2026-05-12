@@ -5,6 +5,7 @@ import {
     MagnifyingGlassIcon,
     FunnelIcon,
     DocumentTextIcon,
+    EllipsisVerticalIcon,
 } from "@heroicons/vue/24/outline";
 import AdminLayout from "@/Layouts/AdminLayout.vue";
 import Swal from "sweetalert2";
@@ -19,6 +20,9 @@ const props = defineProps({
     data: Object,
     filters: Object,
     years: Array,
+    mitras: Array,
+    jenisKerjasamaOptions: Array,
+    jenisDokumenOptions: Array,
 });
 
 const search = ref(props.filters?.search || "");
@@ -29,6 +33,7 @@ const fileInput = ref(null);
 const showAdendumModal = ref(false);
 const adendumFileInput = ref(null);
 const selectedKerjasama = ref(null);
+const openStatusDropdown = ref(null);
 
 let debounceTimer = null;
 
@@ -58,7 +63,10 @@ const filter = () => {
             search: search.value,
             tahun: tahun.value,
         },
-        { preserveState: true },
+        {
+            preserveState: false,
+            preserveScroll: false
+        },
     );
 };
 
@@ -85,6 +93,7 @@ const goToPage = (page) => {
 };
 
 const form = ref({
+    id_mitra: "",
     mitra: "",
     tahun: "",
     judul: "",
@@ -92,9 +101,34 @@ const form = ref({
     mulai: "",
     selesai: "",
     jenis_kerjasama: "KSDD",
+    jenis_dokumen: "KSB",
     tipe_pengajuan: "mitra",
+    nomor_suratM: '',
+    nomor_suratP: '',
+    urusan: '',
+    pembiayaan: '',
     file: null,
 });
+
+const mitraIdSearch = ref("");
+
+const filteredMitraOptions = computed(() => {
+    const query = String(mitraIdSearch.value || "").trim();
+    const mitras = props.mitras || [];
+
+    if (!query) return mitras;
+
+    return mitras.filter((mitra) => String(mitra.id_mitra).includes(query));
+});
+
+const applySelectedMitra = (idMitra) => {
+    const selected = (props.mitras || []).find(
+        (mitra) => String(mitra.id_mitra) === String(idMitra),
+    );
+
+    form.value.id_mitra = selected ? String(selected.id_mitra) : "";
+    form.value.mitra = selected?.nama_perusahaan || "";
+};
 
 const adendumForm = ref({
     judul_adendum: "",
@@ -111,16 +145,16 @@ const calculateEndDate = () => {
   if (form.value.mulai && form.value.jangka) {
     const startDate = new Date(form.value.mulai);
     const years = parseInt(form.value.jangka, 10);
-    
+
     if (!isNaN(years)) {
       const endDate = new Date(startDate);
       endDate.setFullYear(endDate.getFullYear() + years);
-      
+
       // Format ke YYYY-MM-DD
       const year = endDate.getFullYear();
       const month = String(endDate.getMonth() + 1).padStart(2, '0');
       const day = String(endDate.getDate()).padStart(2, '0');
-      
+
       form.value.selesai = `${year}-${month}-${day}`;
     }
   }
@@ -141,12 +175,17 @@ const validate = () => {
     if (!form.value.mitra) errors.value.mitra = "Mitra wajib diisi";
     if (!form.value.tahun) errors.value.tahun = "Tahun wajib diisi";
     if (!form.value.judul) errors.value.judul = "Judul wajib diisi";
+    if (!form.value.nomor_suratM) errors.value.nomor_suratM = "Nomor surat mitra wajib diisi";
+    if (!form.value.nomor_suratP) errors.value.nomor_suratP = "Nomor surat pemerintah wajib diisi";
+    if (!form.value.urusan) errors.value.urusan = "Urusan wajib diisi";
     if (!form.value.jangka) errors.value.jangka = "Jangka waktu wajib diisi";
     if (!form.value.mulai) errors.value.mulai = "Tanggal mulai wajib diisi";
     if (!form.value.selesai)
         errors.value.selesai = "Tanggal selesai wajib diisi";
     if (!form.value.jenis_kerjasama) errors.value.jenis_kerjasama = "Jenis kerjasama wajib diisi";
+    if (!form.value.jenis_dokumen) errors.value.jenis_dokumen = "Jenis dokumen wajib diisi";
     if (!form.value.tipe_pengajuan) errors.value.tipe_pengajuan = "Tipe pengajuan wajib diisi";
+    if (!form.value.pembiayaan) errors.value.pembiayaan = "Pembiayaan wajib diisi";
     if (!form.value.file) errors.value.file = "File wajib diupload";
 
     return Object.keys(errors.value).length === 0;
@@ -188,43 +227,37 @@ const handleAdendumDrop = (e) => {
 const submit = () => {
     if (!validate()) {
         Swal.fire({
-            icon: 'error',
-            title: 'Validasi Gagal',
-            html: '<div style="text-align: left">' + 
-                  Object.values(errors.value).map(err => `• ${err}`).join('<br>') + 
-                  '</div>',
-            confirmButtonText: 'OK',
-            confirmButtonColor: '#0d9488'
+            icon: "error",
+            title: "Validasi Gagal",
+            html:
+                '<div style="text-align: left">' +
+                Object.values(errors.value)
+                    .map((err) => `• ${err}`)
+                    .join("<br>") +
+                "</div>",
+            confirmButtonText: "OK",
+            confirmButtonColor: "#0d9488",
         });
+
         return;
     }
 
     isSubmitting.value = true;
 
     const formData = new FormData();
-    const tahun = String(form.value.tahun || new Date().getFullYear());
-    const judulSlug = String(form.value.judul || "KERJASAMA")
-        .toUpperCase()
-        .replace(/[^A-Z0-9]+/g, "-")
-        .replace(/^-+|-+$/g, "")
-        .slice(0, 24);
-
-    // Determine nomor_surat prefix based on jenis_kerjasama
-    const prefix = form.value.tipe_pengajuan === "mitra" ? "RIW-M" : "RIW-P";
 
     formData.append("mitra", form.value.mitra);
-    formData.append("tahun", tahun);
+    formData.append("tahun", form.value.tahun);
     formData.append("judul", form.value.judul);
     formData.append("jangka", form.value.jangka);
-    formData.append(
-        "nomor_surat",
-        `${prefix}/${tahun}/${judulSlug || "KERJASAMA"}`,
-    );
-    formData.append("urusan", "Kerjasama Daerah");
+    formData.append("nomor_suratM", form.value.nomor_suratM);
+    formData.append("nomor_suratP", form.value.nomor_suratP);
+    formData.append("urusan", form.value.urusan);
+    formData.append("pembiayaan", form.value.pembiayaan);
     formData.append("daerah", "Boyolali");
     formData.append("jenis_kerjasama", form.value.jenis_kerjasama);
     formData.append("tipe_pengajuan", form.value.tipe_pengajuan);
-    formData.append("jenis_dokumen", "PDF");
+    formData.append("jenis_dokumen", form.value.jenis_dokumen);
     formData.append("nama_pihak_luar", form.value.mitra);
     formData.append("tanggal_mulai", form.value.mulai);
     formData.append("tanggal_berakhir", form.value.selesai);
@@ -233,47 +266,69 @@ const submit = () => {
         formData.append("file", form.value.file);
     }
 
-    router.post(route("admin.riwayat-kerjasama.gabungan.store"), formData, {
-        preserveScroll: true,
-        onSuccess: () => {
-            isSubmitting.value = false;
-            Swal.fire({
-                icon: 'success',
-                title: 'Berhasil!',
-                text: 'Data kerjasama berhasil disimpan',
-                confirmButtonText: 'OK',
-                confirmButtonColor: '#0d9488'
-            }).then(() => {
-                closeModal();
-                router.visit(route('admin.riwayat-kerjasama.gabungan'), { preserveState: false });
-            });
-        },
-        onError: (err) => {
-            isSubmitting.value = false;
-            console.error('Error:', err);
-            
-            let errorHtml = '<div style="text-align: left; font-size: 0.9rem;">';
-            if (typeof err === 'object') {
-                Object.entries(err).forEach(([key, value]) => {
-                    const errorMsg = Array.isArray(value) ? value[0] : value;
-                    errorHtml += `<strong>${key}:</strong> ${errorMsg}<br>`;
-                });
-            } else {
-                errorHtml += String(err);
-            }
-            errorHtml += '</div>';
+    router.post(
+        route("admin.riwayat-kerjasama.gabungan.store"),
+        formData,
+        {
+            preserveScroll: true,
 
-            Swal.fire({
-                icon: 'error',
-                title: 'Gagal Menyimpan Data',
-                html: errorHtml,
-                confirmButtonText: 'OK',
-                confirmButtonColor: '#0d9488'
-            });
-            
-            errors.value = err;
-        },
-    });
+            onSuccess: () => {
+                isSubmitting.value = false;
+
+                Swal.fire({
+                    icon: "success",
+                    title: "Berhasil!",
+                    text: "Data kerjasama berhasil disimpan",
+                    confirmButtonText: "OK",
+                    confirmButtonColor: "#0d9488",
+                }).then(() => {
+                    closeModal();
+
+                    router.visit(
+                        route("admin.riwayat-kerjasama.gabungan"),
+                        {
+                            preserveState: false,
+                        }
+                    );
+                });
+            },
+
+            onError: (err) => {
+                isSubmitting.value = false;
+
+                console.error("Error:", err);
+
+                let errorHtml =
+                    '<div style="text-align: left; font-size: 0.9rem;">';
+
+                if (typeof err === "object") {
+                    Object.entries(err).forEach(([key, value]) => {
+                        const errorMsg = Array.isArray(value)
+                            ? value[0]
+                            : value;
+
+                        errorHtml += `
+                            <strong>${key}:</strong> ${errorMsg}<br>
+                        `;
+                    });
+                } else {
+                    errorHtml += String(err);
+                }
+
+                errorHtml += "</div>";
+
+                Swal.fire({
+                    icon: "error",
+                    title: "Gagal Menyimpan Data",
+                    html: errorHtml,
+                    confirmButtonText: "OK",
+                    confirmButtonColor: "#0d9488",
+                });
+
+                errors.value = err;
+            },
+        }
+    );
 };
 
 // SUBMIT ADENDUM
@@ -298,7 +353,9 @@ const submitAdendum = () => {
 // CLOSE MODAL
 const closeModal = () => {
     showModal.value = false;
+    mitraIdSearch.value = "";
     form.value = {
+        id_mitra: "",
         mitra: "",
         tahun: "",
         judul: "",
@@ -306,7 +363,12 @@ const closeModal = () => {
         mulai: "",
         selesai: "",
         jenis_kerjasama: "KSDD",
+        jenis_dokumen: "KSB",
         tipe_pengajuan: "mitra",
+        nomor_suratM: '',
+        nomor_suratP: '',
+        urusan: '',
+        pembiayaan: '',
         file: null,
     };
     errors.value = {};
@@ -329,6 +391,69 @@ const closeAdendumModal = () => {
 const openAdendumModal = (item) => {
     selectedKerjasama.value = item;
     showAdendumModal.value = true;
+};
+
+// CLOSE STATUS DROPDOWN
+const closeStatusDropdown = () => {
+    openStatusDropdown.value = null;
+};
+
+// TOGGLE STATUS DROPDOWN
+const toggleStatusDropdown = (idKerjasama) => {
+    if (openStatusDropdown.value === idKerjasama) {
+        openStatusDropdown.value = null;
+    } else {
+        openStatusDropdown.value = idKerjasama;
+    }
+};
+
+// UPDATE STATUS
+const handleStatusUpdate = (idKerjasama, newStatus) => {
+    Swal.fire({
+        title: "Ubah Status",
+        text: `Apakah Anda yakin ingin mengubah status menjadi "${newStatus}"?`,
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#0d9488",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Ya, ubah status",
+        cancelButtonText: "Batal",
+    }).then((result) => {
+        if (result.isConfirmed) {
+            router.put(
+                route("admin.riwayat-kerjasama.update-status", idKerjasama),
+                { status: newStatus },
+                {
+                    preserveScroll: true,
+                    onSuccess: () => {
+                        closeStatusDropdown();
+                        Swal.fire({
+                            icon: "success",
+                            title: "Berhasil!",
+                            text: "Status kerjasama berhasil diperbarui",
+                            confirmButtonText: "OK",
+                            confirmButtonColor: "#0d9488",
+                        }).then(() => {
+                            router.visit(
+                                route("admin.riwayat-kerjasama.gabungan"),
+                                { preserveState: true }
+                            );
+                        });
+                    },
+                    onError: (err) => {
+                        console.error("Error updating status:", err);
+                        Swal.fire({
+                            icon: "error",
+                            title: "Gagal",
+                            text: "Gagal mengubah status kerjasama",
+                            confirmButtonText: "OK",
+                            confirmButtonColor: "#0d9488",
+                        });
+                    },
+                }
+            );
+        }
+    });
 };
 
 onBeforeUnmount(() => {
@@ -527,7 +652,7 @@ const filteredTableData = computed(() => {
                                     >
                                         <div class="flex items-center justify-between cursor-pointer">
                                             Tahun
-                                                                                        <button class="text-yellow-300 hover:text-yellow-100 flex items-center justify-center w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 ml-2">
+                                                                                        <button @click.stop="openFilterColumn = openFilterColumn === 'tahun' ? null : 'tahun'" class="text-yellow-300 hover:text-yellow-100 flex items-center justify-center w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 ml-2">
                                                                                             <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                                                                                                 <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.293l3.71-4.06a.75.75 0 111.08 1.04l-4.25 4.657a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
                                                                                             </svg>
@@ -569,7 +694,7 @@ const filteredTableData = computed(() => {
                                     >
                                         <div class="flex items-center justify-between cursor-pointer">
                                             Tipe
-                                                                                        <button class="text-yellow-300 hover:text-yellow-100 flex items-center justify-center w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 ml-2">
+                                                                                        <button @click.stop="openFilterColumn = openFilterColumn === 'tipe' ? null : 'tipe'" class="text-yellow-300 hover:text-yellow-100 flex items-center justify-center w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 ml-2">
                                                                                             <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                                                                                                 <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.293l3.71-4.06a.75.75 0 111.08 1.04l-4.25 4.657a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
                                                                                             </svg>
@@ -611,7 +736,7 @@ const filteredTableData = computed(() => {
                                     >
                                         <div class="flex items-center justify-between cursor-pointer">
                                             Mitra
-                                                                                        <button class="text-yellow-300 hover:text-yellow-100 flex items-center justify-center w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 ml-2">
+                                                                                        <button @click.stop="openFilterColumn = openFilterColumn === 'mitra' ? null : 'mitra'" class="text-yellow-300 hover:text-yellow-100 flex items-center justify-center w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 ml-2">
                                                                                             <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                                                                                                 <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.293l3.71-4.06a.75.75 0 111.08 1.04l-4.25 4.657a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
                                                                                             </svg>
@@ -654,11 +779,26 @@ const filteredTableData = computed(() => {
                                         Judul
                                     </th>
                                     <th
-                                        class="px-4 py-3 text-left whitespace-nowrap border-r border-gray-200 relative"
+                                        class="px-4 py-3 text-left border-r border-gray-200"
+                                    >
+                                        Nomor Surat Mitra
+                                    </th>
+                                    <th
+                                        class="px-4 py-3 text-left border-r border-gray-200"
+                                    >
+                                        Nomor Surat Pemerintah
+                                    </th>
+                                    <th
+                                        class="px-4 py-3 text-left border-r border-gray-200"
+                                    >
+                                        Urusan
+                                    </th>
+                                    <th
+                                        class="px-4 py-3 text-left whitespace-nowrap border-r border-gray-200 relative group cursor-pointer"
                                     >
                                         <div class="flex items-center justify-between cursor-pointer">
                                             Jenis Kerjasama
-                                                                                        <button class="text-yellow-300 hover:text-yellow-100 flex items-center justify-center w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 ml-2">
+                                                                                        <button @click.stop="openFilterColumn = openFilterColumn === 'jenis_kerjasama' ? null : 'jenis_kerjasama'" class="text-yellow-300 hover:text-yellow-100 flex items-center justify-center w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 ml-2">
                                                                                             <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                                                                                                 <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.293l3.71-4.06a.75.75 0 111.08 1.04l-4.25 4.657a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
                                                                                             </svg>
@@ -698,6 +838,11 @@ const filteredTableData = computed(() => {
                                     <th
                                         class="px-4 py-3 text-left whitespace-nowrap border-r border-gray-200"
                                     >
+                                        Jenis Dokumen
+                                    </th>
+                                    <th
+                                        class="px-4 py-3 text-left whitespace-nowrap border-r border-gray-200"
+                                    >
                                         Mulai
                                     </th>
                                     <th
@@ -709,6 +854,16 @@ const filteredTableData = computed(() => {
                                         class="px-4 py-3 text-left whitespace-nowrap border-r border-gray-200"
                                     >
                                         Jangka
+                                    </th>
+                                    <th
+                                        class="px-4 py-3 text-left whitespace-nowrap border-r border-gray-200"
+                                    >
+                                        Sisa Waktu
+                                    </th>
+                                    <th
+                                        class="px-4 py-3 text-left border-r border-gray-200"
+                                    >
+                                        Pembiayaan
                                     </th>
                                     <th
                                         class="px-4 py-3 text-left whitespace-nowrap border-r border-gray-200"
@@ -725,7 +880,7 @@ const filteredTableData = computed(() => {
                                     >
                                         <div class="flex items-center justify-between cursor-pointer">
                                             Status
-                                                                                        <button class="text-yellow-300 hover:text-yellow-100 flex items-center justify-center w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 ml-2">
+                                                                                        <button @click.stop="openFilterColumn = openFilterColumn === 'status' ? null : 'status'" class="text-yellow-300 hover:text-yellow-100 flex items-center justify-center w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 ml-2">
                                                                                             <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                                                                                                 <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.293l3.71-4.06a.75.75 0 111.08 1.04l-4.25 4.657a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
                                                                                             </svg>
@@ -765,16 +920,16 @@ const filteredTableData = computed(() => {
                                 </tr>
                             </thead>
 
-                            <tbody>
+                            <tbody @click="closeStatusDropdown()">
                                 <tr
                                     v-for="item in filteredTableData"
-                                    :key="item.no"
+                                    :key="item.id_kerjasama"
                                     class="border-b border-gray-200 align-middle"
                                 >
                                     <td
                                         class="px-4 py-3 whitespace-nowrap border-r border-gray-200"
                                     >
-                                        {{ item.no }}
+                                        {{ item.id_kerjasama }}
                                     </td>
                                     <td
                                         class="px-4 py-3 whitespace-nowrap border-r border-gray-200"
@@ -787,7 +942,7 @@ const filteredTableData = computed(() => {
                                         <span
                                             class="px-2 py-1 rounded text-xs font-semibold"
                                             :class="
-                                                item.tipe === 'Mitra'
+                                                item.tipe === 'mitra'
                                                     ? 'bg-blue-100 text-blue-800'
                                                     : 'bg-green-100 text-green-800'
                                             "
@@ -805,12 +960,32 @@ const filteredTableData = computed(() => {
                                     >
                                         {{ item.judul }}
                                     </td>
-                                    <td class="px-6 py-4">
+                                    <td
+                                        class="px-4 py-3 whitespace-nowrap border-r border-gray-200"
+                                    >
+                                        {{ item.nomor_suratM }}
+                                    </td>
+                                    <td
+                                        class="px-4 py-3 whitespace-nowrap border-r border-gray-200"
+                                    >
+                                        {{ item.nomor_suratP }}
+                                    </td>
+                                    <td
+                                        class="px-4 py-3 whitespace-nowrap border-r border-gray-200"
+                                    >
+                                        {{ item.urusan }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap border-r border-gray-200">
                                         <span
                                             class="px-3 py-1 text-xs font-semibold rounded-lg bg-blue-100 text-blue-700"
                                         >
                                             {{ item.jenis_kerjasama || '-' }}
                                         </span>
+                                    </td>
+                                    <td
+                                        class="px-4 py-3 whitespace-nowrap border-r border-gray-200"
+                                    >
+                                        {{ item.jenis_dokumen || '-' }}
                                     </td>
                                     <td
                                         class="px-4 py-3 whitespace-nowrap border-r border-gray-200"
@@ -826,6 +1001,23 @@ const filteredTableData = computed(() => {
                                         class="px-4 py-3 whitespace-nowrap border-r border-gray-200"
                                     >
                                         {{ item.jangka_waktu }}
+                                    </td>
+                                    <td
+                                        class="px-4 py-3 whitespace-nowrap border-r border-gray-200"
+                                    >
+                                        <span v-if="item.days_remaining !== null" :class="{
+                                            'text-green-600 font-semibold': item.days_remaining > 30,
+                                            'text-orange-600 font-semibold': item.days_remaining > 0 && item.days_remaining <= 30,
+                                            'text-red-600 font-semibold': item.days_remaining <= 0
+                                        }">
+                                            {{ item.days_remaining > 0 ? item.days_remaining + ' hari' : 'Berakhir' }}
+                                        </span>
+                                        <span v-else class="text-gray-400">-</span>
+                                    </td>
+                                    <td
+                                        class="px-4 py-3 whitespace-nowrap border-r border-gray-200"
+                                    >
+                                        {{ item.pembiayaan }}
                                     </td>
                                     <td
                                         class="px-4 py-3 whitespace-nowrap min-w-[90px] border-r border-gray-200"
@@ -877,22 +1069,60 @@ const filteredTableData = computed(() => {
                                         </div>
                                     </td>
                                     <td
-                                        class="px-4 py-3 whitespace-nowrap min-w-[140px]"
+                                        class="px-4 py-3 whitespace-nowrap min-w-[140px] relative"
                                     >
-                                        <span
-                                            class="inline-flex items-center px-3 py-1 rounded-full text-xs leading-none"
-                                            :class="{
-                                                'bg-green-100 text-green-700':
-                                                    item.status === 'Aktif',
-                                                'bg-red-100 text-red-600':
-                                                    item.status === 'Berakhir',
-                                                'bg-yellow-100 text-yellow-700':
-                                                    item.status ===
-                                                    'Segera Berakhir',
-                                            }"
-                                        >
-                                            {{ item.status }}
-                                        </span>
+                                        <div class="flex items-center justify-between gap-2">
+                                            <span
+                                                class="inline-flex items-center px-3 py-1 rounded-full text-xs leading-none"
+                                                :class="{
+                                                    'bg-green-100 text-green-700':
+                                                        item.status === 'Aktif',
+                                                    'bg-red-100 text-red-600':
+                                                        item.status === 'Berakhir',
+                                                    'bg-yellow-100 text-yellow-700':
+                                                        item.status ===
+                                                        'Segera Berakhir',
+                                                }"
+                                            >
+                                                {{ item.status }}
+                                            </span>
+                                            <div class="relative">
+                                                <button
+                                                    @click.stop="toggleStatusDropdown(item.id_kerjasama)"
+                                                    class="p-1 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded transition"
+                                                >
+                                                    <EllipsisVerticalIcon class="w-5 h-5" />
+                                                </button>
+                                                <!-- DROPDOWN STATUS MENU -->
+                                                <div
+                                                    v-if="openStatusDropdown === item.id_kerjasama"
+                                                    class="absolute right-0 top-full mt-1 bg-white text-black text-sm rounded-lg shadow-2xl z-50 border border-gray-200 min-w-max"
+                                                    @click.stop
+                                                >
+                                                    <button
+                                                        @click.stop="handleStatusUpdate(item.id_kerjasama, 'Aktif')"
+                                                        :disabled="item.status === 'Aktif'"
+                                                        class="block w-full text-left px-4 py-2 hover:bg-gray-100 transition first:rounded-t-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                                                    >
+                                                        Aktif
+                                                    </button>
+                                                    <button
+                                                        @click.stop="handleStatusUpdate(item.id_kerjasama, 'Segera Berakhir')"
+                                                        :disabled="item.status === 'Segera Berakhir'"
+                                                        class="block w-full text-left px-4 py-2 hover:bg-gray-100 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                                                    >
+                                                        Segera Berakhir
+                                                    </button>
+                                                    <button
+                                                        @click.stop="handleStatusUpdate(item.id_kerjasama, 'Berakhir')"
+                                                        :disabled="item.status === 'Berakhir'"
+                                                        class="block w-full text-left px-4 py-2 hover:bg-gray-100 transition last:rounded-b-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                                                    >
+                                                        Berakhir
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </td>
                                 </tr>
                             </tbody>
@@ -961,6 +1191,31 @@ const filteredTableData = computed(() => {
                                 Mitra <span class="text-red-500">*</span>
                             </label>
                             <input
+                                v-model="mitraIdSearch"
+                                class="w-full border rounded-lg px-3 py-2 mt-1"
+                                placeholder="Ketik ID mitra (contoh: 21)"
+                            />
+                            <select
+                                v-model="form.id_mitra"
+                                @change="applySelectedMitra(form.id_mitra)"
+                                class="w-full border rounded-lg px-3 py-2 mt-1 bg-white"
+                            >
+                                <option value="">Pilih ID mitra</option>
+                                <option
+                                    v-for="mitraOption in filteredMitraOptions"
+                                    :key="mitraOption.id_mitra"
+                                    :value="String(mitraOption.id_mitra)"
+                                >
+                                    {{ mitraOption.id_mitra }} - {{ mitraOption.nama_perusahaan }}
+                                </option>
+                            </select>
+                            <p
+                                v-if="mitraIdSearch && filteredMitraOptions.length === 0"
+                                class="text-xs text-gray-500 mt-1"
+                            >
+                                Data mitra tidak ditemukan untuk ID tersebut.
+                            </p>
+                            <input
                                 v-model="form.mitra"
                                 class="w-full border rounded-lg px-3 py-2 mt-1"
                                 placeholder="Masukkan nama mitra"
@@ -1009,6 +1264,63 @@ const filteredTableData = computed(() => {
                         </p>
                     </div>
 
+                    <!-- NOMOR SURAT MITRA -->
+                    <div>
+                        <label class="text-sm font-medium">
+                            Nomor Surat Mitra <span class="text-red-500">*</span>
+                        </label>
+                        <input
+                            v-model="form.nomor_suratM"
+                            type="text"
+                            class="w-full border rounded-lg px-3 py-2 mt-1"
+                            placeholder="Masukkan nomor surat mitra"
+                        />
+                        <p
+                            v-if="errors.nomor_suratM"
+                            class="text-red-500 text-xs mt-1"
+                        >
+                            {{ errors.nomor_suratM }}
+                        </p>
+                    </div>
+
+                    <!-- Nomor Surat Pemerintah -->
+                    <div>
+                        <label class="text-sm font-medium">
+                            Nomor Surat Pemerintah <span class="text-red-500">*</span>
+                        </label>
+                        <input
+                            v-model="form.nomor_suratP"
+                            type="text"
+                            class="w-full border rounded-lg px-3 py-2 mt-1"
+                            placeholder="Masukkan nomor surat pemerintah"
+                        />
+                        <p
+                            v-if="errors.nomor_SuratP"
+                            class="text-red-500 text-xs mt-1"
+                        >
+                            {{ errors.nomor_suratP }}
+                        </p>
+                    </div>
+
+                    <!-- Urusan -->
+                    <div>
+                        <label class="text-sm font-medium">
+                            Urusan <span class="text-red-500">*</span>
+                        </label>
+                        <textarea
+                            v-model="form.urusan"
+                            rows="3"
+                            class="w-full border rounded-lg px-3 py-2 mt-1"
+                            placeholder="Masukkan urusan kerjasama"
+                        ></textarea>
+                        <p
+                            v-if="errors.urusan"
+                            class="text-red-500 text-xs mt-1"
+                        >
+                            {{ errors.urusan }}
+                        </p>
+                    </div>
+
                     <!-- JANGKA -->
                     <div>
                         <label class="text-sm font-medium">
@@ -1036,18 +1348,43 @@ const filteredTableData = computed(() => {
                             v-model="form.jenis_kerjasama"
                             class="w-full border rounded-lg px-3 py-2 mt-1"
                         >
-                            <option value="KSDD">Kerjasama Daerah Antar Daerah (KSDD)</option>
-                            <option value="KSDPK">Kerjasama Dengan Pihak Ketiga (KSDPK)</option>
-                            <option value="NK/RK">Sinergi Dengan Pemerintah Pusat/Lembaga (NK/RK)</option>
-                            <option value="PERTEK">Perjanjian Teknis (PERTEK)</option>
-                            <option value="KSDPL">Kerjasama Daerah Dengan Pemerintah Daerah Di Luar Negeri (KSDPL)</option>
-                            <option value="KSDLL">Kerjasama Daerah Dengan Lembaga Di Luar Negeri (KSDLL)</option>
+                            <option
+                                v-for="option in (jenisKerjasamaOptions || [])"
+                                :key="option.value"
+                                :value="option.value"
+                            >
+                                {{ option.label }}
+                            </option>
                         </select>
                         <p
                             v-if="errors.jenis_kerjasama"
                             class="text-red-500 text-xs mt-1"
                         >
                             {{ errors.jenis_kerjasama }}
+                        </p>
+                    </div>
+
+                    <div>
+                        <label class="text-sm font-medium">
+                            Jenis Dokumen <span class="text-red-500">*</span>
+                        </label>
+                        <select
+                            v-model="form.jenis_dokumen"
+                            class="w-full border rounded-lg px-3 py-2 mt-1"
+                        >
+                            <option
+                                v-for="option in (jenisDokumenOptions || [])"
+                                :key="option"
+                                :value="option"
+                            >
+                                {{ option }}
+                            </option>
+                        </select>
+                        <p
+                            v-if="errors.jenis_dokumen"
+                            class="text-red-500 text-xs mt-1"
+                        >
+                            {{ errors.jenis_dokumen }}
                         </p>
                     </div>
 
@@ -1108,6 +1445,29 @@ const filteredTableData = computed(() => {
                                 {{ errors.selesai }}
                             </p>
                         </div>
+                    </div>
+
+                    <!-- PEMBIAYAAN -->
+                    <div>
+                        <label class="text-sm font-medium">
+                            Pembiayaan <span class="text-red-500">*</span>
+                        </label>
+                        <select
+                            v-model="form.pembiayaan"
+                            class="w-full border rounded-lg px-3 py-2 mt-1"
+                        >
+                            <option value="APBN">APBN</option>
+                            <option value="APBD">APBD</option>
+                            <option value="PIHAK KETIGA">PIHAK KETIGA</option>
+                            <option value="PARA PIHAK">PARA PIHAK</option>
+                            <option value="SESUAI DENGAN PERATURAN PERUNDANG-UNDANGAN">SESUAI DENGAN PERATURAN PERUNDANG-UNDANGAN</option>
+                        </select>
+                        <p
+                            v-if="errors.pembiayaan"
+                            class="text-red-500 text-xs mt-1"
+                        >
+                            {{ errors.pembiayaan }}
+                        </p>
                     </div>
 
                     <!-- UPLOAD -->

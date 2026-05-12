@@ -347,6 +347,8 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
         ->name('riwayat-kerjasama.pemerintah.store');
     Route::put('/riwayat-kerjasama/pemerintah/{id}', [RiwayatKerjasamaController::class, 'updatePemerintah'])
         ->name('riwayat-kerjasama.pemerintah.update');
+    Route::put('/riwayat-kerjasama/{id}/status', [RiwayatKerjasamaController::class, 'updateStatus'])
+        ->name('riwayat-kerjasama.update-status');
     Route::post('/riwayat-kerjasama/adendum', [RiwayatKerjasamaController::class, 'storeAdendum'])
         ->name('riwayat-kerjasama.adendum.store');
 

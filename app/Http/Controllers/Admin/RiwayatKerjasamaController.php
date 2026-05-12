@@ -14,6 +14,8 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
@@ -48,6 +50,9 @@ class RiwayatKerjasamaController extends Controller
                 ->distinct()
                 ->orderBy('tahun', 'desc')
                 ->pluck('tahun'),
+            'mitras' => $this->mitraOptions(),
+            'jenisKerjasamaOptions' => $this->jenisKerjasamaOptions(),
+            'jenisDokumenOptions' => $this->jenisDokumenOptions(),
         ]);
     }
 
@@ -81,6 +86,9 @@ class RiwayatKerjasamaController extends Controller
                 ->distinct()
                 ->orderBy('tahun', 'desc')
                 ->pluck('tahun'),
+            'mitras' => $this->mitraOptions(),
+            'jenisKerjasamaOptions' => $this->jenisKerjasamaOptions(),
+            'jenisDokumenOptions' => $this->jenisDokumenOptions(),
         ]);
     }
 
@@ -113,7 +121,52 @@ class RiwayatKerjasamaController extends Controller
                 ->distinct()
                 ->orderBy('tahun', 'desc')
                 ->pluck('tahun'),
+            'mitras' => $this->mitraOptions(),
+            'jenisKerjasamaOptions' => $this->jenisKerjasamaOptions(),
+            'jenisDokumenOptions' => $this->jenisDokumenOptions(),
         ]);
+    }
+
+    private function jenisKerjasamaOptions(): array
+    {
+        return [
+            ['value' => 'KSDD', 'label' => 'Kerjasama Daerah Antar Daerah (KSDD)'],
+            ['value' => 'KSDPK', 'label' => 'Kerjasama Dengan Pihak Ketiga (KSDPK)'],
+            ['value' => 'NK/RK', 'label' => 'Sinergi Dengan Pemerintah Pusat/Lembaga (NK/RK)'],
+            ['value' => 'PERTEK', 'label' => 'Perjanjian Teknis (PERTEK)'],
+            ['value' => 'KSDPL', 'label' => 'Kerjasama Daerah Dengan Pemerintah Daerah Di Luar Negeri (KSDPL)'],
+            ['value' => 'KSDLL', 'label' => 'Kerjasama Daerah Dengan Lembaga Di Luar Negeri (KSDLL)'],
+        ];
+    }
+
+    private function jenisDokumenOptions(): array
+    {
+        return [
+            'KSB',
+            'Nota Kesepakatan',
+            'Perjanjian Teknis',
+            'PKS',
+            'Rencana Kerja',
+            'MOU',
+            'RKT',
+            'LOI',
+        ];
+    }
+
+    private function mitraOptions()
+    {
+        return Mitra::query()
+            ->orderBy('nama_perusahaan')
+            ->get()
+            ->map(fn (Mitra $mitra) => [
+                'id_mitra' => $mitra->id_mitra,
+                'nama_perusahaan' => $mitra->nama_perusahaan,
+                'npwp' => $mitra->getAttribute('npwp'),
+                'pic' => $mitra->pic,
+                'no_handphone' => $mitra->no_handphone,
+                'alamat' => $mitra->alamat,
+            ])
+            ->values();
     }
 
     /**
@@ -237,16 +290,18 @@ class RiwayatKerjasamaController extends Controller
     public function storeMitra(Request $request)
     {
         $validated = $request->validate([
-            'mitra' => ['required', 'string'],
+            'id_mitra' => ['nullable', 'integer', 'exists:mitras,id_mitra'],
+            'mitra' => ['required', 'string', 'max:255'],
             'tahun' => ['required', 'numeric'],
             'judul' => ['required', 'string'],
             'jangka' => ['required', 'string'],
-            'nomor_surat' => ['required', 'string'],
+            'nomor_suratM' => ['required', 'string'],
+            'nomor_suratP' => ['required', 'string'],
+            'pembiayaan' => ['required','in:APBN,APBD,PIHAK KETIGA,PARA PIHAK,SESUAI DENGAN PERATURAN PERUNDANG-UNDANGAN'],
             'urusan' => ['required', 'string'],
             'daerah' => ['required', 'string'],
-            'jenis_kerjasama' => ['required', 'string'],
-            'jenis_dokumen' => ['required', 'string'],
-            'nama_pihak_luar' => ['required', 'string'],
+            'jenis_kerjasama' => ['required', 'string', Rule::in(array_column($this->jenisKerjasamaOptions(), 'value'))],
+            'jenis_dokumen' => ['required', 'string', Rule::in($this->jenisDokumenOptions())],
             'tanggal_mulai' => ['required', 'date'],
             'tanggal_berakhir' => ['required', 'date'],
             'file' => ['required', 'file', 'mimes:pdf', 'max:10240'],
@@ -265,14 +320,12 @@ class RiwayatKerjasamaController extends Controller
             ]);
         }
 
-        // Find or create mitra
-        $mitra = Mitra::where('nama_perusahaan', $validated['mitra'])->first();
-        if (! $mitra) {
-            $mitra = Mitra::create([
-                'nama_perusahaan' => $validated['mitra'],
-                'alamat' => '-',
-            ]);
-        }
+        $mitra = ! empty($validated['id_mitra'])
+            ? Mitra::findOrFail((int) $validated['id_mitra'])
+            : Mitra::firstOrCreate(
+                ['nama_perusahaan' => trim((string) $validated['mitra'])],
+                ['alamat' => '-']
+            );
 
         $path = null;
         $originalFileName = null;
@@ -288,14 +341,16 @@ class RiwayatKerjasamaController extends Controller
                 'id_admin' => $admin->id_admin,
                 'id_kategori' => $idKategori,
                 'judul' => $validated['judul'],
-                'nomor_suratM' => $validated['nomor_surat'],
+                'nomor_suratM' => $validated['nomor_suratM'],
+                'nomor_suratP' => $validated['nomor_suratP'],
+                'pembiayaan' => $validated['pembiayaan'],
                 'urusan' => $validated['urusan'],
                 'daerah' => $validated['daerah'],
                 'jenis_kerjasama' => $validated['jenis_kerjasama'],
                 'jenis_dokumen' => $validated['jenis_dokumen'],
                 'pemrakarsa' => 'M',
                 'tipe' => 'mitra',
-                'nama_pihak_luar' => $validated['nama_pihak_luar'],
+                'nama_pihak_luar' => $validated['mitra'],
                 'status_aktif' => 'aktif',
                 'is_finalized' => true,
                 'status_persetujuan' => 'disetujui',
@@ -311,6 +366,7 @@ class RiwayatKerjasamaController extends Controller
             if ($path && $originalFileName) {
                 Dokumen::create([
                     'id_kerjasama' => $kerjasama->id_kerjasama,
+                    'jenis_dokumen' => $validated['jenis_dokumen'],
                     'nama_file' => $originalFileName,
                     'lokasi_file' => $path,
                     'versi_dokumen' => 1,
@@ -343,7 +399,9 @@ class RiwayatKerjasamaController extends Controller
             'tahun' => ['required', 'numeric'],
             'judul' => ['required', 'string'],
             'jangka' => ['required', 'string'],
-            'nomor_surat' => ['required', 'string'],
+            'nomor_suratM' => ['required', 'string'],
+            'nomor_suratP' => ['required', 'string'],
+            'pembiayaan' => ['required','in:APBN,APBD,PIHAK KETIGA,PARA PIHAK,SESUAI DENGAN PERATURAN PERUNDANG-UNDANGAN'],
             'urusan' => ['required', 'string'],
             'daerah' => ['required', 'string'],
             'jenis_kerjasama' => [
@@ -352,7 +410,7 @@ class RiwayatKerjasamaController extends Controller
                 'in:KSDD,KSDPK,NK/RK,PERTEK,KSDPL,KSDLL'
             ],
             'tipe_pengajuan' => ['required', 'in:mitra,pemerintah'],
-            'jenis_dokumen' => ['required', 'string'],
+            'jenis_dokumen' => ['required', 'string', Rule::in($this->jenisDokumenOptions())],
             'nama_pihak_luar' => ['required', 'string'],
             'tanggal_mulai' => ['required', 'date'],
             'tanggal_berakhir' => ['required', 'date'],
@@ -398,7 +456,9 @@ class RiwayatKerjasamaController extends Controller
                     'id_admin' => $admin->id_admin,
                     'id_kategori' => $idKategori,
                     'judul' => $validated['judul'],
-                    'nomor_suratM' => $validated['nomor_surat'],
+                    'nomor_suratM' => $validated['nomor_suratM'],
+                    'nomor_suratP' => $validated['nomor_suratP'],
+                    'pembiayaan' => $validated['pembiayaan'],
                     'urusan' => $validated['urusan'],
                     'daerah' => $validated['daerah'],
                     'jenis_kerjasama' => $validated['jenis_kerjasama'],
@@ -421,6 +481,7 @@ class RiwayatKerjasamaController extends Controller
                 if ($path && $originalFileName) {
                     Dokumen::create([
                         'id_kerjasama' => $kerjasama->id_kerjasama,
+                        'jenis_dokumen' => $validated['jenis_dokumen'],
                         'nama_file' => $originalFileName,
                         'lokasi_file' => $path,
                         'versi_dokumen' => 1,
@@ -443,7 +504,9 @@ class RiwayatKerjasamaController extends Controller
                     'id_admin' => $admin->id_admin,
                     'id_kategori' => $idKategori,
                     'judul' => $validated['judul'],
-                    'nomor_suratP' => $validated['nomor_surat'],
+                    'nomor_suratM' => $validated['nomor_suratM'],
+                    'nomor_suratP' => $validated['nomor_suratP'],
+                    'pembiayaan' => $validated['pembiayaan'],
                     'urusan' => $validated['urusan'],
                     'daerah' => $validated['daerah'],
                     'jenis_kerjasama' => $validated['jenis_kerjasama'],
@@ -466,6 +529,7 @@ class RiwayatKerjasamaController extends Controller
                 if ($path && $originalFileName) {
                     Dokumen::create([
                         'id_kerjasama' => $kerjasama->id_kerjasama,
+                        'jenis_dokumen' => $validated['jenis_dokumen'],
                         'nama_file' => $originalFileName,
                         'lokasi_file' => $path,
                         'versi_dokumen' => 1,
@@ -632,6 +696,42 @@ class RiwayatKerjasamaController extends Controller
         return back()->with('success', 'Adendum berhasil ditambahkan.');
     }
 
+    /**
+     * Update status kerjasama.
+     */
+    public function updateStatus(int $id, Request $request)
+    {
+        $validated = $request->validate([
+            'status' => ['required', 'string', 'in:Aktif,Segera Berakhir,Berakhir'],
+        ]);
+
+        $kerjasama = Kerjasama::findOrFail($id);
+        $admin = $request->user()->admin;
+
+        abort_if($admin === null, 403, 'User harus memiliki akses admin.');
+
+        // Find id_status from status table
+        $statusRecord = \App\Models\Status::where('jenis_status', $validated['status'])->firstOrFail();
+
+        DB::transaction(function () use ($kerjasama, $validated, $admin, $statusRecord) {
+            // Update status di kerjasama - simpan string status, bukan boolean!
+            $kerjasama->update([
+                'status_aktif' => $validated['status'],
+            ]);
+
+            // Catat perubahan status di riwayat_status
+            RiwayatStatus::create([
+                'id_kerjasama' => $kerjasama->id_kerjasama,
+                'id_status' => $statusRecord->id_status,
+                'id_admin' => $admin->id_admin,
+                'catatan' => '',
+                'tanggal' => now(),
+            ]);
+        });
+
+        return back()->with('success', 'Status kerjasama berhasil diperbarui.');
+    }
+
     // =========================================================================
     // Helpers
     // =========================================================================
@@ -640,9 +740,11 @@ class RiwayatKerjasamaController extends Controller
     {
         $nextVersion = ((int) $kerjasama->dokumen()->max('versi_dokumen')) + 1;
         $path = $file->store('dokumen-kerjasama', 'public');
+        $jenisDokumen = $kerjasama->jenis_dokumen ?: ($kerjasama->finalDokumen?->jenis_dokumen ?: 'KSB');
 
         Dokumen::create([
             'id_kerjasama' => $kerjasama->id_kerjasama,
+            'jenis_dokumen' => $jenisDokumen,
             'nama_file' => $file->getClientOriginalName(),
             'lokasi_file' => $path,
             'versi_dokumen' => $nextVersion,
@@ -655,7 +757,7 @@ class RiwayatKerjasamaController extends Controller
         // SIMPLE SEARCH - Focus on main fields
         if ($request->filled('search')) {
             $search = trim($request->search);
-            
+
             \Log::info("🔍 SEARCH FILTER", [
                 'search' => $search,
                 'filled' => $request->filled('search'),
@@ -671,12 +773,12 @@ class RiwayatKerjasamaController extends Controller
                   ->orWhere('nama_pihak_luar', 'like', "%{$search}%")
                   ->orWhere('jenis_kerjasama', 'like', "%{$search}%")
                   ->orWhere('jenis_dokumen', 'like', "%{$search}%");
-                
+
                 // Mitra name search
                 $q->orWhereHas('mitra', function ($mitra) use ($search) {
                     $mitra->where('nama_perusahaan', 'like', "%{$search}%");
                 });
-                
+
                 // Year search
                 if (is_numeric($search)) {
                     $q->orWhereHas('latestPeriode', function ($periode) use ($search) {
@@ -703,18 +805,8 @@ class RiwayatKerjasamaController extends Controller
 
         $tahun = $mulai ? Carbon::parse($mulai)->year : null;
 
-        // 🔥 STATUS OTOMATIS
-        $status = 'Aktif';
-        if ($berakhir) {
-            $today = Carbon::today();
-            $end = Carbon::parse($berakhir);
-
-            if ($today->gte($end)) {
-                $status = 'Berakhir';
-            } elseif ($end->greaterThan($today) && $today->diffInDays($end, false) <= 30) {
-                $status = 'Segera Berakhir';
-            }
-        }
+        // 🔥 AMBIL STATUS DARI DATABASE (bukan otomatis dari tanggal)
+        $status = $k->status_aktif ?? 'Aktif';
 
         $jangkaWaktu = '-';
         if ($mulai && $berakhir) {
@@ -758,6 +850,14 @@ class RiwayatKerjasamaController extends Controller
 
         $hasAdendum = $k->relationLoaded('adendum') && $k->adendum->count() > 0;
 
+        // 🔥 HITUNG SISA HARI
+        $daysRemaining = null;
+        if ($berakhir) {
+            $today = Carbon::today();
+            $end = Carbon::parse($berakhir);
+            $daysRemaining = $today->diffInDays($end, false);
+        }
+
         return [
             'no' => $index + 1,
             'id_kerjasama' => $k->id_kerjasama,
@@ -774,8 +874,14 @@ class RiwayatKerjasamaController extends Controller
             'file_name' => $storedFileName,
             'file_url' => $this->resolveFileUrl($storedFilePath),
             'status' => $status,
+            'days_remaining' => $daysRemaining,
             'jenis_kerjasama' => $k->jenis_kerjasama,
+            'jenis_dokumen' => $k->jenis_dokumen,
             'has_adendum' => $hasAdendum,
+            'nomor_suratM' => $k->nomor_suratM,
+            'nomor_suratP' => $k->nomor_suratP,
+            'urusan' => $k->urusan,
+            'pembiayaan' => $k->pembiayaan,
         ];
     }
 
