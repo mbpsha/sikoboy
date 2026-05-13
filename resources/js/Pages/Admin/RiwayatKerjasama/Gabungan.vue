@@ -131,8 +131,19 @@ const applySelectedMitra = (idMitra) => {
 };
 
 const adendumForm = ref({
-    judul_adendum: "",
-    keterangan_adendum: "",
+    mitra: "",
+    tahun: "",
+    judul: "",
+    nomor_surat_mitra_baru: "",
+    nomor_surat_pemerintah_baru: "",
+    nomor_surat_mitra_lama: "",
+    nomor_surat_pemerintah_lama: "",
+    urusan: "",
+    jangka_waktu: "",
+    jenis_kerjasama: "",
+    tanggal_mulai: "",
+    tanggal_berakhir: "",
+    pembiayaan: "",
     file: null,
 });
 
@@ -195,8 +206,32 @@ const validate = () => {
 const validateAdendum = () => {
     adendumErrors.value = {};
 
-    if (!adendumForm.value.judul_adendum)
-        adendumErrors.value.judul_adendum = "Judul adendum wajib diisi";
+    if (!adendumForm.value.mitra)
+        adendumErrors.value.mitra = "Mitra wajib diisi";
+    if (!adendumForm.value.tahun)
+        adendumErrors.value.tahun = "Tahun wajib diisi";
+    if (!adendumForm.value.judul)
+        adendumErrors.value.judul = "Judul wajib diisi";
+    if (!adendumForm.value.nomor_surat_mitra_baru)
+        adendumErrors.value.nomor_surat_mitra_baru = "Nomor surat mitra baru wajib diisi";
+    if (!adendumForm.value.nomor_surat_pemerintah_baru)
+        adendumErrors.value.nomor_surat_pemerintah_baru = "Nomor surat pemerintah baru wajib diisi";
+    if (!adendumForm.value.nomor_surat_mitra_lama)
+        adendumErrors.value.nomor_surat_mitra_lama = "Nomor surat mitra lama wajib diisi";
+    if (!adendumForm.value.nomor_surat_pemerintah_lama)
+        adendumErrors.value.nomor_surat_pemerintah_lama = "Nomor surat pemerintah lama wajib diisi";
+    if (!adendumForm.value.urusan)
+        adendumErrors.value.urusan = "Urusan wajib diisi";
+    if (!adendumForm.value.jangka_waktu)
+        adendumErrors.value.jangka_waktu = "Jangka waktu wajib diisi";
+    if (!adendumForm.value.jenis_kerjasama)
+        adendumErrors.value.jenis_kerjasama = "Jenis kerjasama wajib diisi";
+    if (!adendumForm.value.tanggal_mulai)
+        adendumErrors.value.tanggal_mulai = "Tanggal mulai wajib diisi";
+    if (!adendumForm.value.tanggal_berakhir)
+        adendumErrors.value.tanggal_berakhir = "Tanggal berakhir wajib diisi";
+    if (!adendumForm.value.pembiayaan)
+        adendumErrors.value.pembiayaan = "Pembiayaan wajib diisi";
     if (!adendumForm.value.file)
         adendumErrors.value.file = "File adendum wajib diupload";
 
@@ -337,8 +372,19 @@ const submitAdendum = () => {
 
     const formData = new FormData();
     formData.append("id_kerjasama", selectedKerjasama.value.id_kerjasama);
-    formData.append("judul_adendum", adendumForm.value.judul_adendum);
-    formData.append("keterangan_adendum", adendumForm.value.keterangan_adendum);
+    formData.append("mitra", adendumForm.value.mitra);
+    formData.append("tahun", adendumForm.value.tahun);
+    formData.append("judul", adendumForm.value.judul);
+    formData.append("nomor_surat_mitra_baru", adendumForm.value.nomor_surat_mitra_baru);
+    formData.append("nomor_surat_pemerintah_baru", adendumForm.value.nomor_surat_pemerintah_baru);
+    formData.append("nomor_surat_mitra_lama", adendumForm.value.nomor_surat_mitra_lama);
+    formData.append("nomor_surat_pemerintah_lama", adendumForm.value.nomor_surat_pemerintah_lama);
+    formData.append("urusan", adendumForm.value.urusan);
+    formData.append("jangka_waktu", adendumForm.value.jangka_waktu);
+    formData.append("jenis_kerjasama", adendumForm.value.jenis_kerjasama);
+    formData.append("tanggal_mulai", adendumForm.value.tanggal_mulai);
+    formData.append("tanggal_berakhir", adendumForm.value.tanggal_berakhir);
+    formData.append("pembiayaan", adendumForm.value.pembiayaan);
 
     if (adendumForm.value.file) {
         formData.append("file", adendumForm.value.file);
@@ -380,8 +426,19 @@ const closeAdendumModal = () => {
     showAdendumModal.value = false;
     selectedKerjasama.value = null;
     adendumForm.value = {
-        judul_adendum: "",
-        keterangan_adendum: "",
+        mitra: "",
+        tahun: "",
+        judul: "",
+        nomor_surat_mitra_baru: "",
+        nomor_surat_pemerintah_baru: "",
+        nomor_surat_mitra_lama: "",
+        nomor_surat_pemerintah_lama: "",
+        urusan: "",
+        jangka_waktu: "",
+        jenis_kerjasama: "",
+        tanggal_mulai: "",
+        tanggal_berakhir: "",
+        pembiayaan: "",
         file: null,
     };
     adendumErrors.value = {};
@@ -390,6 +447,23 @@ const closeAdendumModal = () => {
 // OPEN ADENDUM MODAL
 const openAdendumModal = (item) => {
     selectedKerjasama.value = item;
+    adendumForm.value = {
+        mitra: item?.mitra || "",
+        tahun: item?.tahun ? String(item.tahun) : "",
+        judul: item?.judul || "",
+        nomor_surat_mitra_baru: item?.nomor_suratM || "",
+        nomor_surat_pemerintah_baru: item?.nomor_suratP || "",
+        nomor_surat_mitra_lama: item?.nomor_suratM || "",
+        nomor_surat_pemerintah_lama: item?.nomor_suratP || "",
+        urusan: item?.urusan || "",
+        jangka_waktu: item?.jangka_waktu || "",
+        jenis_kerjasama: item?.jenis_kerjasama || "",
+        tanggal_mulai: "",
+        tanggal_berakhir: "",
+        pembiayaan: item?.pembiayaan || "",
+        file: null,
+    };
+    adendumErrors.value = {};
     showAdendumModal.value = true;
 };
 
@@ -1540,7 +1614,7 @@ const filteredTableData = computed(() => {
             class="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
         >
             <div
-                class="bg-white rounded-2xl p-6 w-[600px] max-h-[85vh] shadow-lg relative flex flex-col"
+                class="bg-white rounded-2xl p-6 w-[760px] max-h-[85vh] shadow-lg relative flex flex-col"
             >
                 <!-- CLOSE -->
                 <button
@@ -1555,36 +1629,135 @@ const filteredTableData = computed(() => {
                 <!-- FORM - SCROLLABLE -->
                 <div class="overflow-y-auto flex-1 pr-2">
                     <div class="space-y-4">
-                        <!-- JUDUL ADENDUM -->
-                        <div>
-                            <label class="text-sm font-medium">
-                                Judul Adendum
-                            </label>
-                            <input
-                                v-model="adendumForm.judul_adendum"
-                                type="text"
-                                class="w-full border rounded-lg px-3 py-2 mt-1"
-                                placeholder="Masukkan judul adendum"
-                            />
-                            <p
-                                v-if="adendumErrors.judul_adendum"
-                                class="text-red-500 text-xs mt-1"
-                            >
-                                {{ adendumErrors.judul_adendum }}
-                            </p>
-                        </div>
-
-                        <!-- KETERANGAN ADENDUM -->
-                        <div>
-                            <label class="text-sm font-medium">
-                                Keterangan (Opsional)
-                            </label>
-                            <textarea
-                                v-model="adendumForm.keterangan_adendum"
-                                class="w-full border rounded-lg px-3 py-2 mt-1"
-                                placeholder="Masukkan keterangan adendum"
-                                rows="4"
-                            ></textarea>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="text-sm font-medium">Mitra</label>
+                                <input
+                                    v-model="adendumForm.mitra"
+                                    type="text"
+                                    class="w-full border rounded-lg px-3 py-2 mt-1"
+                                    placeholder="Masukkan mitra"
+                                />
+                                <p v-if="adendumErrors.mitra" class="text-red-500 text-xs mt-1">{{ adendumErrors.mitra }}</p>
+                            </div>
+                            <div>
+                                <label class="text-sm font-medium">Tahun</label>
+                                <input
+                                    v-model="adendumForm.tahun"
+                                    type="number"
+                                    class="w-full border rounded-lg px-3 py-2 mt-1"
+                                    placeholder="Masukkan tahun"
+                                />
+                                <p v-if="adendumErrors.tahun" class="text-red-500 text-xs mt-1">{{ adendumErrors.tahun }}</p>
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="text-sm font-medium">Judul</label>
+                                <input
+                                    v-model="adendumForm.judul"
+                                    type="text"
+                                    class="w-full border rounded-lg px-3 py-2 mt-1"
+                                    placeholder="Masukkan judul"
+                                />
+                                <p v-if="adendumErrors.judul" class="text-red-500 text-xs mt-1">{{ adendumErrors.judul }}</p>
+                            </div>
+                            <div>
+                                <label class="text-sm font-medium">Nomor Surat Mitra baru</label>
+                                <input
+                                    v-model="adendumForm.nomor_surat_mitra_baru"
+                                    type="text"
+                                    class="w-full border rounded-lg px-3 py-2 mt-1"
+                                    placeholder="Masukkan nomor surat mitra baru"
+                                />
+                                <p v-if="adendumErrors.nomor_surat_mitra_baru" class="text-red-500 text-xs mt-1">{{ adendumErrors.nomor_surat_mitra_baru }}</p>
+                            </div>
+                            <div>
+                                <label class="text-sm font-medium">Nomor Surat Pemerintah baru</label>
+                                <input
+                                    v-model="adendumForm.nomor_surat_pemerintah_baru"
+                                    type="text"
+                                    class="w-full border rounded-lg px-3 py-2 mt-1"
+                                    placeholder="Masukkan nomor surat pemerintah baru"
+                                />
+                                <p v-if="adendumErrors.nomor_surat_pemerintah_baru" class="text-red-500 text-xs mt-1">{{ adendumErrors.nomor_surat_pemerintah_baru }}</p>
+                            </div>
+                            <div>
+                                <label class="text-sm font-medium">Nomor Surat Mitra lama</label>
+                                <input
+                                    v-model="adendumForm.nomor_surat_mitra_lama"
+                                    type="text"
+                                    class="w-full border rounded-lg px-3 py-2 mt-1"
+                                    placeholder="Masukkan nomor surat mitra lama"
+                                />
+                                <p v-if="adendumErrors.nomor_surat_mitra_lama" class="text-red-500 text-xs mt-1">{{ adendumErrors.nomor_surat_mitra_lama }}</p>
+                            </div>
+                            <div>
+                                <label class="text-sm font-medium">Nomor Surat Pemerintah lama</label>
+                                <input
+                                    v-model="adendumForm.nomor_surat_pemerintah_lama"
+                                    type="text"
+                                    class="w-full border rounded-lg px-3 py-2 mt-1"
+                                    placeholder="Masukkan nomor surat pemerintah lama"
+                                />
+                                <p v-if="adendumErrors.nomor_surat_pemerintah_lama" class="text-red-500 text-xs mt-1">{{ adendumErrors.nomor_surat_pemerintah_lama }}</p>
+                            </div>
+                            <div>
+                                <label class="text-sm font-medium">Urusan</label>
+                                <input
+                                    v-model="adendumForm.urusan"
+                                    type="text"
+                                    class="w-full border rounded-lg px-3 py-2 mt-1"
+                                    placeholder="Masukkan urusan"
+                                />
+                                <p v-if="adendumErrors.urusan" class="text-red-500 text-xs mt-1">{{ adendumErrors.urusan }}</p>
+                            </div>
+                            <div>
+                                <label class="text-sm font-medium">Jangka Waktu</label>
+                                <input
+                                    v-model="adendumForm.jangka_waktu"
+                                    type="text"
+                                    class="w-full border rounded-lg px-3 py-2 mt-1"
+                                    placeholder="Contoh: 2 Tahun"
+                                />
+                                <p v-if="adendumErrors.jangka_waktu" class="text-red-500 text-xs mt-1">{{ adendumErrors.jangka_waktu }}</p>
+                            </div>
+                            <div>
+                                <label class="text-sm font-medium">Jenis Kerjasama</label>
+                                <input
+                                    v-model="adendumForm.jenis_kerjasama"
+                                    type="text"
+                                    class="w-full border rounded-lg px-3 py-2 mt-1"
+                                    placeholder="Masukkan jenis kerjasama"
+                                />
+                                <p v-if="adendumErrors.jenis_kerjasama" class="text-red-500 text-xs mt-1">{{ adendumErrors.jenis_kerjasama }}</p>
+                            </div>
+                            <div>
+                                <label class="text-sm font-medium">Tanggal Mulai</label>
+                                <input
+                                    v-model="adendumForm.tanggal_mulai"
+                                    type="date"
+                                    class="w-full border rounded-lg px-3 py-2 mt-1"
+                                />
+                                <p v-if="adendumErrors.tanggal_mulai" class="text-red-500 text-xs mt-1">{{ adendumErrors.tanggal_mulai }}</p>
+                            </div>
+                            <div>
+                                <label class="text-sm font-medium">Tanggal Berakhir</label>
+                                <input
+                                    v-model="adendumForm.tanggal_berakhir"
+                                    type="date"
+                                    class="w-full border rounded-lg px-3 py-2 mt-1"
+                                />
+                                <p v-if="adendumErrors.tanggal_berakhir" class="text-red-500 text-xs mt-1">{{ adendumErrors.tanggal_berakhir }}</p>
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="text-sm font-medium">Pembiayaan</label>
+                                <textarea
+                                    v-model="adendumForm.pembiayaan"
+                                    class="w-full border rounded-lg px-3 py-2 mt-1"
+                                    placeholder="Masukkan pembiayaan"
+                                    rows="3"
+                                ></textarea>
+                                <p v-if="adendumErrors.pembiayaan" class="text-red-500 text-xs mt-1">{{ adendumErrors.pembiayaan }}</p>
+                            </div>
                         </div>
 
                         <!-- FILE UPLOAD -->

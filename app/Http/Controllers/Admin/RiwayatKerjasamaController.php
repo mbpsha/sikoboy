@@ -670,8 +670,19 @@ class RiwayatKerjasamaController extends Controller
     {
         $validated = $request->validate([
             'id_kerjasama' => ['required', 'integer', 'exists:kerjasama,id_kerjasama'],
-            'judul_adendum' => ['required', 'string', 'max:255'],
-            'keterangan_adendum' => ['nullable', 'string'],
+            'mitra' => ['required', 'string', 'max:255'],
+            'tahun' => ['required', 'digits:4'],
+            'judul' => ['required', 'string', 'max:255'],
+            'nomor_surat_mitra_baru' => ['required', 'string', 'max:255'],
+            'nomor_surat_pemerintah_baru' => ['required', 'string', 'max:255'],
+            'nomor_surat_mitra_lama' => ['required', 'string', 'max:255'],
+            'nomor_surat_pemerintah_lama' => ['required', 'string', 'max:255'],
+            'urusan' => ['required', 'string', 'max:255'],
+            'jangka_waktu' => ['required', 'string', 'max:255'],
+            'jenis_kerjasama' => ['required', 'string', 'max:255'],
+            'tanggal_mulai' => ['required', 'date'],
+            'tanggal_berakhir' => ['required', 'date', 'after_or_equal:tanggal_mulai'],
+            'pembiayaan' => ['required', 'string'],
             'file' => ['required', 'file', 'mimes:pdf', 'max:10240'],
         ]);
 
@@ -686,8 +697,19 @@ class RiwayatKerjasamaController extends Controller
 
         \App\Models\Adendum::create([
             'id_kerjasama' => $validated['id_kerjasama'],
-            'judul_adendum' => $validated['judul_adendum'],
-            'keterangan_adendum' => $validated['keterangan_adendum'],
+            'mitra' => $validated['mitra'],
+            'tahun' => $validated['tahun'],
+            'judul_adendum' => $validated['judul'],
+            'nomor_surat_mitra_baru' => $validated['nomor_surat_mitra_baru'],
+            'nomor_surat_pemerintah_baru' => $validated['nomor_surat_pemerintah_baru'],
+            'nomor_surat_mitra_lama' => $validated['nomor_surat_mitra_lama'],
+            'nomor_surat_pemerintah_lama' => $validated['nomor_surat_pemerintah_lama'],
+            'urusan' => $validated['urusan'],
+            'jangka_waktu' => $validated['jangka_waktu'],
+            'jenis_kerjasama' => $validated['jenis_kerjasama'],
+            'tanggal_mulai' => $validated['tanggal_mulai'],
+            'tanggal_berakhir' => $validated['tanggal_berakhir'],
+            'pembiayaan' => $validated['pembiayaan'],
             'nama_file' => $originalFileName,
             'lokasi_file' => $path,
             'created_by' => $admin->id_user,
