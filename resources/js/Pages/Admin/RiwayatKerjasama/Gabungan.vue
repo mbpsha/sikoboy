@@ -96,7 +96,7 @@ const form = ref({
     id_mitra: "",
     mitra: "",
     tahun: "",
-    judul: "",
+    judul_adendum: "",
     jangka: "",
     mulai: "",
     selesai: "",
@@ -133,7 +133,7 @@ const applySelectedMitra = (idMitra) => {
 const adendumForm = ref({
     mitra: "",
     tahun: "",
-    judul: "",
+    judul_adendum: "",
     nomor_surat_mitra_baru: "",
     nomor_surat_pemerintah_baru: "",
     nomor_surat_mitra_lama: "",
@@ -210,8 +210,8 @@ const validateAdendum = () => {
         adendumErrors.value.mitra = "Mitra wajib diisi";
     if (!adendumForm.value.tahun)
         adendumErrors.value.tahun = "Tahun wajib diisi";
-    if (!adendumForm.value.judul)
-        adendumErrors.value.judul = "Judul wajib diisi";
+    if (!adendumForm.value.judul_adendum)
+        adendumErrors.value.judul_adendum = "Judul wajib diisi";
     if (!adendumForm.value.nomor_surat_mitra_baru)
         adendumErrors.value.nomor_surat_mitra_baru = "Nomor surat mitra baru wajib diisi";
     if (!adendumForm.value.nomor_surat_pemerintah_baru)
@@ -374,7 +374,7 @@ const submitAdendum = () => {
     formData.append("id_kerjasama", selectedKerjasama.value.id_kerjasama);
     formData.append("mitra", adendumForm.value.mitra);
     formData.append("tahun", adendumForm.value.tahun);
-    formData.append("judul", adendumForm.value.judul);
+    formData.append("judul_adendum", adendumForm.value.judul_adendum);
     formData.append("nomor_surat_mitra_baru", adendumForm.value.nomor_surat_mitra_baru);
     formData.append("nomor_surat_pemerintah_baru", adendumForm.value.nomor_surat_pemerintah_baru);
     formData.append("nomor_surat_mitra_lama", adendumForm.value.nomor_surat_mitra_lama);
@@ -404,7 +404,7 @@ const closeModal = () => {
         id_mitra: "",
         mitra: "",
         tahun: "",
-        judul: "",
+        judul_adendum: "",
         jangka: "",
         mulai: "",
         selesai: "",
@@ -428,7 +428,7 @@ const closeAdendumModal = () => {
     adendumForm.value = {
         mitra: "",
         tahun: "",
-        judul: "",
+        judul_adendum: "",
         nomor_surat_mitra_baru: "",
         nomor_surat_pemerintah_baru: "",
         nomor_surat_mitra_lama: "",
@@ -450,7 +450,7 @@ const openAdendumModal = (item) => {
     adendumForm.value = {
         mitra: item?.mitra || "",
         tahun: item?.tahun ? String(item.tahun) : "",
-        judul: item?.judul || "",
+        judul_adendum: item?.judul || "",
         nomor_surat_mitra_baru: item?.nomor_suratM || "",
         nomor_surat_pemerintah_baru: item?.nomor_suratP || "",
         nomor_surat_mitra_lama: "",
@@ -1653,12 +1653,12 @@ const filteredTableData = computed(() => {
                             <div class="md:col-span-2">
                                 <label class="text-sm font-medium">Judul</label>
                                 <input
-                                    v-model="adendumForm.judul"
+                                    v-model="adendumForm.judul_adendum"
                                     type="text"
                                     class="w-full border rounded-lg px-3 py-2 mt-1"
                                     placeholder="Masukkan judul"
                                 />
-                                <p v-if="adendumErrors.judul" class="text-red-500 text-xs mt-1">{{ adendumErrors.judul }}</p>
+                                <p v-if="adendumErrors.judul_adendum" class="text-red-500 text-xs mt-1">{{ adendumErrors.judul_adendum }}</p>
                             </div>
                             <div>
                                 <label class="text-sm font-medium">Nomor Surat Mitra baru</label>
