@@ -819,6 +819,8 @@ class RiwayatKerjasamaController extends Controller
             'judul' => $k->judul,
             'mulai' => $mulai ? Carbon::parse($mulai)->translatedFormat('d F Y') : '-',
             'berakhir' => $berakhir ? Carbon::parse($berakhir)->translatedFormat('d F Y') : '-',
+            'tanggal_mulai' => $mulai ? Carbon::parse($mulai)->format('Y-m-d') : null,
+            'tanggal_berakhir' => $berakhir ? Carbon::parse($berakhir)->format('Y-m-d') : null,
             'jangka_waktu' => $jangkaWaktu,
             'file_name' => $storedFileName,
             'file_url' => $this->resolveFileUrl($storedFilePath),
