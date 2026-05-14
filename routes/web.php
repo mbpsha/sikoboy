@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\DataKerjasamaController;
 use App\Http\Controllers\Admin\ManajemenDokumenController;
 use App\Http\Controllers\Admin\ManajemenPotensiController;
+use App\Http\Controllers\Admin\NotificationController as AdminNotificationController;
 use App\Http\Controllers\Admin\PeraturanController;
 use App\Http\Controllers\Admin\ProfileController as AdminProfileController;
 use App\Http\Controllers\Admin\RiwayatKerjasamaController;
@@ -265,10 +266,9 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('/dashboard', [AdminDashboardController::class, 'index'])
         ->name('dashboard');
 
-    // 🔹 NOTIFIKASI ADMIN (DUMMY DATA) ← INI YANG DITAMBAHKAN
-    Route::get('/notifikasi', function () {
-        return Inertia::render('Admin/NotifAdmin');
-    })->name('notifications.index');
+    // 🔹 Notifikasi Admin
+    Route::get('/notifikasi', [AdminNotificationController::class, 'index'])
+        ->name('notifications.index');
 
     // 🔹 Pengguna (Users)
     Route::get('/pengguna', [AdminUserController::class, 'index'])
