@@ -1659,20 +1659,18 @@ onBeforeUnmount(() => {
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label class="text-sm font-medium">
-                                    Tanggal Berakhir <span class="text-red-500">*</span>
-                                </label>
-                                <input
-                                    type="date"
-                                    v-model="adendumForm.selesai"
-                                    class="w-full border rounded-lg px-3 py-2 mt-1"
-                                />
-                                <p v-if="adendumErrors.selesai" class="text-red-500 text-xs mt-1">
-                                    {{ adendumErrors.selesai }}
-                                </p>
-                            </div>
+                        <div>
+                            <label class="text-sm font-medium">
+                                Tanggal Berakhir <span class="text-red-500">*</span>
+                            </label>
+                            <input
+                                type="date"
+                                v-model="adendumForm.selesai"
+                                class="w-full border rounded-lg px-3 py-2 mt-1"
+                            />
+                            <p v-if="adendumErrors.selesai" class="text-red-500 text-xs mt-1">
+                                {{ adendumErrors.selesai }}
+                            </p>
                         </div>
 
                         <div>
