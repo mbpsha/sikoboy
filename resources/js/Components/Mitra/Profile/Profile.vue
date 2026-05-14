@@ -8,39 +8,7 @@ import DetailNotif from '@/Components/Mitra/Profile/DetailNotif.vue';
 
 const page = usePage();
 
-// 🔔 DUMMY NOTIFICATIONS (Hardcoded - 2 notifikasi) - HANYA untuk alert banner
-const dummyNotifications = [
-  {
-    id: 1,
-    type: 'expiring_soon',
-    status_type: 'expiring_soon',
-    title: 'Kerjasama Anda akan berakhir dalam 90 hari',
-    message: 'Masa kerjasama dengan SETDA Boyolali akan berakhir pada tanggal 2 Januari 2027. Harap perhatikan tanggal berakhir kerjasama Anda.',
-    days_left: 90,
-    kerjasama_id: 1,
-    kerjasama_judul: '"Perjanjian Kerja Sama antara Dinas Pemberdayaan Masyarakat dan Desa dan PT BPR Bank Boyolali (Perseroda) tentang Pengelolaan Atas Rekening Kas Desa Melalui PT BPR Bank Boyolali (Perseroda)" akan berakhir dalam 90 hari',
-    nomor_kerjasama: '012/SP-KS/PT-ABC/V/2026',
-    tanggal_mulai: '2026-01-02',
-    tanggal_berakhir: '2027-01-02',
-    status: 'Aktif',
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: 2,
-    type: 'expiring_soon',
-    status_type: 'expiring_soon',
-    title: 'Kerjasama Anda akan berakhir dalam 30 hari',
-    message: 'Masa kerjasama dengan SETDA Boyolali akan berakhir pada tanggal 15 Desember 2026. Harap perhatikan tanggal berakhir kerjasama Anda.',
-    days_left: 30,
-    kerjasama_id: 2,
-    kerjasama_judul: 'Kerjasama Pengelolaan Aset Daerah antara PT Hamaz Sejahtera Group dengan Dinas Kesehatan Kabupaten Boyolali',
-    nomor_kerjasama: '045/SP-KS/DINKES/VI/2026',
-    tanggal_mulai: '2025-12-15',
-    tanggal_berakhir: '2026-12-15',
-    status: 'Aktif',
-    created_at: new Date().toISOString(),
-  }
-];
+const notifications = computed(() => page.props?.notifications || []);
 
 // 🔔 State untuk notifikasi yang sudah ditutup (disimpan di localStorage)
 const closedNotifications = ref([]);
@@ -68,7 +36,7 @@ const closeNotification = (notifId) => {
 
 // 🔔 Filter notifikasi yang belum ditutup
 const visibleNotifications = computed(() => {
-  return dummyNotifications.filter(notif => !closedNotifications.value.includes(notif.id));
+  return notifications.value.filter(notif => !closedNotifications.value.includes(notif.id));
 });
 
 // 🔔 Modal state untuk Detail Notif
@@ -232,7 +200,7 @@ const getStatusLabel = (status) => {
                     Lihat Kerjasama
                   </button>
                   <span class="text-xs text-yellow-600">
-                    • {{ notif.days_left }} hari lagi
+                    • {{ notif.days_left === null || notif.days_left === undefined ? 'Baru' : `${notif.days_left} hari lagi` }}
                   </span>
                 </div>
               </div>
