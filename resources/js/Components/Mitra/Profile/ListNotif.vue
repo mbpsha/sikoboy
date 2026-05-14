@@ -256,7 +256,7 @@ const getNotificationIcon = (notif) => {
 <div class="flex flex-col items-end gap-2">
   <!-- Days Left Badge - HANYA tampil jika BELUM expired -->
   <div 
-    v-if="notif.days_left !== undefined && notif.status_type !== 'expired'"
+    v-if="notif.days_left !== undefined && notif.days_left !== null && notif.status_type !== 'expired'"
     class="w-16 h-16 rounded-xl flex items-center justify-center text-white font-bold"
     :class="notif.days_left <= 30 ? 'bg-red-500' : (notif.days_left <= 90 ? 'bg-orange-500' : 'bg-green-500')"
   >

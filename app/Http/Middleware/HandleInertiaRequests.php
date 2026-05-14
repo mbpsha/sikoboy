@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\NotificationFeed;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -29,18 +30,30 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $user = $request->user();
+        $mitraNotifications = collect();
+        $adminNotifications = collect();
+
+        if ($user?->role === 'mitra') {
+            $mitraNotifications = NotificationFeed::forMitra($user, 50);
+        }
+
+        if ($user?->role === 'admin') {
+            $adminNotifications = NotificationFeed::forAdmin(50);
+        }
+
         return [
             ...parent::share($request),
             'auth' => [
                 // Only share minimal identity info: username and role (plus id/email)
-                'user' => $request->user() ? [
-                    'id' => $request->user()->id_user,
-                    'email' => $request->user()->email,
-                    'role' => $request->user()->role,
+                'user' => $user ? [
+                    'id' => $user->id_user,
+                    'email' => $user->email,
+                    'role' => $user->role,
                     // username: prefer admin.nama, then mitra.pic, then email local part
-                    'username' => $request->user()->admin?->nama
-                        ?? $request->user()->mitra?->pic
-                        ?? preg_replace('/@.*$/', '', $request->user()->email),
+                    'username' => $user->admin?->nama
+                        ?? $user->mitra?->pic
+                        ?? preg_replace('/@.*$/', '', $user->email),
                 ] : null,
             ],
             'flash' => [
@@ -51,6 +64,10 @@ class HandleInertiaRequests extends Middleware
                 'generated_password' => $request->session()->get('generated_password'),
             ],
             'recaptcha_site_key' => config('services.recaptcha.key'),
+            'notifications' => $mitraNotifications->take(5)->values()->all(),
+            'notifications_count' => $mitraNotifications->count(),
+            'admin_notifications' => $adminNotifications->take(5)->values()->all(),
+            'admin_notifications_count' => $adminNotifications->count(),
         ];
     }
 }

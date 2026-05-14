@@ -15,37 +15,13 @@ const isDev = typeof import.meta !== 'undefined' && import.meta.env && import.me
 // 🔔 Notification state
 const showNotificationDropdown = ref(false);
 
-// DUMMY NOTIFICATIONS (Hardcoded) - fallback jika props kosong
-const dummyNotifications = [
-  {
-    id: 1,
-    type: 'expiring_soon',
-    title: 'Kerjasama Anda akan berakhir dalam 90 hari',
-    message: 'Masa kerjasama dengan SETDA Boyolali akan berakhir pada tanggal 2 Januari 2027. Harap perhatikan tanggal berakhir kerjasama Anda.',
-    days_left: 90,
-    nomor_kerjasama: '012/SP-KS/PT-ABC/V/2026',
-    tanggal_berakhir: '2027-01-02',
-  },
-  {
-    id: 2,
-    type: 'expiring_soon',
-    title: 'Kerjasama Anda akan berakhir dalam 30 hari',
-    message: 'Masa kerjasama dengan SETDA Boyolali akan berakhir pada  tanggal 15 Desember 2026. Harap perhatikan tanggal berakhir kerjasama Anda.',
-    days_left: 30,
-    nomor_kerjasama: '045/SP-KS/DINKES/VI/2026',
-    tanggal_berakhir: '2026-12-15',
-  }
-];
-
-// Gunakan dummy jika props tidak ada
 const notifications = computed(() => {
-  const propsNotif = page.props?.notifications || [];
-  return propsNotif.length > 0 ? propsNotif : dummyNotifications;
+  return page.props?.notifications || [];
 });
 
 const notificationsCount = computed(() => {
   const count = page.props?.notifications_count || 0;
-  return count > 0 ? count : 1; // Default 1 jika tidak ada
+  return count > 0 ? count : 0;
 });
 
 const toggleNotificationDropdown = () => {
@@ -233,7 +209,7 @@ const portalLabel = computed(() => {
                         <p class="text-sm font-semibold text-gray-800">{{ notif.title }}</p>
                         <p class="text-xs text-gray-600 mt-1">{{ notif.message }}</p>
                         <p class="text-xs text-yellow-600 mt-2 font-medium">
-                          {{ notif.days_left }} hari lagi
+                          {{ notif.days_left === null || notif.days_left === undefined ? 'Baru' : `${notif.days_left} hari lagi` }}
                         </p>
                       </div>
                     </div>
