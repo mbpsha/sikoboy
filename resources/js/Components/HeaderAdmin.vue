@@ -296,10 +296,9 @@ const displayName = computed(() => {
 })
 
 const roleLabel = computed(() => {
-  const r = authUser.value?.role ?? ''
-  if (r === 'admin') return 'Administrator'
-  if (r === 'mitra') return 'Mitra'
-  return r
+  // Show admin.divisi directly (if present)
+  const divisi = authUser.value?.admin?.divisi ?? ''
+  return divisi || ''
 })
 
 const initial = computed(() => displayName.value?.charAt(0).toUpperCase() || '')
