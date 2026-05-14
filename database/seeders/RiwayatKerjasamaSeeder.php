@@ -24,18 +24,23 @@ class RiwayatKerjasamaSeeder extends Seeder
             ->pluck('id_kategori');
 
         $jenisKerjasamaList = [
-            'KSDD',
-            'KSDPK',
-            'NK/RK',
-            'PERTEK',
-            'KSDPL',
-            'KSDLL',
+            'Kerjasama Daerah Antar Daerah (KSDD)',
+            'Kerjasama Dengan Pihak Ketiga (KSDPK)',
+            'Sinergi Dengan Pemerintah Pusat/Lembaga (NK/RK)',
+            'Perjanjian Teknis (PERTEK)',
+            'Kerjasama Daerah Dengan Pemerintah Daerah Di Luar Negeri (KSDPL)',
+            'Kerjasama Daerah Dengan Lembaga Di Luar Negeri (KSDLL)',
         ];
 
         $jenisDokumenList = [
-            'MoU',
+            'KSB',
+            'Nota Kesepakatan',
+            'Perjanjian Teknis',
             'PKS',
-            'IA',
+            'Rencana Kerja',
+            'MOU',
+            'RKT',
+            'LOI',
         ];
 
         // =========================
