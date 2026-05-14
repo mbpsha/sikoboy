@@ -34,6 +34,7 @@ const showAdendumModal = ref(false);
 const adendumFileInput = ref(null);
 const selectedKerjasama = ref(null);
 const openStatusDropdown = ref(null);
+const openFilterColumn = ref(null);
 
 const filter = () => {
     console.log("🔍 PEMERINTAH FILTER CALLED - search:", search.value, "tahun:", tahun.value);
@@ -647,13 +648,18 @@ onBeforeUnmount(() => {
                                     <th
                                         class="px-4 py-3 text-left whitespace-nowrap border-r border-gray-200 relative group cursor-pointer"
                                     >
-                                        <div class="flex items-center justify-between gap-1">
+                                            <div class="flex items-center justify-between gap-1">
                                             <span>Tahun</span>
-                                            <button class="text-yellow-300 hover:text-yellow-100">⚙️</button>
+                                            <button @click.stop="openFilterColumn = openFilterColumn === 'tahun' ? null : 'tahun'" class="text-yellow-300 hover:text-yellow-100 flex items-center justify-center w-6 h-6 rounded-full bg-white/10 hover:bg-white/20">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                    <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.293l3.71-4.06a.75.75 0 111.08 1.04l-4.25 4.657a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+                                                </svg>
+                                            </button>
                                         </div>
                                         <!-- FILTER DROPDOWN TAHUN -->
                                         <div
-                                            class="hidden group-hover:block absolute left-0 top-full mt-1 bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200"
+                                            v-show="openFilterColumn === 'tahun'"
+                                            class="absolute left-0 top-full mt-1 bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200"
                                         >
                                             <div class="mb-2 max-h-40 overflow-y-auto">
                                                 <label v-for="val in uniqueTahun" :key="val" class="flex items-center gap-2 mb-1 cursor-pointer hover:bg-gray-100 p-1 rounded">
@@ -683,13 +689,18 @@ onBeforeUnmount(() => {
                                     <th
                                         class="px-4 py-3 text-left whitespace-nowrap border-r border-gray-200 relative group cursor-pointer"
                                     >
-                                        <div class="flex items-center justify-between gap-1">
+                                            <div class="flex items-center justify-between gap-1">
                                             <span>Tipe</span>
-                                            <button class="text-yellow-300 hover:text-yellow-100">⚙️</button>
+                                            <button @click.stop="openFilterColumn = openFilterColumn === 'tipe' ? null : 'tipe'" class="text-yellow-300 hover:text-yellow-100 flex items-center justify-center w-6 h-6 rounded-full bg-white/10 hover:bg-white/20">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                    <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.293l3.71-4.06a.75.75 0 111.08 1.04l-4.25 4.657a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+                                                </svg>
+                                            </button>
                                         </div>
                                         <!-- FILTER DROPDOWN TIPE -->
                                         <div
-                                            class="hidden group-hover:block absolute left-0 top-full mt-1 bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200"
+                                            v-show="openFilterColumn === 'tipe'"
+                                            class="absolute left-0 top-full mt-1 bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200"
                                         >
                                             <div class="mb-2 max-h-40 overflow-y-auto">
                                                 <label v-for="val in uniqueTipe" :key="val" class="flex items-center gap-2 mb-1 cursor-pointer hover:bg-gray-100 p-1 rounded">
@@ -719,13 +730,18 @@ onBeforeUnmount(() => {
                                     <th
                                         class="px-4 py-3 text-left whitespace-nowrap border-r border-gray-200 relative group cursor-pointer"
                                     >
-                                        <div class="flex items-center justify-between gap-1">
+                                            <div class="flex items-center justify-between gap-1">
                                             <span>Mitra</span>
-                                            <button class="text-yellow-300 hover:text-yellow-100">⚙️</button>
+                                            <button @click.stop="openFilterColumn = openFilterColumn === 'mitra' ? null : 'mitra'" class="text-yellow-300 hover:text-yellow-100 flex items-center justify-center w-6 h-6 rounded-full bg-white/10 hover:bg-white/20">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                    <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.293l3.71-4.06a.75.75 0 111.08 1.04l-4.25 4.657a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+                                                </svg>
+                                            </button>
                                         </div>
                                         <!-- FILTER DROPDOWN MITRA -->
                                         <div
-                                            class="hidden group-hover:block absolute left-0 top-full mt-1 bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200 max-w-xs"
+                                            v-show="openFilterColumn === 'mitra'"
+                                            class="absolute left-0 top-full mt-1 bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200 max-w-xs"
                                         >
                                             <div class="mb-2 max-h-40 overflow-y-auto">
                                                 <label v-for="val in uniqueMitra" :key="val" class="flex items-center gap-2 mb-1 cursor-pointer hover:bg-gray-100 p-1 rounded">
@@ -775,13 +791,18 @@ onBeforeUnmount(() => {
                                     <th
                                         class="px-4 py-3 text-left whitespace-nowrap border-r border-gray-200 relative group cursor-pointer"
                                     >
-                                        <div class="flex items-center justify-between gap-1">
+                                            <div class="flex items-center justify-between gap-1">
                                             <span>Jenis Kerjasama</span>
-                                            <button class="text-yellow-300 hover:text-yellow-100">⚙️</button>
+                                            <button @click.stop="openFilterColumn = openFilterColumn === 'jenis_kerjasama' ? null : 'jenis_kerjasama'" class="text-yellow-300 hover:text-yellow-100 flex items-center justify-center w-6 h-6 rounded-full bg-white/10 hover:bg-white/20">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                    <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.293l3.71-4.06a.75.75 0 111.08 1.04l-4.25 4.657a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+                                                </svg>
+                                            </button>
                                         </div>
                                         <!-- FILTER DROPDOWN JENIS KERJASAMA -->
                                         <div
-                                            class="hidden group-hover:block absolute left-0 top-full mt-1 bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200"
+                                            v-show="openFilterColumn === 'jenis_kerjasama'"
+                                            class="absolute left-0 top-full mt-1 bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200"
                                         >
                                             <div class="mb-2 max-h-40 overflow-y-auto">
                                                 <label v-for="val in uniqueJenisKerjasama" :key="val" class="flex items-center gap-2 mb-1 cursor-pointer hover:bg-gray-100 p-1 rounded">

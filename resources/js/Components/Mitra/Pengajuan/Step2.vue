@@ -1,6 +1,7 @@
 <script setup>
 import { ref } from 'vue';
-import { useForm, Link, usePage } from '@inertiajs/vue3';
+import { useForm, Link, usePage, router } from '@inertiajs/vue3';
+import Swal from 'sweetalert2'
 import Header from '@/Components/Header.vue';
 
 const page = usePage();
@@ -13,11 +14,11 @@ const props = defineProps({
 const form = useForm({
   jenis_kerjasama: '',
   jenis_dokumen: '',
-  judul_dokumen: '',
-  mitra_kerjasama: '',
-  nomor_dokumen: '',
-  pembayaan: '',
-  ususan: '',
+  judul: '',
+  nama_pihak_luar: props.step1Data?.nama_perusahaan ?? '',
+  nomor_suratM: '',
+  pembiayaan: '',
+  urusan: '',
   tanggal_mulai: '',
   tanggal_selesai: '',
   dokumen_file: null,
@@ -27,7 +28,7 @@ const fileInput = ref(null);
 const fileName = ref('');
 
 const handleFileSelect = (event) => {
-  const file = event.target.files[0];
+  const file = event.target.files?.[0];
   if (file) {
     form.dokumen_file = file;
     fileName.value = file.name;
@@ -35,14 +36,32 @@ const handleFileSelect = (event) => {
 };
 
 const triggerFileInput = () => {
-  fileInput.value.click();
+  fileInput.value?.click();
+};
+
+const handleDrop = (e) => {
+  const file = e.dataTransfer?.files?.[0];
+  if (file && file.type === 'application/pdf') {
+    form.dokumen_file = file;
+    fileName.value = file.name;
+  }
 };
 
 const submit = () => {
   form.post(route('mitra.pengajuan.store'), {
-    onError: () => {
-      // Form errors handled by inertia
+    preserveScroll: false,
+    onSuccess: () => {
+      Swal.fire({
+        icon: 'success',
+        title: 'Pengajuan Terkirim',
+        text: 'Pengajuan kerjasama berhasil dikirim ke admin.',
+        timer: 2000,
+        showConfirmButton: false,
+      }).then(() => router.visit(route('portal-mitra')))
     },
+    onError: () => {
+      Swal.fire({ icon: 'error', title: 'Gagal', text: 'Terjadi kesalahan. Periksa input.' })
+    }
   });
 };
 </script>
@@ -122,47 +141,47 @@ const submit = () => {
                   <div class="space-y-2">
                     <label for="judul_dokumen" class="block text-sm font-bold text-[#17464E]">Judul Dokumen Perjanjian <span class="text-red-500">*</span></label>
                     <input
-                      v-model="form.judul_dokumen"
+                      v-model="form.judul"
                       id="judul_dokumen"
                       type="text"
                       placeholder="Masukkan judul dokumen perjanjian"
                       class="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-[#17464E]/20 outline-none transition-all"
                     />
-                    <p v-if="form.errors.judul_dokumen" class="text-red-500 text-xs mt-1">{{ form.errors.judul_dokumen }}</p>
+                    <p v-if="form.errors.judul" class="text-red-500 text-xs mt-1">{{ form.errors.judul }}</p>
                   </div>
 
                   <!-- Mitra Kerjasama -->
                   <div class="space-y-2">
                     <label for="mitra_kerjasama" class="block text-sm font-bold text-[#17464E]">Mitra Kerjasama <span class="text-red-500">*</span></label>
                     <input
-                      v-model="form.mitra_kerjasama"
+                      v-model="form.nama_pihak_luar"
                       id="mitra_kerjasama"
                       type="text"
                       placeholder="Mitra kerjasama ke- 1"
                       class="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-[#17464E]/20 outline-none transition-all"
                     />
-                    <p v-if="form.errors.mitra_kerjasama" class="text-red-500 text-xs mt-1">{{ form.errors.mitra_kerjasama }}</p>
+                    <p v-if="form.errors.nama_pihak_luar" class="text-red-500 text-xs mt-1">{{ form.errors.nama_pihak_luar }}</p>
                   </div>
 
                   <!-- Nomor Dokumen dari Mitra -->
                   <div class="space-y-2">
                     <label for="nomor_dokumen" class="block text-sm font-bold text-[#17464E]">Nomor Dokumen dari Mitra <span class="text-red-500">*</span></label>
                     <input
-                      v-model="form.nomor_dokumen"
+                      v-model="form.nomor_suratM"
                       id="nomor_dokumen"
                       type="text"
                       placeholder="Inputkan nomor surat mitra anda"
                       class="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-[#17464E]/20 outline-none transition-all"
                     />
-                    <p v-if="form.errors.nomor_dokumen" class="text-red-500 text-xs mt-1">{{ form.errors.nomor_dokumen }}</p>
+                    <p v-if="form.errors.nomor_suratM" class="text-red-500 text-xs mt-1">{{ form.errors.nomor_suratM }}</p>
                   </div>
 
                   <!-- Pembiayaan -->
                   <div class="space-y-2">
                     <label for="pembayaan" class="block text-sm font-bold text-[#17464E]">Pembiayaan <span class="text-orange-500">(*wajib dipilih)</span></label>
                     <select
-                      v-model="form.pembayaan"
-                      id="pembayaan"
+                      v-model="form.pembiayaan"
+                      id="pembiayaan"
                       class="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-[#17464E]/20 outline-none transition-all"
                     >
                       <option value="">Pilih pembiayaan</option>
@@ -172,14 +191,14 @@ const submit = () => {
                       <option value="PARA PIHAK">PARA PIHAK</option>
                       <option value="SESUAI DENGAN PERATURAN PERUNDANG-UNDANGAN">SESUAI DENGAN PERATURAN PERUNDANG-UNDANGAN</option>
                     </select>
-                    <p v-if="form.errors.pembayaan" class="text-red-500 text-xs mt-1">{{ form.errors.pembayaan }}</p>
+                    <p v-if="form.errors.pembiayaan" class="text-red-500 text-xs mt-1">{{ form.errors.pembiayaan }}</p>
                   </div>
 
                   <!-- Ususan -->
                   <div class="space-y-2">
                     <label for="ususan" class="block text-sm font-bold text-[#17464E]">Ususan</label>
                     <select
-                      v-model="form.ususan"
+                      v-model="form.urusan"
                       id="ususan"
                       class="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-[#17464E]/20 outline-none transition-all"
                     >
@@ -196,7 +215,7 @@ const submit = () => {
                       <option value="PANGAN">PANGAN</option>
                       <option value="PERTANAHAN">PERTANAHAN</option>
                     </select>
-                    <p v-if="form.errors.ususan" class="text-red-500 text-xs mt-1">{{ form.errors.ususan }}</p>
+                    <p v-if="form.errors.urusan" class="text-red-500 text-xs mt-1">{{ form.errors.urusan }}</p>
                   </div>
 
                   <!-- Tanggal Mulai -->
@@ -240,13 +259,7 @@ const submit = () => {
                   <div
                     @click="triggerFileInput"
                     @dragover.prevent
-                    @drop.prevent="(e) => {
-                      const file = e.dataTransfer.files[0];
-                      if (file && file.type === 'application/pdf') {
-                        form.dokumen_file = file;
-                        fileName = file.name;
-                      }
-                    }"
+                    @drop.prevent="handleDrop"
                     class="border-2 border-dashed border-gray-300 rounded-xl p-10 text-center hover:border-[#17464E] transition cursor-pointer"
                   >
                     <div class="flex flex-col items-center">

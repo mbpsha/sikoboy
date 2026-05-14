@@ -208,6 +208,31 @@ const indexOffset = computed(() => (users?.current_page ? (users.current_page - 
 
 const local = ref({ search: filters.search || '', role: filters.role || '' })
 
+// Client-side filtered users for immediate search across all visible columns
+const filteredUsers = computed(() => {
+  const q = String(local.value.search || '').trim().toLowerCase();
+  const list = users?.data || [];
+  if (!q) return list;
+
+  return list.filter((u) => {
+    const candidates = [
+      u.admin?.nama,
+      u.mitra?.nama_perusahaan,
+      u.mitra?.pic,
+      u.mitra?.no_handphone,
+      u.email,
+      u.display_name,
+      u.username,
+      u.role,
+      u.instansi,
+      u.status,
+      u.tanggal_daftar,
+    ];
+
+    return candidates.some((c) => String(c || '').toLowerCase().includes(q));
+  });
+});
+
 let debounceTimer = null
 function scheduleApplyFilters() {
   clearTimeout(debounceTimer)
@@ -218,7 +243,11 @@ function applyFilters() {
   const params = {}
   if (local.value.search) params.search = local.value.search
   if (local.value.role)   params.role   = local.value.role
-  router.visit(route('admin.pengguna.index'), { method: 'get', data: params, preserveState: false })
+  router.get(
+    route('admin.pengguna.index'),
+    params,
+    { preserveState: true }
+  )
 }
 
 function resetFilters() {
@@ -230,6 +259,14 @@ function resetFilters() {
 function goTo(url) {
   if (!url) return
   router.visit(url, { preserveState: false })
+}
+
+const goToPage = (page) => {
+  if (!page) return
+  const params = {}
+  if (local.value.search) params.search = local.value.search
+  if (local.value.role) params.role = local.value.role
+  router.visit(route('admin.pengguna.index'), { method: 'get', data: { ...params, page }, preserveState: true })
 }
 
 function verifyMitra(id) {
@@ -293,11 +330,10 @@ function verifyMitra(id) {
                   <th class="py-3 px-4 text-left">Perusahaan / Divisi</th>
                   <th class="py-3 px-4 text-left">Status</th>
                   <th class="py-3 px-4 text-left">Tanggal Daftar</th>
-                  <th class="py-3 px-4 text-left">Aksi</th>
                 </tr>
               </thead>
               <tbody class="bg-white text-sm">
-                <tr v-for="(user, idx) in users.data" :key="user.id" class="border-b" :class="{ 'opacity-60 bg-gray-50': !user.is_active }">
+                <tr v-for="(user, idx) in filteredUsers" :key="user.id" class="border-b" :class="{ 'opacity-60 bg-gray-50': !user.is_active }">
                   <td class="py-4 px-4 text-gray-700">{{ indexOffset + idx + 1 }}</td>
                   <td class="py-4 px-4 text-gray-700">
                     <div class="font-medium">{{ user.admin?.nama ?? user.mitra?.pic ?? user.display_name ?? '-' }}</div>
@@ -356,7 +392,7 @@ function verifyMitra(id) {
                     </div>
                   </td>
                 </tr>
-                <tr v-if="!users.data?.length">
+                <tr v-if="!filteredUsers?.length">
                   <td colspan="8" class="py-6 px-4 text-center text-gray-500">Belum ada data pengguna.</td>
                 </tr>
               </tbody>
@@ -364,11 +400,22 @@ function verifyMitra(id) {
           </div>
 
           <!-- Pagination -->
-          <div class="mt-6 flex items-center justify-between">
+          <div v-if="(users?.last_page || 1) > 1" class="mt-6 flex items-center justify-between">
             <div class="text-sm text-gray-600">Tampilkan {{ users.per_page }} / Halaman</div>
-            <div class="flex gap-2">
-              <button :disabled="!users.prev_page_url" @click.prevent="goTo(users.prev_page_url)" class="px-3 py-1 bg-white border rounded-md text-sm disabled:opacity-40">← Prev</button>
-              <button :disabled="!users.next_page_url" @click.prevent="goTo(users.next_page_url)" class="px-3 py-1 bg-white border rounded-md text-sm disabled:opacity-40">Next →</button>
+            <div class="flex items-center justify-end gap-2">
+              <button @click.prevent="goToPage(users.current_page - 1)" :disabled="!users.prev_page_url" class="px-3 py-2 text-sm rounded-lg border bg-white disabled:opacity-50">Sebelumnya</button>
+
+              <button
+                v-for="page in users.last_page"
+                :key="page"
+                @click.prevent="goToPage(page)"
+                class="px-3 py-2 text-sm rounded-lg border"
+                :class="page === users.current_page ? 'bg-teal-600 text-white' : 'bg-white'"
+              >
+                {{ page }}
+              </button>
+
+              <button @click.prevent="goToPage(users.current_page + 1)" :disabled="!users.next_page_url" class="px-3 py-2 text-sm rounded-lg border bg-white disabled:opacity-50">Berikutnya</button>
             </div>
           </div>
         </div>

@@ -111,9 +111,52 @@ class KerjasamaController extends Controller
                 'id_mitra' => $mitra->id_mitra,
                 'nama_perusahaan' => $mitra->nama_perusahaan,
             ] : null,
+            // also expose step1Data for form prefill
+            'step1Data' => $mitra ? [
+                'id_mitra' => $mitra->id_mitra,
+                'nama_perusahaan' => $mitra->nama_perusahaan,
+                'no_handphone' => $mitra->no_handphone,
+                'alamat' => $mitra->alamat,
+                'pic' => $mitra->pic,
+            ] : null,
             'kategoris' => $kategoris,
             'jenisDokumen' => $jenisDokumen,
         ]);
+    }
+
+    /**
+     * Handle POST from pengajuan step 1 — validate and save to session, then go to step2.
+     */
+    public function storeStep1(Request $request)
+    {
+        $validated = $request->validate([
+            'nama_mitra' => ['required', 'string', 'max:255'],
+            'no_hp' => ['required', 'string', 'max:50'],
+            'alamat' => ['required', 'string', 'max:1000'],
+            'pic' => ['required', 'string', 'max:255'],
+        ]);
+
+        $user = $request->user();
+        $mitra = $user?->mitra;
+
+        $data = [
+            'nama_perusahaan' => $validated['nama_mitra'],
+            'no_handphone' => $validated['no_hp'],
+            'alamat' => $validated['alamat'],
+            'pic' => $validated['pic'],
+        ];
+
+        if ($mitra) {
+            $mitra->update($data);
+        } else {
+            // create minimal mitra record and associate with user
+            $mitra = \App\Models\Mitra::create(array_merge(['id_user' => $user->id_user], $data));
+        }
+
+        // Persist draft mitra id in session so Step2 can reference if needed
+        $request->session()->put('pengajuan.mitra_id', $mitra->id_mitra);
+
+        return redirect()->route('mitra.pengajuan.step2');
     }
 
     public function store(StoreKerjasamaRequest $request)

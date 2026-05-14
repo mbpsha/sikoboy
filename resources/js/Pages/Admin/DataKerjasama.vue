@@ -47,12 +47,6 @@
             <option value="">Semua Tahun</option>
             <option v-for="y in years" :key="y" :value="y">{{ y }}</option>
           </select>
-          <select v-model="local.status" @change="applyFilters" class="rounded-full px-4 py-2.5 text-sm border border-gray-200 bg-gray-50 focus:outline-none focus:border-teal-600">
-            <option value="">Semua Status</option>
-            <option value="aktif">Aktif</option>
-            <option value="segera berakhir">Segera Berakhir</option>
-            <option value="berakhir">Berakhir</option>
-          </select>
           <button @click="applyFilters" class="bg-teal-700 hover:bg-teal-800 text-white text-sm px-5 py-2.5 rounded-full font-medium transition">
             Filter
           </button>
@@ -194,14 +188,14 @@
               <tr v-for="(k, idx) in filteredKerjasama" :key="k.id_kerjasama" class="hover:bg-gray-50 transition-colors">
                 <td class="py-3 px-4 text-gray-500 text-xs">{{ indexOffset + idx + 1 }}</td>
                 <td class="py-3 px-4 text-gray-600 whitespace-nowrap">{{ k.tahun }}</td>
-                <td class="py-3 px-4 max-w-[130px] truncate font-medium">{{ k.mitra }}</td>
+                <td class="py-3 px-4 max-w-[130px] truncate font-medium">{{ k.mitra ?? '—' }}</td>
                 <td class="py-3 px-4 max-w-[220px] leading-snug">{{ k.judul }}</td>
-                <td class="py-3 px-4 text-gray-600 whitespace-nowrap">{{ k.jenis_kerjasama }}</td>
-                <td class="py-3 px-4 text-gray-600 whitespace-nowrap">{{ k.jenis_dokumen }}</td>
-                <td class="py-3 px-4 text-gray-600">{{ k.urusan }}</td>
-                <td class="py-3 px-4 text-gray-600 whitespace-nowrap">{{ k.tanggal_mulai || '—' }}</td>
-                <td class="py-3 px-4 text-gray-600 whitespace-nowrap">{{ k.tanggal_selesai || '—' }}</td>
-                <td class="py-3 px-4 text-gray-600 whitespace-nowrap">{{ k.jangka_waktu ?? '—' }}</td>
+                <td class="py-3 px-4 text-gray-600 whitespace-nowrap">{{ k.jenis_kerjasama ?? '—' }}</td>
+                <td class="py-3 px-4 text-gray-600 whitespace-nowrap">{{ k.jenis_dokumen ?? '—' }}</td>
+                <td class="py-3 px-4 text-gray-600">{{ k.urusan ?? '—' }}</td>
+                <td class="py-3 px-4 text-gray-600 whitespace-nowrap">{{ k.tanggal_mulai ?? '—' }}</td>
+                <td class="py-3 px-4 text-gray-600 whitespace-nowrap">{{ k.tanggal_berakhir ?? '—' }}</td>
+                <td class="py-3 px-4 text-gray-600 whitespace-nowrap">{{ formatJangkaWaktu(k.tanggal_mulai, k.tanggal_berakhir) }}</td>
                 <td class="py-3 px-4">
                   <Link :href="route('admin.data-kerjasama.index') + '#/dokumen/' + k.id_kerjasama"
                     class="text-teal-700 hover:text-teal-900 font-medium text-xs underline-offset-2 hover:underline">
@@ -209,7 +203,7 @@
                   </Link>
                 </td>
                 <td class="py-3 px-4 text-gray-600 whitespace-nowrap">{{ k.pembiayaan ?? '—' }}</td>
-                <td class="py-3 px-4 text-gray-600 whitespace-nowrap">{{ k.nomor_suratM ?? k.nomor_surat ?? '—' }}</td>
+                <td class="py-3 px-4 text-gray-600 whitespace-nowrap">{{ k.nomor_suratM ?? k.nomor_surat ?? k.nomor_suratP ?? '—' }}</td>
 
                 <!-- Proses column -->
                 <td class="py-3 px-4 align-top">
@@ -217,29 +211,42 @@
                     <button
                       v-for="(p, pi) in (k.proses || [])" :key="pi"
                       @click.prevent="openProcessModal(k, p)"
-                      class="w-full text-left px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-xs text-gray-700 transition"
+                      class="w-full text-left px-3 py-2 rounded-lg text-xs transition cursor-pointer"
+                      :class="k.is_finalized
+                        ? 'bg-orange-100 text-orange-700 border border-orange-200'
+                        : 'bg-gray-100 hover:bg-gray-200 text-gray-700'"
                     >
-                      {{ p.label || p.title || p.nama_proses }}
+                      <span v-if="k.is_finalized" class="inline-flex items-center gap-1">
+                        <span class="w-2 h-2 rounded-full bg-orange-400 inline-block"></span>
+                        {{ p.label || p.title }} — <span class="font-semibold">Selesai</span>
+                      </span>
+                      <span v-else>{{ p.label || p.title }}</span>
                     </button>
                     <p v-if="!(k.proses || []).length" class="text-xs text-gray-400 italic">Belum ada proses.</p>
-                    <button
-                      @click.prevent="toggleAddForm(k.id_kerjasama)"
-                      class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-teal-700 hover:bg-teal-50 text-xs font-medium transition mt-1"
-                    >
-                      <span class="text-base leading-none">+</span> Tambah Proses
-                    </button>
-                    <div v-if="showAddFormFor[k.id_kerjasama]" class="mt-2 p-3 bg-gray-50 border border-gray-200 rounded-lg space-y-2">
-                      <input
-                        v-model="newProcessForm[k.id_kerjasama].title"
-                        placeholder="Contoh: Proses 1 - Revisi"
-                        class="w-full text-xs border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-teal-500"
-                      />
-                      <div class="flex gap-2">
-                        <button @click.prevent="addProcess(k)" class="flex-1 bg-teal-600 hover:bg-teal-700 text-white text-xs px-3 py-1.5 rounded-lg transition">Tambah</button>
-                        <button @click.prevent="cancelAdd(k.id_kerjasama)" class="flex-1 bg-white border border-gray-200 text-gray-600 text-xs px-3 py-1.5 rounded-lg transition">Batal</button>
-                        <button @click.prevent="finishAddProcess(k)" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1.5 rounded-lg transition">Selesai Proses</button>
+                    <!-- Tambah Proses — sembunyikan jika sudah selesai -->
+                    <template v-if="!k.is_finalized">
+                      <button
+                        @click.prevent="toggleAddForm(k.id_kerjasama)"
+                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-teal-700 hover:bg-teal-50 text-xs font-medium transition mt-1"
+                      >
+                        <span class="text-base leading-none">+</span> Tambah Proses
+                      </button>
+                      <div v-if="showAddFormFor[k.id_kerjasama]" class="mt-2 p-3 bg-gray-50 border border-gray-200 rounded-lg space-y-2">
+                        <input
+                          v-model="newProcessForm[k.id_kerjasama].title"
+                          placeholder="Contoh: Proses 1 - Revisi"
+                          class="w-full text-xs border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-teal-500"
+                        />
+                        <div class="flex gap-2">
+                          <button @click.prevent="addProcess(k)" class="flex-1 bg-teal-600 hover:bg-teal-700 text-white text-xs px-3 py-1.5 rounded-lg transition">Tambah</button>
+                          <button @click.prevent="cancelAdd(k.id_kerjasama)" class="flex-1 bg-white border border-gray-200 text-gray-600 text-xs px-3 py-1.5 rounded-lg transition">Batal</button>
+                          <button @click.prevent="finishAddProcess(k)" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1.5 rounded-lg transition">Selesai Proses</button>
+                        </div>
                       </div>
-                    </div>
+                    </template>
+
+                    <!-- Label history jika sudah finalized -->
+                    <p v-else class="text-xs text-orange-500 font-medium mt-1 italic">✓ Proses selesai</p>
                   </div>
                 </td>
 
@@ -249,7 +256,7 @@
                     class="inline-block px-2.5 py-1 rounded-full text-xs font-medium"
                     :class="statusBadgeClass(k)"
                   >
-                    {{ k.status_display ?? (k.status_persetujuan === 'disetujui' ? 'Diterima' : (k.status_persetujuan ?? 'Proses')) }}
+                    {{ k.status_display ?? (k.status_persetujuan ? (k.status_persetujuan === 'disetujui' ? 'Diterima' : k.status_persetujuan) : 'Diterima') }}
                   </span>
                 </td>
               </tr>
@@ -258,19 +265,30 @@
         </div>
 
         <!-- Pagination Footer -->
-        <div class="px-5 py-3.5 flex items-center justify-between border-t border-gray-100">
+        <div v-if="(kerjasama?.last_page || 1) > 1" class="px-5 py-3.5 flex items-center justify-between border-t border-gray-100">
           <span class="text-xs text-gray-500">Tampilkan {{ kerjasama.per_page }} data / halaman</span>
-          <div class="flex gap-2">
+          <div class="flex items-center justify-end gap-2">
             <button
+              class="px-3 py-2 text-sm rounded-lg border bg-white disabled:opacity-50"
               :disabled="!kerjasama.prev_page_url"
-              @click.prevent="goTo(kerjasama.prev_page_url)"
-              class="px-4 py-1.5 text-xs border border-gray-200 rounded-lg bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
-            >← Prev</button>
+              @click.prevent="goToPage(kerjasama.current_page - 1)"
+            >Sebelumnya</button>
+
             <button
+              v-for="page in kerjasama.last_page"
+              :key="page"
+              @click.prevent="goToPage(page)"
+              class="px-3 py-2 text-sm rounded-lg border"
+              :class="page === kerjasama.current_page ? 'bg-teal-600 text-white' : 'bg-white'"
+            >
+              {{ page }}
+            </button>
+
+            <button
+              class="px-3 py-2 text-sm rounded-lg border bg-white disabled:opacity-50"
               :disabled="!kerjasama.next_page_url"
-              @click.prevent="goTo(kerjasama.next_page_url)"
-              class="px-4 py-1.5 text-xs border border-gray-200 rounded-lg bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
-            >Next →</button>
+              @click.prevent="goToPage(kerjasama.current_page + 1)"
+            >Berikutnya</button>
           </div>
         </div>
       </div>
@@ -304,33 +322,35 @@
           <div>
             <label class="block text-xs font-medium text-gray-600 mb-1">Catatan</label>
             <textarea v-model="activeProcess.catatan" rows="4"
-              class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition resize-none" />
+              :readonly="isProcessReadOnly"
+              :class="isProcessReadOnly ? 'bg-gray-50 text-gray-500 cursor-not-allowed' : 'focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500'"
+              class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm transition resize-none" />
           </div>
 
           <div>
             <label class="block text-xs font-medium text-gray-600 mb-1">Upload Dokumen (PDF)</label>
-            <input ref="processFileInput" type="file" accept="application/pdf" class="hidden" @change="onFileSelect" />
+            <input ref="processFileInput" type="file" accept="application/pdf" class="hidden" @change="onFileSelect" :disabled="isProcessReadOnly" />
             <div
-              @click="triggerProcessFileInput"
+              @click.prevent.stop="!isProcessReadOnly && triggerProcessFileInput()"
               @dragover.prevent
-              @drop.prevent="handleProcessDrop"
-              class="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-teal-600 transition cursor-pointer"
+              @drop.prevent="!isProcessReadOnly && handleProcessDrop($event)"
+              :class="['border-2 border-dashed rounded-xl p-6 text-center transition', isProcessReadOnly ? 'border-gray-200 bg-gray-50 cursor-not-allowed' : 'border-gray-300 hover:border-teal-600 cursor-pointer']"
             >
               <div class="flex flex-col items-center">
                 <svg class="w-10 h-10 text-teal-700 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
                 </svg>
                 <p class="font-semibold text-[#17464E] mb-1">Drag & Drop Dokumen Kerjasama (PDF)</p>
-                <p class="text-xs text-gray-600 mb-3">atau klik untuk memilih file</p>
-                <button type="button" class="px-4 py-2 bg-teal-600 text-white rounded-md text-sm">Pilih File</button>
+                <p class="text-xs text-gray-600 mb-3">{{ isProcessReadOnly ? 'Riwayat sudah selesai — tidak bisa mengupload.' : 'atau klik untuk memilih file' }}</p>
+                <button v-if="!isProcessReadOnly" type="button" class="px-4 py-2 bg-teal-600 text-white rounded-md text-sm">Pilih File</button>
                 <p v-if="fileName" class="text-sm text-gray-600 mt-3">✓ {{ fileName }}</p>
               </div>
             </div>
           </div>
 
           <div class="flex justify-end gap-2 pt-2">
-            <button @click="closeProcessModal" class="px-4 py-2 text-sm rounded-lg border border-gray-200 hover:bg-gray-50 transition">Batal</button>
-            <button @click.prevent="saveProcessUpdate" class="px-4 py-2 text-sm rounded-lg bg-teal-600 hover:bg-teal-700 text-white font-medium transition">Simpan</button>
+            <button @click="closeProcessModal" class="px-4 py-2 text-sm rounded-lg border border-gray-200 hover:bg-gray-50 transition">Tutup</button>
+            <button v-if="!isProcessReadOnly" @click.prevent="saveProcessUpdate" class="px-4 py-2 text-sm rounded-lg bg-teal-600 hover:bg-teal-700 text-white font-medium transition">Simpan</button>
           </div>
         </div>
       </div>
@@ -350,22 +370,16 @@ const props = defineProps({
 })
 
 const page = usePage()
-const currentUsername = computed(() => page.props.auth?.user?.username ?? '')
-const currentUserDivisi = computed(() => page.props.auth?.user?.admin?.divisi ?? currentUsername.value)
+const currentUsername    = computed(() => page.props.auth?.user?.username ?? '')
+const currentUserDivisi  = computed(() => page.props.auth?.user?.admin?.divisi ?? currentUsername.value)
 
 const kerjasama = computed(() => props.kerjasama ?? {
-  data: [],
-  per_page: 15,
-  prev_page_url: null,
-  next_page_url: null,
-  current_page: 1,
+  data: [], per_page: 15, prev_page_url: null, next_page_url: null, current_page: 1,
 })
 
-const filters   = computed(() => props.filters ?? {})
+const filters     = computed(() => props.filters ?? {})
 const indexOffset = computed(() =>
-  kerjasama.value.current_page
-    ? (kerjasama.value.current_page - 1) * kerjasama.value.per_page
-    : 0
+  kerjasama.value.current_page ? (kerjasama.value.current_page - 1) * kerjasama.value.per_page : 0
 )
 
 const local = ref({
@@ -374,70 +388,26 @@ const local = ref({
   status: filters.value?.status ?? '',
 })
 
-// Column filters state
-const columnFilters = ref({
-  mitra: [],
-  jenis_kerjasama: [],
-  jenis_dokumen: [],
-  urusan: [],
-})
-
-// Track which column filter is open
+const columnFilters = ref({ mitra: [], jenis_kerjasama: [], jenis_dokumen: [], urusan: [] })
 const openFilterColumn = ref(null)
+const closeAllFilters  = () => { openFilterColumn.value = null }
+const showAddMenu      = ref(false)
 
-// Close filter when clicking outside
-const closeAllFilters = () => {
-  openFilterColumn.value = null
-}
+const uniqueMitra          = computed(() => [...new Set(kerjasama.value.data.map(i => i.mitra))].filter(Boolean).sort())
+const uniqueJenisKerjasama = computed(() => [...new Set(kerjasama.value.data.map(i => i.jenis_kerjasama))].filter(Boolean).sort())
+const uniqueJenisDokumen   = computed(() => [...new Set(kerjasama.value.data.map(i => i.jenis_dokumen))].filter(Boolean).sort())
+const uniqueUrusan         = computed(() => [...new Set(kerjasama.value.data.map(i => i.urusan))].filter(Boolean).sort())
 
-// Get unique values for each column
-const uniqueMitra = computed(() => {
-  const values = kerjasama.value.data.map(item => item.mitra)
-  return [...new Set(values)].filter(Boolean).sort()
-})
-
-const uniqueJenisKerjasama = computed(() => {
-  const values = kerjasama.value.data.map(item => item.jenis_kerjasama)
-  return [...new Set(values)].filter(Boolean).sort()
-})
-
-const uniqueJenisDokumen = computed(() => {
-  const values = kerjasama.value.data.map(item => item.jenis_dokumen)
-  return [...new Set(values)].filter(Boolean).sort()
-})
-
-const uniqueUrusan = computed(() => {
-  const values = kerjasama.value.data.map(item => item.urusan)
-  return [...new Set(values)].filter(Boolean).sort()
-})
-
-// Filtered data based on column filters
 const filteredKerjasama = computed(() => {
-  let data = [...kerjasama.value.data]
+  // preserve any existing proses; ensure it's at least an array
+  let data = (kerjasama.value.data || []).map(i => ({ ...i, proses: Array.isArray(i.proses) ? i.proses : [] }))
 
-  if (columnFilters.value.mitra.length > 0) {
-    data = data.filter(item => columnFilters.value.mitra.includes(item.mitra))
-  }
-
-  if (columnFilters.value.jenis_kerjasama.length > 0) {
-    data = data.filter(item => columnFilters.value.jenis_kerjasama.includes(item.jenis_kerjasama))
-  }
-
-  if (columnFilters.value.jenis_dokumen.length > 0) {
-    data = data.filter(item => columnFilters.value.jenis_dokumen.includes(item.jenis_dokumen))
-  }
-
-  if (columnFilters.value.urusan.length > 0) {
-    data = data.filter(item => columnFilters.value.urusan.includes(item.urusan))
-  }
-
+  if (columnFilters.value.mitra.length)           data = data.filter(i => columnFilters.value.mitra.includes(i.mitra))
+  if (columnFilters.value.jenis_kerjasama.length) data = data.filter(i => columnFilters.value.jenis_kerjasama.includes(i.jenis_kerjasama))
+  if (columnFilters.value.jenis_dokumen.length)   data = data.filter(i => columnFilters.value.jenis_dokumen.includes(i.jenis_dokumen))
+  if (columnFilters.value.urusan.length)           data = data.filter(i => columnFilters.value.urusan.includes(i.urusan))
   return data
 })
-
-// Add menu state
-const showAddMenu = ref(false)
-
-let searchTimeout = null
 
 const years = computed(() => {
   const now = new Date().getFullYear()
@@ -446,60 +416,74 @@ const years = computed(() => {
 
 function statusBadgeClass(k) {
   const status = (k?.status_display || '').toString().toLowerCase()
-
-  if (status.startsWith('proses')) {
-    return 'bg-blue-100 text-blue-800'
-  }
-
-  if (status === 'aktif' || (k?.status_persetujuan === 'disetujui')) {
-    return 'bg-green-100 text-green-800'
-  }
-
-  if (status === 'segera berakhir') {
-    return 'bg-yellow-100 text-yellow-800'
-  }
-
-  if (status === 'berakhir') {
-    return 'bg-red-100 text-red-800'
-  }
-
-  return 'bg-amber-100 text-amber-800'
+  // finished / finalized -> orange badge
+  if (k?.is_finalized || status === 'selesai') return 'bg-orange-100 text-orange-800'
+  if (status.startsWith('proses'))              return 'bg-blue-100 text-blue-800'
+  if (status === 'segera berakhir')            return 'bg-yellow-100 text-yellow-800'
+  if (status === 'berakhir')                   return 'bg-red-100 text-red-800'
+  // explicit approved flag
+  if (k?.status_persetujuan === 'disetujui')   return 'bg-green-100 text-green-800'
+  // default -> treat as "Diterima" with green badge
+  return 'bg-green-100 text-green-800'
 }
 
-// Auto-search dengan debounce
+// Format duration between two ISO date strings into "X tahun Y bulan Z hari"
+function formatJangkaWaktu(startStr, endStr) {
+  if (!startStr || !endStr) return '—'
+  const start = new Date(startStr)
+  const end = new Date(endStr)
+  if (isNaN(start) || isNaN(end) || end < start) return '—'
+
+  let years = end.getFullYear() - start.getFullYear()
+  let months = end.getMonth() - start.getMonth()
+  let days = end.getDate() - start.getDate()
+
+  if (days < 0) {
+    // borrow days from previous month
+    const prevMonth = new Date(end.getFullYear(), end.getMonth(), 0) // last day of previous month
+    days += prevMonth.getDate()
+    months -= 1
+  }
+
+  if (months < 0) {
+    months += 12
+    years -= 1
+  }
+
+  const parts = []
+  if (years > 0) parts.push(`${years} ${years === 1 ? 'tahun' : 'tahun'}`)
+  if (months > 0) parts.push(`${months} ${months === 1 ? 'bulan' : 'bulan'}`)
+  if (days > 0) parts.push(`${days} ${days === 1 ? 'hari' : 'hari'}`)
+  return parts.length ? parts.join(' ') : '0 hari'
+}
+
+let searchTimeout = null
 watch(() => local.value.search, () => {
   clearTimeout(searchTimeout)
-  searchTimeout = setTimeout(() => {
-    applyFilters()
-  }, 500)
+  searchTimeout = setTimeout(() => applyFilters(), 500)
 })
 
 function applyFilters() {
   const params = {}
-  if (local.value.search) params.search = local.value.search
+  const q = (local.value.search || '').trim()
+  if (q)               params.search = q
   if (local.value.tahun)  params.tahun  = local.value.tahun
   if (local.value.status) params.status = local.value.status
-  router.visit(route('admin.data-kerjasama.index'), { method: 'get', data: params })
-}
-
-function applyColumnFilter(column, value) {
-  if (!value) return
-  local.value.search = value
-  columnFilters.value[column] = value
-  applyFilters()
+  router.get(route('admin.data-kerjasama.index'), params, { preserveState: false })
 }
 
 function resetAllFilters() {
-  local.value.search = ''
-  local.value.tahun = ''
-  local.value.status = ''
-  columnFilters.value = { mitra: '', jenis_kerjasama: '', jenis_dokumen: '', urusan: '' }
-  router.visit(route('admin.data-kerjasama.index'), { method: 'get', data: {} })
+  local.value = { search: '', tahun: '', status: '' }
+  columnFilters.value = { mitra: [], jenis_kerjasama: [], jenis_dokumen: [], urusan: [] }
+  router.get(route('admin.data-kerjasama.index'), {}, { preserveState: false })
 }
 
-function goTo(url) {
-  if (!url) return
-  router.visit(url, { preserveState: false })
+function goToPage(p) {
+  if (!p) return
+  const params = {}
+  if (local.value.search) params.search = local.value.search
+  if (local.value.tahun)  params.tahun  = local.value.tahun
+  router.get(route('admin.data-kerjasama.index'), { ...params, page: p }, { preserveState: true, preserveScroll: true })
 }
 
 // ─── Add process form ────────────────────────────────────────────────────────
@@ -516,32 +500,23 @@ function cancelAdd(id) {
   if (newProcessForm[id]) newProcessForm[id].title = ''
 }
 
-// Tambah proses baru — kirim ke server, reload data
 function addProcess(k) {
   const id    = k.id_kerjasama
   const title = (newProcessForm[id]?.title || '').trim()
   if (!title) return
 
-  // Add a temporary process entry locally. Persist when user opens it and saves.
   if (!k.proses) k.proses = []
-    k.proses.push({
-      id: null,
-      label: title,
-      title: title,
-      catatan: '',
-      penanggung: currentUserDivisi.value,
-      __temp: true,
-    })
+  k.proses.push({ id: null, label: title, title, catatan: '', penanggung: currentUserDivisi.value, __temp: true })
 
   newProcessForm[id].title = ''
   showAddFormFor[id] = false
 }
 
-// Selesaikan semua proses dan simpan ke riwayat
+// ✅ Selesaikan proses → simpan ke riwayat mitra
 async function finishAddProcess(k) {
   const confirmed = await Swal.fire({
     title: 'Selesaikan Proses?',
-    text: 'Data akan disimpan ke riwayat kerjasama.',
+    text: 'Data akan disimpan ke Riwayat Kerjasama Mitra.',
     icon: 'question',
     showCancelButton: true,
     confirmButtonText: 'Ya, selesaikan',
@@ -557,7 +532,7 @@ async function finishAddProcess(k) {
   fd.append('title',       title)
   fd.append('catatan',     'Semua proses telah diselesaikan.')
   fd.append('penanggung',  currentUserDivisi.value)
-  fd.append('is_finished', '1')   // flag untuk controller simpan ke riwayat
+  fd.append('is_finished', '1')
 
   router.post(
     route('admin.data-kerjasama.proses.store', id),
@@ -567,32 +542,38 @@ async function finishAddProcess(k) {
       onSuccess: () => {
         newProcessForm[id].title = ''
         showAddFormFor[id] = false
+        Swal.fire({
+          icon: 'success',
+          title: 'Proses Selesai!',
+          text: 'Data kerjasama telah dipindahkan ke Riwayat Kerjasama Mitra.',
+          timer: 2000,
+          showConfirmButton: false,
+        }).then(() => router.visit(route('admin.riwayat-kerjasama.mitra')))
       },
-      onError: (e) => console.error('Gagal selesai semua proses:', e),
+      onError: (e) => {
+        console.error('Gagal:', e)
+        Swal.fire({ icon: 'error', title: 'Gagal', text: 'Terjadi kesalahan saat menyimpan proses.' })
+      },
     }
   )
 }
 
 // ─── Process Modal ────────────────────────────────────────────────────────────
-const showProcessModal  = ref(false)
-const activeProcess     = ref(null)
-const activeKerjasama   = ref(null)
-const fileToUpload      = ref(null)
-const fileName          = ref('')
-const processFileInput  = ref(null)
+const showProcessModal = ref(false)
+const activeProcess    = ref(null)
+const activeKerjasama  = ref(null)
+const fileToUpload     = ref(null)
+const fileName         = ref('')
+const processFileInput = ref(null)
+
+const isProcessReadOnly = computed(() => !!activeKerjasama.value?.is_finalized)
 
 function openProcessModal(k, p) {
-  activeKerjasama.value = k
-  activeProcess.value   = {
-    ...p,
-    penanggung: p.penanggung || currentUserDivisi.value,
-    // If this is a temporary process (just a title), keep catatan empty
-    catatan:    p.id ? (p.catatan || '') : '',
-  }
+  activeKerjasama.value  = k
+  activeProcess.value    = { ...p, penanggung: p.penanggung || currentUserDivisi.value, catatan: p.id ? (p.catatan || '') : '' }
   showProcessModal.value = true
-  // reset file setiap buka modal
-  fileToUpload.value = null
-  fileName.value     = ''
+  fileToUpload.value     = null
+  fileName.value         = ''
 }
 
 function closeProcessModal() {
@@ -609,20 +590,15 @@ function onFileSelect(e) {
   fileName.value     = f ? f.name : ''
 }
 
-function triggerProcessFileInput() {
-  processFileInput.value?.click()
-}
+function triggerProcessFileInput() { processFileInput.value?.click() }
 
 function handleProcessDrop(e) {
   const file = e.dataTransfer.files?.[0] ?? null
-  if (file?.type === 'application/pdf') {
-    fileToUpload.value = file
-    fileName.value     = file.name
-  }
+  if (file?.type === 'application/pdf') { fileToUpload.value = file; fileName.value = file.name }
 }
 
-// Simpan update proses (catatan + file) — pakai POST + FormData
-async function saveProcessUpdate() {
+// ✅ Simpan proses (tanpa selesai)
+function saveProcessUpdate() {
   const k = activeKerjasama.value
   const p = activeProcess.value
   if (!k || !p) return
@@ -631,94 +607,23 @@ async function saveProcessUpdate() {
   fd.append('title',      p.title      ?? '')
   fd.append('penanggung', p.penanggung ?? currentUserDivisi.value)
   fd.append('catatan',    p.catatan    ?? '')
-  if (fileToUpload.value) {
-    fd.append('file', fileToUpload.value)
-  }
+  if (fileToUpload.value) fd.append('file', fileToUpload.value)
 
-  // If this process is not yet persisted, call store (POST). Otherwise use update (PUT).
-  if (!p.id) {
-    router.post(
-      route('admin.data-kerjasama.proses.store', k.id_kerjasama),
-      fd,
-      {
-        preserveScroll: true,
-        onSuccess: () => {
-          fileToUpload.value = null
-          closeProcessModal()
-        },
-        onError: (e) => console.error('Gagal simpan proses baru:', e),
-      }
-    )
+  const isNew = !p.id
+
+  if (isNew) {
+    router.post(route('admin.data-kerjasama.proses.store', k.id_kerjasama), fd, {
+      preserveScroll: true,
+      onSuccess: () => { fileToUpload.value = null; closeProcessModal() },
+      onError: (e) => console.error('Gagal simpan proses baru:', e),
+    })
   } else {
     fd.append('_method', 'PUT')
-    router.post(
-      route('admin.data-kerjasama.proses.update', [k.id_kerjasama, p.id]),
-      fd,
-      {
-        preserveScroll: true,
-        onSuccess: () => {
-          fileToUpload.value = null
-          closeProcessModal()
-        },
-        onError: (e) => console.error('Gagal simpan proses:', e),
-      }
-    )
-  }
-}
-
-// Selesai & Simpan ke Riwayat dari modal
-async function endProcess() {
-  const k = activeKerjasama.value
-  const p = activeProcess.value
-  if (!k || !p) return
-
-  const confirmed = await Swal.fire({
-    title: 'Selesaikan Proses?',
-    text: 'Data akan disimpan ke riwayat kerjasama.',
-    icon: 'question',
-    showCancelButton: true,
-    confirmButtonText: 'Ya, selesaikan',
-    cancelButtonText: 'Batal',
-  }).then(r => r.isConfirmed)
-
-  if (!confirmed) return
-
-  const fd = new FormData()
-  fd.append('title',       p.title      ?? 'Selesai')
-  fd.append('penanggung',  p.penanggung ?? currentUserDivisi.value)
-  fd.append('catatan',     p.catatan    ?? '')
-  fd.append('is_finished', '1')
-  if (fileToUpload.value) {
-    fd.append('file', fileToUpload.value)
-  }
-  // If the process is new, call store; otherwise update
-  if (!p.id) {
-    router.post(
-      route('admin.data-kerjasama.proses.store', k.id_kerjasama),
-      fd,
-      {
-        preserveScroll: true,
-        onSuccess: () => {
-          fileToUpload.value = null
-          closeProcessModal()
-        },
-        onError: (e) => console.error('Gagal selesai proses baru:', e),
-      }
-    )
-  } else {
-    fd.append('_method', 'PUT')
-    router.post(
-      route('admin.data-kerjasama.proses.update', [k.id_kerjasama, p.id]),
-      fd,
-      {
-        preserveScroll: true,
-        onSuccess: () => {
-          fileToUpload.value = null
-          closeProcessModal()
-        },
-        onError: (e) => console.error('Gagal selesai proses:', e),
-      }
-    )
+    router.post(route('admin.data-kerjasama.proses.update', [k.id_kerjasama, p.id]), fd, {
+      preserveScroll: true,
+      onSuccess: () => { fileToUpload.value = null; closeProcessModal() },
+      onError: (e) => console.error('Gagal simpan proses:', e),
+    })
   }
 }
 </script>
