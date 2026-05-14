@@ -156,7 +156,7 @@ class RiwayatKerjasamaController extends Controller
                 'pemrakarsa' => 'P',
                 'tipe' => 'pemerintah',
                 'nama_pihak_luar' => $validated['nama_pihak_luar'] ?? null,
-                'status_aktif' => 'aktif',
+                'status_aktif' => 'Aktif',
                 'is_finalized' => true,
                 'status_persetujuan' => 'disetujui',
             ]);
@@ -200,6 +200,7 @@ class RiwayatKerjasamaController extends Controller
         $kerjasama = Kerjasama::pemerintahTipe()->findOrFail($id);
         $validated = $request->validated();
         $file = $request->file('dokumen_file');
+        $currentPage = $request->input('page', 1);
 
         DB::transaction(function () use ($kerjasama, $validated, $file, $request) {
             $kerjasama->update([
@@ -229,7 +230,10 @@ class RiwayatKerjasamaController extends Controller
             }
         });
 
-        return back()->with('success', 'Data kerjasama pemerintah berhasil diperbarui.');
+        return redirect()
+            ->route('admin.riwayat-kerjasama.pemerintah')
+            ->with(['success' => 'Data kerjasama pemerintah berhasil diperbarui.', 'page' => $currentPage])
+            ->withQueryString();
     }
 
     /**
@@ -301,7 +305,7 @@ class RiwayatKerjasamaController extends Controller
                 'pemrakarsa' => 'M',
                 'tipe' => 'mitra',
                 'nama_pihak_luar' => $validated['nama_pihak_luar'],
-                'status_aktif' => 'aktif',
+                'status_aktif' => 'Aktif',
                 'is_finalized' => true,
                 'status_persetujuan' => 'disetujui',
             ]);
@@ -415,7 +419,7 @@ class RiwayatKerjasamaController extends Controller
                     'pemrakarsa' => 'M',
                     'tipe' => 'mitra',
                     'nama_pihak_luar' => $validated['nama_pihak_luar'],
-                    'status_aktif' => 'aktif',
+                    'status_aktif' => 'Aktif',
                     'is_finalized' => true,
                     'status_persetujuan' => 'disetujui',
                 ]);
@@ -462,7 +466,7 @@ class RiwayatKerjasamaController extends Controller
                     'pemrakarsa' => 'P',
                     'tipe' => 'pemerintah',
                     'nama_pihak_luar' => $validated['nama_pihak_luar'],
-                    'status_aktif' => 'aktif',
+                    'status_aktif' => 'Aktif',
                     'is_finalized' => true,
                     'status_persetujuan' => 'disetujui',
                 ]);
@@ -676,7 +680,7 @@ class RiwayatKerjasamaController extends Controller
             ]);
         });
 
-        return back()->with('success', 'Status kerjasama berhasil diperbarui.');
+        return back();
     }
 
     // =========================================================================

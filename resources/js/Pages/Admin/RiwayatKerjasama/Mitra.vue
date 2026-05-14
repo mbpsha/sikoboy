@@ -334,8 +334,10 @@ const submit = () => {
                 }).then(() => {
                     closeModal();
 
+                    // Redirect to last page to see the newly created kerjasama
+                    const lastPage = props.data?.last_page || 1;
                     router.visit(
-                        route("admin.riwayat-kerjasama.mitra"),
+                        route("admin.riwayat-kerjasama.mitra", { page: lastPage }),
                         {
                             preserveState: false,
                         }
@@ -385,6 +387,7 @@ const submit = () => {
 const submitAdendum = () => {
     if (!validateAdendum()) return;
 
+    const currentPage = props.data?.current_page || 1;
     const formData = new FormData();
     formData.append("id_kerjasama", selectedKerjasama.value.id_kerjasama);
     formData.append("judul_adendum", adendumForm.value.judul_adendum);
@@ -396,7 +399,14 @@ const submitAdendum = () => {
 
     router.post(route("admin.riwayat-kerjasama.adendum.store"), formData, {
         preserveScroll: true,
-        onSuccess: closeAdendumModal,
+        onSuccess: () => {
+            closeAdendumModal();
+            // Refresh to same page after adding adendum
+            router.visit(
+                route("admin.riwayat-kerjasama.mitra", { page: currentPage }),
+                { preserveState: true }
+            );
+        },
     });
 };
 
@@ -455,6 +465,8 @@ const toggleStatusDropdown = (idKerjasama) => {
 
 // UPDATE STATUS
 const handleStatusUpdate = (idKerjasama, newStatus) => {
+    const currentPage = props.data?.current_page || 1;
+
     Swal.fire({
         title: "Ubah Status",
         text: `Apakah Anda yakin ingin mengubah status menjadi "${newStatus}"?`,
@@ -481,7 +493,7 @@ const handleStatusUpdate = (idKerjasama, newStatus) => {
                             confirmButtonColor: "#0d9488",
                         }).then(() => {
                             router.visit(
-                                route("admin.riwayat-kerjasama.mitra"),
+                                route("admin.riwayat-kerjasama.mitra", { page: currentPage }),
                                 { preserveState: true }
                             );
                         });
@@ -995,22 +1007,19 @@ onBeforeUnmount(() => {
                                                 >
                                                     <button
                                                         @click.stop="handleStatusUpdate(item.id_kerjasama, 'Aktif')"
-                                                        :disabled="item.status === 'Aktif'"
-                                                        class="block w-full text-left px-4 py-2 hover:bg-gray-100 transition first:rounded-t-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                                                        class="block w-full text-left px-4 py-2 hover:bg-gray-100 transition first:rounded-t-lg"
                                                     >
                                                         Aktif
                                                     </button>
                                                     <button
                                                         @click.stop="handleStatusUpdate(item.id_kerjasama, 'Segera Berakhir')"
-                                                        :disabled="item.status === 'Segera Berakhir'"
-                                                        class="block w-full text-left px-4 py-2 hover:bg-gray-100 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                                                        class="block w-full text-left px-4 py-2 hover:bg-gray-100 transition"
                                                     >
                                                         Segera Berakhir
                                                     </button>
                                                     <button
                                                         @click.stop="handleStatusUpdate(item.id_kerjasama, 'Berakhir')"
-                                                        :disabled="item.status === 'Berakhir'"
-                                                        class="block w-full text-left px-4 py-2 hover:bg-gray-100 transition last:rounded-b-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                                                        class="block w-full text-left px-4 py-2 hover:bg-gray-100 transition last:rounded-b-lg"
                                                     >
                                                         Berakhir
                                                     </button>
