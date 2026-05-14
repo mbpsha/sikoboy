@@ -218,13 +218,22 @@ const errors = ref({});
 const adendumErrors = ref({});
 const isSubmitting = ref(false);
 
+const parseJangkaToYears = (value) => {
+    const match = String(value ?? "").match(/(\d+)/);
+    if (!match) return null;
+
+    const years = Number.parseInt(match[1], 10);
+
+    return Number.isNaN(years) || years <= 0 ? null : years;
+};
+
 // AUTO CALCULATE TANGGAL SELESAI
 const calculateEndDate = () => {
   if (form.value.mulai && form.value.jangka) {
     const startDate = new Date(form.value.mulai);
-    const years = parseInt(form.value.jangka, 10);
+    const years = parseJangkaToYears(form.value.jangka);
 
-    if (!isNaN(years)) {
+    if (years !== null) {
       const endDate = new Date(startDate);
       endDate.setFullYear(endDate.getFullYear() + years);
 
@@ -249,9 +258,9 @@ watch(
 const calculateAdendumEndDate = () => {
     if (adendumForm.value.mulai && adendumForm.value.jangka) {
         const startDate = new Date(adendumForm.value.mulai);
-        const years = parseInt(adendumForm.value.jangka, 10);
+        const years = parseJangkaToYears(adendumForm.value.jangka);
 
-        if (!isNaN(years)) {
+        if (years !== null) {
             const endDate = new Date(startDate);
             endDate.setFullYear(endDate.getFullYear() + years);
 
