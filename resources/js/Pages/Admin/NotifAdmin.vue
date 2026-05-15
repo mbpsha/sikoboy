@@ -161,7 +161,7 @@
             v-for="notif in filteredNotifications"
             :key="notif.id"
             class="bg-white rounded-lg shadow-sm p-5 border-l-4 transition-all hover:shadow-md"
-            :class="notif.status === 'expired' ? 'border-l-red-500' : 'border-l-orange-400'"
+            :class="notif.status === 'expired' ? 'border-l-red-500' : (notif.status === 'info' ? 'border-l-blue-400' : 'border-l-orange-400')"
           >
             <div class="flex gap-4">
               <!-- Badge Type -->
@@ -178,37 +178,37 @@
 
               <!-- Content -->
               <div class="flex-1 min-w-0">
-                <h3 class="font-semibold" :class="notif.status === 'expired' ? 'text-red-600' : 'text-orange-600'">
-                  {{ notif.title }}
-                </h3>
+                  <h3 class="font-semibold" :class="notif.status === 'expired' ? 'text-red-600' : (notif.status === 'info' ? 'text-blue-600' : 'text-orange-600')">
+                    {{ notif.title }}
+                  </h3>
                 <p class="text-gray-600 text-sm mt-1">{{ notif.description }}</p>
                 
                 <div class="flex flex-wrap gap-4 mt-3 text-sm">
-                  <span class="text-gray-500">
-                    <strong class="text-gray-700">Nomor:</strong> {{ notif.nomor || 'DUMMY-001' }}
-                  </span>
-                  <span class="text-gray-500">
-                    <strong class="text-gray-700">Berakhir:</strong> {{ formatDate(notif.tanggalBerakhir) }}
-                  </span>
-                  <span 
-                    class="px-2 py-0.5 rounded text-xs font-semibold"
-                    :class="notif.status === 'expired'
+                    <span class="text-gray-500" v-if="notif.nomor">
+                      <strong class="text-gray-700">Nomor:</strong> {{ notif.nomor || 'DUMMY-001' }}
+                    </span>
+                    <span class="text-gray-500" v-if="notif.tanggalBerakhir">
+                      <strong class="text-gray-700">Berakhir:</strong> {{ formatDate(notif.tanggalBerakhir) }}
+                    </span>
+                    <span 
+                      class="px-2 py-0.5 rounded text-xs font-semibold"
+                      :class="notif.status === 'expired'
                       ? 'bg-red-100 text-red-700' 
-                      : 'bg-green-100 text-green-700'"
-                  >
-                    {{ notif.status === 'expired' ? 'Expired' : 'Aktif' }}
-                  </span>
+                      : (notif.status === 'info' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700')"
+                    >
+                      {{ notif.status === 'expired' ? 'Expired' : (notif.status === 'info' ? 'Info' : 'Aktif') }}
+                    </span>
+                  </div>
                 </div>
-              </div>
 
               <!-- Countdown -->
               <div class="text-right flex-shrink-0">
                 <div 
                   class="w-20 h-20 rounded-lg flex flex-col items-center justify-center text-white font-bold"
-                  :class="notif.status === 'expired' ? 'bg-red-500' : 'bg-orange-500'"
+                  :class="notif.status === 'expired' ? 'bg-red-500' : (notif.status === 'info' ? 'bg-blue-500' : 'bg-orange-500')"
                 >
-                  <span class="text-2xl">{{ notif.daysLeft }}</span>
-                  <span class="text-xs">Hari</span>
+                  <span class="text-2xl">{{ notif.daysLeft ?? '!' }}</span>
+                  <span class="text-xs">{{ notif.daysLeft === null ? 'Baru' : 'Hari' }}</span>
                 </div>
                 <button 
                   @click="viewDetail(notif.id)"
@@ -274,71 +274,16 @@ const logout = () => {
 }
 
 // --- Notification Page Logic ---
+const props = defineProps({
+  notifications: {
+    type: Array,
+    default: () => [],
+  },
+})
+
 const activeTab = ref('semua')
 
-// 🎭 DUMMY DATA
-const notifications = ref([
-  {
-    id: 1,
-    type: 'MITRA',
-    title: 'Kerjasama akan berakhir dalam 90 hari lagi',
-    description: 'Kerjasama dengan Dinas Pemberdayaan Masyarakat dan Desa Boyolali dan PT BPR Bank Boyolali (Perseroda)',
-    nomor: '012/SP-KS/PT-ABC/V/2026',
-    status: 'warning',
-    tanggalBerakhir: '2027-01-02',
-    daysLeft: 90,
-  },
-  {
-    id: 2,
-    type: 'MITRA',
-    title: 'Kerjasama akan berakhir dalam 30 hari lagi',
-    description: 'Kerjasama dengan CV Sumber Rejeki dan Dinas Koperasi Boyolali',
-    nomor: '013/SP-KS/CV-SR/VII/2026',
-    status: 'urgent',
-    tanggalBerakhir: '2026-12-15',
-    daysLeft: 30,
-  },
-  {
-    id: 3,
-    type: 'MITRA',
-    title: 'Kerjasama telah berakhir',
-    description: 'Kerjasama dengan PT Sejahtera Abadi telah melewati masa berlaku',
-    nomor: '010/SP-KS/PT-SA/III/2026',
-    status: 'expired',
-    tanggalBerakhir: '2026-05-01',
-    daysLeft: 0,
-  },
-  {
-    id: 4,
-    type: 'SETDA',
-    title: 'Arsip dokumen akan berakhir dalam 60 hari',
-    description: 'Dokumen kerjasama dengan PT Maju Jaya akan segera berakhir',
-    nomor: '015/SP-KS/SETDA/VI/2026',
-    status: 'warning',
-    tanggalBerakhir: '2027-02-15',
-    daysLeft: 60,
-  },
-  {
-    id: 5,
-    type: 'SETDA',
-    title: 'Arsip dokumen akan berakhir dalam 90 hari',
-    description: 'Dokumen kerjasama dengan CV Berkah Jaya akan berakhir pada Maret 2027',
-    nomor: '016/SP-KS/SETDA/VIII/2026',
-    status: 'warning',
-    tanggalBerakhir: '2027-03-10',
-    daysLeft: 90,
-  },
-  {
-    id: 6,
-    type: 'SETDA',
-    title: 'Arsip dokumen telah berakhir',
-    description: 'Dokumen kerjasama dengan PT Nusantara telah melewati masa berlaku',
-    nomor: '011/SP-KS/SETDA/II/2026',
-    status: 'expired',
-    tanggalBerakhir: '2026-04-20',
-    daysLeft: 0,
-  },
-])
+const notifications = computed(() => props.notifications ?? [])
 
 const tabs = [
   { label: 'Semua', value: 'semua' },
@@ -352,8 +297,8 @@ const getCount = (type) => {
   if (type === 'semua') return notifications.value.length
   if (type === 'mitra') return notifications.value.filter(n => n.type === 'MITRA').length
   if (type === 'setda') return notifications.value.filter(n => n.type === 'SETDA').length
-  if (type === 'akan_berakhir') return notifications.value.filter(n => n.status !== 'expired').length
-  if (type === 'sudah_berakhir') return notifications.value.filter(n => n.status === 'expired').length
+  if (type === 'akan_berakhir') return notifications.value.filter(n => n.status_group === 'akan_berakhir').length
+  if (type === 'sudah_berakhir') return notifications.value.filter(n => n.status_group === 'sudah_berakhir').length
   return 0
 }
 
@@ -361,8 +306,8 @@ const filteredNotifications = computed(() => {
   switch (activeTab.value) {
     case 'mitra': return notifications.value.filter(n => n.type === 'MITRA')
     case 'setda': return notifications.value.filter(n => n.type === 'SETDA')
-    case 'akan_berakhir': return notifications.value.filter(n => n.status !== 'expired')
-    case 'sudah_berakhir': return notifications.value.filter(n => n.status === 'expired')
+    case 'akan_berakhir': return notifications.value.filter(n => n.status_group === 'akan_berakhir')
+    case 'sudah_berakhir': return notifications.value.filter(n => n.status_group === 'sudah_berakhir')
     default: return notifications.value
   }
 })

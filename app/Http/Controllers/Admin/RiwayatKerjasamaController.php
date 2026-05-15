@@ -208,7 +208,7 @@ class RiwayatKerjasamaController extends Controller
                 'pemrakarsa' => 'P',
                 'tipe' => 'pemerintah',
                 'nama_pihak_luar' => $validated['nama_pihak_luar'] ?? null,
-                'status_aktif' => 'aktif',
+                'status_aktif' => 'Aktif',
                 'is_finalized' => true,
                 'status_persetujuan' => 'disetujui',
             ]);
@@ -252,6 +252,7 @@ class RiwayatKerjasamaController extends Controller
         $kerjasama = Kerjasama::pemerintahTipe()->findOrFail($id);
         $validated = $request->validated();
         $file = $request->file('dokumen_file');
+        $currentPage = $request->input('page', 1);
 
         DB::transaction(function () use ($kerjasama, $validated, $file, $request) {
             $kerjasama->update([
@@ -281,7 +282,10 @@ class RiwayatKerjasamaController extends Controller
             }
         });
 
-        return back()->with('success', 'Data kerjasama pemerintah berhasil diperbarui.');
+        return redirect()
+            ->route('admin.riwayat-kerjasama.pemerintah')
+            ->with(['success' => 'Data kerjasama pemerintah berhasil diperbarui.', 'page' => $currentPage])
+            ->withQueryString();
     }
 
     /**
@@ -466,7 +470,7 @@ class RiwayatKerjasamaController extends Controller
                     'pemrakarsa' => 'M',
                     'tipe' => 'mitra',
                     'nama_pihak_luar' => $validated['nama_pihak_luar'],
-                    'status_aktif' => 'aktif',
+                    'status_aktif' => 'Aktif',
                     'is_finalized' => true,
                     'status_persetujuan' => 'disetujui',
                 ]);
@@ -514,7 +518,7 @@ class RiwayatKerjasamaController extends Controller
                     'pemrakarsa' => 'P',
                     'tipe' => 'pemerintah',
                     'nama_pihak_luar' => $validated['nama_pihak_luar'],
-                    'status_aktif' => 'aktif',
+                    'status_aktif' => 'Aktif',
                     'is_finalized' => true,
                     'status_persetujuan' => 'disetujui',
                 ]);
@@ -670,8 +674,19 @@ class RiwayatKerjasamaController extends Controller
     {
         $validated = $request->validate([
             'id_kerjasama' => ['required', 'integer', 'exists:kerjasama,id_kerjasama'],
+            'mitra' => ['required', 'string', 'max:255'],
+            'tahun' => ['required', 'digits:4'],
             'judul_adendum' => ['required', 'string', 'max:255'],
-            'keterangan_adendum' => ['nullable', 'string'],
+            'nomor_surat_mitra_baru' => ['required', 'string', 'max:255'],
+            'nomor_surat_pemerintah_baru' => ['required', 'string', 'max:255'],
+            'nomor_surat_mitra_lama' => ['required', 'string', 'max:255'],
+            'nomor_surat_pemerintah_lama' => ['required', 'string', 'max:255'],
+            'urusan' => ['required', 'string', 'max:255'],
+            'jangka_waktu' => ['required', 'string', 'max:255'],
+            'jenis_kerjasama' => ['required', 'string', 'max:255'],
+            'tanggal_mulai' => ['required', 'date'],
+            'tanggal_berakhir' => ['required', 'date', 'after_or_equal:tanggal_mulai'],
+            'pembiayaan' => ['required', 'string'],
             'file' => ['required', 'file', 'mimes:pdf', 'max:10240'],
         ]);
 
@@ -686,8 +701,19 @@ class RiwayatKerjasamaController extends Controller
 
         \App\Models\Adendum::create([
             'id_kerjasama' => $validated['id_kerjasama'],
+            'mitra' => $validated['mitra'],
+            'tahun' => $validated['tahun'],
             'judul_adendum' => $validated['judul_adendum'],
-            'keterangan_adendum' => $validated['keterangan_adendum'],
+            'nomor_surat_mitra_baru' => $validated['nomor_surat_mitra_baru'],
+            'nomor_surat_pemerintah_baru' => $validated['nomor_surat_pemerintah_baru'],
+            'nomor_surat_mitra_lama' => $validated['nomor_surat_mitra_lama'],
+            'nomor_surat_pemerintah_lama' => $validated['nomor_surat_pemerintah_lama'],
+            'urusan' => $validated['urusan'],
+            'jangka_waktu' => $validated['jangka_waktu'],
+            'jenis_kerjasama' => $validated['jenis_kerjasama'],
+            'tanggal_mulai' => $validated['tanggal_mulai'],
+            'tanggal_berakhir' => $validated['tanggal_berakhir'],
+            'pembiayaan' => $validated['pembiayaan'],
             'nama_file' => $originalFileName,
             'lokasi_file' => $path,
             'created_by' => $admin->id_user,
@@ -729,7 +755,7 @@ class RiwayatKerjasamaController extends Controller
             ]);
         });
 
-        return back()->with('success', 'Status kerjasama berhasil diperbarui.');
+        return back();
     }
 
     // =========================================================================
@@ -870,6 +896,8 @@ class RiwayatKerjasamaController extends Controller
             'judul' => $k->judul,
             'mulai' => $mulai ? Carbon::parse($mulai)->translatedFormat('d F Y') : '-',
             'berakhir' => $berakhir ? Carbon::parse($berakhir)->translatedFormat('d F Y') : '-',
+            'tanggal_mulai' => $mulai ? Carbon::parse($mulai)->format('Y-m-d') : null,
+            'tanggal_berakhir' => $berakhir ? Carbon::parse($berakhir)->format('Y-m-d') : null,
             'jangka_waktu' => $jangkaWaktu,
             'file_name' => $storedFileName,
             'file_url' => $this->resolveFileUrl($storedFilePath),

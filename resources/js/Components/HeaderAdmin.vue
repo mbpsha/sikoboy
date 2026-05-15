@@ -62,12 +62,9 @@
             <div 
               v-for="notif in notifications" 
               :key="notif.id"
-              :class="[
-                'px-4 py-3 border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer',
-                !notif.read && 'bg-yellow-50'
-              ]"
-              @click="handleNotificationClick(notif)"
-            >
+                class="px-4 py-3 border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer"
+                @click="handleNotificationClick(notif)"
+              >
               <div class="flex gap-3">
                 <!-- Icon -->
                 <div class="flex-shrink-0">
@@ -123,10 +120,7 @@
                     >
                       {{ notif.type }}
                     </span>
-                    <span 
-                      v-if="!notif.read"
-                      class="w-2 h-2 bg-red-500 rounded-full flex-shrink-0 mt-1.5"
-                    ></span>
+                    <span class="w-2 h-2 bg-red-500 rounded-full flex-shrink-0 mt-1.5"></span>
                   </div>
                   
                   <p class="font-semibold text-gray-800 text-sm mt-1 truncate">
@@ -239,54 +233,7 @@ const props = defineProps({ title: String })
 const page = usePage()
 const showNotifications = ref(false)
 
-// 🎭 DUMMY DATA - Ganti dengan API nanti
-const notifications = ref([
-  {
-    id: 1,
-    type: 'MITRA',
-    title: 'Kerjasama akan berakhir dalam 90 hari',
-    description: 'Masa kerjasama dengan PT BPR Bank Boyolali akan berakhir pada 2 Januari 2027.',
-    countdown: '90 hari lagi',
-    status: 'warning',
-    read: false
-  },
-  {
-    id: 2,
-    type: 'MITRA',
-    title: 'Kerjasama akan berakhir dalam 30 hari',
-    description: 'Masa kerjasama dengan CV Sumber Rejeki akan berakhir pada 15 Desember 2026.',
-    countdown: '30 hari lagi',
-    status: 'urgent',
-    read: false
-  },
-  {
-    id: 3,
-    type: 'SETDA',
-    title: 'Arsip dokumen akan berakhir dalam 90 hari',
-    description: 'Dokumen kerjasama dengan PT Maju Jaya akan berakhir pada 10 Maret 2027.',
-    countdown: '90 hari lagi',
-    status: 'warning',
-    read: false
-  },
-  {
-    id: 4,
-    type: 'SETDA',
-    title: 'Arsip dokumen akan berakhir dalam 60 hari',
-    description: 'Dokumen kerjasama dengan CV Berkah Jaya akan berakhir pada 20 Februari 2027.',
-    countdown: '60 hari lagi',
-    status: 'warning',
-    read: true
-  },
-  {
-    id: 5,
-    type: 'MITRA',
-    title: 'Kerjasama telah berakhir',
-    description: 'Masa kerjasama dengan PT Sejahtera Abadi telah berakhir pada 1 November 2026.',
-    countdown: 'Telah berakhir',
-    status: 'expired',
-    read: false
-  }
-])
+const notifications = computed(() => page.props.admin_notifications ?? [])
 
 const authUser = computed(() => page.props.auth?.user ?? null)
 
@@ -302,7 +249,7 @@ const roleLabel = computed(() => {
 })
 
 const initial = computed(() => displayName.value?.charAt(0).toUpperCase() || '')
-const totalNotifications = computed(() => notifications.value.filter(n => !n.read).length)
+const totalNotifications = computed(() => page.props.admin_notifications_count ?? notifications.value.length)
 
 const toggleNotifications = () => {
   showNotifications.value = !showNotifications.value
@@ -310,18 +257,12 @@ const toggleNotifications = () => {
 
 // 🔔 UPDATE: Navigasi ke halaman NotifAdmin dengan query parameter ID
 const handleNotificationClick = (notif) => {
-  markAsRead(notif.id)
   // Navigasi ke halaman notifikasi dengan highlight notifikasi yang diklik
   router.visit(`/admin/notifikasi?highlight=${notif.id}`)
 }
 
-const markAsRead = (id) => {
-  const notif = notifications.value.find(n => n.id === id)
-  if (notif) notif.read = true
-}
-
 const markAllAsRead = () => {
-  notifications.value.forEach(notif => { notif.read = true })
+  showNotifications.value = false
 }
 
 const handleClickOutside = (event) => {
