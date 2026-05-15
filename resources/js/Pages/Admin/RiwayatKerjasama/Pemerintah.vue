@@ -225,6 +225,62 @@ const adendumForm = ref({
 const errors = ref({});
 const adendumErrors = ref({});
 const isSubmitting = ref(false);
+const showMitraSuggestions = ref(false);
+let hideMitraSuggestionsTimer = null;
+
+const filteredMitraOptions = computed(() => {
+    const query = String(form.value.mitra ?? "").trim().toLowerCase();
+
+    if (!query) return [];
+
+    return (props.mitras || [])
+        .filter((mitraOption) => {
+            const idMitra = String(mitraOption.id_mitra ?? "").toLowerCase();
+            const namaPerusahaan = String(mitraOption.nama_perusahaan ?? "").toLowerCase();
+
+            return idMitra.includes(query) || namaPerusahaan.includes(query);
+        })
+        .slice(0, 10);
+});
+
+const selectMitra = (mitraOption) => {
+    form.value.id_mitra = String(mitraOption.id_mitra);
+    form.value.mitra = mitraOption.nama_perusahaan || "";
+    showMitraSuggestions.value = false;
+};
+
+const handleMitraFocus = () => {
+    if (hideMitraSuggestionsTimer) {
+        clearTimeout(hideMitraSuggestionsTimer);
+        hideMitraSuggestionsTimer = null;
+    }
+    showMitraSuggestions.value = true;
+};
+
+const handleMitraBlur = () => {
+    hideMitraSuggestionsTimer = setTimeout(() => {
+        showMitraSuggestions.value = false;
+    }, 120);
+};
+
+watch(
+    () => form.value.mitra,
+    (value) => {
+        const keyword = String(value ?? "").trim().toLowerCase();
+
+        if (!keyword) {
+            form.value.id_mitra = "";
+            return;
+        }
+
+        const exactMatch = (props.mitras || []).find(
+            (mitraOption) =>
+                String(mitraOption.nama_perusahaan ?? "").trim().toLowerCase() === keyword,
+        );
+
+        form.value.id_mitra = exactMatch ? String(exactMatch.id_mitra) : "";
+    },
+);
 
 const parseJangkaToYears = (value) => {
     const match = String(value ?? "").match(/(\d+)/);
@@ -515,7 +571,7 @@ const submitAdendum = () => {
 // CLOSE MODAL
 const closeModal = () => {
     showModal.value = false;
-    mitraIdSearch.value = "";
+    showMitraSuggestions.value = false;
     form.value = {
         id_mitra: "",
         mitra: "",
@@ -646,6 +702,7 @@ const handleStatusUpdate = (idKerjasama, newStatus) => {
 
 onBeforeUnmount(() => {
     if (debounceTimer) clearTimeout(debounceTimer);
+    if (hideMitraSuggestionsTimer) clearTimeout(hideMitraSuggestionsTimer);
 });
 </script>
 
@@ -1256,35 +1313,32 @@ onBeforeUnmount(() => {
                                 Mitra <span class="text-red-500">*</span>
                             </label>
                             <input
-                                v-model="mitraIdSearch"
+                                v-model="form.mitra"
+                                @focus="handleMitraFocus"
+                                @blur="handleMitraBlur"
                                 class="w-full border rounded-lg px-3 py-2 mt-1"
-                                placeholder="Ketik ID mitra (contoh: 21)"
+                                placeholder="Ketik nama atau ID mitra"
                             />
-                            <select
-                                v-model="form.id_mitra"
-                                @change="applySelectedMitra(form.id_mitra)"
-                                class="w-full border rounded-lg px-3 py-2 mt-1 bg-white"
+                            <div
+                                v-if="showMitraSuggestions && form.mitra && filteredMitraOptions.length > 0"
+                                class="mt-1 max-h-44 overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-sm"
                             >
-                                <option value="">Pilih ID mitra</option>
-                                <option
+                                <button
                                     v-for="mitraOption in filteredMitraOptions"
                                     :key="mitraOption.id_mitra"
-                                    :value="String(mitraOption.id_mitra)"
+                                    type="button"
+                                    class="w-full px-3 py-2 text-left text-sm hover:bg-gray-50"
+                                    @mousedown.prevent="selectMitra(mitraOption)"
                                 >
                                     {{ mitraOption.id_mitra }} - {{ mitraOption.nama_perusahaan }}
-                                </option>
-                            </select>
+                                </button>
+                            </div>
                             <p
-                                v-if="mitraIdSearch && filteredMitraOptions.length === 0"
+                                v-if="showMitraSuggestions && form.mitra && filteredMitraOptions.length === 0"
                                 class="text-xs text-gray-500 mt-1"
                             >
-                                Data mitra tidak ditemukan untuk ID tersebut.
+                                Data mitra tidak ditemukan.
                             </p>
-                            <input
-                                v-model="form.mitra"
-                                class="w-full border rounded-lg px-3 py-2 mt-1"
-                                placeholder="Masukkan nama mitra"
-                            />
                             <p
                                 v-if="errors.mitra"
                                 class="text-red-500 text-xs mt-1"
