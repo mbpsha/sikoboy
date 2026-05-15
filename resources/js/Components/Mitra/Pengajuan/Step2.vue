@@ -157,7 +157,7 @@ const submit = () => {
                       v-model="form.nama_pihak_luar"
                       id="mitra_kerjasama"
                       type="text"
-                      placeholder="Mitra kerjasama ke- 1"
+                      placeholder="Nama Mitra kerjasama ke- 1"
                       class="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-[#17464E]/20 outline-none transition-all"
                     />
                     <p v-if="form.errors.nama_pihak_luar" class="text-red-500 text-xs mt-1">{{ form.errors.nama_pihak_luar }}</p>
@@ -196,7 +196,7 @@ const submit = () => {
 
                   <!-- Ususan -->
                   <div class="space-y-2">
-                    <label for="ususan" class="block text-sm font-bold text-[#17464E]">Ususan</label>
+                    <label for="ususan" class="block text-sm font-bold text-[#17464E]">Ususan<span class="text-red-500">*</span></label>
                     <select
                       v-model="form.urusan"
                       id="ususan"
