@@ -23,6 +23,7 @@ class Dokumen extends Model
         'lokasi_file',
         'versi_dokumen',
         'created_by',
+        'tipe_dokumen',
     ];
 
     public function kerjasama()

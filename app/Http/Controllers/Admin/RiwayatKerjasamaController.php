@@ -367,8 +367,9 @@ class RiwayatKerjasamaController extends Controller
                 'keterangan' => $path,
             ]);
 
+            $dok = null;
             if ($path && $originalFileName) {
-                Dokumen::create([
+                $dok = Dokumen::create([
                     'id_kerjasama' => $kerjasama->id_kerjasama,
                     'jenis_dokumen' => $validated['jenis_dokumen'],
                     'nama_file' => $originalFileName,
@@ -383,6 +384,7 @@ class RiwayatKerjasamaController extends Controller
                 jenisStatus: 'disetujui',
                 idAdmin: (int) $admin->id_admin,
                 catatan: 'Kerjasama mitra ditambahkan ke riwayat',
+                file: $dok ? $dok->lokasi_file : null,
             );
         });
 
@@ -482,8 +484,9 @@ class RiwayatKerjasamaController extends Controller
                     'keterangan' => $path,
                 ]);
 
+                $dok = null;
                 if ($path && $originalFileName) {
-                    Dokumen::create([
+                    $dok = Dokumen::create([
                         'id_kerjasama' => $kerjasama->id_kerjasama,
                         'jenis_dokumen' => $validated['jenis_dokumen'],
                         'nama_file' => $originalFileName,
@@ -498,6 +501,7 @@ class RiwayatKerjasamaController extends Controller
                     jenisStatus: 'disetujui',
                     idAdmin: (int) $admin->id_admin,
                     catatan: 'Kerjasama mitra ditambahkan ke riwayat',
+                    file: $dok ? $dok->lokasi_file : null,
                 );
             });
         } else {
@@ -652,6 +656,14 @@ class RiwayatKerjasamaController extends Controller
                         'nama_file' => $originalFileName,
                         'lokasi_file' => $path,
                     ]);
+                    // Create a riwayat entry so mitra can see admin-uploaded file in timeline
+                    RiwayatStatus::recordStatus(
+                        idKerjasama: (int) $kerjasama->id_kerjasama,
+                        jenisStatus: 'revisi',
+                        idAdmin: (int) $admin->id_admin,
+                        catatan: 'Admin mengganti dokumen kerjasama',
+                        file: $path,
+                    );
                 } else {
                     Dokumen::create([
                         'id_kerjasama' => $kerjasama->id_kerjasama,
@@ -660,6 +672,13 @@ class RiwayatKerjasamaController extends Controller
                         'versi_dokumen' => 1,
                         'created_by' => $admin->id_user,
                     ]);
+                    RiwayatStatus::recordStatus(
+                        idKerjasama: (int) $kerjasama->id_kerjasama,
+                        jenisStatus: 'revisi',
+                        idAdmin: (int) $admin->id_admin,
+                        catatan: 'Admin menambahkan dokumen kerjasama',
+                        file: $path,
+                    );
                 }
             }
         });
@@ -776,6 +795,15 @@ class RiwayatKerjasamaController extends Controller
             'versi_dokumen' => $nextVersion,
             'created_by' => $createdBy,
         ]);
+        // Also create a riwayat entry so timelines show the uploaded file.
+        $adminId = \App\Models\Admin::where('id_user', $createdBy)->value('id_admin');
+        RiwayatStatus::recordStatus(
+            idKerjasama: (int) $kerjasama->id_kerjasama,
+            jenisStatus: 'revisi',
+            idAdmin: $adminId ? (int) $adminId : null,
+            catatan: 'Dokumen versi baru diunggah oleh admin',
+            file: $path,
+        );
     }
 
     private function applyFilters($query, Request $request): void

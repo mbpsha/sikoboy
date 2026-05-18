@@ -625,6 +625,16 @@ const handleStatusUpdate = (idKerjasama, newStatus) => {
     });
 };
 
+// Normalize status text and return badge classes
+const statusBadgeClasses = (status) => {
+    const s = String(status ?? '').trim().toLowerCase();
+    if (!s) return 'bg-gray-100 text-gray-600';
+    if (s === 'aktif' || s === 'active') return 'bg-green-100 text-green-700';
+    if (s === 'berakhir' || s === 'expired' || s === 'selesai') return 'bg-red-100 text-red-600';
+    if (s.includes('segera') || s.includes('soon') || s.includes('akan')) return 'bg-yellow-100 text-yellow-700';
+    return 'bg-gray-100 text-gray-600';
+};
+
 onBeforeUnmount(() => {
     if (debounceTimer) clearTimeout(debounceTimer);
     if (hideMitraSuggestionsTimer) clearTimeout(hideMitraSuggestionsTimer);
@@ -1231,15 +1241,7 @@ const filteredTableData = computed(() => {
                                         <div class="flex items-center justify-between gap-2">
                                             <span
                                                 class="inline-flex items-center px-3 py-1 rounded-full text-xs leading-none"
-                                                :class="{
-                                                    'bg-green-100 text-green-700':
-                                                        item.status === 'Aktif',
-                                                    'bg-red-100 text-red-600':
-                                                        item.status === 'Berakhir',
-                                                    'bg-yellow-100 text-yellow-700':
-                                                        item.status ===
-                                                        'Segera Berakhir',
-                                                }"
+                                                :class="statusBadgeClasses(item.status)"
                                             >
                                                 {{ item.status }}
                                             </span>
