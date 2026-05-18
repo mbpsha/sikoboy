@@ -48,58 +48,7 @@
                     />
                 </svg>
             </button>
-
-          <!-- Notification List -->
-          <div class="max-h-96 overflow-y-auto">
-            <div 
-              v-for="notif in notifications" 
-              :key="notif.id"
-                class="px-4 py-3 border-b border-gray-100 hover:bg-yellow-50 transition-colors cursor-pointer"
-                @click="handleNotificationClick(notif)"
-              >
-              <div class="flex gap-3">
-                <!-- Icon -->
-                <div class="flex-shrink-0">
-                  <div 
-                    :class="[
-                      'w-10 h-10 rounded-full flex items-center justify-center',
-                      notif.type === 'MITRA' ? 'bg-blue-100' : 'bg-green-100'
-                    ]"
-                  >
-                    <!-- MITRA Icon -->
-                    <svg 
-                      v-if="notif.type === 'MITRA'"
-                      xmlns="http://www.w3.org/2000/svg" 
-                      class="h-5 w-5 text-blue-600" 
-                      fill="none" 
-                      viewBox="0 0 24 24" 
-                      stroke="currentColor"
-                    >
-                      <path 
-                        stroke-linecap="round" 
-                        stroke-linejoin="round" 
-                        stroke-width="2" 
-                        d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" 
-                      />
-                    </svg>
-                    <!-- SETDA Icon -->
-                    <svg 
-                      v-else
-                      xmlns="http://www.w3.org/2000/svg" 
-                      class="h-5 w-5 text-green-600" 
-                      fill="none" 
-                      viewBox="0 0 24 24" 
-                      stroke="currentColor"
-                    >
-                      <path 
-                        stroke-linecap="round" 
-                        stroke-linejoin="round" 
-                        stroke-width="2" 
-                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" 
-                      />
-                    </svg>
-                  </div>
-                </div>
+        </div>
 
         <div class="flex items-center gap-2 sm:gap-3">
             <div class="relative">
@@ -313,10 +262,15 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted, onUnmounted, watch } from 'vue'
+import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { usePage, Link, router } from '@inertiajs/vue3'
 
 defineEmits(["toggle-sidebar"]);
+
+const page = usePage();
+const showNotifications = ref(false);
+const isMobile = ref(window.innerWidth < 768);
+const isSidebarCollapsed = ref(false);
 
 const rawAdminNotifications = computed(() => page.props.admin_notifications ?? [])
 
@@ -326,11 +280,6 @@ const closedAdminNotifications = ref([])
 const notifications = computed(() => {
   return rawAdminNotifications.value.filter(n => !closedAdminNotifications.value.includes(n.id))
 })
-
-const page = usePage();
-const showNotifications = ref(false);
-
-const notifications = computed(() => page.props.admin_notifications ?? []);
 const authUser = computed(() => page.props.auth?.user ?? null);
 
 const displayName = computed(() => {
@@ -376,8 +325,13 @@ const handleClickOutside = (event) => {
     }
 };
 
+const handleWindowResize = () => {
+  isMobile.value = window.innerWidth < 768;
+};
+
 onMounted(() => {
   document.addEventListener('click', handleClickOutside)
+  window.addEventListener('resize', handleWindowResize)
   // load closed admin notifications
   try {
     const stored = localStorage.getItem('closed_admin_notifications')
@@ -389,6 +343,7 @@ onMounted(() => {
 
 onUnmounted(() => {
     document.removeEventListener("click", handleClickOutside);
+    window.removeEventListener('resize', handleWindowResize);
 });
 </script>
 
