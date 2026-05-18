@@ -166,6 +166,7 @@ class KerjasamaController extends Controller
         $defaultAdminEmail = (string) config('services.default_admin_email');
 
         $admin = Admin::query()
+        
             ->whereHas('user', fn ($query) => $query->where('email', $defaultAdminEmail))
             ->first();
         $admin ??= Admin::query()->orderBy('id_admin')->first();
@@ -190,6 +191,7 @@ class KerjasamaController extends Controller
                 'pemrakarsa' => 'M',
                 'jenis_kerjasama' => $validated['jenis_kerjasama'],
                 'jenis_dokumen' => $validated['jenis_dokumen'],
+                'pembiayaan' => $validated['pembiayaan'],
                 'tipe' => 'mitra',
                 'nama_pihak_luar' => $validated['nama_pihak_luar'],
                 'is_finalized' => false,
@@ -214,6 +216,7 @@ class KerjasamaController extends Controller
                 'lokasi_file' => $path,
                 'versi_dokumen' => 1,
                 'created_by' => $request->user()->id_user,
+                'tipe_dokumen' => 'mitra',
             ]);
 
             RiwayatStatus::recordStatus(
@@ -221,11 +224,49 @@ class KerjasamaController extends Controller
                 jenisStatus: 'diajukan',
                 idAdmin: (int) $admin->id_admin,
                 catatan: 'Pengajuan baru dari mitra',
+                file: null,
             );
         });
 
         return redirect()
             ->route('mitra.kerjasama.index')
             ->with('success', 'Pengajuan kerjasama berhasil dikirim.');
+    }
+
+    /**
+     * Handle mitra uploading a revision file for an existing kerjasama.
+     */
+    public function uploadRevision(Request $request, int $id)
+    {
+        $kerjasama = Kerjasama::findOrFail($id);
+        $mitra     = $request->user()->mitra;
+
+        if (! $mitra || $kerjasama->id_mitra !== $mitra->id_mitra) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $request->validate([
+            'file' => ['required', 'file', 'mimes:pdf', 'max:10240'],
+        ]);
+
+        $file        = $request->file('file');
+        $path        = $file->store('dokumen-kerjasama', 'public');
+        $nextVersion = ((int) $kerjasama->dokumen()->max('versi_dokumen')) + 1;
+
+        $dok = Dokumen::create([
+            'id_kerjasama'  => $kerjasama->id_kerjasama,
+            'nama_file'     => $file->getClientOriginalName(),
+            'lokasi_file'   => $path,
+            'versi_dokumen' => $nextVersion,
+            'created_by'    => $request->user()->id_user,
+            'tipe_dokumen'  => 'mitra',  // ✅ pastikan migration sudah dijalankan
+        ]);
+
+        // ✅ Return JSON bukan redirect
+        return response()->json([
+            'success'    => true,
+            'message'    => 'File revisi berhasil diunggah.',
+            'lokasi_file' => $dok->lokasi_file,
+        ]);
     }
 }

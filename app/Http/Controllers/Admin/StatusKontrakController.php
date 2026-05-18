@@ -48,8 +48,7 @@ class StatusKontrakController extends Controller
     {
         $kerjasama = Kerjasama::mitraTipe()->where('is_finalized', false)->findOrFail($id);
         $admin = $request->user()->admin;
-        $penanggungJawab = trim(($admin->divisi ?? '').' - '.($admin->nama ?? ''));
-        $penanggungJawab = trim($penanggungJawab, ' -');
+        $penanggungJawab = trim($admin->divisi ?? '');
         $statusNegosiasi = $request->validated('status_negosiasi');
 
         $kerjasama->update([
@@ -76,8 +75,7 @@ class StatusKontrakController extends Controller
         $validated = $request->validated();
         $admin = $request->user()->admin;
         $adminId = (int) $admin->id_admin;
-        $penanggungJawab = trim(($admin->divisi ?? '').' - '.($admin->nama ?? ''));
-        $penanggungJawab = trim($penanggungJawab, ' -');
+        $penanggungJawab = trim($admin->divisi ?? '');
         $catatanPersetujuan = $validated['catatan_persetujuan'] ?? null;
 
         DB::transaction(function () use ($kerjasama, $validated, $adminId, $catatanPersetujuan, $penanggungJawab): void {

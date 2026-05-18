@@ -51,9 +51,11 @@ class HandleInertiaRequests extends Middleware
                     'email' => $user->email,
                     'role' => $user->role,
                     // username: prefer admin.nama, then mitra.pic, then email local part
-                    'username' => $user->admin?->nama
-                        ?? $user->mitra?->pic
-                        ?? preg_replace('/@.*$/', '', $user->email),
+                        'username' => $user->admin?->nama
+                            ?? $user->mitra?->pic
+                            ?? preg_replace('/@.*$/', '', $user->email),
+                        // include division for admins so frontend can show it
+                        'divisi' => $user->admin?->divisi ?? null,
                 ] : null,
             ],
             'flash' => [

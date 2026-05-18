@@ -49,13 +49,57 @@
                 </svg>
             </button>
 
-            <div class="min-w-0">
-                <p class="hidden sm:block text-sm text-gray-500">Dashboard / {{ title }}</p>
-                <h1 class="text-lg sm:text-2xl font-semibold text-gray-700 truncate">
-                    {{ title }}
-                </h1>
-            </div>
-        </div>
+          <!-- Notification List -->
+          <div class="max-h-96 overflow-y-auto">
+            <div 
+              v-for="notif in notifications" 
+              :key="notif.id"
+                class="px-4 py-3 border-b border-gray-100 hover:bg-yellow-50 transition-colors cursor-pointer"
+                @click="handleNotificationClick(notif)"
+              >
+              <div class="flex gap-3">
+                <!-- Icon -->
+                <div class="flex-shrink-0">
+                  <div 
+                    :class="[
+                      'w-10 h-10 rounded-full flex items-center justify-center',
+                      notif.type === 'MITRA' ? 'bg-blue-100' : 'bg-green-100'
+                    ]"
+                  >
+                    <!-- MITRA Icon -->
+                    <svg 
+                      v-if="notif.type === 'MITRA'"
+                      xmlns="http://www.w3.org/2000/svg" 
+                      class="h-5 w-5 text-blue-600" 
+                      fill="none" 
+                      viewBox="0 0 24 24" 
+                      stroke="currentColor"
+                    >
+                      <path 
+                        stroke-linecap="round" 
+                        stroke-linejoin="round" 
+                        stroke-width="2" 
+                        d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" 
+                      />
+                    </svg>
+                    <!-- SETDA Icon -->
+                    <svg 
+                      v-else
+                      xmlns="http://www.w3.org/2000/svg" 
+                      class="h-5 w-5 text-green-600" 
+                      fill="none" 
+                      viewBox="0 0 24 24" 
+                      stroke="currentColor"
+                    >
+                      <path 
+                        stroke-linecap="round" 
+                        stroke-linejoin="round" 
+                        stroke-width="2" 
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" 
+                      />
+                    </svg>
+                  </div>
+                </div>
 
         <div class="flex items-center gap-2 sm:gap-3">
             <div class="relative">
@@ -269,22 +313,19 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted, onUnmounted } from "vue";
-import { usePage, Link, router } from "@inertiajs/vue3";
+import { computed, ref, onMounted, onUnmounted, watch } from 'vue'
+import { usePage, Link, router } from '@inertiajs/vue3'
 
 defineEmits(["toggle-sidebar"]);
 
-defineProps({
-    title: String,
-    isMobile: {
-        type: Boolean,
-        default: false,
-    },
-    isSidebarCollapsed: {
-        type: Boolean,
-        default: false,
-    },
-});
+const rawAdminNotifications = computed(() => page.props.admin_notifications ?? [])
+
+// local state: closed notifications (persisted in localStorage) to hide from header popup
+const closedAdminNotifications = ref([])
+
+const notifications = computed(() => {
+  return rawAdminNotifications.value.filter(n => !closedAdminNotifications.value.includes(n.id))
+})
 
 const page = usePage();
 const showNotifications = ref(false);
@@ -298,26 +339,36 @@ const displayName = computed(() => {
 });
 
 const roleLabel = computed(() => {
-    const divisi = authUser.value?.admin?.divisi ?? "";
-    return divisi || "";
-});
+  // Show only the division for admins/ users that have it
+  const divisi = authUser.value?.admin?.divisi ?? authUser.value?.divisi ?? ''
+  return divisi || ''
+})
 
-const initial = computed(() => displayName.value?.charAt(0).toUpperCase() || "");
-const totalNotifications = computed(
-    () => page.props.admin_notifications_count ?? notifications.value.length,
-);
+const initial = computed(() => displayName.value?.charAt(0).toUpperCase() || '')
+// show count for visible (not-closed) notifications in header
+const totalNotifications = computed(() => notifications.value.length)
 
 const toggleNotifications = () => {
     showNotifications.value = !showNotifications.value;
 };
 
 const handleNotificationClick = (notif) => {
-    router.visit(`/admin/notifikasi?highlight=${notif.id}`);
-};
+  // Navigasi ke halaman notifikasi dengan highlight notifikasi yang diklik
+  // hide this notification from header popup (but keep in full list)
+  if (!closedAdminNotifications.value.includes(notif.id)) {
+    closedAdminNotifications.value.push(notif.id)
+    try { localStorage.setItem('closed_admin_notifications', JSON.stringify(closedAdminNotifications.value)) } catch (e) {}
+  }
+  router.visit(`/admin/notifikasi?highlight=${notif.id}`)
+}
 
 const markAllAsRead = () => {
-    showNotifications.value = false;
-};
+  // add all current raw admin notification ids to closed list
+  const ids = rawAdminNotifications.value.map(n => n.id)
+  closedAdminNotifications.value = Array.from(new Set([...closedAdminNotifications.value, ...ids]))
+  try { localStorage.setItem('closed_admin_notifications', JSON.stringify(closedAdminNotifications.value)) } catch (e) {}
+  showNotifications.value = false
+}
 
 const handleClickOutside = (event) => {
     if (!event.target.closest(".relative")) {
@@ -326,8 +377,15 @@ const handleClickOutside = (event) => {
 };
 
 onMounted(() => {
-    document.addEventListener("click", handleClickOutside);
-});
+  document.addEventListener('click', handleClickOutside)
+  // load closed admin notifications
+  try {
+    const stored = localStorage.getItem('closed_admin_notifications')
+    if (stored) closedAdminNotifications.value = JSON.parse(stored)
+  } catch (e) {
+    closedAdminNotifications.value = []
+  }
+})
 
 onUnmounted(() => {
     document.removeEventListener("click", handleClickOutside);

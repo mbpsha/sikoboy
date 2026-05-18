@@ -15,14 +15,17 @@ const isDev = typeof import.meta !== 'undefined' && import.meta.env && import.me
 // 🔔 Notification state
 const showNotificationDropdown = ref(false);
 
-const notifications = computed(() => {
-  return page.props?.notifications || [];
-});
+const rawNotifications = computed(() => page.props?.notifications || [])
 
-const notificationsCount = computed(() => {
-  const count = page.props?.notifications_count || 0;
-  return count > 0 ? count : 0;
-});
+// local state: closed notifications (persisted in localStorage) to hide from header popup
+const closedMitraNotifications = ref([])
+
+const notifications = computed(() => {
+  return rawNotifications.value.filter(n => !closedMitraNotifications.value.includes(n.id))
+})
+
+// show count for visible (not-closed) notifications in header
+const notificationsCount = computed(() => notifications.value.length)
 
 const toggleNotificationDropdown = () => {
   showNotificationDropdown.value = !showNotificationDropdown.value;
@@ -35,6 +38,11 @@ const closeNotificationDropdown = () => {
 // 🔔 Handler ketika notifikasi diklik → REDIRECT ke ListNotif.vue
 const handleNotificationClick = (notification) => {
   console.log('[Header] Notification clicked, redirecting to list:', notification);
+  // hide this notification from header popup (but keep in full list)
+  if (!closedMitraNotifications.value.includes(notification.id)) {
+    closedMitraNotifications.value.push(notification.id)
+    try { localStorage.setItem('closed_mitra_notifications', JSON.stringify(closedMitraNotifications.value)) } catch (e) {}
+  }
   closeNotificationDropdown();
   
   // Redirect ke halaman list notifikasi
@@ -46,6 +54,13 @@ const handleNotificationClick = (notification) => {
   }
 };
 
+const markAllAsRead = () => {
+  const ids = rawNotifications.value.map(n => n.id)
+  closedMitraNotifications.value = Array.from(new Set([...closedMitraNotifications.value, ...ids]))
+  try { localStorage.setItem('closed_mitra_notifications', JSON.stringify(closedMitraNotifications.value)) } catch (e) {}
+  showNotificationDropdown.value = false
+}
+
 // Close dropdown when clicking outside
 onMounted(() => {
   const handleClickOutside = (event) => {
@@ -53,25 +68,21 @@ onMounted(() => {
       closeNotificationDropdown();
     }
   };
-  
+
   document.addEventListener('click', handleClickOutside);
-  
+
+  // load closed mitra notifications from localStorage
+  try {
+    const stored = localStorage.getItem('closed_mitra_notifications')
+    if (stored) closedMitraNotifications.value = JSON.parse(stored)
+  } catch (e) {
+    closedMitraNotifications.value = []
+  }
+
   // Cleanup listener
   return () => {
     document.removeEventListener('click', handleClickOutside);
   };
-  
-  try {
-    if (import.meta.env && import.meta.env.DEV) {
-      console.log('[Header] page.props.auth:', page.props?.auth)
-      console.log('[Header] userRole:', userRole.value)
-      console.log('[Header] userRoleNorm:', userRoleNorm.value)
-      console.log('[Header] isAuthenticated:', isAuthenticated.value)
-      console.log('[Header] notifications:', notifications.value)
-    }
-  } catch (e) {
-    console.error('[Header] Debug error:', e)
-  }
 })
 
 const currentUrl = computed(() => {

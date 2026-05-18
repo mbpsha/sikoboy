@@ -254,6 +254,10 @@ Route::middleware(['auth', 'role:mitra'])->prefix('mitra')->name('mitra.')->grou
         ->name('pengajuan.step2');
     Route::post('/pengajuan', [MitraKerjasamaController::class, 'store'])
         ->name('pengajuan.store');
+
+    // Upload revisi dokumen untuk kerjasama (Mitra)
+    Route::post('/kerjasama/{id}/revisi', [MitraKerjasamaController::class, 'uploadRevision'])
+        ->name('kerjasama.revisi.upload');
 });
 
 // ========================================

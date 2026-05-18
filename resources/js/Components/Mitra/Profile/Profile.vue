@@ -460,7 +460,9 @@ const getStatusLabel = (status) => {
     <!-- Progress Modal -->
     <KerjasamaProgressModal 
       :isOpen="isProgressModalOpen"
+      :kerjasamaId="selectedKerjasama?.id_kerjasama"
       :kerjasamaNama="selectedKerjasama?.judul || ''"
+      :items="selectedKerjasama?.proses || []"
       @close="isProgressModalOpen = false"
     />
 

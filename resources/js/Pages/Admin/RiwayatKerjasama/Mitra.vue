@@ -40,7 +40,7 @@ const form = ref({
     id_mitra: "",
     mitra: "",
     tahun: "",
-    judul_adendum: "",
+    judul: "",
     jangka: "",
     mulai: "",
     selesai: "",
@@ -54,37 +54,27 @@ const form = ref({
     file: null,
 });
 
-const jenisKerjasamaOptions = [
-    { value: "KSDD", label: "Kerjasama Daerah Antar Daerah (KSDD)" },
-    { value: "KSDPK", label: "Kerjasama Dengan Pihak Ketiga (KSDPK)" },
-    { value: "NK/RK", label: "Sinergi Dengan Pemerintah Pusat/Lembaga (NK/RK)" },
-    { value: "PERTEK", label: "Perjanjian Teknis (PERTEK)" },
-    { value: "KSDPL", label: "Kerjasama Daerah Dengan Pemerintah Daerah Di Luar Negeri (KSDPL)" },
-    { value: "KSDLL", label: "Kerjasama Daerah Dengan Lembaga Di Luar Negeri (KSDLL)" },
-];
+const mitraIdSearch = ref("");
 
-const pembiayaanOptions = [
-    "APBN",
-    "APBD",
-    "PIHAK KETIGA",
-    "PARA PIHAK",
-    "SESUAI DENGAN PERATURAN PERUNDANG-UNDANGAN",
-];
+const filteredMitraOptions = computed(() => {
+    const query = String(mitraIdSearch.value || "").trim();
+    const mitras = props.mitras || [];
+
+    if (!query) return mitras;
+
+    return mitras.filter((mitra) => String(mitra.id_mitra).includes(query));
+});
+
+const selectedMitra = computed(() => {
+    if (!form.value.id_mitra) return null;
+    return (props.mitras || []).find(
+        (mitra) => String(mitra.id_mitra) === String(form.value.id_mitra),
+    ) || null;
+});
 
 const adendumForm = ref({
-    mitra: "",
-    tahun: "",
     judul_adendum: "",
-    nomor_suratM_baru: "",
-    nomor_suratP_baru: "",
-    nomor_suratM_lama: "",
-    nomor_suratP_lama: "",
-    urusan: "",
-    jangka: "",
-    mulai: "",
-    selesai: "",
-    jenis_kerjasama: "KSDD",
-    pembiayaan: "",
+    keterangan_adendum: "",
     file: null,
 });
 
@@ -92,22 +82,13 @@ const errors = ref({});
 const adendumErrors = ref({});
 const isSubmitting = ref(false);
 
-const parseJangkaToYears = (value) => {
-    const match = String(value ?? "").match(/(\d+)/);
-    if (!match) return null;
-
-    const years = Number.parseInt(match[1], 10);
-
-    return Number.isNaN(years) || years <= 0 ? null : years;
-};
-
 // AUTO CALCULATE TANGGAL SELESAI
 const calculateEndDate = () => {
   if (form.value.mulai && form.value.jangka) {
     const startDate = new Date(form.value.mulai);
-    const years = parseJangkaToYears(form.value.jangka);
+    const years = parseInt(form.value.jangka, 10);
 
-    if (years !== null) {
+    if (!isNaN(years)) {
       const endDate = new Date(startDate);
       endDate.setFullYear(endDate.getFullYear() + years);
 
@@ -127,31 +108,6 @@ watch(
   () => {
     calculateEndDate();
   }
-);
-
-const calculateAdendumEndDate = () => {
-    if (adendumForm.value.mulai && adendumForm.value.jangka) {
-        const startDate = new Date(adendumForm.value.mulai);
-        const years = parseJangkaToYears(adendumForm.value.jangka);
-
-        if (years !== null) {
-            const endDate = new Date(startDate);
-            endDate.setFullYear(endDate.getFullYear() + years);
-
-            const year = endDate.getFullYear();
-            const month = String(endDate.getMonth() + 1).padStart(2, "0");
-            const day = String(endDate.getDate()).padStart(2, "0");
-
-            adendumForm.value.selesai = `${year}-${month}-${day}`;
-        }
-    }
-};
-
-watch(
-    [() => adendumForm.value.mulai, () => adendumForm.value.jangka],
-    () => {
-        calculateAdendumEndDate();
-    }
 );
 
 const filter = () => {
@@ -274,6 +230,16 @@ onBeforeUnmount(() => {
     if (debounceTimer) clearTimeout(debounceTimer);
 });
 
+// Normalize status text and return badge classes
+const statusBadgeClasses = (status) => {
+    const s = String(status ?? '').trim().toLowerCase();
+    if (!s) return 'bg-gray-100 text-gray-600';
+    if (s === 'aktif' || s === 'active') return 'bg-green-100 text-green-700';
+    if (s === 'berakhir' || s === 'expired' || s === 'selesai') return 'bg-red-100 text-red-600';
+    if (s.includes('segera') || s.includes('soon') || s.includes('akan')) return 'bg-yellow-100 text-yellow-700';
+    return 'bg-gray-100 text-gray-600';
+};
+
 const goToPage = (page) => {
     if (!page || page === props.data?.current_page) return;
 
@@ -287,73 +253,6 @@ const goToPage = (page) => {
         { preserveState: true, preserveScroll: true },
     );
 };
-
-const selectedMitra = ref(null);
-const showMitraSuggestions = ref(false);
-let hideMitraSuggestionsTimer = null;
-
-const filteredMitraOptions = computed(() => {
-    const query = String(form.value.mitra ?? "").trim().toLowerCase();
-
-    if (!query) return [];
-
-    return (props.mitras || [])
-        .filter((mitraOption) => {
-            const idMitra = String(mitraOption.id_mitra ?? "").toLowerCase();
-            const namaPerusahaan = String(mitraOption.nama_perusahaan ?? "").toLowerCase();
-
-            return idMitra.includes(query) || namaPerusahaan.includes(query);
-        })
-        .slice(0, 10);
-});
-
-const selectMitra = (mitraOption) => {
-    form.value.id_mitra = String(mitraOption.id_mitra);
-    form.value.mitra = mitraOption.nama_perusahaan || "";
-    selectedMitra.value = mitraOption;
-    showMitraSuggestions.value = false;
-};
-
-const handleMitraFocus = () => {
-    if (hideMitraSuggestionsTimer) {
-        clearTimeout(hideMitraSuggestionsTimer);
-        hideMitraSuggestionsTimer = null;
-    }
-    showMitraSuggestions.value = true;
-};
-
-const handleMitraBlur = () => {
-    hideMitraSuggestionsTimer = setTimeout(() => {
-        showMitraSuggestions.value = false;
-    }, 120);
-};
-
-watch(
-    () => form.value.mitra,
-    (value) => {
-        const keyword = String(value ?? "").trim().toLowerCase();
-
-        if (!keyword) {
-            form.value.id_mitra = "";
-            selectedMitra.value = null;
-            return;
-        }
-
-        const exactMatch = (props.mitras || []).find(
-            (mitraOption) =>
-                String(mitraOption.nama_perusahaan ?? "").trim().toLowerCase() === keyword,
-        );
-
-        if (exactMatch) {
-            form.value.id_mitra = String(exactMatch.id_mitra);
-            selectedMitra.value = exactMatch;
-            return;
-        }
-
-        form.value.id_mitra = "";
-        selectedMitra.value = null;
-    },
-);
 
 // VALIDASI
 const validate = () => {
@@ -382,28 +281,8 @@ const validate = () => {
 const validateAdendum = () => {
     adendumErrors.value = {};
 
-    if (!adendumForm.value.mitra)
-        adendumErrors.value.mitra = "Mitra wajib diisi";
-    if (!adendumForm.value.tahun)
-        adendumErrors.value.tahun = "Tahun wajib diisi";
     if (!adendumForm.value.judul_adendum)
         adendumErrors.value.judul_adendum = "Judul adendum wajib diisi";
-    if (!adendumForm.value.nomor_suratM_baru)
-        adendumErrors.value.nomor_suratM_baru = "Nomor surat mitra baru wajib diisi";
-    if (!adendumForm.value.nomor_suratP_baru)
-        adendumErrors.value.nomor_suratP_baru = "Nomor surat pemerintah baru wajib diisi";
-    if (!adendumForm.value.urusan)
-        adendumErrors.value.urusan = "Urusan wajib diisi";
-    if (!adendumForm.value.jangka)
-        adendumErrors.value.jangka = "Jangka waktu wajib diisi";
-    if (!adendumForm.value.mulai)
-        adendumErrors.value.mulai = "Tanggal mulai wajib diisi";
-    if (!adendumForm.value.selesai)
-        adendumErrors.value.selesai = "Tanggal berakhir wajib diisi";
-    if (!adendumForm.value.jenis_kerjasama)
-        adendumErrors.value.jenis_kerjasama = "Jenis kerjasama wajib diisi";
-    if (!adendumForm.value.pembiayaan)
-        adendumErrors.value.pembiayaan = "Pembiayaan wajib diisi";
     if (!adendumForm.value.file)
         adendumErrors.value.file = "File adendum wajib diupload";
 
@@ -490,10 +369,8 @@ const submit = () => {
                 }).then(() => {
                     closeModal();
 
-                    // Redirect to last page to see the newly created kerjasama
-                    const lastPage = props.data?.last_page || 1;
                     router.visit(
-                        route("admin.riwayat-kerjasama.mitra", { page: lastPage }),
+                        route("admin.riwayat-kerjasama.mitra"),
                         {
                             preserveState: false,
                         }
@@ -543,24 +420,10 @@ const submit = () => {
 const submitAdendum = () => {
     if (!validateAdendum()) return;
 
-    const currentPage = props.data?.current_page || 1;
     const formData = new FormData();
     formData.append("id_kerjasama", selectedKerjasama.value.id_kerjasama);
-    formData.append("mitra", adendumForm.value.mitra);
-    formData.append("tahun", adendumForm.value.tahun);
     formData.append("judul_adendum", adendumForm.value.judul_adendum);
-    formData.append("keterangan_adendum", JSON.stringify({
-        nomor_surat_mitra_lama: adendumForm.value.nomor_suratM_lama,
-        nomor_surat_mitra_baru: adendumForm.value.nomor_suratM_baru,
-        nomor_surat_pemerintah_lama: adendumForm.value.nomor_suratP_lama,
-        nomor_surat_pemerintah_baru: adendumForm.value.nomor_suratP_baru,
-        urusan: adendumForm.value.urusan,
-        jangka_waktu: adendumForm.value.jangka,
-        tanggal_mulai: adendumForm.value.mulai,
-        tanggal_berakhir: adendumForm.value.selesai,
-        jenis_kerjasama: adendumForm.value.jenis_kerjasama,
-        pembiayaan: adendumForm.value.pembiayaan,
-    }));
+    formData.append("keterangan_adendum", adendumForm.value.keterangan_adendum);
 
     if (adendumForm.value.file) {
         formData.append("file", adendumForm.value.file);
@@ -568,27 +431,19 @@ const submitAdendum = () => {
 
     router.post(route("admin.riwayat-kerjasama.adendum.store"), formData, {
         preserveScroll: true,
-        onSuccess: () => {
-            closeAdendumModal();
-            // Refresh to same page after adding adendum
-            router.visit(
-                route("admin.riwayat-kerjasama.mitra", { page: currentPage }),
-                { preserveState: true }
-            );
-        },
+        onSuccess: closeAdendumModal,
     });
 };
 
 // CLOSE MODAL
 const closeModal = () => {
     showModal.value = false;
-    showMitraSuggestions.value = false;
-    selectedMitra.value = null;
+    mitraIdSearch.value = "";
     form.value = {
         id_mitra: "",
         mitra: "",
         tahun: "",
-        judul_adendum: "",
+        judul: "",
         jangka: "",
         mulai: "",
         selesai: "",
@@ -609,19 +464,8 @@ const closeAdendumModal = () => {
     showAdendumModal.value = false;
     selectedKerjasama.value = null;
     adendumForm.value = {
-        mitra: "",
-        tahun: "",
         judul_adendum: "",
-        nomor_suratM_baru: "",
-        nomor_suratP_baru: "",
-        nomor_suratM_lama: "",
-        nomor_suratP_lama: "",
-        urusan: "",
-        jangka: "",
-        mulai: "",
-        selesai: "",
-        jenis_kerjasama: "KSDD",
-        pembiayaan: "",
+        keterangan_adendum: "",
         file: null,
     };
     adendumErrors.value = {};
@@ -630,20 +474,6 @@ const closeAdendumModal = () => {
 // OPEN ADENDUM MODAL
 const openAdendumModal = (item) => {
     selectedKerjasama.value = item;
-    adendumForm.value = {
-        judul_adendum: item?.judul || "",
-        nomor_suratM_baru: "",
-        nomor_suratP_baru: "",
-        nomor_suratM_lama: item?.nomor_suratM || "",
-        nomor_suratP_lama: item?.nomor_suratP || "",
-        urusan: item?.urusan || "",
-        jangka: item?.jangka_waktu || "",
-        mulai: item?.tanggal_mulai || "",
-        selesai: item?.tanggal_berakhir || "",
-        jenis_kerjasama: item?.jenis_kerjasama || "KSDD",
-        pembiayaan: item?.pembiayaan || "",
-        file: null,
-    };
     showAdendumModal.value = true;
 };
 
@@ -663,8 +493,6 @@ const toggleStatusDropdown = (idKerjasama) => {
 
 // UPDATE STATUS
 const handleStatusUpdate = (idKerjasama, newStatus) => {
-    const currentPage = props.data?.current_page || 1;
-
     Swal.fire({
         title: "Ubah Status",
         text: `Apakah Anda yakin ingin mengubah status menjadi "${newStatus}"?`,
@@ -691,7 +519,7 @@ const handleStatusUpdate = (idKerjasama, newStatus) => {
                             confirmButtonColor: "#0d9488",
                         }).then(() => {
                             router.visit(
-                                route("admin.riwayat-kerjasama.mitra", { page: currentPage }),
+                                route("admin.riwayat-kerjasama.mitra"),
                                 { preserveState: true }
                             );
                         });
@@ -714,7 +542,6 @@ const handleStatusUpdate = (idKerjasama, newStatus) => {
 
 onBeforeUnmount(() => {
     if (debounceTimer) clearTimeout(debounceTimer);
-    if (hideMitraSuggestionsTimer) clearTimeout(hideMitraSuggestionsTimer);
 });
 </script>
 
@@ -1048,9 +875,45 @@ onBeforeUnmount(() => {
                                         Adendum
                                     </th>
                                     <th
-                                        class="px-4 py-3 text-left whitespace-nowrap"
+                                        class="px-4 py-3 text-left whitespace-nowrap relative cursor-pointer"
                                     >
-                                        Status
+                                        <div class="flex items-center justify-between">
+                                            <span>Status</span>
+                                            <button @click.stop="openFilterColumn = openFilterColumn === 'status' ? null : 'status'" class="ml-2 text-yellow-300 hover:text-yellow-100 flex items-center justify-center w-6 h-6 rounded-full bg-white/10 hover:bg-white/20">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                    <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.293l3.71-4.06a.75.75 0 111.08 1.04l-4.25 4.657a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                        <!-- FILTER DROPDOWN STATUS -->
+                                        <div
+                                            v-show="openFilterColumn === 'status'"
+                                            class="absolute left-0 top-full mt-1 bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200"
+                                        >
+                                            <div class="mb-2 max-h-40 overflow-y-auto">
+                                                <label v-for="val in uniqueStatus" :key="val" class="flex items-center gap-2 mb-1 cursor-pointer hover:bg-gray-100 p-1 rounded">
+                                                    <input
+                                                        type="checkbox"
+                                                        :checked="columnFilters.status.includes(val)"
+                                                        @change="(e) => {
+                                                            if (e.target.checked) {
+                                                                columnFilters.status.push(val)
+                                                            } else {
+                                                                columnFilters.status = columnFilters.status.filter(v => v !== val)
+                                                            }
+                                                        }"
+                                                        class="cursor-pointer"
+                                                    />
+                                                    <span class="text-xs">{{ val }}</span>
+                                                </label>
+                                            </div>
+                                            <button
+                                                @click="columnFilters.status = []"
+                                                class="w-full px-2 py-1 bg-gray-300 hover:bg-gray-400 rounded text-xs"
+                                            >
+                                                Clear
+                                            </button>
+                                        </div>
                                     </th>
                                 </tr>
                             </thead>
@@ -1209,15 +1072,7 @@ onBeforeUnmount(() => {
                                         <div class="flex items-center justify-between gap-2">
                                             <span
                                                 class="inline-flex items-center px-3 py-1 rounded-full text-xs leading-none"
-                                                :class="{
-                                                    'bg-green-100 text-green-700':
-                                                        item.status === 'Aktif',
-                                                    'bg-red-100 text-red-600':
-                                                        item.status === 'Berakhir',
-                                                    'bg-yellow-100 text-yellow-700':
-                                                        item.status ===
-                                                        'Segera Berakhir',
-                                                }"
+                                                :class="statusBadgeClasses(item.status)"
                                             >
                                                 {{ item.status }}
                                             </span>
@@ -1236,19 +1091,22 @@ onBeforeUnmount(() => {
                                                 >
                                                     <button
                                                         @click.stop="handleStatusUpdate(item.id_kerjasama, 'Aktif')"
-                                                        class="block w-full text-left px-4 py-2 hover:bg-gray-100 transition first:rounded-t-lg"
+                                                        :disabled="item.status === 'Aktif'"
+                                                        class="block w-full text-left px-4 py-2 hover:bg-gray-100 transition first:rounded-t-lg disabled:opacity-50 disabled:cursor-not-allowed"
                                                     >
                                                         Aktif
                                                     </button>
                                                     <button
                                                         @click.stop="handleStatusUpdate(item.id_kerjasama, 'Segera Berakhir')"
-                                                        class="block w-full text-left px-4 py-2 hover:bg-gray-100 transition"
+                                                        :disabled="item.status === 'Segera Berakhir'"
+                                                        class="block w-full text-left px-4 py-2 hover:bg-gray-100 transition disabled:opacity-50 disabled:cursor-not-allowed"
                                                     >
                                                         Segera Berakhir
                                                     </button>
                                                     <button
                                                         @click.stop="handleStatusUpdate(item.id_kerjasama, 'Berakhir')"
-                                                        class="block w-full text-left px-4 py-2 hover:bg-gray-100 transition last:rounded-b-lg"
+                                                        :disabled="item.status === 'Berakhir'"
+                                                        class="block w-full text-left px-4 py-2 hover:bg-gray-100 transition last:rounded-b-lg disabled:opacity-50 disabled:cursor-not-allowed"
                                                     >
                                                         Berakhir
                                                     </button>
@@ -1323,33 +1181,47 @@ onBeforeUnmount(() => {
                                 Mitra <span class="text-red-500">*</span>
                             </label>
                             <input
-                                v-model="form.mitra"
-                                @focus="handleMitraFocus"
-                                @blur="handleMitraBlur"
+                                v-model="mitraIdSearch"
                                 class="w-full border rounded-lg px-3 py-2 mt-1"
-                                placeholder="Ketik nama atau ID mitra"
+                                placeholder="Ketik ID mitra (contoh: 21)"
                             />
-                            <div
-                                v-if="showMitraSuggestions && form.mitra && filteredMitraOptions.length > 0"
-                                class="mt-1 max-h-44 overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-sm"
+                            <select
+                                v-model="form.id_mitra"
+                                @change="form.mitra = selectedMitra?.nama_perusahaan || ''"
+                                class="w-full border rounded-lg px-3 py-2 mt-1 bg-white"
                             >
-                                <button
+                                <option value="">Pilih ID mitra</option>
+                                <option
                                     v-for="mitraOption in filteredMitraOptions"
                                     :key="mitraOption.id_mitra"
-                                    type="button"
-                                    class="w-full px-3 py-2 text-left text-sm hover:bg-gray-50"
-                                    @mousedown.prevent="selectMitra(mitraOption)"
+                                    :value="String(mitraOption.id_mitra)"
                                 >
                                     {{ mitraOption.id_mitra }} - {{ mitraOption.nama_perusahaan }}
-                                </button>
-                            </div>
+                                </option>
+                            </select>
                             <p
-                                v-if="showMitraSuggestions && form.mitra && filteredMitraOptions.length === 0"
+                                v-if="mitraIdSearch && filteredMitraOptions.length === 0"
                                 class="text-xs text-gray-500 mt-1"
                             >
-                                Data mitra tidak ditemukan.
+                                Data mitra tidak ditemukan untuk ID tersebut.
                             </p>
-                            <p v-if="errors.mitra" class="text-red-500 text-xs mt-1">{{ errors.mitra }}</p>
+                            <p
+                                v-if="errors.id_mitra"
+                                class="text-red-500 text-xs mt-1"
+                            >
+                                {{ errors.id_mitra }}
+                            </p>
+                            <input
+                                v-model="form.mitra"
+                                class="w-full border rounded-lg px-3 py-2 mt-2"
+                                placeholder="Masukkan nama mitra"
+                            />
+                            <p
+                                v-if="errors.mitra"
+                                class="text-red-500 text-xs mt-1"
+                            >
+                                {{ errors.mitra }}
+                            </p>
                             <div
                                 v-if="selectedMitra"
                                 class="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700 space-y-1"
@@ -1673,7 +1545,7 @@ onBeforeUnmount(() => {
             class="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
         >
             <div
-                class="bg-white rounded-2xl p-6 w-[760px] max-h-[85vh] shadow-lg relative flex flex-col"
+                class="bg-white rounded-2xl p-6 w-[600px] max-h-[85vh] shadow-lg relative flex flex-col"
             >
                 <!-- CLOSE -->
                 <button
@@ -1707,158 +1579,17 @@ onBeforeUnmount(() => {
                             </p>
                         </div>
 
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label class="text-sm font-medium">
-                                    Nomor Surat Mitra baru <span class="text-red-500">*</span>
-                                </label>
-                                <input
-                                    v-model="adendumForm.nomor_suratM_baru"
-                                    type="text"
-                                    class="w-full border rounded-lg px-3 py-2 mt-1"
-                                    placeholder="Masukkan nomor surat mitra baru"
-                                />
-                                <p v-if="adendumErrors.nomor_suratM_baru" class="text-red-500 text-xs mt-1">
-                                    {{ adendumErrors.nomor_suratM_baru }}
-                                </p>
-                            </div>
-                            <div>
-                                <label class="text-sm font-medium">
-                                    Nomor Surat Pemerintah baru <span class="text-red-500">*</span>
-                                </label>
-                                <input
-                                    v-model="adendumForm.nomor_suratP_baru"
-                                    type="text"
-                                    class="w-full border rounded-lg px-3 py-2 mt-1"
-                                    placeholder="Masukkan nomor surat pemerintah baru"
-                                />
-                                <p v-if="adendumErrors.nomor_suratP_baru" class="text-red-500 text-xs mt-1">
-                                    {{ adendumErrors.nomor_suratP_baru }}
-                                </p>
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label class="text-sm font-medium">
-                                    Nomor Surat Mitra lama
-                                </label>
-                                <input
-                                    v-model="adendumForm.nomor_suratM_lama"
-                                    type="text"
-                                    class="w-full border rounded-lg px-3 py-2 mt-1 bg-gray-100"
-                                    readonly
-                                />
-                            </div>
-                            <div>
-                                <label class="text-sm font-medium">
-                                    Nomor Surat Pemerintah lama
-                                </label>
-                                <input
-                                    v-model="adendumForm.nomor_suratP_lama"
-                                    type="text"
-                                    class="w-full border rounded-lg px-3 py-2 mt-1 bg-gray-100"
-                                    readonly
-                                />
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label class="text-sm font-medium">
-                                    Urusan <span class="text-red-500">*</span>
-                                </label>
-                                <textarea
-                                    v-model="adendumForm.urusan"
-                                    rows="3"
-                                    class="w-full border rounded-lg px-3 py-2 mt-1"
-                                    placeholder="Masukkan urusan kerjasama"
-                                ></textarea>
-                                <p v-if="adendumErrors.urusan" class="text-red-500 text-xs mt-1">
-                                    {{ adendumErrors.urusan }}
-                                </p>
-                            </div>
-                            <div>
-                                <label class="text-sm font-medium">
-                                    Jangka Waktu <span class="text-red-500">*</span>
-                                </label>
-                                <input
-                                    v-model="adendumForm.jangka"
-                                    type="text"
-                                    class="w-full border rounded-lg px-3 py-2 mt-1"
-                                    placeholder="Contoh: 2 Tahun"
-                                />
-                                <p v-if="adendumErrors.jangka" class="text-red-500 text-xs mt-1">
-                                    {{ adendumErrors.jangka }}
-                                </p>
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label class="text-sm font-medium">
-                                    Jenis Kerjasama <span class="text-red-500">*</span>
-                                </label>
-                                <select
-                                    v-model="adendumForm.jenis_kerjasama"
-                                    class="w-full border rounded-lg px-3 py-2 mt-1"
-                                >
-                                    <option
-                                        v-for="option in jenisKerjasamaOptions"
-                                        :key="option.value"
-                                        :value="option.value"
-                                    >
-                                        {{ option.label }}
-                                    </option>
-                                </select>
-                                <p v-if="adendumErrors.jenis_kerjasama" class="text-red-500 text-xs mt-1">
-                                    {{ adendumErrors.jenis_kerjasama }}
-                                </p>
-                            </div>
-                            <div>
-                                <label class="text-sm font-medium">
-                                    Tanggal Mulai <span class="text-red-500">*</span>
-                                </label>
-                                <input
-                                    type="date"
-                                    v-model="adendumForm.mulai"
-                                    class="w-full border rounded-lg px-3 py-2 mt-1"
-                                />
-                                <p v-if="adendumErrors.mulai" class="text-red-500 text-xs mt-1">
-                                    {{ adendumErrors.mulai }}
-                                </p>
-                            </div>
-                        </div>
-
+                        <!-- KETERANGAN ADENDUM -->
                         <div>
                             <label class="text-sm font-medium">
-                                Tanggal Berakhir <span class="text-red-500">*</span>
+                                Keterangan (Opsional)
                             </label>
-                            <input
-                                type="date"
-                                v-model="adendumForm.selesai"
+                            <textarea
+                                v-model="adendumForm.keterangan_adendum"
                                 class="w-full border rounded-lg px-3 py-2 mt-1"
-                            />
-                            <p v-if="adendumErrors.selesai" class="text-red-500 text-xs mt-1">
-                                {{ adendumErrors.selesai }}
-                            </p>
-                        </div>
-
-                        <div>
-                            <label class="text-sm font-medium">
-                                Pembiayaan <span class="text-red-500">*</span>
-                            </label>
-                            <select
-                                v-model="adendumForm.pembiayaan"
-                                class="w-full border rounded-lg px-3 py-2 mt-1"
-                            >
-                                <option v-for="option in pembiayaanOptions" :key="option" :value="option">
-                                    {{ option }}
-                                </option>
-                            </select>
-                            <p v-if="adendumErrors.pembiayaan" class="text-red-500 text-xs mt-1">
-                                {{ adendumErrors.pembiayaan }}
-                            </p>
+                                placeholder="Masukkan keterangan adendum"
+                                rows="4"
+                            ></textarea>
                         </div>
 
                         <!-- FILE UPLOAD -->
