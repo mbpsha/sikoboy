@@ -38,7 +38,7 @@
                         </svg>
                     </button>
                 </div>
-                <div class="mt-4 border-t border-teal-700" />
+                <div class="mt-4 border-t border-teal-700"></div>
             </div>
 
             <!-- MENU -->
@@ -258,7 +258,9 @@ watch(
 )
 
 watch(isCollapsed, (collapsed) => {
-    if (!collapsed) {
+    if (collapsed) {
+        showRiwayatMenu.value = false
+    } else {
         showCollapsedRiwayatMenu.value = false
     }
 })
