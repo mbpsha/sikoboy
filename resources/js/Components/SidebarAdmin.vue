@@ -168,8 +168,7 @@
 
             <button
                 @click="showConfirm = true"
-                class="w-full bg-red-600 hover:bg-red-700 transition rounded-xl font-semibold text-sm flex items-center justify-center"
-                :class="isCollapsed ? 'p-2.5' : 'p-2.5'"
+                class="w-full bg-red-600 hover:bg-red-700 transition rounded-xl font-semibold text-sm flex items-center justify-center p-2.5"
                 :title="isCollapsed ? 'Logout' : ''"
             >
                 <svg v-if="isCollapsed" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
