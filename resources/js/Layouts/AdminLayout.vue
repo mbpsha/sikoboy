@@ -1,10 +1,13 @@
 <template>
     <div>
         <!-- Sidebar (fixed) -->
-        <SidebarAdmin />
+        <SidebarAdmin v-model:collapsed="isSidebarCollapsed" />
 
         <!-- Content Area (account for fixed sidebar width) -->
-        <div class="ml-64 bg-gray-100 min-h-screen">
+        <div
+            class="bg-gray-100 min-h-screen transition-all duration-300"
+            :class="isSidebarCollapsed ? 'ml-20' : 'ml-64'"
+        >
             <!-- Header -->
             <HeaderAdmin :title="title" />
 
@@ -17,10 +20,29 @@
 </template>
 
 <script setup>
+import { onMounted, ref, watch } from "vue";
 import SidebarAdmin from "@/Components/SidebarAdmin.vue";
 import HeaderAdmin from "@/Components/HeaderAdmin.vue";
 
 defineProps({
     title: String,
+});
+
+const isSidebarCollapsed = ref(false);
+
+onMounted(() => {
+    try {
+        isSidebarCollapsed.value = localStorage.getItem("admin_sidebar_collapsed") === "1";
+    } catch (error) {
+        isSidebarCollapsed.value = false;
+    }
+});
+
+watch(isSidebarCollapsed, (collapsed) => {
+    try {
+        localStorage.setItem("admin_sidebar_collapsed", collapsed ? "1" : "0");
+    } catch (error) {
+        // no-op
+    }
 });
 </script>
