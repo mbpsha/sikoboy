@@ -43,14 +43,14 @@
 
             <!-- MENU -->
             <nav class="mt-2 space-y-1" :class="isCollapsed ? 'px-2' : 'px-3'">
-                <Link :href="route('admin.dashboard')" :class="navClass('/admin/dashboard')">
+                <Link :href="route('admin.dashboard')" :class="navClass('/admin/dashboard')" aria-label="Beranda">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M3 10.5L12 3l9 7.5V20a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1v-9.5z"/>
                     </svg>
                     <span v-if="!isCollapsed" class="text-sm">Beranda</span>
                 </Link>
 
-                <Link :href="route('admin.pengguna.index')" :class="navClass('/admin/pengguna')">
+                <Link :href="route('admin.pengguna.index')" :class="navClass('/admin/pengguna')" aria-label="Pengguna">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
                         <circle cx="9" cy="8" r="3"/>
                         <path stroke-linecap="round" stroke-linejoin="round" d="M4 20c0-3 3-5 5-5s5 2 5 5"/>
@@ -58,7 +58,7 @@
                     <span v-if="!isCollapsed" class="text-sm">Pengguna</span>
                 </Link>
 
-                <Link :href="route('admin.data-kerjasama.index')" :class="navClass('/admin/data-kerjasama')">
+                <Link :href="route('admin.data-kerjasama.index')" :class="navClass('/admin/data-kerjasama')" aria-label="Ajuan Kerjasama">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M7 3h7l5 5v13a1 1 0 01-1 1H7a1 1 0 01-1-1V4a1 1 0 011-1z"/>
                         <path stroke-linecap="round" stroke-linejoin="round" d="M14 3v5h5"/>
@@ -67,7 +67,7 @@
                 </Link>
 
                 <template v-if="isCollapsed">
-                    <Link :href="route('admin.riwayat-kerjasama.gabungan')" :class="navClass('/admin/riwayat-kerjasama')">
+                    <Link :href="route('admin.riwayat-kerjasama.gabungan')" :class="navClass('/admin/riwayat-kerjasama')" aria-label="Riwayat Kerjasama">
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
                             <circle cx="12" cy="12" r="9"/>
                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 7v5l3 2"/>
@@ -108,7 +108,7 @@
                     </div>
                 </div>
 
-                <Link :href="route('admin.manajemen-potensi.index')" :class="navClass('/admin/manajemen-potensi')">
+                <Link :href="route('admin.manajemen-potensi.index')" :class="navClass('/admin/manajemen-potensi')" aria-label="Manajemen Potensi">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
                         <circle cx="9" cy="6" r="2"/>
@@ -118,7 +118,7 @@
                     <span v-if="!isCollapsed" class="text-sm">Manajemen Potensi</span>
                 </Link>
 
-                <Link :href="route('admin.manajemen-dokumen.index')" :class="navClass('/admin/manajemen-dokumen')">
+                <Link :href="route('admin.manajemen-dokumen.index')" :class="navClass('/admin/manajemen-dokumen')" aria-label="Manajemen Dokumen">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M7 3h7l5 5v13a1 1 0 01-1 1H7a1 1 0 01-1-1V4a1 1 0 011-1z"/>
                         <path stroke-linecap="round" stroke-linejoin="round" d="M14 3v5h5"/>
@@ -127,7 +127,7 @@
                     <span v-if="!isCollapsed" class="text-sm">Manajemen Dokumen</span>
                 </Link>
 
-                <Link :href="route('admin.manajemen-peraturan.index')" :class="navClass('/admin/manajemen-peraturan')">
+                <Link :href="route('admin.manajemen-peraturan.index')" :class="navClass('/admin/manajemen-peraturan')" aria-label="Manajemen Peraturan">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M7 3h7l5 5v13a1 1 0 01-1 1H7a1 1 0 01-1-1V4a1 1 0 011-1z"/>
                         <path stroke-linecap="round" stroke-linejoin="round" d="M14 3v5h5"/>
@@ -142,6 +142,7 @@
             <Link
                 :href="route('admin.profile.show')"
                 class="flex items-center rounded-xl transition w-full group border"
+                aria-label="Profil Admin"
                 :class="[
                     page.url?.startsWith('/admin/profile')
                         ? 'bg-white/15 border-white/30'
@@ -169,6 +170,7 @@
             <button
                 @click="showConfirm = true"
                 class="w-full bg-red-600 hover:bg-red-700 transition rounded-xl font-semibold text-sm flex items-center justify-center p-2.5"
+                aria-label="Logout"
                 :title="isCollapsed ? 'Logout' : ''"
             >
                 <svg v-if="isCollapsed" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
