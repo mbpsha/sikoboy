@@ -144,6 +144,8 @@ Route::get('/template-dokumen/{id}/preview', [TemplateDokumenController::class, 
 // AUTHENTICATION ROUTES
 // ========================================
 
+$loginThrottleAttempts = max(1, (int) env('RATE_LIMITER_LOGIN_ATTEMPTS', 5));
+
 // Portal redirect
 Route::middleware('auth')->get('/portal-mitra', function (Request $request) {
     return match ($request->user()?->role) {
@@ -160,25 +162,26 @@ Route::get('/login/{role}', fn () => redirect()->route('login'))
     ->whereIn('role', ['admin', 'mitra'])
     ->name('login.role');
 Route::post('/login', [LoginController::class, 'login'])
-    ->middleware('throttle:5,1')
+    ->middleware('throttle:'.$loginThrottleAttempts.',1')
     ->name('login.attempt');
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
 // Registration (Mitra only)
 Route::get('/register', [RegisterController::class, 'showRegistrationForm'])->name('register');
 Route::post('/register', [RegisterController::class, 'register'])
-    ->middleware('throttle:5,1')
+    ->middleware('throttle:'.$loginThrottleAttempts.',1')
     ->name('register.attempt');
 
 // Password Reset
 Route::get('/forgot-password', [ForgotPasswordController::class, 'showLinkRequestForm'])
     ->name('password.request');
 Route::post('/forgot-password', [ForgotPasswordController::class, 'sendResetLinkEmail'])
-    ->middleware('throttle:5,1')
+    ->middleware('throttle:'.$loginThrottleAttempts.',1')
     ->name('password.email');
 Route::get('/reset-password/{token}', [ResetPasswordController::class, 'showResetForm'])
     ->name('password.reset');
 Route::post('/reset-password', [ResetPasswordController::class, 'reset'])
+    ->middleware('throttle:'.$loginThrottleAttempts.',1')
     ->name('password.update');
 
 // Email Verification
@@ -194,9 +197,11 @@ Route::middleware('auth')->group(function () {
 });
 
 // Dev: Verify Email Page
-Route::get('/dev/verify-email', function () {
-    return Inertia::render('Auth/VerifyEmail');
-});
+if (app()->environment(['local', 'testing'])) {
+    Route::get('/dev/verify-email', function () {
+        return Inertia::render('Auth/VerifyEmail');
+    });
+}
 
 // ========================================
 // AUTHENTICATED USER PROFILE
