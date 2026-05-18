@@ -117,9 +117,11 @@ class NotificationFeed
                 ];
             });
 
+        $processNotifications = self::mitraProcessNotifications((int) $mitra->id_mitra);
         $statusNotifications = self::mitraStatusNotifications((int) $mitra->id_mitra);
 
         return $adminUploadNotifications
+            ->concat($processNotifications)
             ->concat($statusNotifications)
             ->sortByDesc('created_at')
             ->take($limit)
@@ -164,6 +166,72 @@ class NotificationFeed
                 ];
             })
             ->filter()
+            ->values();
+    }
+
+    private static function mitraProcessNotifications(int $mitraId)
+    {
+        return DB::table('riwayat_status as rs')
+            ->join('kerjasama as k', 'k.id_kerjasama', '=', 'rs.id_kerjasama')
+            ->join('admins as a', 'a.id_admin', '=', 'rs.id_admin')
+            ->where('k.id_mitra', $mitraId)
+            ->where('rs.judul', '!=', null)
+            // Hanya tampilkan notifikasi untuk status penting (id_status: 2=revisi, 3=disetujui, 4=ditolak, 5=dibatalkan)
+            ->whereIn('rs.id_status', [2, 3, 4, 5])
+            ->orderByDesc('rs.tanggal')
+            ->limit(50)
+            ->get([
+                'rs.id_riwayat',
+                'rs.tanggal',
+                'rs.judul',
+                'rs.id_status',
+                'rs.catatan',
+                'k.id_kerjasama',
+                'k.judul as kerjasama_judul',
+                'k.nomor_suratM',
+                'k.nomor_suratP',
+                'k.status_aktif',
+                'a.nama',
+            ])
+            ->map(function ($row) {
+                $nomor = $row->nomor_suratM ?: $row->nomor_suratP;
+                $judul = $row->judul ?: $row->kerjasama_judul;
+                
+                // Map id_status ke nama
+                $statusName = match($row->id_status) {
+                    2 => 'revisi',
+                    3 => 'disetujui',
+                    4 => 'ditolak',
+                    5 => 'dibatalkan',
+                    default => 'proses',
+                };
+                
+                // Format status untuk display
+                $statusLabel = match($statusName) {
+                    'revisi' => 'meminta revisi',
+                    'disetujui' => 'menyetujui',
+                    'ditolak' => 'telah menambahkan',
+                    'dibatalkan' => 'membatalkan',
+                    default => 'mengubah',
+                };
+
+                return [
+                    'id' => 'mitra-process-'.$row->id_riwayat,
+                    'type' => 'process_update',
+                    'status_type' => $statusName,
+                    'title' => 'Admin '.$statusLabel.' proses kerjasama',
+                    'message' => 'Admin ('.$row->nama.') '.$statusLabel.' proses "'.$judul.'" untuk kerjasama '.$row->kerjasama_judul.'. '
+                        .($row->catatan ? 'Catatan: '.$row->catatan : ''),
+                    'days_left' => null,
+                    'kerjasama_id' => (int) $row->id_kerjasama,
+                    'kerjasama_judul' => $row->kerjasama_judul,
+                    'nomor_kerjasama' => $nomor,
+                    'proses_judul' => $judul,
+                    'jenis_status' => $statusName,
+                    'status' => $row->status_aktif ?: 'Aktif',
+                    'created_at' => Carbon::parse($row->tanggal)->toISOString(),
+                ];
+            })
             ->values();
     }
 

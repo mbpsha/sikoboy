@@ -1,187 +1,229 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, watch } from 'vue'
+import Swal from 'sweetalert2'
 
-defineProps({
-  isOpen: {
-    type: Boolean,
-    default: false
-  },
-  kerjasamaNama: {
-    type: String,
-    default: 'Digitalisasi Sistem Administrasi Kependudukan'
+const props = defineProps({
+  isOpen:        { type: Boolean, default: false },
+  kerjasamaNama: { type: String,  default: '' },
+  kerjasamaId:   { type: [Number, String], default: null },
+  items:         { type: Array,   default: () => [] },
+})
+
+defineEmits(['close'])
+
+const progressItems = ref([])
+watch(() => props.items, (v) => { progressItems.value = v || [] }, { immediate: true })
+
+// File input & state per item index
+const selectedFiles  = ref({})
+const isUploading    = ref({})
+const fileInputRefs  = ref({})
+
+const setFileRef = (el, idx) => { if (el) fileInputRefs.value[idx] = el }
+
+const handleFileSelect = (e, idx) => {
+  const file = e.target.files?.[0]
+  if (file) selectedFiles.value = { ...selectedFiles.value, [idx]: file }
+}
+
+const doUpload = async (idx) => {
+  const file = selectedFiles.value[idx]
+  if (!file || !props.kerjasamaId) return
+
+  isUploading.value = { ...isUploading.value, [idx]: true }
+  try {
+    const fd    = new FormData()
+    fd.append('file', file)
+    const token = document.querySelector('meta[name="csrf-token"]')?.content ?? ''
+    const res   = await fetch(`/mitra/kerjasama/${props.kerjasamaId}/revisi`, {
+      method: 'POST', body: fd, credentials: 'same-origin',
+      headers: token ? { 'X-CSRF-TOKEN': token } : {},
+    })
+    if (!res.ok) throw new Error()
+    await Swal.fire({ icon: 'success', title: 'Berhasil!', text: 'Dokumen revisi berhasil diupload.', timer: 2000, showConfirmButton: false })
+    window.location.reload()
+  } catch {
+    Swal.fire({ icon: 'error', title: 'Gagal', text: 'Gagal upload. Coba lagi.' })
+  } finally {
+    isUploading.value = { ...isUploading.value, [idx]: false }
   }
-});
+}
 
-const emit = defineEmits(['close']);
-
-// Logic File Upload
-const fileInput = ref(null);
-const selectedFile = ref(null);
-const isUploading = ref(false);
-
-const triggerFileInput = () => {
-  fileInput.value?.click();
-};
-
-const handleFileSelect = (event) => {
-  const file = event.target.files?.[0];
-  if (file) {
-    selectedFile.value = file;
-  }
-};
-
-const handleUpload = async () => {
-  if (!selectedFile.value) return;
-
-  isUploading.value = true;
-  // Simulasi upload ke server
-  await new Promise(resolve => setTimeout(resolve, 1500));
-
-  alert(`File ${selectedFile.value.name} berhasil diunggah!`);
-  isUploading.value = false;
-  selectedFile.value = null;
-};
-
-const downloadFile = (filename) => {
-  const element = document.createElement('a');
-  element.setAttribute('href', `/storage/dokumen/${filename}`);
-  element.setAttribute('download', filename);
-  element.style.display = 'none';
-  document.body.appendChild(element);
-  element.click();
-  document.body.removeChild(element);
-};
-
-// Data Progress
-const progressItems = [
-  { id: 1, title: 'Pengajuan Diterima', tanggal: 'Selesai pada 6 Juni 2027', status: 'completed', catatan: 'Tidak ada catatan', pegawai: 'Admin Bidang Tata Pemerintahan' },
-  { id: 2, title: 'Pengajuan Direview', tanggal: 'Selesai pada 6 Juni 2027', status: 'completed', catatan: 'Tidak ada catatan', pegawai: 'Admin Bidang Tata Pemerintahan' },
-  { id: 3, title: 'Proses 1 : Revisi Dokumen', tanggal: 'Selesai pada 6 Juni 2027', status: 'warning', catatan: 'Perbaiki penamaan kelanjutan kerjasama dan tambahkan lampiran.', pegawai: 'Admin Bidang Hukum', file: 'Draft_kerjasama_6/6/27.pdf' },
-  { id: 4, title: 'Proses ...', tanggal: 'Selesai pada -', status: 'pending', catatan: '' },
-  { id: 5, title: 'Kerjasama Ditandatangani', tanggal: 'Selesai pada -', status: 'pending', catatan: '' }
-];
-
-const getStatusIcon = (status) => {
-  if (status === 'completed') return '✓';
-  if (status === 'warning') return '⚠';
-  return '⏳';
-};
-
-const getStatusColor = (status) => {
-  if (status === 'completed') return '#10b981';
-  if (status === 'warning') return '#ef4444';
-  return '#9ca3af';
-};
+const getIcon = (item) => {
+  const t = (item.title || '').toLowerCase()
+  if (t.includes('diterima') || t.includes('selesai') || t.includes('ditandatangani'))
+    return { bg: 'bg-green-500', symbol: '✓' }
+  if (t.includes('ditolak'))  return { bg: 'bg-red-500',    symbol: '✕' }
+  if (t.includes('revisi'))   return { bg: 'bg-orange-400', symbol: '!' }
+  return { bg: 'bg-green-500', symbol: '✓' } // default hijau + ceklis
+}
 </script>
 
 <template>
-  <div v-if="isOpen" class="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] backdrop-blur-sm">
-    <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full mx-4 max-h-[85vh] flex flex-col relative overflow-hidden">
+  <div v-if="isOpen" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[90vh] flex flex-col overflow-hidden">
 
-      <input
-        ref="fileInput"
-        type="file"
-        accept=".pdf"
-        class="hidden"
-        @change="handleFileSelect"
-      />
-
-      <div class="bg-white border-b border-gray-100 p-6 flex justify-between items-start shrink-0">
+      <!-- Header -->
+      <div class="px-6 pt-5 pb-4 border-b border-gray-100 flex items-start justify-between shrink-0">
         <div>
-          <h2 class="text-2xl font-bold text-gray-800 tracking-tight">Progres Kerjasama</h2>
-          <p class="text-sm text-gray-500 mt-1">{{ kerjasamaNama }}</p>
+          <h2 class="text-base font-bold text-gray-800">Progres Kerjasama</h2>
+          <p class="text-sm text-gray-400 mt-0.5 truncate max-w-sm">{{ kerjasamaNama }}</p>
         </div>
-        <button @click="$emit('close')" class="text-gray-400 hover:text-gray-600 transition p-2 bg-gray-50 rounded-full">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        <button @click="$emit('close')"
+          class="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 transition shrink-0">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
         </button>
       </div>
 
-      <div class="p-6 overflow-y-auto flex-1">
-        <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-6">Status Tracking</h3>
+      <!-- Body -->
+      <div class="px-6 py-5 overflow-y-auto flex-1">
+        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-5">Status Tracking</p>
 
-        <div class="space-y-1 relative">
-          <div class="absolute left-[19px] top-[40px] bottom-0 w-[2px] bg-gray-200"></div>
+        <!-- Empty -->
+        <div v-if="!progressItems.length" class="text-center py-12">
+          <div class="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-3">
+            <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+            </svg>
+          </div>
+          <p class="text-sm text-gray-400">Belum ada proses yang dicatat.</p>
+        </div>
 
-          <div v-for="item in progressItems" :key="item.id" class="pl-14 pb-8 relative group">
+        <!-- Timeline -->
+        <div v-else class="relative">
+          <div class="absolute left-[15px] top-8 bottom-8 w-px bg-gray-200"></div>
 
-            <div
-              class="absolute left-0 top-0 w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg z-10 transition-transform group-hover:scale-110"
-              :style="{ backgroundColor: getStatusColor(item.status) }"
-            >
-              {{ getStatusIcon(item.status) }}
+          <div v-for="(item, idx) in progressItems" :key="item.id ?? idx" class="relative flex gap-4 mb-4 last:mb-0">
+
+            <!-- Hidden file input per item -->
+            <input
+              :ref="el => setFileRef(el, idx)"
+              type="file" accept=".pdf" class="hidden"
+              @change="(e) => handleFileSelect(e, idx)"
+            />
+
+            <!-- Dot — selalu ceklis hijau kecuali ada kondisi khusus -->
+            <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0 z-10 shadow-sm"
+              :class="getIcon(item).bg">
+              {{ getIcon(item).symbol }}
             </div>
 
-            <div class="bg-white border border-gray-100 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow">
-              <div class="flex justify-between items-start mb-1">
-                <h4 class="font-bold text-gray-800 leading-tight">{{ item.title }}</h4>
-              </div>
-              <p class="text-[11px] font-medium text-gray-400 mb-4 tracking-wide uppercase">{{ item.tanggal }}</p>
+            <!-- Card -->
+            <div class="flex-1 bg-white border border-gray-100 rounded-xl shadow-sm overflow-hidden">
 
-              <div v-if="item.catatan" class="mb-4">
-                <p class="text-[10px] text-gray-400 font-bold uppercase mb-2">Catatan:</p>
-                <div :class="[
-                  'p-3 rounded-lg text-xs leading-relaxed',
-                  item.status === 'warning' ? 'bg-red-50 text-red-700 border-l-4 border-red-400' : 'bg-gray-50 text-gray-600'
-                ]">
-                  {{ item.catatan }}
+              <!-- Card header -->
+              <div class="px-4 pt-3 pb-2 border-b border-gray-50">
+                <h4 class="text-sm font-semibold text-gray-800">{{ item.title ?? '—' }}</h4>
+                <p class="text-[11px] text-gray-400 mt-0.5">Selesai pada {{ item.tanggal || '—' }}</p>
+              </div>
+
+              <!-- Card body -->
+              <div class="px-4 py-3 space-y-3">
+
+                <!-- Catatan -->
+                <div>
+                  <p class="text-[10px] font-semibold text-gray-400 uppercase mb-1">Catatan :</p>
+                  <p :class="[
+                    'text-xs rounded-lg px-3 py-2 leading-relaxed',
+                    item.file ? 'bg-orange-50 text-orange-700' : 'bg-gray-50 text-gray-600'
+                  ]">
+                    {{ item.catatan || 'Tidak ada catatan' }}
+                  </p>
                 </div>
-              </div>
 
-              <div v-if="item.file" class="mb-4">
-                <p class="text-[10px] text-gray-400 font-bold uppercase mb-2">Dokumen Terlampir:</p>
-                <button
-                  @click="downloadFile(item.file)"
-                  class="w-full flex items-center justify-between p-3 bg-blue-50 border border-blue-100 rounded-lg group/file hover:bg-blue-100 transition"
-                >
-                  <div class="flex items-center gap-3">
-                    <div class="p-2 bg-blue-500 rounded text-white"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg></div>
-                    <span class="text-xs font-semibold text-blue-700 truncate max-w-[200px]">{{ item.file }}</span>
+                <!-- File dari admin — selalu tampil jika ada, tidak bisa hilang -->
+                <div v-if="item.file">
+                  <p class="text-[10px] font-semibold text-gray-400 uppercase mb-1">File Revisi</p>
+                  <a :href="'/storage/' + item.file" target="_blank"
+                    class="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-50 border border-blue-100 rounded-lg text-xs text-blue-700 font-medium hover:bg-blue-100 transition">
+                    <svg class="w-3.5 h-3.5 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/>
+                    </svg>
+                    <span class="truncate max-w-[180px]">{{ item.file.split('/').pop() }}</span>
+                    <span class="text-blue-400 text-[10px] font-bold shrink-0">Download</span>
+                  </a>
+                </div>
+
+                <!-- Upload dokumen mitra — HANYA muncul jika admin sudah upload file di item ini -->
+                <div v-if="item.file" class="pt-2 border-t border-gray-100">
+                  <p class="text-[10px] font-semibold text-gray-500 uppercase mb-1">
+                    Upload Dokumen Revisi dari Mitra
+                  </p>
+                  <p class="text-[10px] text-gray-400 mb-2">
+                    Selesai pada {{ item.file_mitra ? item.tanggal : '-' }}
+                  </p>
+
+                  <!-- Sudah upload — tampil nama file, tidak bisa upload lagi -->
+                  <div v-if="item.file_mitra"
+                    class="flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-100 rounded-lg">
+                    <svg class="w-4 h-4 text-green-600 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+                    </svg>
+                    <span class="text-xs text-green-700 font-medium flex-1 truncate">
+                      {{ item.file_mitra.split('/').pop() }}
+                    </span>
+                    <a :href="'/storage/' + item.file_mitra" target="_blank"
+                      class="text-green-600 text-[10px] font-bold hover:underline shrink-0">Lihat</a>
                   </div>
-                  <span class="text-[10px] font-bold text-blue-500 group-hover/file:translate-x-1 transition-transform uppercase">Unduh</span>
-                </button>
-              </div>
 
-              <div v-if="item.status === 'warning'" class="mt-4 pt-4 border-t border-gray-100">
-                <p class="text-[10px] text-gray-400 font-bold uppercase mb-3">Tindakan Diperlukan:</p>
+                  <!-- Belum upload -->
+                  <div v-else>
+                    <!-- File sudah dipilih -->
+                    <div v-if="selectedFiles[idx]"
+                      class="flex items-center gap-2 mb-2 px-3 py-1.5 bg-green-50 border border-green-100 rounded-lg">
+                      <svg class="w-3.5 h-3.5 text-green-600 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/>
+                      </svg>
+                      <span class="text-xs text-green-700 font-medium flex-1 truncate">{{ selectedFiles[idx].name }}</span>
+                      <button @click="delete selectedFiles[idx]" class="text-red-400 hover:text-red-600 text-[10px] font-bold shrink-0">✕</button>
+                    </div>
 
-                <div v-if="selectedFile" class="mb-3 flex items-center gap-2 p-2 bg-green-50 rounded-md border border-green-100">
-                  <span class="text-[10px] text-green-700 font-bold flex-1 truncate">✓ {{ selectedFile.name }}</span>
-                  <button @click="selectedFile = null" class="text-red-500 hover:text-red-700 font-bold text-[10px]">BATAL</button>
+                    <!-- Belum pilih file -->
+                    <div v-else @click="fileInputRefs[idx]?.click()"
+                      class="flex items-center gap-3 px-3 py-2.5 bg-gray-100 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-200 transition mb-2">
+                      <svg class="w-5 h-5 text-gray-500 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/>
+                      </svg>
+                      <span class="text-xs text-gray-500 font-medium">Pilih File (*PDF)</span>
+                    </div>
+
+                    <div class="flex gap-2">
+                      <button v-if="selectedFiles[idx]" @click="fileInputRefs[idx]?.click()"
+                        class="px-3 py-1.5 text-xs border border-gray-200 text-gray-600 bg-white rounded-lg hover:bg-gray-50 transition">
+                        Ganti File
+                      </button>
+                      <button @click="doUpload(idx)"
+                        :disabled="!selectedFiles[idx] || isUploading[idx]"
+                        class="flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:opacity-40 disabled:cursor-not-allowed transition">
+                        <span v-if="isUploading[idx]" class="animate-spin inline-block w-3 h-3 border border-white border-t-transparent rounded-full"></span>
+                        {{ isUploading[idx] ? 'Mengirim...' : 'Upload Sekarang' }}
+                      </button>
+                    </div>
+                  </div>
                 </div>
 
-                <div class="flex gap-2">
-                  <button
-                    @click="triggerFileInput"
-                    class="flex-1 px-4 py-2 text-xs font-bold border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition active:scale-95"
-                  >
-                    {{ selectedFile ? 'Ganti File' : 'Pilih File' }}
-                  </button>
-                  <button
-                    @click="handleUpload"
-                    :disabled="!selectedFile || isUploading"
-                    class="flex-1 px-4 py-2 text-xs font-bold bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:scale-100 transition active:scale-95 flex items-center justify-center gap-2 shadow-md"
-                  >
-                    <span v-if="isUploading" class="animate-spin text-lg">◌</span>
-                    {{ isUploading ? 'Mengirim...' : 'Upload Revisi' }}
-                  </button>
-                </div>
               </div>
 
-              <p v-if="item.pegawai" class="text-[10px] text-gray-400 text-right mt-4 italic">
-                Diproses oleh: <span class="font-bold text-gray-600">{{ item.pegawai }}</span>
-              </p>
+              <!-- Oleh -->
+              <div v-if="item.penanggung || item.pegawai"
+                class="px-4 py-2 bg-gray-50 border-t border-gray-100 text-right">
+                <span class="text-[10px] text-gray-400 italic">
+                  Oleh : <span class="font-semibold text-gray-500">{{ item.penanggung || item.pegawai }}</span>
+                </span>
+              </div>
+
             </div>
           </div>
         </div>
       </div>
 
-      <div class="bg-gray-50 border-t border-gray-100 p-6 flex justify-end gap-3 shrink-0">
-        <button @click="$emit('close')" class="px-8 py-2.5 text-xs font-bold text-gray-500 hover:text-gray-700 transition">TUTUP</button>
-        <button
-          @click="$emit('close')"
-          class="px-10 py-2.5 bg-[#1e5a5e] text-white rounded-xl text-xs font-bold hover:bg-[#144a4d] transition shadow-lg shadow-teal-900/20 active:scale-95 uppercase tracking-widest"
-        >
-          Simpan Progress
+      <!-- Footer -->
+      <div class="px-6 py-4 border-t border-gray-100 flex justify-end shrink-0 bg-gray-50">
+        <button @click="$emit('close')"
+          class="px-5 py-2 text-sm text-gray-500 hover:text-gray-700 font-medium rounded-lg hover:bg-gray-100 transition">
+          Tutup
         </button>
       </div>
 
@@ -190,7 +232,7 @@ const getStatusColor = (status) => {
 </template>
 
 <style scoped>
-::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 20px; }
 ::-webkit-scrollbar-thumb:hover { background: #d1d5db; }

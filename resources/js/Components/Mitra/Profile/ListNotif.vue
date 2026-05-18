@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed } from 'vue';
-import { usePage, Link } from '@inertiajs/vue3';
+import { usePage, Link, router } from '@inertiajs/vue3';
 import Header from '@/Components/Header.vue';
 import Footer from '@/Components/Footer.vue';
 import DetailNotif from '@/Components/Mitra/Profile/DetailNotif.vue';
@@ -24,6 +24,14 @@ const openDetailNotif = (notification) => {
   selectedNotification.value = notification;
   isDetailNotifOpen.value = true;
 };
+
+const goBack = () => {
+  try {
+    router.back()
+  } catch (e) {
+    window.history.back()
+  }
+}
 
 // Filter notifications
 const filteredNotifications = computed(() => {
@@ -140,7 +148,18 @@ const getNotificationIcon = (notif) => {
         
         <!-- Header -->
         <div class="mb-8">
-          <h1 class="text-3xl font-bold text-[#17464E]">Semua Notifikasi</h1>
+          <div class="flex items-center justify-between">
+            <h1 class="text-3xl font-bold text-[#17464E]">Semua Notifikasi</h1>
+            <button
+              @click.prevent="goBack"
+              class="ml-4 px-3 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 transition"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 inline-block mr-2" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M9.707 14.707a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414l5-5a1 1 0 011.414 1.414L6.414 9H17a1 1 0 110 2H6.414l3.293 3.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+              </svg>
+              Kembali
+            </button>
+          </div>
           <p class="text-sm text-[#2f5e66] mt-1">
             Pantau seluruh pengingat status kerjasama Anda dengan SETDA Boyolali
           </p>

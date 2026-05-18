@@ -57,7 +57,6 @@
             <thead>
               <tr class="border-b-2 border-gray-200">
                 <th class="px-6 py-4 text-left font-semibold text-gray-700">Nama Potensi</th>
-                <th class="px-6 py-4 text-left font-semibold text-gray-700">Jumlah Poin</th>
                 <th class="px-6 py-4 text-left font-semibold text-gray-700">Status</th>
                 <th class="px-6 py-4 text-center font-semibold text-gray-700">Aksi</th>
               </tr>
@@ -70,7 +69,6 @@
               </tr>
               <tr v-for="item in potensiList" :key="item.id_potensi" class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                 <td class="px-6 py-4 font-medium text-gray-800">{{ item.judul }}</td>
-                <td class="px-6 py-4 text-gray-600">{{ item.poin?.length || 0 }} Poin</td>
                 <td class="px-6 py-4">
                   <span v-if="item.status_tampil" class="px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
                     Aktif
@@ -242,14 +240,6 @@
             >
               {{ selectedPotensi.status_tampil ? 'Aktif' : 'Nonaktif' }}
             </span>
-          </div>
-
-          <!-- POIN -->
-          <div v-if="selectedPotensi.poin && selectedPotensi.poin.length > 0">
-            <strong class="text-gray-700">Poin:</strong>
-            <ul class="list-disc list-inside text-gray-600 text-sm mt-2">
-              <li v-for="p in selectedPotensi.poin" :key="p.id">{{ p.isi }}</li>
-            </ul>
           </div>
         </div>
 

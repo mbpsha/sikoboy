@@ -190,17 +190,26 @@
                 <td class="py-3 px-4 text-gray-600 whitespace-nowrap">{{ k.tahun }}</td>
                 <td class="py-3 px-4 max-w-[130px] truncate font-medium">{{ k.mitra ?? '—' }}</td>
                 <td class="py-3 px-4 max-w-[220px] leading-snug">{{ k.judul }}</td>
-                <td class="py-3 px-4 text-gray-600 whitespace-nowrap">{{ k.jenis_kerjasama ?? '—' }}</td>
+                <td class="py-3 px-4 whitespace-nowrap">
+                  <span v-if="k.jenis_kerjasama" class="px-3 py-1 text-xs font-semibold rounded-lg bg-blue-100 text-blue-700">
+                    {{ k.jenis_kerjasama }}
+                  </span>
+                  <span v-else class="text-gray-400">—</span>
+                </td>
                 <td class="py-3 px-4 text-gray-600 whitespace-nowrap">{{ k.jenis_dokumen ?? '—' }}</td>
                 <td class="py-3 px-4 text-gray-600">{{ k.urusan ?? '—' }}</td>
                 <td class="py-3 px-4 text-gray-600 whitespace-nowrap">{{ k.tanggal_mulai ?? '—' }}</td>
                 <td class="py-3 px-4 text-gray-600 whitespace-nowrap">{{ k.tanggal_berakhir ?? '—' }}</td>
                 <td class="py-3 px-4 text-gray-600 whitespace-nowrap">{{ formatJangkaWaktu(k.tanggal_mulai, k.tanggal_berakhir) }}</td>
                 <td class="py-3 px-4">
-                  <Link :href="route('admin.data-kerjasama.index') + '#/dokumen/' + k.id_kerjasama"
-                    class="text-teal-700 hover:text-teal-900 font-medium text-xs underline-offset-2 hover:underline">
-                    Lihat
-                  </Link>
+                  <div class="flex flex-col gap-1">
+                    <a v-if="k.file_url" :href="k.file_url" target="_blank" class="text-teal-700 hover:text-teal-900 font-medium text-xs underline-offset-2 hover:underline">
+                      � Lihat Dokumen
+                    </a>
+                    <a v-if="k.latest_mitra_revision" :href="'/storage/' + k.latest_mitra_revision.lokasi_file" target="_blank" class="text-blue-700 hover:text-blue-900 text-xs">
+                      📄 Lihat revisi: {{ k.latest_mitra_revision.nama_file }}
+                    </a>
+                  </div>
                 </td>
                 <td class="py-3 px-4 text-gray-600 whitespace-nowrap">{{ k.pembiayaan ?? '—' }}</td>
                 <td class="py-3 px-4 text-gray-600 whitespace-nowrap">{{ k.nomor_suratM ?? k.nomor_surat ?? k.nomor_suratP ?? '—' }}</td>
@@ -325,10 +334,22 @@
               :readonly="isProcessReadOnly"
               :class="isProcessReadOnly ? 'bg-gray-50 text-gray-500 cursor-not-allowed' : 'focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500'"
               class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm transition resize-none" />
+            <p v-if="isProcessReadOnly" class="text-xs text-orange-600 mt-1">
+              ℹ️ Proses ini sudah diisi — tidak bisa diubah atau upload file.
+            </p>
           </div>
 
           <div>
             <label class="block text-xs font-medium text-gray-600 mb-1">Upload Dokumen (PDF)</label>
+            
+            <!-- Tampilkan file yang sudah ada jika proses read-only -->
+            <div v-if="isProcessReadOnly && activeProcess?.file" class="mb-3 p-3 bg-blue-50 border border-blue-100 rounded-lg">
+              <p class="text-xs text-blue-700 font-medium mb-1">✓ File Tersimpan:</p>
+              <a :href="'/storage/' + activeProcess.file" target="_blank" class="text-xs text-blue-600 underline">
+                {{ activeProcess.file.split('/').pop() }}
+              </a>
+            </div>
+
             <input ref="processFileInput" type="file" accept="application/pdf" class="hidden" @change="onFileSelect" :disabled="isProcessReadOnly" />
             <div
               @click.prevent.stop="!isProcessReadOnly && triggerProcessFileInput()"
@@ -341,7 +362,7 @@
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
                 </svg>
                 <p class="font-semibold text-[#17464E] mb-1">Drag & Drop Dokumen Kerjasama (PDF)</p>
-                <p class="text-xs text-gray-600 mb-3">{{ isProcessReadOnly ? 'Riwayat sudah selesai — tidak bisa mengupload.' : 'atau klik untuk memilih file' }}</p>
+                <p class="text-xs text-gray-600 mb-3">{{ isProcessReadOnly ? 'Proses sudah diisi — tidak bisa diubah.' : 'atau klik untuk memilih file' }}</p>
                 <button v-if="!isProcessReadOnly" type="button" class="px-4 py-2 bg-teal-600 text-white rounded-md text-sm">Pilih File</button>
                 <p v-if="fileName" class="text-sm text-gray-600 mt-3">✓ {{ fileName }}</p>
               </div>
@@ -371,7 +392,7 @@ const props = defineProps({
 
 const page = usePage()
 const currentUsername    = computed(() => page.props.auth?.user?.username ?? '')
-const currentUserDivisi  = computed(() => page.props.auth?.user?.admin?.divisi ?? currentUsername.value)
+const currentUserDivisi = computed(() => page.props.auth?.user?.divisi ?? currentUsername.value)
 
 const kerjasama = computed(() => props.kerjasama ?? {
   data: [], per_page: 15, prev_page_url: null, next_page_url: null, current_page: 1,
@@ -469,7 +490,7 @@ function applyFilters() {
   if (q)               params.search = q
   if (local.value.tahun)  params.tahun  = local.value.tahun
   if (local.value.status) params.status = local.value.status
-  router.get(route('admin.data-kerjasama.index'), params, { preserveState: false })
+  router.get(route('admin.data-kerjasama.index'), params, { preserveState: true })
 }
 
 function resetAllFilters() {
@@ -566,7 +587,16 @@ const fileToUpload     = ref(null)
 const fileName         = ref('')
 const processFileInput = ref(null)
 
-const isProcessReadOnly = computed(() => !!activeKerjasama.value?.is_finalized)
+const isProcessReadOnly = computed(() => {
+  if (!activeProcess.value) return false
+  // Proses temp (baru ditambah, belum disimpan) → selalu bisa diedit
+  if (activeProcess.value.__temp) return false
+  // Kerjasama sudah finalized → read only
+  if (activeKerjasama.value?.is_finalized) return true
+  // Proses lama yang sudah punya id dan catatan → read only
+  if (activeProcess.value.id && activeProcess.value.catatan?.trim()) return true
+  return false
+})
 
 function openProcessModal(k, p) {
   activeKerjasama.value  = k

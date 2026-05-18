@@ -62,7 +62,7 @@
             <div 
               v-for="notif in notifications" 
               :key="notif.id"
-                class="px-4 py-3 border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer"
+                class="px-4 py-3 border-b border-gray-100 hover:bg-yellow-50 transition-colors cursor-pointer"
                 @click="handleNotificationClick(notif)"
               >
               <div class="flex gap-3">
@@ -226,14 +226,21 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted, onUnmounted } from 'vue'
+import { computed, ref, onMounted, onUnmounted, watch } from 'vue'
 import { usePage, Link, router } from '@inertiajs/vue3'
 
 const props = defineProps({ title: String })
 const page = usePage()
 const showNotifications = ref(false)
 
-const notifications = computed(() => page.props.admin_notifications ?? [])
+const rawAdminNotifications = computed(() => page.props.admin_notifications ?? [])
+
+// local state: closed notifications (persisted in localStorage) to hide from header popup
+const closedAdminNotifications = ref([])
+
+const notifications = computed(() => {
+  return rawAdminNotifications.value.filter(n => !closedAdminNotifications.value.includes(n.id))
+})
 
 const authUser = computed(() => page.props.auth?.user ?? null)
 
@@ -243,13 +250,14 @@ const displayName = computed(() => {
 })
 
 const roleLabel = computed(() => {
-  // Show admin.divisi directly (if present)
-  const divisi = authUser.value?.admin?.divisi ?? ''
+  // Show only the division for admins/ users that have it
+  const divisi = authUser.value?.admin?.divisi ?? authUser.value?.divisi ?? ''
   return divisi || ''
 })
 
 const initial = computed(() => displayName.value?.charAt(0).toUpperCase() || '')
-const totalNotifications = computed(() => page.props.admin_notifications_count ?? notifications.value.length)
+// show count for visible (not-closed) notifications in header
+const totalNotifications = computed(() => notifications.value.length)
 
 const toggleNotifications = () => {
   showNotifications.value = !showNotifications.value
@@ -258,10 +266,19 @@ const toggleNotifications = () => {
 // 🔔 UPDATE: Navigasi ke halaman NotifAdmin dengan query parameter ID
 const handleNotificationClick = (notif) => {
   // Navigasi ke halaman notifikasi dengan highlight notifikasi yang diklik
+  // hide this notification from header popup (but keep in full list)
+  if (!closedAdminNotifications.value.includes(notif.id)) {
+    closedAdminNotifications.value.push(notif.id)
+    try { localStorage.setItem('closed_admin_notifications', JSON.stringify(closedAdminNotifications.value)) } catch (e) {}
+  }
   router.visit(`/admin/notifikasi?highlight=${notif.id}`)
 }
 
 const markAllAsRead = () => {
+  // add all current raw admin notification ids to closed list
+  const ids = rawAdminNotifications.value.map(n => n.id)
+  closedAdminNotifications.value = Array.from(new Set([...closedAdminNotifications.value, ...ids]))
+  try { localStorage.setItem('closed_admin_notifications', JSON.stringify(closedAdminNotifications.value)) } catch (e) {}
   showNotifications.value = false
 }
 
@@ -273,6 +290,13 @@ const handleClickOutside = (event) => {
 
 onMounted(() => {
   document.addEventListener('click', handleClickOutside)
+  // load closed admin notifications
+  try {
+    const stored = localStorage.getItem('closed_admin_notifications')
+    if (stored) closedAdminNotifications.value = JSON.parse(stored)
+  } catch (e) {
+    closedAdminNotifications.value = []
+  }
 })
 
 onUnmounted(() => {
