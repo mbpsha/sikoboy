@@ -67,12 +67,33 @@
                 </Link>
 
                 <template v-if="isCollapsed">
-                    <Link :href="route('admin.riwayat-kerjasama.gabungan')" :class="navClass('/admin/riwayat-kerjasama')" aria-label="Riwayat Kerjasama">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
-                            <circle cx="12" cy="12" r="9"/>
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 7v5l3 2"/>
-                        </svg>
-                    </Link>
+                    <div class="relative">
+                        <button
+                            type="button"
+                            :class="navClass('/admin/riwayat-kerjasama')"
+                            aria-label="Riwayat Kerjasama"
+                            @click="showCollapsedRiwayatMenu = !showCollapsedRiwayatMenu"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                                <circle cx="12" cy="12" r="9"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 7v5l3 2"/>
+                            </svg>
+                        </button>
+                        <div
+                            v-if="showCollapsedRiwayatMenu"
+                            class="absolute left-full top-0 ml-2 w-52 rounded-xl border border-teal-700/40 bg-teal-900 shadow-xl p-2 space-y-1 z-50"
+                        >
+                            <Link :href="route('admin.riwayat-kerjasama.gabungan')" :class="subNavClass('/admin/riwayat-kerjasama/gabungan')">
+                                <span class="text-sm">Semua Kerjasama</span>
+                            </Link>
+                            <Link :href="route('admin.riwayat-kerjasama.pemerintah')" :class="subNavClass('/admin/riwayat-kerjasama/pemerintah')">
+                                <span class="text-sm">Pemrakarsa Boyolali</span>
+                            </Link>
+                            <Link :href="route('admin.riwayat-kerjasama.mitra')" :class="subNavClass('/admin/riwayat-kerjasama/mitra')">
+                                <span class="text-sm">Pemrakarsa Mitra</span>
+                            </Link>
+                        </div>
+                    </div>
                 </template>
                 <div v-else>
                     <button
@@ -220,6 +241,7 @@ const showConfirm   = ref(false)
 const showRiwayatMenu = ref(
     page.url?.startsWith("/admin/riwayat-kerjasama") ?? false
 )
+const showCollapsedRiwayatMenu = ref(false)
 const isCollapsed = computed({
     get: () => props.collapsed,
     set: (value) => emit("update:collapsed", value),
@@ -228,11 +250,18 @@ const isCollapsed = computed({
 watch(
     () => page.url,
     (url) => {
+        showCollapsedRiwayatMenu.value = false
         if (url?.startsWith("/admin/riwayat-kerjasama")) {
             showRiwayatMenu.value = true
         }
     }
 )
+
+watch(isCollapsed, (collapsed) => {
+    if (!collapsed) {
+        showCollapsedRiwayatMenu.value = false
+    }
+})
 
 // ✅ Nama dan inisial admin dari shared auth props
 const adminName = computed(() => {

@@ -29,10 +29,12 @@ defineProps({
 });
 
 const isSidebarCollapsed = ref(false);
+const SIDEBAR_STORAGE_KEY = "admin_sidebar_collapsed";
+const SIDEBAR_COLLAPSED_VALUE = "1";
 
 onMounted(() => {
     try {
-        isSidebarCollapsed.value = localStorage.getItem("admin_sidebar_collapsed") === "1";
+        isSidebarCollapsed.value = localStorage.getItem(SIDEBAR_STORAGE_KEY) === SIDEBAR_COLLAPSED_VALUE;
     } catch (error) {
         isSidebarCollapsed.value = false;
     }
@@ -40,7 +42,7 @@ onMounted(() => {
 
 watch(isSidebarCollapsed, (collapsed) => {
     try {
-        localStorage.setItem("admin_sidebar_collapsed", collapsed ? "1" : "0");
+        localStorage.setItem(SIDEBAR_STORAGE_KEY, collapsed ? SIDEBAR_COLLAPSED_VALUE : "0");
     } catch (error) {
         // no-op
     }
