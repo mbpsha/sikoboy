@@ -215,7 +215,7 @@ Route::middleware('auth')->get('/profile', function (Request $request) {
 // MITRA ROUTES
 // ========================================
 
-Route::middleware(['auth', 'role:mitra'])->prefix('mitra')->name('mitra.')->group(function () {
+Route::middleware(['auth', 'role:mitra', 'throttle:240,1'])->prefix('mitra')->name('mitra.')->group(function () {
     // Dashboard
     Route::get('/dashboard', [MitraDashboardController::class, 'index'])
         ->name('dashboard');
@@ -264,7 +264,7 @@ Route::middleware(['auth', 'role:mitra'])->prefix('mitra')->name('mitra.')->grou
 // ADMIN ROUTES
 // ========================================
 
-Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', 'role:admin', 'throttle:240,1'])->prefix('admin')->name('admin.')->group(function () {
 
     // 🔹 Dashboard
     Route::get('/dashboard', [AdminDashboardController::class, 'index'])
@@ -335,6 +335,8 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('/riwayat-kerjasama/gabungan', [RiwayatKerjasamaController::class, 'index'])
         ->middleware('throttle:120,1')
         ->name('riwayat-kerjasama.gabungan');
+    Route::get('/riwayat-kerjasama/gabungan/export', [RiwayatKerjasamaController::class, 'exportGabungan'])
+        ->name('riwayat-kerjasama.gabungan.export');
     Route::post('/riwayat-kerjasama/gabungan', [RiwayatKerjasamaController::class, 'storeGabungan'])
         ->name('riwayat-kerjasama.gabungan.store');
     Route::put('/riwayat-kerjasama/gabungan/{id}', [RiwayatKerjasamaController::class, 'updateGabungan'])
@@ -342,11 +344,15 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('/riwayat-kerjasama/mitra', [RiwayatKerjasamaController::class, 'mitra'])
         ->middleware('throttle:120,1')
         ->name('riwayat-kerjasama.mitra');
+    Route::get('/riwayat-kerjasama/mitra/export', [RiwayatKerjasamaController::class, 'exportMitra'])
+        ->name('riwayat-kerjasama.mitra.export');
     Route::post('/riwayat-kerjasama/mitra', [RiwayatKerjasamaController::class, 'storeMitra'])
         ->name('riwayat-kerjasama.mitra.store');
     Route::get('/riwayat-kerjasama/pemerintah', [RiwayatKerjasamaController::class, 'pemerintah'])
         ->middleware('throttle:120,1')
         ->name('riwayat-kerjasama.pemerintah');
+    Route::get('/riwayat-kerjasama/pemerintah/export', [RiwayatKerjasamaController::class, 'exportPemerintah'])
+        ->name('riwayat-kerjasama.pemerintah.export');
     Route::post('/riwayat-kerjasama/pemerintah', [RiwayatKerjasamaController::class, 'storePemerintah'])
         ->name('riwayat-kerjasama.pemerintah.store');
     Route::put('/riwayat-kerjasama/pemerintah/{id}', [RiwayatKerjasamaController::class, 'updatePemerintah'])

@@ -143,6 +143,20 @@ const resetAllFilters = () => {
     applyFilters();
 };
 
+const buildExportParams = () => ({
+    search: search.value || undefined,
+    tahun: tahun.value || undefined,
+    tahun_column: columnFilters.value.tahun.length ? columnFilters.value.tahun : undefined,
+    tipe: columnFilters.value.tipe.length ? columnFilters.value.tipe : undefined,
+    mitra: columnFilters.value.mitra.length ? columnFilters.value.mitra : undefined,
+    jenis_kerjasama: columnFilters.value.jenis_kerjasama.length ? columnFilters.value.jenis_kerjasama : undefined,
+    status: columnFilters.value.status.length ? columnFilters.value.status : undefined,
+});
+
+const exportSpreadsheet = () => {
+    window.location.href = route("admin.riwayat-kerjasama.mitra.export", buildExportParams());
+};
+
 // Watch search with debounce
 watch(search, () => {
     clearTimeout(debounceTimer);
@@ -582,6 +596,10 @@ onBeforeUnmount(() => {
 
                         <button v-if="search || tahun" @click="resetAllFilters" class="bg-gray-300 hover:bg-gray-400 text-gray-700 text-sm px-5 py-2.5 rounded-full font-medium transition">
                             Reset
+                        </button>
+
+                        <button @click="exportSpreadsheet" class="bg-emerald-600 hover:bg-emerald-700 text-white text-sm px-5 py-2.5 rounded-full font-medium transition whitespace-nowrap">
+                            Ekspor Spreadsheet
                         </button>
                     </div>
                 </div>
