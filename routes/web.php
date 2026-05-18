@@ -240,7 +240,7 @@ Route::middleware(['auth', 'role:mitra', 'throttle:240,1'])->prefix('mitra')->na
         ->name('profile.update');
     Route::put('/profile/password', [MitraProfileController::class, 'updatePassword'])
         ->name('profile.password');
-    
+
     // 🔔 Notifikasi
     Route::get('/notifications', [MitraProfileController::class, 'notifications'])
         ->name('notifications');
@@ -336,6 +336,7 @@ Route::middleware(['auth', 'role:admin', 'throttle:240,1'])->prefix('admin')->na
         ->middleware('throttle:120,1')
         ->name('riwayat-kerjasama.gabungan');
     Route::get('/riwayat-kerjasama/gabungan/export', [RiwayatKerjasamaController::class, 'exportGabungan'])
+        ->middleware('throttle:30,1')
         ->name('riwayat-kerjasama.gabungan.export');
     Route::post('/riwayat-kerjasama/gabungan', [RiwayatKerjasamaController::class, 'storeGabungan'])
         ->name('riwayat-kerjasama.gabungan.store');
@@ -345,6 +346,7 @@ Route::middleware(['auth', 'role:admin', 'throttle:240,1'])->prefix('admin')->na
         ->middleware('throttle:120,1')
         ->name('riwayat-kerjasama.mitra');
     Route::get('/riwayat-kerjasama/mitra/export', [RiwayatKerjasamaController::class, 'exportMitra'])
+        ->middleware('throttle:30,1')
         ->name('riwayat-kerjasama.mitra.export');
     Route::post('/riwayat-kerjasama/mitra', [RiwayatKerjasamaController::class, 'storeMitra'])
         ->name('riwayat-kerjasama.mitra.store');
@@ -352,6 +354,7 @@ Route::middleware(['auth', 'role:admin', 'throttle:240,1'])->prefix('admin')->na
         ->middleware('throttle:120,1')
         ->name('riwayat-kerjasama.pemerintah');
     Route::get('/riwayat-kerjasama/pemerintah/export', [RiwayatKerjasamaController::class, 'exportPemerintah'])
+        ->middleware('throttle:30,1')
         ->name('riwayat-kerjasama.pemerintah.export');
     Route::post('/riwayat-kerjasama/pemerintah', [RiwayatKerjasamaController::class, 'storePemerintah'])
         ->name('riwayat-kerjasama.pemerintah.store');

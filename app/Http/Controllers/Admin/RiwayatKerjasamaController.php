@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Exports\RiwayatKerjasamaExport;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreKerjasamaPemerintahRequest;
 use App\Models\Adendum;
@@ -17,6 +18,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
+use Maatwebsite\Excel\Facades\Excel;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class RiwayatKerjasamaController extends Controller
@@ -127,17 +130,17 @@ class RiwayatKerjasamaController extends Controller
         ]);
     }
 
-    public function exportGabungan(Request $request): StreamedResponse
+    public function exportGabungan(Request $request): StreamedResponse|BinaryFileResponse
     {
         return $this->exportByType($request, 'gabungan');
     }
 
-    public function exportMitra(Request $request): StreamedResponse
+    public function exportMitra(Request $request): StreamedResponse|BinaryFileResponse
     {
         return $this->exportByType($request, 'mitra');
     }
 
-    public function exportPemerintah(Request $request): StreamedResponse
+    public function exportPemerintah(Request $request): StreamedResponse|BinaryFileResponse
     {
         return $this->exportByType($request, 'pemerintah');
     }
@@ -855,7 +858,7 @@ class RiwayatKerjasamaController extends Controller
         }
     }
 
-    private function exportByType(Request $request, string $type): StreamedResponse
+    private function exportByType(Request $request, string $type): StreamedResponse|BinaryFileResponse
     {
         $query = match ($type) {
             'mitra' => Kerjasama::finalized()
@@ -875,7 +878,14 @@ class RiwayatKerjasamaController extends Controller
             ->values()
             ->map(fn (Kerjasama $k, int $i) => $this->formatRow($k, $i));
 
-        $filename = 'riwayat-kerjasama-'.$type.'-'.now()->format('Ymd_His').'.csv';
+        $format = strtolower((string) $request->query('format', 'csv'));
+        $baseFilename = 'riwayat-kerjasama-'.$type.'-'.now()->format('Ymd_His');
+
+        if ($format === 'xlsx') {
+            return Excel::download(new RiwayatKerjasamaExport($rows), $baseFilename.'.xlsx');
+        }
+
+        $filename = $baseFilename.'.csv';
 
         return response()->streamDownload(function () use ($rows) {
             $handle = fopen('php://output', 'w');
