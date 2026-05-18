@@ -37,6 +37,9 @@ onMounted(() => {
         isSidebarCollapsed.value = localStorage.getItem(SIDEBAR_STORAGE_KEY) === SIDEBAR_COLLAPSED_VALUE;
     } catch (error) {
         isSidebarCollapsed.value = false;
+        if (import.meta.env.DEV) {
+            console.error("Failed to load sidebar state:", error);
+        }
     }
 });
 
@@ -44,7 +47,9 @@ watch(isSidebarCollapsed, (collapsed) => {
     try {
         localStorage.setItem(SIDEBAR_STORAGE_KEY, collapsed ? SIDEBAR_COLLAPSED_VALUE : "0");
     } catch (error) {
-        // no-op
+        if (import.meta.env.DEV) {
+            console.error("Failed to store sidebar state:", error);
+        }
     }
 });
 </script>

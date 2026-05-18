@@ -67,7 +67,7 @@
                 </Link>
 
                 <template v-if="isCollapsed">
-                    <div class="relative">
+                    <div ref="collapsedRiwayatMenuRef" class="relative">
                         <button
                             type="button"
                             :class="navClass('/admin/riwayat-kerjasama')"
@@ -226,7 +226,7 @@
 
 <script setup>
 import { Link, usePage, router } from "@inertiajs/vue3"
-import { ref, watch, computed } from "vue"
+import { ref, watch, computed, onMounted, onUnmounted } from "vue"
 
 const props = defineProps({
     collapsed: {
@@ -242,15 +242,20 @@ const showRiwayatMenu = ref(
     page.url?.startsWith("/admin/riwayat-kerjasama") ?? false
 )
 const showCollapsedRiwayatMenu = ref(false)
+const collapsedRiwayatMenuRef = ref(null)
 const isCollapsed = computed({
     get: () => props.collapsed,
     set: (value) => emit("update:collapsed", value),
 })
 
+const closeCollapsedMenu = () => {
+    showCollapsedRiwayatMenu.value = false
+}
+
 watch(
     () => page.url,
     (url) => {
-        showCollapsedRiwayatMenu.value = false
+        closeCollapsedMenu()
         if (url?.startsWith("/admin/riwayat-kerjasama")) {
             showRiwayatMenu.value = true
         }
@@ -258,12 +263,38 @@ watch(
 )
 
 watch(isCollapsed, (collapsed) => {
-    showCollapsedRiwayatMenu.value = false
+    closeCollapsedMenu()
     if (collapsed) {
         showRiwayatMenu.value = false
     } else {
         showRiwayatMenu.value = page.url?.startsWith("/admin/riwayat-kerjasama") ?? false
     }
+})
+
+const handleDocumentClick = (event) => {
+    if (!showCollapsedRiwayatMenu.value) {
+        return
+    }
+
+    if (collapsedRiwayatMenuRef.value && !collapsedRiwayatMenuRef.value.contains(event.target)) {
+        closeCollapsedMenu()
+    }
+}
+
+const handleEscapeKey = (event) => {
+    if (event.key === "Escape") {
+        closeCollapsedMenu()
+    }
+}
+
+onMounted(() => {
+    document.addEventListener("click", handleDocumentClick)
+    document.addEventListener("keydown", handleEscapeKey)
+})
+
+onUnmounted(() => {
+    document.removeEventListener("click", handleDocumentClick)
+    document.removeEventListener("keydown", handleEscapeKey)
 })
 
 // ✅ Nama dan inisial admin dari shared auth props
