@@ -39,6 +39,10 @@ const isDesktopCollapsed = ref(false);
 const isMobileSidebarOpen = ref(false);
 
 const syncViewport = () => {
+    if (typeof window === "undefined") {
+        return;
+    }
+
     const mobile = window.innerWidth < DESKTOP_BREAKPOINT;
     isMobile.value = mobile;
 

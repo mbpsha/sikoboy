@@ -90,6 +90,8 @@
                 <div
                     v-if="showNotifications"
                     class="absolute right-0 mt-2 w-[calc(100vw-2rem)] sm:w-96 bg-white rounded-lg shadow-xl border border-gray-200 z-50"
+                    role="dialog"
+                    aria-label="Panel notifikasi admin"
                 >
                     <div class="px-4 py-3 border-b border-gray-200 flex justify-between items-center">
                         <h3 class="font-semibold text-gray-800">Notifikasi</h3>
