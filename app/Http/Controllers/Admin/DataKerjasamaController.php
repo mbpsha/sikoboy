@@ -21,7 +21,6 @@ class DataKerjasamaController extends Controller
 {
     public function index(Request $request)
     {
-        \Log::debug('DataKerjasama index called', ['query' => $request->query()]);
         $query = Kerjasama::with(['mitra', 'admin', 'latestPeriode', 'kategori', 'riwayatStatus']);
 
         if ($request->filled('search')) {
@@ -151,18 +150,6 @@ class DataKerjasamaController extends Controller
         }
 
         [$sortBy, $sortDir] = $this->resolveSort($request);
-
-        // Debug: when a search is present, log the generated SQL and bindings to inspect why unexpected rows are returned
-        if ($request->filled('search')) {
-            try {
-                \Log::debug('DataKerjasama SQL', [
-                    'sql' => $query->toSql(),
-                    'bindings' => $query->getBindings(),
-                ]);
-            } catch (\Throwable $e) {
-                \Log::warning('Failed to dump query SQL for DataKerjasama', ['err' => $e->getMessage()]);
-            }
-        }
 
         $kerjasama = $query->orderBy($sortBy, $sortDir)
             ->paginate(15)
