@@ -23,7 +23,8 @@
                     >
                         <svg
                             xmlns="http://www.w3.org/2000/svg"
-                            class="w-6 h-6"
+                            class="w-6 h-6 transition-transform"
+                            :class="isCollapsed ? 'rotate-180' : ''"
                             fill="none"
                             viewBox="0 0 24 24"
                             stroke="currentColor"
@@ -33,7 +34,6 @@
                                 stroke-linecap="round"
                                 stroke-linejoin="round"
                                 d="M11 5l-7 7 7 7M20 5v14"
-                                :class="isCollapsed ? 'rotate-180 origin-center' : ''"
                             />
                         </svg>
                     </button>
@@ -258,10 +258,11 @@ watch(
 )
 
 watch(isCollapsed, (collapsed) => {
+    showCollapsedRiwayatMenu.value = false
     if (collapsed) {
         showRiwayatMenu.value = false
     } else {
-        showCollapsedRiwayatMenu.value = false
+        showRiwayatMenu.value = page.url?.startsWith("/admin/riwayat-kerjasama") ?? false
     }
 })
 
