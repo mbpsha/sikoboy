@@ -32,11 +32,11 @@ const handleFileSelect = (event) => {
 
 const handleUpload = async () => {
   if (!selectedFile.value) return;
-  
+
   isUploading.value = true;
   // Simulasi upload ke server
-  await new Promise(resolve => setTimeout(resolve, 1500)); 
-  
+  await new Promise(resolve => setTimeout(resolve, 1500));
+
   alert(`File ${selectedFile.value.name} berhasil diunggah!`);
   isUploading.value = false;
   selectedFile.value = null;
@@ -77,7 +77,7 @@ const getStatusColor = (status) => {
 <template>
   <div v-if="isOpen" class="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] backdrop-blur-sm">
     <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full mx-4 max-h-[85vh] flex flex-col relative overflow-hidden">
-      
+
       <input
         ref="fileInput"
         type="file"
@@ -103,8 +103,8 @@ const getStatusColor = (status) => {
           <div class="absolute left-[19px] top-[40px] bottom-0 w-[2px] bg-gray-200"></div>
 
           <div v-for="item in progressItems" :key="item.id" class="pl-14 pb-8 relative group">
-            
-            <div 
+
+            <div
               class="absolute left-0 top-0 w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg z-10 transition-transform group-hover:scale-110"
               :style="{ backgroundColor: getStatusColor(item.status) }"
             >
@@ -143,20 +143,20 @@ const getStatusColor = (status) => {
 
               <div v-if="item.status === 'warning'" class="mt-4 pt-4 border-t border-gray-100">
                 <p class="text-[10px] text-gray-400 font-bold uppercase mb-3">Tindakan Diperlukan:</p>
-                
+
                 <div v-if="selectedFile" class="mb-3 flex items-center gap-2 p-2 bg-green-50 rounded-md border border-green-100">
                   <span class="text-[10px] text-green-700 font-bold flex-1 truncate">✓ {{ selectedFile.name }}</span>
                   <button @click="selectedFile = null" class="text-red-500 hover:text-red-700 font-bold text-[10px]">BATAL</button>
                 </div>
 
                 <div class="flex gap-2">
-                  <button 
+                  <button
                     @click="triggerFileInput"
                     class="flex-1 px-4 py-2 text-xs font-bold border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition active:scale-95"
                   >
                     {{ selectedFile ? 'Ganti File' : 'Pilih File' }}
                   </button>
-                  <button 
+                  <button
                     @click="handleUpload"
                     :disabled="!selectedFile || isUploading"
                     class="flex-1 px-4 py-2 text-xs font-bold bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:scale-100 transition active:scale-95 flex items-center justify-center gap-2 shadow-md"
@@ -177,7 +177,7 @@ const getStatusColor = (status) => {
 
       <div class="bg-gray-50 border-t border-gray-100 p-6 flex justify-end gap-3 shrink-0">
         <button @click="$emit('close')" class="px-8 py-2.5 text-xs font-bold text-gray-500 hover:text-gray-700 transition">TUTUP</button>
-        <button 
+        <button
           @click="$emit('close')"
           class="px-10 py-2.5 bg-[#1e5a5e] text-white rounded-xl text-xs font-bold hover:bg-[#144a4d] transition shadow-lg shadow-teal-900/20 active:scale-95 uppercase tracking-widest"
         >
