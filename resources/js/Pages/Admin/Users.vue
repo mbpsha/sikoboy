@@ -289,37 +289,120 @@ function verifyMitra(id) {
 
 <template>
   <AdminLayout title="Pengguna">
-    <div class="max-w-6xl mx-auto">
+    <div class="w-full max-w-full xl:max-w-7xl mx-auto overflow-x-hidden">
       <div class="bg-white rounded-xl shadow-md overflow-hidden">
 
         <!-- Top Bar -->
-        <div class="flex items-center justify-between p-6 border-b bg-teal-700">
-          <h2 class="text-white font-semibold">Pengguna</h2>
-          <div class="flex items-center gap-3 flex-wrap">
-            <input
-              v-model="local.search"
-              @input="scheduleApplyFilters"
-              placeholder="Cari nama, email, instansi..."
-              class="rounded-full bg-white px-4 py-2 text-sm min-w-[220px]"
-            />
-            <select v-model="local.role" @change="scheduleApplyFilters" class="rounded-full px-3 py-2 text-sm bg-white">
-              <option value="">Semua Role</option>
-              <option value="admin">Admin</option>
-              <option value="mitra">Mitra</option>
-            </select>
-            <button @click="applyFilters" title="Filter" class="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 4 21 4 14 12 14 19 10 21 10 12 3 4"/></svg>
-            </button>
-            <button @click.prevent="openCreateMitra" class="bg-teal-400 hover:bg-teal-300 text-white px-4 py-2 rounded-full text-sm font-medium">+ Mitra</button>
-            <button @click.prevent="openCreateAdmin"  class="bg-indigo-500 hover:bg-indigo-400 text-white px-4 py-2 rounded-full text-sm font-medium">+ Admin</button>
-            <button @click.prevent="resetFilters" class="bg-white/20 hover:bg-white/30 text-white px-3 py-2 rounded-full text-sm">Reset</button>
-          </div>
+        <div
+            class="flex flex-col gap-4 p-4 md:p-6 border-b bg-teal-700"
+        >
+
+        <!-- HEADER -->
+        <div
+            class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
+        >
+            <h2
+                class="text-white font-semibold text-lg"
+            >
+                Pengguna
+            </h2>
+
+            <div
+                class="text-white/80 text-sm"
+            >
+                Total:
+                    <span class="font-semibold">
+                        {{ users?.total ?? filteredUsers.length }}
+                    </span>
+                        pengguna
+            </div>
         </div>
+
+        <!-- FILTER -->
+        <div
+            class="flex flex-wrap items-center gap-2 md:gap-3"
+        >
+
+        <!-- SEARCH -->
+        <div
+            class="relative flex-1 min-w-[220px]"
+        >
+            <input
+                v-model="local.search"
+                @input="scheduleApplyFilters"
+                placeholder="Cari nama, email, instansi..."
+                class="w-full rounded-full bg-white pl-4 pr-4 py-2.5 text-sm border-0 focus:ring-2 focus:ring-white/40"
+            />
+        </div>
+
+        <!-- ROLE -->
+        <select
+            v-model="local.role"
+            @change="scheduleApplyFilters"
+            class="rounded-full px-4 py-2.5 text-sm bg-white border-0 min-w-[140px]"
+        >
+            <option value="">
+                Semua Role
+            </option>
+
+            <option value="admin">
+                Admin
+            </option>
+
+            <option value="mitra">
+                Mitra
+            </option>
+        </select>
+
+        <!-- FILTER BUTTON -->
+        <button
+            @click="applyFilters"
+            title="Filter"
+            class="p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white shrink-0 transition"
+            >
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+        >
+            <polygon points="3 4 21 4 14 12 14 19 10 21 10 12 3 4"/>
+        </svg>
+        </button>
+
+        <!-- BUTTONS -->
+        <button
+            @click.prevent="openCreateMitra"
+            class="bg-teal-400 hover:bg-teal-300 text-white px-4 py-2.5 rounded-full text-sm font-medium transition"
+        >
+            + Mitra
+        </button>
+
+        <button
+            @click.prevent="openCreateAdmin"
+            class="bg-indigo-500 hover:bg-indigo-400 text-white px-4 py-2.5 rounded-full text-sm font-medium transition"
+        >
+            + Admin
+        </button>
+
+        <button
+            @click.prevent="resetFilters"
+            class="bg-white/20 hover:bg-white/30 text-white px-4 py-2.5 rounded-full text-sm transition"
+        >
+            Reset
+        </button>
+    </div>
+    </div>
 
         <!-- Table -->
         <div class="p-6">
-          <div class="overflow-x-auto">
-            <table class="min-w-full table-auto table-lines">
+          <div class="overflow-x-auto rounded-xl border border-gray-100">
+            <table class="min-w-[1100px] w-full table-auto table-lines">
               <thead>
                 <tr class="bg-teal-700 text-white text-sm">
                   <th class="py-3 px-4 text-left">No</th>
@@ -333,7 +416,7 @@ function verifyMitra(id) {
                   <th class="py-3 px-4 text-left">Aksi</th>
                 </tr>
               </thead>
-              <tbody class="bg-white text-sm">
+              <tbody class="bg-white text-xs md:text-sm">
                 <tr v-for="(user, idx) in filteredUsers" :key="user.id" class="border-b" :class="{ 'opacity-60 bg-gray-50': !user.is_active }">
                   <td class="py-4 px-4 text-gray-700">{{ indexOffset + idx + 1 }}</td>
                   <td class="py-4 px-4 text-gray-700">
@@ -401,26 +484,77 @@ function verifyMitra(id) {
             </table>
           </div>
 
-          <!-- Pagination -->
-          <div v-if="(users?.last_page || 1) > 1" class="mt-6 flex items-center justify-between">
-            <div class="text-sm text-gray-600">Tampilkan {{ users.per_page }} / Halaman</div>
-            <div class="flex items-center justify-end gap-2">
-              <button @click.prevent="goToPage(users.current_page - 1)" :disabled="!users.prev_page_url" class="px-3 py-2 text-sm rounded-lg border bg-white disabled:opacity-50">Sebelumnya</button>
+        <!-- Pagination -->
+        <div
+            v-if="(users?.last_page || 1) > 1"
+            class="mt-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4"
+        >
 
-              <button
+        <!-- INFO -->
+        <div
+            class="text-sm text-gray-600"
+        >
+            Halaman
+            {{ users.current_page }}
+            dari
+            {{ users.last_page }}
+        </div>
+
+        <!-- MOBILE -->
+        <div
+            class="flex md:hidden items-center justify-between gap-3"
+        >
+            <button
+                @click.prevent="goToPage(users.current_page - 1)"
+                :disabled="!users.prev_page_url"
+                class="flex-1 px-4 py-2 text-sm rounded-xl border bg-white disabled:opacity-50"
+            >
+                Sebelumnya
+            </button>
+
+            <button
+                @click.prevent="goToPage(users.current_page + 1)"
+                :disabled="!users.next_page_url"
+                class="flex-1 px-4 py-2 text-sm rounded-xl border bg-white disabled:opacity-50"
+            >
+                Berikutnya
+            </button>
+        </div>
+
+        <!-- DESKTOP -->
+        <div
+            class="hidden md:flex items-center justify-end gap-2"
+        >
+            <button
+                @click.prevent="goToPage(users.current_page - 1)"
+                :disabled="!users.prev_page_url"
+                class="px-3 py-2 text-sm rounded-lg border bg-white disabled:opacity-50"
+            >
+                Sebelumnya
+            </button>
+
+            <button
                 v-for="page in users.last_page"
                 :key="page"
                 @click.prevent="goToPage(page)"
                 class="px-3 py-2 text-sm rounded-lg border"
-                :class="page === users.current_page ? 'bg-teal-600 text-white' : 'bg-white'"
-              >
+                :class="page === users.current_page
+                    ? 'bg-teal-600 text-white'
+                    : 'bg-white'"
+            >
                 {{ page }}
-              </button>
+            </button>
 
-              <button @click.prevent="goToPage(users.current_page + 1)" :disabled="!users.next_page_url" class="px-3 py-2 text-sm rounded-lg border bg-white disabled:opacity-50">Berikutnya</button>
+            <button
+                @click.prevent="goToPage(users.current_page + 1)"
+                :disabled="!users.next_page_url"
+                class="px-3 py-2 text-sm rounded-lg border bg-white disabled:opacity-50"
+            >
+                Berikutnya
+            </button>
             </div>
-          </div>
         </div>
+    </div>
 
         <!-- Modal Tambah Mitra -->
         <div v-if="showCreateModal && createType === 'mitra'" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4" @click.self="closeCreate">
@@ -624,7 +758,21 @@ function verifyMitra(id) {
 </template>
 
 <style scoped>
-.table-lines thead th { border-right: 1px solid rgba(255,255,255,0.18); }
-.table-lines thead th:last-child { border-right: none; }
-.table-lines tbody td { border-bottom: 1px solid rgba(15,23,42,0.06); }
+.table-lines thead th {
+  border-right: 1px solid rgba(255,255,255,0.18);
+  white-space: nowrap;
+}
+
+.table-lines thead th:last-child {
+  border-right: none;
+}
+
+.table-lines tbody td {
+  border-bottom: 1px solid rgba(15,23,42,0.06);
+  vertical-align: top;
+}
+
+.table-lines tbody tr:hover {
+  background: rgba(15, 118, 110, 0.03);
+}
 </style>

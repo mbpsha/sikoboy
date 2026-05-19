@@ -1,57 +1,185 @@
 <template>
     <AdminLayout title="Beranda">
-        <!-- Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div class="bg-teal-500 text-white p-6 rounded-xl">
-                <p>Total Kerjasama</p>
-                <h2 class="text-3xl font-bold mt-2">{{ metrics.total_kerjasama ?? 0 }}</h2>
-            </div>
 
-            <div class="bg-green-500 text-white p-6 rounded-xl">
-                <p>Kerjasama Aktif</p>
-                <h2 class="text-3xl font-bold mt-2">{{ metrics.aktif ?? 0 }}</h2>
-            </div>
+        <!-- WRAPPER -->
+        <div class="w-full overflow-x-hidden">
 
-            <div class="bg-yellow-500 text-white p-6 rounded-xl">
-                <p>Akan Berakhir</p>
-                <h2 class="text-3xl font-bold mt-2">{{ metrics.akan_berakhir ?? 0 }}</h2>
-            </div>
+            <!-- METRIC CARDS -->
+            <div
+                class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6"
+            >
 
-            <div class="bg-red-500 text-white p-6 rounded-xl">
-                <p>Berakhir</p>
-                <h2 class="text-3xl font-bold mt-2">{{ metrics.berakhir ?? 0 }}</h2>
-            </div>
+                <!-- CARD -->
+                <div
+                    class="bg-teal-500 text-white p-5 md:p-6 rounded-2xl shadow-sm"
+                >
+                    <p class="text-sm md:text-base opacity-90">
+                        Total Kerjasama
+                    </p>
 
-            <div class="bg-blue-500 text-white p-6 rounded-xl">
-                <p>Total Mitra</p>
-                <h2 class="text-3xl font-bold mt-2">{{ metrics.total_mitra ?? 0 }}</h2>
-            </div>
-
-            <div class="bg-purple-500 text-white p-6 rounded-xl">
-                <p>Total Dokumen</p>
-                <h2 class="text-3xl font-bold mt-2">{{ metrics.total_dokumen ?? 0 }}</h2>
-            </div>
-        </div>
-
-        <!-- Charts -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-            <div class="bg-white p-6 rounded-xl shadow">
-                <h2 class="font-semibold mb-4">Jumlah Kerjasama per Tahun</h2>
-                <div v-if="kerjasama_per_tahun.length > 0" class="h-72 sm:h-80">
-                    <canvas ref="barChartRef"></canvas>
+                    <h2 class="text-3xl md:text-4xl font-bold mt-3">
+                        {{ metrics.total_kerjasama ?? 0 }}
+                    </h2>
                 </div>
-                <div v-else class="flex items-center justify-center h-72 sm:h-80 text-gray-400">
-                    <p>Tidak ada data kerjasama</p>
+
+                <div
+                    class="bg-green-500 text-white p-5 md:p-6 rounded-2xl shadow-sm"
+                >
+                    <p class="text-sm md:text-base opacity-90">
+                        Kerjasama Aktif
+                    </p>
+
+                    <h2 class="text-3xl md:text-4xl font-bold mt-3">
+                        {{ metrics.aktif ?? 0 }}
+                    </h2>
+                </div>
+
+                <div
+                    class="bg-yellow-500 text-white p-5 md:p-6 rounded-2xl shadow-sm"
+                >
+                    <p class="text-sm md:text-base opacity-90">
+                        Akan Berakhir
+                    </p>
+
+                    <h2 class="text-3xl md:text-4xl font-bold mt-3">
+                        {{ metrics.akan_berakhir ?? 0 }}
+                    </h2>
+                </div>
+
+                <div
+                    class="bg-red-500 text-white p-5 md:p-6 rounded-2xl shadow-sm"
+                >
+                    <p class="text-sm md:text-base opacity-90">
+                        Berakhir
+                    </p>
+
+                    <h2 class="text-3xl md:text-4xl font-bold mt-3">
+                        {{ metrics.berakhir ?? 0 }}
+                    </h2>
+                </div>
+
+                <div
+                    class="bg-blue-500 text-white p-5 md:p-6 rounded-2xl shadow-sm"
+                >
+                    <p class="text-sm md:text-base opacity-90">
+                        Total Mitra
+                    </p>
+
+                    <h2 class="text-3xl md:text-4xl font-bold mt-3">
+                        {{ metrics.total_mitra ?? 0 }}
+                    </h2>
+                </div>
+
+                <div
+                    class="bg-purple-500 text-white p-5 md:p-6 rounded-2xl shadow-sm"
+                >
+                    <p class="text-sm md:text-base opacity-90">
+                        Total Dokumen
+                    </p>
+
+                    <h2 class="text-3xl md:text-4xl font-bold mt-3">
+                        {{ metrics.total_dokumen ?? 0 }}
+                    </h2>
                 </div>
             </div>
 
-            <div class="bg-white p-6 rounded-xl shadow">
-                <h2 class="font-semibold mb-4">Kategori Kerjasama</h2>
-                <div v-if="kategori_kerjasama.length > 0" class="h-72 sm:h-80">
-                    <canvas ref="categoryChartRef"></canvas>
+            <!-- CHARTS -->
+            <div
+                class="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-6 mt-6 items-start"
+            >
+
+                <!-- BAR CHART -->
+                <div
+                    class="bg-white p-4 md:p-6 rounded-2xl shadow-sm overflow-hidden"
+                >
+                    <h2
+                        class="font-semibold text-gray-800 text-base md:text-lg mb-4"
+                    >
+                        Jumlah Kerjasama per Tahun
+                    </h2>
+
+                    <div
+                        v-if="kerjasama_per_tahun.length > 0"
+                        class="relative h-[260px] sm:h-[300px] md:h-[360px]"
+                    >
+                        <canvas
+                            ref="barChartRef"
+                            class="!w-full !h-full"
+                        ></canvas>
+                    </div>
+
+                    <div
+                        v-else
+                        class="flex items-center justify-center h-[260px] sm:h-[300px] md:h-[360px] text-gray-400"
+                    >
+                        <p>Tidak ada data kerjasama</p>
+                    </div>
                 </div>
-                <div v-else class="flex items-center justify-center h-72 sm:h-80 text-gray-400">
-                    <p>Tidak ada data kategori</p>
+
+                <!-- PIE CHART -->
+                <div
+                    class="bg-white p-4 md:p-6 rounded-2xl shadow-sm overflow-hidden"
+                >
+                    <h2
+                        class="font-semibold text-gray-800 text-base md:text-lg mb-4"
+                    >
+                        Kategori Kerjasama
+                    </h2>
+
+                    <div
+                        v-if="kategori_kerjasama.length > 0"
+                    >
+
+                        <!-- PIE -->
+                        <div
+                            class="h-[300px] md:h-[380px]"
+                        >
+                            <canvas ref="categoryChartRef"></canvas>
+                        </div>
+
+                        <!-- LEGEND LIST -->
+                        <div
+                            class="mt-5 grid grid-cols-1 gap-3"
+                        >
+                            <div
+                                v-for="(item, index) in kategori_kerjasama"
+                                :key="index"
+                                class="flex items-start gap-3 p-3 rounded-xl bg-gray-50"
+                            >
+
+                                <!-- COLOR -->
+                                <div
+                                    class="w-4 h-4 rounded-full mt-1 shrink-0"
+                                    :style="{
+                                        backgroundColor: pieColors[index]
+                                    }"
+                                ></div>
+
+                                <!-- TEXT -->
+                                <div class="min-w-0 flex-1">
+
+                                    <p
+                                        class="text-sm font-medium text-gray-800 break-words"
+                                    >
+                                        {{ item.kategori }}
+                                    </p>
+
+                                    <p
+                                        class="text-xs text-gray-500 mt-1"
+                                    >
+                                        {{ item.total }} kerjasama
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div
+                        v-else
+                        class="flex items-center justify-center h-[320px] md:h-[380px] text-gray-400"
+                    >
+                        <p>Tidak ada data kategori</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -59,22 +187,29 @@
 </template>
 
 <script setup>
-import { onMounted, onUnmounted, ref } from "vue";
+import {
+    onMounted,
+    onUnmounted,
+    ref,
+} from "vue";
+
 import Chart from "chart.js/auto";
+
 import AdminLayout from "@/Layouts/AdminLayout.vue";
 
 const MOBILE_BREAKPOINT = 768;
-const MOBILE_MAX_TICKS = 6;
 
 const props = defineProps({
     metrics: {
         type: Object,
         default: () => ({}),
     },
+
     kerjasama_per_tahun: {
         type: Array,
         default: () => [],
     },
+
     kategori_kerjasama: {
         type: Array,
         default: () => [],
@@ -82,192 +217,277 @@ const props = defineProps({
 });
 
 const metrics = props.metrics ?? {};
+
 const barChartRef = ref(null);
 const categoryChartRef = ref(null);
+
 let barChartInstance = null;
 let categoryChartInstance = null;
+
 let resizeHandler = null;
 let resizeRafId = null;
 
+const pieColors = [
+    "rgba(20, 184, 166, 0.9)",
+    "rgba(45, 212, 191, 0.9)",
+    "rgba(59, 130, 246, 0.9)",
+    "rgba(96, 165, 250, 0.9)",
+    "rgba(168, 85, 247, 0.9)",
+    "rgba(236, 72, 153, 0.9)",
+];
+
 onMounted(() => {
-    // Gunakan data real dari backend, tidak ada dummy fallback
-    const kerjasamaTahun = props.kerjasama_per_tahun || [];
-    const kategoriKerjasama = props.kategori_kerjasama || [];
+
+    const kerjasamaTahun =
+        props.kerjasama_per_tahun || [];
+
+    const kategoriKerjasama =
+        props.kategori_kerjasama || [];
+
     const isMobileViewport = () =>
-        typeof window !== "undefined" && window.innerWidth < MOBILE_BREAKPOINT;
+        typeof window !== "undefined" &&
+        window.innerWidth < MOBILE_BREAKPOINT;
 
-    const applyBarResponsiveOptions = (chart) => {
-        const isMobile = isMobileViewport();
-        chart.options.scales.x.ticks.maxRotation = isMobile ? 40 : 0;
-        chart.options.scales.x.ticks.minRotation = isMobile ? 30 : 0;
-        chart.options.scales.x.ticks.autoSkip = !isMobile;
-        chart.options.scales.x.ticks.maxTicksLimit = isMobile
-            ? MOBILE_MAX_TICKS
-            : undefined;
-    };
+    // BAR CHART
+    if (
+        kerjasamaTahun.length > 0 &&
+        barChartRef.value
+    ) {
 
-    const applyPieResponsiveOptions = (chart) => {
-        const isMobile = isMobileViewport();
-        chart.options.radius = isMobile ? "80%" : "88%";
-        chart.options.layout.padding = isMobile ? 8 : 16;
-        chart.options.plugins.legend.position = isMobile ? "bottom" : "right";
-        chart.options.plugins.legend.labels.boxWidth = isMobile ? 8 : 12;
-        chart.options.plugins.legend.labels.padding = isMobile ? 10 : 14;
-        chart.options.plugins.legend.labels.font.size = isMobile ? 10 : 12;
-    };
+        barChartInstance = new Chart(
+            barChartRef.value,
+            {
+                type: "bar",
 
-    // Hanya render chart jika ada data
-    if (kerjasamaTahun.length > 0 && barChartRef.value) {
-        // Chart 1: Kerjasama per Tahun (Bar Chart)
-        barChartInstance = new Chart(barChartRef.value, {
-            type: "bar",
-            data: {
-                labels: kerjasamaTahun.map((row) => row.tahun),
-                datasets: [
-                    {
-                        label: "Jumlah Kerjasama",
-                        data: kerjasamaTahun.map((row) => row.total),
-                        backgroundColor: "rgba(54, 162, 235, 0.7)",
-                        borderColor: "rgba(54, 162, 235, 1)",
-                        borderWidth: 1,
-                    },
-                ],
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: false,
-                    },
+                data: {
+                    labels: kerjasamaTahun.map(
+                        row => row.tahun
+                    ),
+
+                    datasets: [
+                        {
+                            label: "Jumlah Kerjasama",
+
+                            data: kerjasamaTahun.map(
+                                row => row.total
+                            ),
+
+                            backgroundColor:
+                                "rgba(54, 162, 235, 0.7)",
+
+                            borderColor:
+                                "rgba(54, 162, 235, 1)",
+
+                            borderWidth: 1,
+
+                            borderRadius: 8,
+                        },
+                    ],
                 },
-                scales: {
-                    x: {
-                        ticks: {
-                            maxRotation: 0,
-                            minRotation: 0,
-                            autoSkip: true,
+
+                options: {
+                    responsive: true,
+
+                    maintainAspectRatio: false,
+
+                    plugins: {
+                        legend: {
+                            display: false,
                         },
                     },
-                    y: {
-                        beginAtZero: true,
-                        ticks: { stepSize: 1, precision: 0 },
-                    },
-                },
-            },
-        });
 
-        applyBarResponsiveOptions(barChartInstance);
-        barChartInstance.update();
-    }
+                    scales: {
+                        x: {
+                            ticks: {
+                                maxRotation: isMobileViewport()
+                                    ? 40
+                                    : 0,
 
-    // Hanya render chart jika ada data
-    if (kategoriKerjasama.length > 0 && categoryChartRef.value) {
-        // Hitung total untuk persentase
-        const totalKategori = kategoriKerjasama.reduce((sum, row) => sum + row.total, 0) || 1;
+                                minRotation: isMobileViewport()
+                                    ? 30
+                                    : 0,
 
-        // Helper untuk format persentase agar konsisten
-        const formatPercentage = (value) => Math.round((value / totalKategori) * 100) + "%";
+                                autoSkip: true,
 
-        // Chart 2: Kategori Kerjasama (Pie Chart)
-        categoryChartInstance = new Chart(categoryChartRef.value, {
-            type: "pie",
-            data: {
-                labels: kategoriKerjasama.map((row) => row.kategori),
-                datasets: [
-                    {
-                        data: kategoriKerjasama.map((row) => row.total),
-                        backgroundColor: [
-                            "rgba(20, 184, 166, 0.8)",   // KSDD
-                            "rgba(45, 212, 191, 0.8)",   // KSDPK
-                            "rgba(59, 130, 246, 0.8)",   // NK/RK
-                            "rgba(96, 165, 250, 0.8)",   // PERTEK
-                            "rgba(168, 85, 247, 0.8)",   // KSDPL
-                            "rgba(236, 72, 153, 0.8)",   // KSDLL
-                        ],
-                        borderColor: [
-                            "rgba(20, 184, 166, 1)",
-                            "rgba(45, 212, 191, 1)",
-                            "rgba(59, 130, 246, 1)",
-                            "rgba(96, 165, 250, 1)",
-                            "rgba(168, 85, 247, 1)",
-                            "rgba(236, 72, 153, 1)",
-                        ],
-                        borderWidth: 2,
-                    },
-                ],
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                radius: "88%",
-                layout: {
-                    padding: 16,
-                },
-                plugins: {
-                    legend: {
-                        display: true,
-                        position: "right",
-                        labels: {
-                            usePointStyle: true,
-                            boxWidth: 12,
-                            padding: 14,
-                            font: {
-                                size: 12,
+                                color: "#6B7280",
+                            },
+
+                            grid: {
+                                display: false,
                             },
                         },
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function (context) {
-                                const percentage = formatPercentage(context.parsed);
-                                return ` ${context.label}: ${context.parsed} (${percentage})`;
+
+                        y: {
+                            beginAtZero: true,
+
+                            ticks: {
+                                stepSize: 1,
+                                precision: 0,
+                                color: "#6B7280",
+                            },
+
+                            grid: {
+                                color: "rgba(0,0,0,0.05)",
                             },
                         },
                     },
                 },
-            },
-        });
-
-        applyPieResponsiveOptions(categoryChartInstance);
-        categoryChartInstance.update();
+            }
+        );
     }
 
+    // PIE CHART
+    if (
+        kategoriKerjasama.length > 0 &&
+        categoryChartRef.value
+    ) {
+
+        categoryChartInstance = new Chart(
+            categoryChartRef.value,
+            {
+                type: "pie",
+
+                data: {
+                    labels: kategoriKerjasama.map(
+                        row => row.kategori
+                    ),
+
+                    datasets: [
+                        {
+                            data: kategoriKerjasama.map(
+                                row => row.total
+                            ),
+
+                            backgroundColor: pieColors,
+
+                            borderWidth: 2,
+
+                            borderColor: "#ffffff",
+                        },
+                    ],
+                },
+
+                options: {
+                    responsive: true,
+
+                    maintainAspectRatio: false,
+
+                    radius: isMobileViewport()
+                        ? "80%"
+                        : "88%",
+
+                    layout: {
+                        padding: isMobileViewport()
+                            ? 8
+                            : 16,
+                    },
+
+                    plugins: {
+
+                        // HIDE DEFAULT LEGEND
+                        legend: {
+                            display: false,
+                        },
+
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) {
+
+                                    const total =
+                                        context.dataset.data.reduce(
+                                            (a, b) => a + b,
+                                            0
+                                        );
+
+                                    const percentage =
+                                        Math.round(
+                                            (
+                                                context.parsed /
+                                                total
+                                            ) * 100
+                                        );
+
+                                    return ` ${context.label}: ${context.parsed} (${percentage}%)`;
+                                },
+                            },
+                        },
+                    },
+                },
+            }
+        );
+    }
+
+    // RESIZE
     resizeHandler = () => {
+
         if (resizeRafId) {
-            cancelAnimationFrame(resizeRafId);
+            cancelAnimationFrame(
+                resizeRafId
+            );
         }
-        resizeRafId = requestAnimationFrame(() => {
-            if (barChartInstance) {
-                applyBarResponsiveOptions(barChartInstance);
-                barChartInstance.update();
-            }
-            if (categoryChartInstance) {
-                applyPieResponsiveOptions(categoryChartInstance);
-                categoryChartInstance.update();
-            }
-            resizeRafId = null;
-        });
+
+        resizeRafId =
+            requestAnimationFrame(() => {
+
+                if (barChartInstance) {
+                    barChartInstance.resize();
+                }
+
+                if (categoryChartInstance) {
+                    categoryChartInstance.resize();
+                }
+
+                resizeRafId = null;
+            });
     };
 
-    window.addEventListener("resize", resizeHandler);
+    window.addEventListener(
+        "resize",
+        resizeHandler
+    );
 });
 
 onUnmounted(() => {
+
     if (resizeHandler) {
-        window.removeEventListener("resize", resizeHandler);
+
+        window.removeEventListener(
+            "resize",
+            resizeHandler
+        );
     }
+
     if (resizeRafId) {
-        cancelAnimationFrame(resizeRafId);
+
+        cancelAnimationFrame(
+            resizeRafId
+        );
+
         resizeRafId = null;
     }
+
     if (barChartInstance) {
+
         barChartInstance.destroy();
+
         barChartInstance = null;
     }
+
     if (categoryChartInstance) {
+
         categoryChartInstance.destroy();
+
         categoryChartInstance = null;
     }
 });
 </script>
+
+<style scoped>
+canvas {
+    max-width: 100% !important;
+}
+
+* {
+    word-break: break-word;
+}
+</style>
