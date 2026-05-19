@@ -23,7 +23,7 @@
                         </svg>
                         Kembali
                     </button>
-                    <div class="text-2xl font-extrabold tracking-widest">SIKOBOY</div>
+                    <div class="text-2xl font-extrabold tracking-widest">Sikoboy</div>
                     <p v-if="showLabel" class="text-xs text-teal-100 mt-1">Admin Dashboard</p>
                     <div class="mt-4 border-t border-teal-700"></div>
                 </div>
@@ -291,7 +291,7 @@ const showLabel = computed(() => props.isMobile || !props.isDesktopCollapsed);
 
 const asideClass = computed(() => {
     const base =
-        "text-white fixed top-0 left-0 h-screen max-h-screen z-50 lg:z-40 flex flex-col justify-between overflow-hidden transition-all duration-300 ease-in-out";
+        "text-white fixed top-0 left-0 h-screen z-50 lg:z-40 flex flex-col justify-between overflow-hidden transition-all duration-300 ease-in-out";
 
     if (props.isMobile) {
         return `${base} w-64 shadow-2xl border-r border-teal-900/70 ${props.isMobileOpen ? "translate-x-0" : "-translate-x-full"}`;
