@@ -35,25 +35,41 @@ const props = defineProps({
 const offset = ref(0)
 const screenWidth = ref(0)
 const visible = ref(false)
+const headerOffset = ref(0)
 
 const handleScroll = () => { offset.value = window.scrollY * 0.3 }
 const updateWidth = () => { screenWidth.value = window.innerWidth }
 
+const updateHeaderOffset = () => {
+  try {
+    const hdr = document.querySelector('header')
+    headerOffset.value = hdr ? hdr.offsetHeight : 0
+  } catch (e) {
+    headerOffset.value = 0
+  }
+}
+
+const _resizeHandler = () => { updateWidth(); updateHeaderOffset() }
+
 onMounted(() => {
   updateWidth()
-  window.addEventListener('resize', updateWidth)
+  updateHeaderOffset()
+  window.addEventListener('resize', _resizeHandler)
   window.addEventListener('scroll', handleScroll)
   setTimeout(() => { visible.value = true }, 100)
 })
 
 onUnmounted(() => {
-  window.removeEventListener('resize', updateWidth)
+  window.removeEventListener('resize', _resizeHandler)
   window.removeEventListener('scroll', handleScroll)
 })
 </script>
 
 <template>
-  <section class="relative overflow-hidden text-white min-h-[90vh] flex items-center justify-center">
+  <section
+    class="relative overflow-hidden text-white min-h-[90vh] flex items-center justify-center"
+    :style="{ paddingTop: headerOffset + 'px' }"
+  >
 
     <!-- Background parallax -->
     <div class="absolute inset-0 pointer-events-none">
@@ -103,10 +119,10 @@ onUnmounted(() => {
       <slot></slot>
 
       <!-- Scroll indicator -->
-      <div v-if="showScrollIndicator" class="mt-14 flex flex-col items-center gap-1 text-white/40 text-xs">
+      <div v-if="showScrollIndicator" class="mt-14 flex flex-col items-center gap-1 text-teal-500 text-xs">
         <span>Scroll ke bawah</span>
-        <div class="w-5 h-8 rounded-full border border-white/30 flex items-start justify-center pt-1">
-          <div class="w-1 h-2 rounded-full bg-white/60 animate-bounce"></div>
+        <div class="w-5 h-8 rounded-full border border-teal-500 flex items-start justify-center pt-1">
+          <div class="w-1 h-2 rounded-full bg-teal-400 animate-bounce"></div>
         </div>
       </div>
 

@@ -210,9 +210,7 @@ class NotificationFeed
                 $statusLabel = match($statusName) {
                     'revisi' => 'meminta revisi',
                     'disetujui' => 'menyetujui',
-                    'ditolak' => 'telah menambahkan',
-                    'dibatalkan' => 'membatalkan',
-                    default => 'mengubah',
+                    default => 'telah menambahkan',
                 };
 
                 return [

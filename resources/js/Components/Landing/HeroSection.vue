@@ -8,11 +8,11 @@ const landing = "/storage/images/beranda.png";
 defineProps({
     title: {
         type: String,
-        default: 'SIKERSA',
+        default: 'S I K E R S A',
     },
     subtitle: {
         type: String,
-        default: 'Sistem Kolaborasi Boyolali',
+        default: 'Sistem Kerjasama Boyolali',
     },
 });
 
@@ -60,15 +60,10 @@ onUnmounted(() => {
             </div>
 
             <!-- gradient putih (moved lower so subtitle remains on dark overlay) -->
-            <div 
+            <div
                 class="absolute inset-0"
-                style="background: linear-gradient(
-                        to bottom,
-                        rgba(255, 255, 255, 0.05) 10%,
-                        rgba(255, 255, 255, 0.6) 70%,
-                        rgba(255, 255, 255, 1) 100%
-                );">
-            </div>
+                :style="{ background: 'linear-gradient(to bottom, rgba(138, 180, 187, 0.3) 10%, rgba(138, 180, 187, 0.9) 60%, rgba(255, 255, 255, 1) 100%)' }"
+            ></div>
         </div>
 
         <!-- CONTENT -->

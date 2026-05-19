@@ -159,6 +159,7 @@ function submitCreateMitra() {
   if (!mitraForm.pic)             missing.push('PIC')
   if (!mitraForm.no_handphone)    missing.push('No. HP')
   if (!mitraForm.alamat)          missing.push('Alamat')
+  if (!mitraForm.password)        missing.push('Password')
 
   if (missing.length) {
     Swal.fire({ icon: 'warning', title: 'Form belum lengkap', html: `Silakan lengkapi: <strong>${missing.join(', ')}</strong>` })
@@ -184,6 +185,7 @@ function submitCreateAdmin() {
   if (!adminForm.email)    missing.push('Email')
   if (!adminForm.username) missing.push('Nama')
   if (!adminForm.instansi) missing.push('Divisi')
+  if (!adminForm.password) missing.push('Password')
 
   if (missing.length) {
     Swal.fire({ icon: 'warning', title: 'Form belum lengkap', html: `Silakan lengkapi: <strong>${missing.join(', ')}</strong>` })
@@ -454,7 +456,7 @@ function verifyMitra(id) {
                 <p v-if="mitraForm.errors.alamat" class="text-red-500 text-xs mt-1">{{ mitraForm.errors.alamat }}</p>
               </div>
               <div>
-                <label class="text-sm font-medium">Password <span class="text-gray-400 text-xs font-normal">(opsional)</span></label>
+                <label class="text-sm font-medium">Password <span class="text-red-600">*</span></label>
                 <div class="relative mt-1">
                   <input :type="showPasswordMitra ? 'text' : 'password'" v-model="mitraForm.password" class="w-full border rounded px-3 py-2 pr-10" />
                   <button type="button" @click="showPasswordMitra = !showPasswordMitra" class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500">
@@ -496,7 +498,7 @@ function verifyMitra(id) {
                 <p v-if="adminForm.errors.instansi" class="text-red-500 text-xs mt-1">{{ adminForm.errors.instansi }}</p>
               </div>
               <div>
-                <label class="text-sm font-medium">Password <span class="text-gray-400 text-xs font-normal">(opsional)</span></label>
+                <label class="text-sm font-medium">Password <span class="text-red-600">*</span></label>
                 <div class="relative mt-1">
                   <input :type="showPasswordAdmin ? 'text' : 'password'" v-model="adminForm.password" class="w-full border rounded px-3 py-2 pr-10" />
                   <button type="button" @click="showPasswordAdmin = !showPasswordAdmin" class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500">
