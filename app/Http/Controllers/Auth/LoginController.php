@@ -45,7 +45,7 @@ class LoginController extends Controller
         $captchaSecret = (string) config('services.recaptcha.secret');
 
         if (!empty($captchaSecret)) {
-            $captchaResponse = Http::asForm()->timeout(5)->post(
+            $captchaResponse = Http::asForm()->timeout(5)->withoutVerifying()->post(
                 'https://www.google.com/recaptcha/api/siteverify',
                 [
                     'secret'   => $captchaSecret,
