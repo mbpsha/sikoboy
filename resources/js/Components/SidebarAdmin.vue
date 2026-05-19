@@ -16,7 +16,7 @@
                         <p class="text-xs text-teal-100 mt-1">Admin Dashboard</p>
                     </div>
                     <button
-                        v-if="isMobile"
+                        v-if="props.isMobile"
                         type="button"
                         class="rounded-lg p-2 hover:bg-teal-700/40 transition"
                         title="Tutup menu"
@@ -268,9 +268,8 @@ const isCollapsed = computed({
     set: (value) => emit("update:collapsed", value),
 })
 const isCompact = computed(() => !props.isMobile && isCollapsed.value)
-const isMobile = computed(() => props.isMobile)
 const sidebarClasses = computed(() => {
-    if (isMobile.value) {
+    if (props.isMobile) {
         return [
             "w-72 max-w-[85vw] shadow-2xl",
             props.mobileOpen ? "translate-x-0" : "-translate-x-full",
@@ -288,7 +287,7 @@ watch(
     () => page.url,
     (url) => {
         closeCollapsedMenu()
-        if (isMobile.value) {
+        if (props.isMobile) {
             emit("close-mobile")
         }
         if (url?.startsWith("/admin/riwayat-kerjasama")) {
@@ -319,7 +318,7 @@ const handleDocumentClick = (event) => {
 const handleEscapeKey = (event) => {
     if (event.key === "Escape") {
         closeCollapsedMenu()
-        if (isMobile.value && props.mobileOpen) {
+        if (props.isMobile && props.mobileOpen) {
             emit("close-mobile")
         }
     }
