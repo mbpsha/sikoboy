@@ -1,20 +1,15 @@
 <template>
-    <div class="min-h-screen bg-gray-100">
-        <SidebarAdmin
-            :is-mobile="isMobile"
-            :is-desktop-collapsed="isDesktopCollapsed"
-            :is-mobile-open="isMobileSidebarOpen"
-            @close-mobile="closeMobileSidebar"
-            @request-expand="isDesktopCollapsed = false"
-        />
+    <div>
+        <!-- Sidebar (fixed) -->
+        <SidebarAdmin v-model:collapsed="isSidebarCollapsed" />
 
-        <div :class="contentClass">
-            <HeaderAdmin
-                :title="title"
-                :is-mobile="isMobile"
-                :is-sidebar-collapsed="isDesktopCollapsed"
-                @toggle-sidebar="handleSidebarToggle"
-            />
+        <!-- Content Area (account for fixed sidebar width) -->
+        <div
+            class="bg-gray-100 min-h-screen transition-all duration-300"
+            :class="isSidebarCollapsed ? 'ml-20' : 'ml-64'"
+        >
+            <!-- Header -->
+            <HeaderAdmin :title="title" />
 
             <div class="p-4 pt-20 sm:p-6 sm:pt-20">
                 <slot />
@@ -24,7 +19,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, onUnmounted, ref } from "vue";
+import { onMounted, ref, watch } from "vue";
 import SidebarAdmin from "@/Components/SidebarAdmin.vue";
 import HeaderAdmin from "@/Components/HeaderAdmin.vue";
 
@@ -32,54 +27,28 @@ defineProps({
     title: String,
 });
 
-const DESKTOP_BREAKPOINT = 1024;
-
-const isMobile = ref(false);
-const isDesktopCollapsed = ref(false);
-const isMobileSidebarOpen = ref(false);
-
-const syncViewport = () => {
-    if (typeof window === "undefined") {
-        return;
-    }
-
-    const mobile = window.innerWidth < DESKTOP_BREAKPOINT;
-    isMobile.value = mobile;
-
-    if (!mobile) {
-        isMobileSidebarOpen.value = false;
-    }
-};
-
-const handleSidebarToggle = () => {
-    if (isMobile.value) {
-        isMobileSidebarOpen.value = !isMobileSidebarOpen.value;
-        return;
-    }
-
-    isDesktopCollapsed.value = !isDesktopCollapsed.value;
-};
-
-const closeMobileSidebar = () => {
-    isMobileSidebarOpen.value = false;
-};
-
-const contentClass = computed(() => {
-    const base = "min-h-screen transition-all duration-300";
-
-    if (isMobile.value) {
-        return base;
-    }
-
-    return `${base} ${isDesktopCollapsed.value ? "lg:ml-20" : "lg:ml-64"}`;
-});
+const isSidebarCollapsed = ref(false);
+const SIDEBAR_STORAGE_KEY = "admin_sidebar_collapsed";
+const SIDEBAR_COLLAPSED_VALUE = "1";
 
 onMounted(() => {
-    syncViewport();
-    window.addEventListener("resize", syncViewport);
+    try {
+        isSidebarCollapsed.value = localStorage.getItem(SIDEBAR_STORAGE_KEY) === SIDEBAR_COLLAPSED_VALUE;
+    } catch (error) {
+        isSidebarCollapsed.value = false;
+        if (import.meta.env.DEV) {
+            console.error("Failed to load sidebar state:", error);
+        }
+    }
 });
 
-onUnmounted(() => {
-    window.removeEventListener("resize", syncViewport);
+watch(isSidebarCollapsed, (collapsed) => {
+    try {
+        localStorage.setItem(SIDEBAR_STORAGE_KEY, collapsed ? SIDEBAR_COLLAPSED_VALUE : "0");
+    } catch (error) {
+        if (import.meta.env.DEV) {
+            console.error("Failed to store sidebar state:", error);
+        }
+    }
 });
 </script>
