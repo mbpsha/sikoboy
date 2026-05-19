@@ -1,5 +1,5 @@
 <template>
-    <div class="bg-gray-100 h-dvh overflow-hidden">
+    <div class="bg-gray-100 h-dvh overflow-hidden" @keydown.escape.window="isMobileSidebarOpen = false">
         <SidebarAdmin
             v-model:collapsed="isSidebarCollapsed"
             :is-mobile="isMobile"
@@ -45,6 +45,8 @@ const isMobileSidebarOpen = ref(false);
 const SIDEBAR_STORAGE_KEY = "admin_sidebar_collapsed";
 const SIDEBAR_COLLAPSED_VALUE = "1";
 const MOBILE_BREAKPOINT = 1024;
+const SIDEBAR_COLLAPSED_MARGIN_CLASS = "lg:ml-20";
+const SIDEBAR_EXPANDED_MARGIN_CLASS = "lg:ml-64";
 
 const updateViewportState = () => {
     isMobile.value = window.innerWidth < MOBILE_BREAKPOINT;
@@ -57,7 +59,7 @@ const contentWrapperClass = computed(() => {
     if (isMobile.value) {
         return "ml-0";
     }
-    return isSidebarCollapsed.value ? "lg:ml-20" : "lg:ml-64";
+    return isSidebarCollapsed.value ? SIDEBAR_COLLAPSED_MARGIN_CLASS : SIDEBAR_EXPANDED_MARGIN_CLASS;
 });
 
 const toggleMenu = () => {

@@ -271,7 +271,7 @@ const isCompact = computed(() => !props.isMobile && isCollapsed.value)
 const sidebarClasses = computed(() => {
     if (props.isMobile) {
         return [
-            "w-72 max-w-[85vw] shadow-2xl",
+            "w-64 max-w-[85vw] shadow-2xl",
             props.mobileOpen ? "translate-x-0" : "-translate-x-full",
         ]
     }
