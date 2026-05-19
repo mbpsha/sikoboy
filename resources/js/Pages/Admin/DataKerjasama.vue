@@ -9,29 +9,6 @@
           <p class="text-sm text-gray-500 mt-1">Kelola dan pantau semua data kerjasama</p>
         </div>
         <div class="relative">
-          <button
-            @click="showAddMenu = !showAddMenu"
-            class="bg-teal-600 hover:bg-teal-700 text-white px-5 py-2.5 rounded-lg font-medium flex items-center gap-2 transition"
-          >
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-            </svg>
-            Tambah Kerjasama
-          </button>
-          <div
-            v-if="showAddMenu"
-            class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-100 overflow-hidden z-10"
-          >
-            <Link href="/admin/riwayat-kerjasama/pemerintah" class="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 font-medium transition">
-              ➕ Pemerintah
-            </Link>
-            <Link href="/admin/riwayat-kerjasama/mitra" class="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 font-medium transition border-t">
-              ➕ Mitra
-            </Link>
-            <Link href="/admin/riwayat-kerjasama/gabungan" class="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 font-medium transition border-t">
-              ➕ Gabungan
-            </Link>
-          </div>
         </div>
       </div>
 
