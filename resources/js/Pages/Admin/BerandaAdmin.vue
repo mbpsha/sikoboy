@@ -63,6 +63,8 @@ import { onMounted, ref } from "vue";
 import Chart from "chart.js/auto";
 import AdminLayout from "@/Layouts/AdminLayout.vue";
 
+const MOBILE_BREAKPOINT = 768;
+
 const props = defineProps({
     metrics: {
         type: Object,
@@ -87,7 +89,7 @@ onMounted(() => {
     const kerjasamaTahun = props.kerjasama_per_tahun || [];
     const kategoriKerjasama = props.kategori_kerjasama || [];
     const isMobileViewport = () =>
-        typeof window !== "undefined" && window.innerWidth < 768;
+        typeof window !== "undefined" && window.innerWidth < MOBILE_BREAKPOINT;
 
     const applyBarResponsiveOptions = (chart) => {
         const isMobile = isMobileViewport();
@@ -151,7 +153,7 @@ onMounted(() => {
         applyBarResponsiveOptions(barChart);
         barChart.options.onResize = (chart) => {
             applyBarResponsiveOptions(chart);
-            chart.update("none");
+            chart.update();
         };
     }
 
@@ -226,7 +228,7 @@ onMounted(() => {
         applyPieResponsiveOptions(categoryChart);
         categoryChart.options.onResize = (chart) => {
             applyPieResponsiveOptions(chart);
-            chart.update("none");
+            chart.update();
         };
     }
 });
