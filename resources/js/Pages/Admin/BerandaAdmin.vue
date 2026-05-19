@@ -87,6 +87,7 @@ const categoryChartRef = ref(null);
 let barChartInstance = null;
 let categoryChartInstance = null;
 let resizeHandler = null;
+let resizeRafId = null;
 
 onMounted(() => {
     // Gunakan data real dari backend, tidak ada dummy fallback
@@ -233,21 +234,33 @@ onMounted(() => {
     }
 
     resizeHandler = () => {
-        if (barChartInstance) {
-            applyBarResponsiveOptions(barChartInstance);
-            barChartInstance.update();
+        if (resizeRafId) {
+            cancelAnimationFrame(resizeRafId);
         }
-        if (categoryChartInstance) {
-            applyPieResponsiveOptions(categoryChartInstance);
-            categoryChartInstance.update();
-        }
+        resizeRafId = requestAnimationFrame(() => {
+            if (barChartInstance) {
+                applyBarResponsiveOptions(barChartInstance);
+                barChartInstance.update();
+            }
+            if (categoryChartInstance) {
+                applyPieResponsiveOptions(categoryChartInstance);
+                categoryChartInstance.update();
+            }
+            resizeRafId = null;
+        });
     };
 
     window.addEventListener("resize", resizeHandler);
 });
 
 onUnmounted(() => {
-    window.removeEventListener("resize", resizeHandler);
+    if (resizeHandler) {
+        window.removeEventListener("resize", resizeHandler);
+    }
+    if (resizeRafId) {
+        cancelAnimationFrame(resizeRafId);
+        resizeRafId = null;
+    }
     if (barChartInstance) {
         barChartInstance.destroy();
         barChartInstance = null;
