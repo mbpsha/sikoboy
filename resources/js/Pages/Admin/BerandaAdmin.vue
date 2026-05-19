@@ -37,20 +37,20 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
             <div class="bg-white p-6 rounded-xl shadow">
                 <h2 class="font-semibold mb-4">Jumlah Kerjasama per Tahun</h2>
-                <div v-if="kerjasama_per_tahun.length > 0">
-                    <canvas id="barChart"></canvas>
+                <div v-if="kerjasama_per_tahun.length > 0" class="h-72 sm:h-80">
+                    <canvas ref="barChartRef"></canvas>
                 </div>
-                <div v-else class="flex items-center justify-center h-64 text-gray-400">
+                <div v-else class="flex items-center justify-center h-72 sm:h-80 text-gray-400">
                     <p>Tidak ada data kerjasama</p>
                 </div>
             </div>
 
             <div class="bg-white p-6 rounded-xl shadow">
                 <h2 class="font-semibold mb-4">Kategori Kerjasama</h2>
-                <div v-if="kategori_kerjasama.length > 0">
-                    <canvas id="categoryChart"></canvas>
+                <div v-if="kategori_kerjasama.length > 0" class="h-72 sm:h-80">
+                    <canvas ref="categoryChartRef"></canvas>
                 </div>
-                <div v-else class="flex items-center justify-center h-64 text-gray-400">
+                <div v-else class="flex items-center justify-center h-72 sm:h-80 text-gray-400">
                     <p>Tidak ada data kategori</p>
                 </div>
             </div>
@@ -59,9 +59,12 @@
 </template>
 
 <script setup>
-import { onMounted } from "vue";
+import { onMounted, onUnmounted, ref } from "vue";
 import Chart from "chart.js/auto";
 import AdminLayout from "@/Layouts/AdminLayout.vue";
+
+const MOBILE_BREAKPOINT = 768;
+const MOBILE_MAX_TICKS = 6;
 
 const props = defineProps({
     metrics: {
@@ -79,16 +82,44 @@ const props = defineProps({
 });
 
 const metrics = props.metrics ?? {};
+const barChartRef = ref(null);
+const categoryChartRef = ref(null);
+let barChartInstance = null;
+let categoryChartInstance = null;
+let resizeHandler = null;
+let resizeRafId = null;
 
 onMounted(() => {
     // Gunakan data real dari backend, tidak ada dummy fallback
     const kerjasamaTahun = props.kerjasama_per_tahun || [];
     const kategoriKerjasama = props.kategori_kerjasama || [];
+    const isMobileViewport = () =>
+        typeof window !== "undefined" && window.innerWidth < MOBILE_BREAKPOINT;
+
+    const applyBarResponsiveOptions = (chart) => {
+        const isMobile = isMobileViewport();
+        chart.options.scales.x.ticks.maxRotation = isMobile ? 40 : 0;
+        chart.options.scales.x.ticks.minRotation = isMobile ? 30 : 0;
+        chart.options.scales.x.ticks.autoSkip = !isMobile;
+        chart.options.scales.x.ticks.maxTicksLimit = isMobile
+            ? MOBILE_MAX_TICKS
+            : undefined;
+    };
+
+    const applyPieResponsiveOptions = (chart) => {
+        const isMobile = isMobileViewport();
+        chart.options.radius = isMobile ? "80%" : "88%";
+        chart.options.layout.padding = isMobile ? 8 : 16;
+        chart.options.plugins.legend.position = isMobile ? "bottom" : "right";
+        chart.options.plugins.legend.labels.boxWidth = isMobile ? 8 : 12;
+        chart.options.plugins.legend.labels.padding = isMobile ? 10 : 14;
+        chart.options.plugins.legend.labels.font.size = isMobile ? 10 : 12;
+    };
 
     // Hanya render chart jika ada data
-    if (kerjasamaTahun.length > 0) {
+    if (kerjasamaTahun.length > 0 && barChartRef.value) {
         // Chart 1: Kerjasama per Tahun (Bar Chart)
-        new Chart(document.getElementById("barChart"), {
+        barChartInstance = new Chart(barChartRef.value, {
             type: "bar",
             data: {
                 labels: kerjasamaTahun.map((row) => row.tahun),
@@ -104,26 +135,42 @@ onMounted(() => {
             },
             options: {
                 responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false,
+                    },
+                },
                 scales: {
+                    x: {
+                        ticks: {
+                            maxRotation: 0,
+                            minRotation: 0,
+                            autoSkip: true,
+                        },
+                    },
                     y: {
                         beginAtZero: true,
-                        ticks: { stepSize: 1 },
+                        ticks: { stepSize: 1, precision: 0 },
                     },
                 },
             },
         });
+
+        applyBarResponsiveOptions(barChartInstance);
+        barChartInstance.update();
     }
 
     // Hanya render chart jika ada data
-    if (kategoriKerjasama.length > 0) {
+    if (kategoriKerjasama.length > 0 && categoryChartRef.value) {
         // Hitung total untuk persentase
         const totalKategori = kategoriKerjasama.reduce((sum, row) => sum + row.total, 0) || 1;
 
         // Helper untuk format persentase agar konsisten
-        const formatPercentage = (value) => Math.round((value / totalKategori) * 100) + '%';
+        const formatPercentage = (value) => Math.round((value / totalKategori) * 100) + "%";
 
         // Chart 2: Kategori Kerjasama (Pie Chart)
-        new Chart(document.getElementById("categoryChart"), {
+        categoryChartInstance = new Chart(categoryChartRef.value, {
             type: "pie",
             data: {
                 labels: kategoriKerjasama.map((row) => row.kategori),
@@ -152,71 +199,75 @@ onMounted(() => {
             },
             options: {
                 responsive: true,
-                radius: '65%',
+                maintainAspectRatio: false,
+                radius: "88%",
                 layout: {
-                    padding: {
-                        top: 50,
-                        right: 40,
-                        bottom: 40,
-                        left: 40
-                    }
+                    padding: 16,
                 },
                 plugins: {
                     legend: {
-                        display: false,
+                        display: true,
+                        position: "right",
+                        labels: {
+                            usePointStyle: true,
+                            boxWidth: 12,
+                            padding: 14,
+                            font: {
+                                size: 12,
+                            },
+                        },
                     },
                     tooltip: {
                         callbacks: {
-                            label: function(context) {
-                                return ` ${context.label}: ${formatPercentage(context.parsed)}`;
-                            }
-                        }
-                    }
+                            label: function (context) {
+                                const percentage = formatPercentage(context.parsed);
+                                return ` ${context.label}: ${context.parsed} (${percentage})`;
+                            },
+                        },
+                    },
                 },
             },
-            plugins: [{
-                id: 'externalLabels',
-                afterDraw: (chart) => {
-                    const ctx = chart.ctx;
-                    const chartArea = chart.chartArea;
-                    const centerX = (chartArea.left + chartArea.right) / 2;
-                    const centerY = (chartArea.top + chartArea.bottom) / 2;
-                    const radius = Math.min(chartArea.right - chartArea.left, chartArea.bottom - chartArea.top) / 2.5;
-                    
-                    const abbreviations = ['KSDD', 'KSDPK', 'NK/RK', 'PERTEK', 'KSDPL', 'KSDLL'];
-                    
-                    chart.data.datasets[0].data.forEach((value, index) => {
-                        const percentage = formatPercentage(value);
-                        const abbr = abbreviations[index] || '';
-                        const color = chart.data.datasets[0].backgroundColor[index];
-                        
-                        const meta = chart._metasets[0];
-                        const startAngle = meta.data[index].startAngle;
-                        const endAngle = meta.data[index].endAngle;
-                        const midAngle = (startAngle + endAngle) / 2;
-                        
-                        const labelRadius = radius + 25;
-                        const x = centerX + Math.cos(midAngle) * labelRadius;
-                        const y = centerY + Math.sin(midAngle) * labelRadius;
-                        
-                        ctx.save();
-                        
-                        // Kotak warna
-                        ctx.fillStyle = color;
-                        ctx.fillRect(x - 45, y - 6, 10, 10);
-                        
-                        // Teks
-                        ctx.font = 'bold 11px Arial';
-                        ctx.fillStyle = '#333';
-                        ctx.textAlign = 'left';
-                        ctx.textBaseline = 'middle';
-                        ctx.fillText(`${abbr} ${percentage}`, x - 30, y);
-                        
-                        ctx.restore();
-                    });
-                },
-            }],
         });
+
+        applyPieResponsiveOptions(categoryChartInstance);
+        categoryChartInstance.update();
+    }
+
+    resizeHandler = () => {
+        if (resizeRafId) {
+            cancelAnimationFrame(resizeRafId);
+        }
+        resizeRafId = requestAnimationFrame(() => {
+            if (barChartInstance) {
+                applyBarResponsiveOptions(barChartInstance);
+                barChartInstance.update();
+            }
+            if (categoryChartInstance) {
+                applyPieResponsiveOptions(categoryChartInstance);
+                categoryChartInstance.update();
+            }
+            resizeRafId = null;
+        });
+    };
+
+    window.addEventListener("resize", resizeHandler);
+});
+
+onUnmounted(() => {
+    if (resizeHandler) {
+        window.removeEventListener("resize", resizeHandler);
+    }
+    if (resizeRafId) {
+        cancelAnimationFrame(resizeRafId);
+        resizeRafId = null;
+    }
+    if (barChartInstance) {
+        barChartInstance.destroy();
+        barChartInstance = null;
+    }
+    if (categoryChartInstance) {
+        categoryChartInstance.destroy();
+        categoryChartInstance = null;
     }
 });
 </script>

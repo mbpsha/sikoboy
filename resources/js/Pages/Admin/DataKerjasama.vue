@@ -4,11 +4,8 @@
 
       <!-- Header with Add Button -->
       <div class="flex items-center justify-between">
-        <div>
-          <h2 class="text-2xl font-bold text-gray-800">Ajuan Kerjasama</h2>
-          <p class="text-sm text-gray-500 mt-1">Kelola dan pantau semua data kerjasama</p>
-        </div>
-        <div class="relative">
+
+        <div class="relative ml-260">
           <button
             @click="showAddMenu = !showAddMenu"
             class="bg-teal-600 hover:bg-teal-700 text-white px-5 py-2.5 rounded-lg font-medium flex items-center gap-2 transition"
@@ -341,7 +338,7 @@
 
           <div>
             <label class="block text-xs font-medium text-gray-600 mb-1">Upload Dokumen (PDF)</label>
-            
+
             <!-- Tampilkan file yang sudah ada jika proses read-only -->
             <div v-if="isProcessReadOnly && activeProcess?.file" class="mb-3 p-3 bg-blue-50 border border-blue-100 rounded-lg">
               <p class="text-xs text-blue-700 font-medium mb-1">✓ File Tersimpan:</p>
