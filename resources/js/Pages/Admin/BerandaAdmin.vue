@@ -59,7 +59,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from "vue";
+import { onMounted, onUnmounted, ref } from "vue";
 import Chart from "chart.js/auto";
 import AdminLayout from "@/Layouts/AdminLayout.vue";
 
@@ -83,6 +83,9 @@ const props = defineProps({
 const metrics = props.metrics ?? {};
 const barChartRef = ref(null);
 const categoryChartRef = ref(null);
+let barChartInstance = null;
+let categoryChartInstance = null;
+let handleResize = null;
 
 onMounted(() => {
     // Gunakan data real dari backend, tidak ada dummy fallback
@@ -112,7 +115,7 @@ onMounted(() => {
     // Hanya render chart jika ada data
     if (kerjasamaTahun.length > 0 && barChartRef.value) {
         // Chart 1: Kerjasama per Tahun (Bar Chart)
-        const barChart = new Chart(barChartRef.value, {
+        barChartInstance = new Chart(barChartRef.value, {
             type: "bar",
             data: {
                 labels: kerjasamaTahun.map((row) => row.tahun),
@@ -150,11 +153,8 @@ onMounted(() => {
             },
         });
 
-        applyBarResponsiveOptions(barChart);
-        barChart.options.onResize = (chart) => {
-            applyBarResponsiveOptions(chart);
-            chart.update();
-        };
+        applyBarResponsiveOptions(barChartInstance);
+        barChartInstance.update();
     }
 
     // Hanya render chart jika ada data
@@ -166,7 +166,7 @@ onMounted(() => {
         const formatPercentage = (value) => Math.round((value / totalKategori) * 100) + "%";
 
         // Chart 2: Kategori Kerjasama (Pie Chart)
-        const categoryChart = new Chart(categoryChartRef.value, {
+        categoryChartInstance = new Chart(categoryChartRef.value, {
             type: "pie",
             data: {
                 labels: kategoriKerjasama.map((row) => row.kategori),
@@ -225,11 +225,35 @@ onMounted(() => {
             },
         });
 
-        applyPieResponsiveOptions(categoryChart);
-        categoryChart.options.onResize = (chart) => {
-            applyPieResponsiveOptions(chart);
-            chart.update();
-        };
+        applyPieResponsiveOptions(categoryChartInstance);
+        categoryChartInstance.update();
+    }
+
+    handleResize = () => {
+        if (barChartInstance) {
+            applyBarResponsiveOptions(barChartInstance);
+            barChartInstance.update();
+        }
+        if (categoryChartInstance) {
+            applyPieResponsiveOptions(categoryChartInstance);
+            categoryChartInstance.update();
+        }
+    };
+
+    window.addEventListener("resize", handleResize);
+});
+
+onUnmounted(() => {
+    if (handleResize) {
+        window.removeEventListener("resize", handleResize);
+    }
+    if (barChartInstance) {
+        barChartInstance.destroy();
+        barChartInstance = null;
+    }
+    if (categoryChartInstance) {
+        categoryChartInstance.destroy();
+        categoryChartInstance = null;
     }
 });
 </script>
