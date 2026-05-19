@@ -46,7 +46,7 @@ const potentials = [
 <template>
     <LandingLayout>
         <HeroSection
-            title="SIKOBOY"
+            title="SIKERSA"
             subtitle="Mewujudkan pengelolaan kerja sama daerah yang efisien, transparan, dan berdampak untuk Kabupaten Boyolali."
         />
 

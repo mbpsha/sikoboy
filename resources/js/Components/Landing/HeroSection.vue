@@ -8,7 +8,7 @@ const landing = "/storage/images/beranda.png";
 defineProps({
     title: {
         type: String,
-        default: 'SIKOBOY',
+        default: 'SIKERSA',
     },
     subtitle: {
         type: String,
@@ -42,7 +42,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-    <section class="relative overflow-hidden text-white min-h-[90vh] flex items-center">
+    <section class="relative overflow-hidden text-white min-h-screen sm:min-h-[90vh] flex items-center">
 
         <!-- font fakhwang -->
          <link href="https://fonts.googleapis.com/css2?family=Fahkwang:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -73,35 +73,35 @@ onUnmounted(() => {
 
         <!-- CONTENT -->
         <div 
-            class="relative z-10 mx-auto max-w-6xl px-6 text-center animate-fadeUp">
+            class="relative z-10 mx-auto max-w-6xl px-4 sm:px-6 md:px-8 text-center animate-fadeUp">
             
             <!-- TITLE (FAHKWANG) -->
-            <h1 class="mx-auto mb-4 text-4xl sm:text-6xl font-semibold tracking-[1em] leading-none" 
+            <h1 class="mx-auto mb-2 sm:mb-4 text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-widest leading-tight sm:leading-none" 
             style="font-family: 'Fahkwang', sans-serif;"> {{ title }} </h1> 
-            <div class="mx-auto mb-6 w-56 h-px bg-white/40"></div>
+            <div class="mx-auto mb-3 sm:mb-6 w-32 sm:w-48 md:w-56 h-px bg-white/40"></div>
 
             <!-- LABEL BELOW TITLE -->
-            <p class="mx-auto text-lg sm:text-xl text-white/80 font-light mb-4">
-                Sistem Kolaboratif Boyolali
+            <p class="mx-auto text-xs sm:text-base md:text-lg text-white/90 font-light mb-2 sm:mb-4">
+                Sistem Kerjasama Boyolali
             </p>
 
             <!-- SUBTITLE -->
-            <p class="mx-auto mt-2 max-w-3xl text-sm sm:text-base leading-relaxed text-white" style="text-shadow: 0 4px 18px rgba(0,0,0,0.45);">
+            <p class="mx-auto mt-2 sm:mt-3 md:mt-4 max-w-2xl sm:max-w-3xl text-xs sm:text-sm md:text-base lg:text-lg leading-relaxed text-white px-2 sm:px-0" style="text-shadow: 0 4px 18px rgba(0,0,0,0.45);">
                 {{ subtitle }}
             </p>
 
             <!-- BUTTON -->
-            <div class="mt-12 flex items-center justify-center gap-6 relative z-20">
+            <div class="mt-6 sm:mt-10 md:mt-12 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 md:gap-6 relative z-20">
                 <a v-if="!isLoggedIn" href="/register"
-                   class="rounded-full px-10 py-3 text-sm font-semibold text-[#17464E] bg-white shadow-2xl hover:scale-105 transition">
+                   class="rounded-full px-6 sm:px-8 md:px-10 py-2 sm:py-2.5 md:py-3 text-xs sm:text-sm md:text-base font-semibold text-[#17464E] bg-white shadow-2xl hover:scale-105 transition w-full sm:w-auto">
                     Daftar
                 </a>
 
                 <a href="#about"
-                   class="rounded-full px-6 py-3 text-sm font-semibold text-white flex items-center gap-3 hover:scale-105 transition"
+                   class="rounded-full px-6 sm:px-8 md:px-10 py-2 sm:py-2.5 md:py-3 text-xs sm:text-sm md:text-base font-semibold text-white flex items-center justify-center gap-2 sm:gap-3 hover:scale-105 transition w-full sm:w-auto" 
                    style="background-color: rgba(12,80,92,0.95); box-shadow: 0 8px 20px rgba(12,80,92,0.25);">
                     
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                    <svg width="14" height="14" class="sm:w-4 sm:h-4 md:w-5 md:h-5" viewBox="0 0 24 24" fill="none">
                         <path d="M5 12h11" stroke="white" stroke-width="2" stroke-linecap="round"/>
                         <path d="M12 5l7 7-7 7" stroke="white" stroke-width="2" stroke-linecap="round"/>
                     </svg>
