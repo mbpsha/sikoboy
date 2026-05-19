@@ -2,10 +2,31 @@
   <AdminLayout title="Ajuan Kerjasama" @click="closeAllFilters">
     <div class="max-w-7xl mx-auto px-4 py-6 space-y-6">
 
+      <!-- Search & Filter Bar -->
+      <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+        <div class="flex flex-wrap items-center gap-3">
+          <input
+            v-model="local.search"
+            placeholder="Cari berdasarkan mitra atau nama kerjasama..."
+            class="flex-1 min-w-[220px] rounded-full px-4 py-2.5 text-sm border border-gray-200 bg-gray-50 focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition"
+          />
+          <select v-model="local.tahun" @change="applyFilters" class="rounded-full px-4 py-2.5 text-sm border border-gray-200 bg-gray-50 focus:outline-none focus:border-teal-600">
+            <option value="">Semua Tahun</option>
+            <option v-for="y in years" :key="y" :value="y">{{ y }}</option>
+          </select>
+          <button @click="applyFilters" class="bg-teal-700 hover:bg-teal-800 text-white text-sm px-5 py-2.5 rounded-full font-medium transition">
+            Filter
+          </button>
+          <button v-if="local.search || local.tahun || local.status" @click="resetAllFilters" class="bg-gray-300 hover:bg-gray-400 text-gray-700 text-sm px-5 py-2.5 rounded-full font-medium transition">
+            Reset
+          </button>
+        </div>
+      </div>
+
       <!-- Header with Add Button -->
       <div class="flex items-center justify-between">
 
-        <div class="relative ml-260">
+        <div class="relative ml-0 md:ml-auto">
           <button
             @click="showAddMenu = !showAddMenu"
             class="bg-teal-600 hover:bg-teal-700 text-white px-5 py-2.5 rounded-lg font-medium flex items-center gap-2 transition"
@@ -29,27 +50,6 @@
               ➕ Gabungan
             </Link>
           </div>
-        </div>
-      </div>
-
-      <!-- Search & Filter Bar -->
-      <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-        <div class="flex flex-wrap items-center gap-3">
-          <input
-            v-model="local.search"
-            placeholder="Cari berdasarkan mitra atau nama kerjasama..."
-            class="flex-1 min-w-[220px] rounded-full px-4 py-2.5 text-sm border border-gray-200 bg-gray-50 focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition"
-          />
-          <select v-model="local.tahun" @change="applyFilters" class="rounded-full px-4 py-2.5 text-sm border border-gray-200 bg-gray-50 focus:outline-none focus:border-teal-600">
-            <option value="">Semua Tahun</option>
-            <option v-for="y in years" :key="y" :value="y">{{ y }}</option>
-          </select>
-          <button @click="applyFilters" class="bg-teal-700 hover:bg-teal-800 text-white text-sm px-5 py-2.5 rounded-full font-medium transition">
-            Filter
-          </button>
-          <button v-if="local.search || local.tahun || local.status" @click="resetAllFilters" class="bg-gray-300 hover:bg-gray-400 text-gray-700 text-sm px-5 py-2.5 rounded-full font-medium transition">
-            Reset
-          </button>
         </div>
       </div>
 
