@@ -151,7 +151,7 @@ const portalLabel = computed(() => {
 </script>
 
 <template>
-  <header class="fixed inset-x-0 top-0 z-50 bg-gradient-to-b from-[#1f5459] to-[#17464E]">
+  <header class="fixed inset-x-0 top-0 z-50 bg-white/10 backdrop-blur-md border-b border-white/10">
     <div class="mx-auto flex max-w-6xl items-center justify-between px-3 sm:px-6 py-3 sm:py-4">
       <!-- Left: emblem + authority text -->
       <div class="flex items-center gap-1 rounded-full px-2 sm:px-5 py-2" style="background: rgba(49,113,124,0.6);">
