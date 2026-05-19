@@ -254,6 +254,26 @@ const goToPage = (page) => {
     );
 };
 
+const visiblePages = computed(() => {
+    const lastPage = Number(props.data?.last_page || 1);
+    const currentPage = Number(props.data?.current_page || 1);
+
+    if (lastPage <= 3) {
+        return Array.from({ length: lastPage }, (_, index) => index + 1);
+    }
+
+    let startPage = Math.max(1, currentPage - 1);
+    let endPage = Math.min(lastPage, currentPage + 1);
+
+    if (startPage === 1) endPage = 3;
+    if (endPage === lastPage) startPage = lastPage - 2;
+
+    return Array.from(
+        { length: endPage - startPage + 1 },
+        (_, index) => startPage + index,
+    );
+});
+
 // VALIDASI
 const validate = () => {
     errors.value = {};
@@ -1135,7 +1155,7 @@ onBeforeUnmount(() => {
                     </button>
 
                     <button
-                        v-for="page in data.last_page"
+                        v-for="page in visiblePages"
                         :key="page"
                         class="px-3 py-2 text-sm rounded-lg border"
                         :class="
@@ -1153,7 +1173,7 @@ onBeforeUnmount(() => {
                         :disabled="!data?.next_page_url"
                         @click="goToPage(data.current_page + 1)"
                     >
-                        Berikutnya
+                        Selanjutnya
                     </button>
                 </div>
             </div>
@@ -1162,9 +1182,9 @@ onBeforeUnmount(() => {
         <!-- MODAL TAMBAH KERJASAMA -->
         <div
             v-if="showModal"
-            class="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
+            class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4 sm:px-6"
         >
-            <div class="bg-white rounded-2xl p-6 w-[750px] max-h-[85vh] shadow-lg relative flex flex-col">
+            <div class="bg-white rounded-2xl p-6 w-full max-w-[750px] max-h-[85vh] shadow-lg relative flex flex-col">
                 <!-- CLOSE -->
                 <button
                     @click="closeModal"
