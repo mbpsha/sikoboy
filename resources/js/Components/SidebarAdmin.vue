@@ -10,9 +10,20 @@
             :class="asideClass"
             style="background-color: #0c505c"
         >
-            <div class="overflow-y-auto flex-1">
+            <div class="overflow-y-auto flex-1 min-h-0">
                 <div :class="['pt-6 pb-4', showLabel ? 'px-6' : 'px-3 text-center']">
-                    <div class="text-2xl font-extrabold tracking-widest">SIKOBOY</div>
+                    <button
+                        v-if="isMobile"
+                        type="button"
+                        class="mb-4 inline-flex items-center gap-2 text-sm font-semibold text-teal-100 hover:text-white transition"
+                        @click="$emit('close-mobile')"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+                        </svg>
+                        Kembali
+                    </button>
+                    <div class="text-2xl font-extrabold tracking-widest">Sikoboy</div>
                     <p v-if="showLabel" class="text-xs text-teal-100 mt-1">Admin Dashboard</p>
                     <div class="mt-4 border-t border-teal-700"></div>
                 </div>
@@ -53,7 +64,7 @@
                         <span v-if="showLabel" class="text-sm">Ajuan Kerjasama</span>
                     </Link>
 
-                    <div>
+                    <div v-if="!isMobile">
                         <button
                             type="button"
                             @click="toggleRiwayatMenu"
@@ -105,6 +116,19 @@
                             </Link>
                         </div>
                     </div>
+
+                    <Link
+                        v-else
+                        :href="route('admin.riwayat-kerjasama.gabungan')"
+                        :class="navClass('/admin/riwayat-kerjasama')"
+                        @click="handleNavigation"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                            <circle cx="12" cy="12" r="9"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 7v5l3 2"/>
+                        </svg>
+                        <span v-if="showLabel" class="text-sm">Riwayat Kerjasama</span>
+                    </Link>
 
                     <Link
                         :href="route('admin.manajemen-potensi.index')"
@@ -267,7 +291,7 @@ const showLabel = computed(() => props.isMobile || !props.isDesktopCollapsed);
 
 const asideClass = computed(() => {
     const base =
-        "text-white h-dvh fixed inset-y-0 left-0 z-50 lg:z-40 flex flex-col justify-between overflow-hidden transition-all duration-300 ease-in-out";
+        "text-white fixed top-0 left-0 h-dvh z-50 lg:z-40 flex flex-col justify-between overflow-hidden transition-all duration-300 ease-in-out";
 
     if (props.isMobile) {
         return `${base} w-64 shadow-2xl border-r border-teal-900/70 ${props.isMobileOpen ? "translate-x-0" : "-translate-x-full"}`;
