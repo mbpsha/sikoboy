@@ -40,11 +40,14 @@ class LoginController extends Controller
             'g-recaptcha-response' => 'nullable|string',
         ]);
 
-        // ✅ Validasi reCAPTCHA untuk semua role
+        // ✅ Validasi reCAPTCHA untuk semua role (skip on localhost)
         $captchaToken  = (string) $request->input('g-recaptcha-response', '');
         $captchaSecret = (string) config('services.recaptcha.secret');
 
-        if (!empty($captchaSecret)) {
+        // Skip reCAPTCHA on localhost for testing
+        $isLocalhost = $request->getHost() === 'localhost' || $request->getHost() === '127.0.0.1';
+        
+        if (!empty($captchaSecret) && !$isLocalhost) {
             $captchaResponse = Http::asForm()->timeout(5)->withoutVerifying()->post(
                 'https://www.google.com/recaptcha/api/siteverify',
                 [

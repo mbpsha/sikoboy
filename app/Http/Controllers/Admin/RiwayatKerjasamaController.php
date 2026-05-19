@@ -35,12 +35,37 @@ class RiwayatKerjasamaController extends Controller
 
         $this->applyFilters($query, $request);
 
-        $kerjasama = $query->orderBy('id_kerjasama', 'asc')
-            ->paginate(10)
-            ->withQueryString();
-
-        $offset = ($kerjasama->currentPage() - 1) * $kerjasama->perPage();
-        $kerjasama->getCollection()->transform(fn ($k, $i) => $this->formatRow($k, $offset + $i));
+        $perPage = $request->input('per_page', 10);
+        
+        // Jika per_page besar (mode show all), gunakan get() untuk menampilkan semua
+        if ($perPage >= 5000) {
+            $collection = $query->orderBy('id_kerjasama', 'asc')->get();
+            $items = [];
+            foreach ($collection as $i => $k) {
+                $items[] = $this->formatRow($k, $i);
+            }
+            $total = count($items);
+            
+            // Format sebagai pagination object dengan last_page = 1
+            $kerjasama = new \Illuminate\Pagination\LengthAwarePaginator(
+                $items,
+                $total, // total items
+                $total, // per_page = total (sehingga last_page = 1)
+                1, // current page
+                [
+                    'path' => $request->url(),
+                    'query' => $request->query(),
+                    'fragment' => null,
+                ]
+            );
+        } else {
+            $kerjasama = $query->orderBy('id_kerjasama', 'asc')
+                ->paginate($perPage)
+                ->withQueryString();
+            
+            $offset = ($kerjasama->currentPage() - 1) * $kerjasama->perPage();
+            $kerjasama->getCollection()->transform(fn ($k, $i) => $this->formatRow($k, $offset + $i));
+        }
 
         return Inertia::render('Admin/RiwayatKerjasama/Gabungan', [
             'data' => $kerjasama,
@@ -71,12 +96,37 @@ class RiwayatKerjasamaController extends Controller
 
         $this->applyFilters($query, $request);
 
-        $kerjasama = $query->orderBy('id_kerjasama', 'asc')
-            ->paginate(10)
-            ->withQueryString();
-
-        $offset = ($kerjasama->currentPage() - 1) * $kerjasama->perPage();
-        $kerjasama->getCollection()->transform(fn ($k, $i) => $this->formatRow($k, $offset + $i));
+        $perPage = $request->input('per_page', 10);
+        
+        // Jika per_page besar (mode show all), gunakan get() untuk menampilkan semua
+        if ($perPage >= 5000) {
+            $collection = $query->orderBy('id_kerjasama', 'asc')->get();
+            $items = [];
+            foreach ($collection as $i => $k) {
+                $items[] = $this->formatRow($k, $i);
+            }
+            $total = count($items);
+            
+            // Format sebagai pagination object dengan last_page = 1
+            $kerjasama = new \Illuminate\Pagination\LengthAwarePaginator(
+                $items,
+                $total, // total items
+                $total, // per_page = total (sehingga last_page = 1)
+                1, // current page
+                [
+                    'path' => $request->url(),
+                    'query' => $request->query(),
+                    'fragment' => null,
+                ]
+            );
+        } else {
+            $kerjasama = $query->orderBy('id_kerjasama', 'asc')
+                ->paginate($perPage)
+                ->withQueryString();
+            
+            $offset = ($kerjasama->currentPage() - 1) * $kerjasama->perPage();
+            $kerjasama->getCollection()->transform(fn ($k, $i) => $this->formatRow($k, $offset + $i));
+        }
 
         return Inertia::render('Admin/RiwayatKerjasama/Mitra', [
             'data' => $kerjasama,
@@ -101,17 +151,50 @@ class RiwayatKerjasamaController extends Controller
      */
     public function pemerintah(Request $request)
     {
+        \Log::info("🔍 PEMERINTAH REQUEST", [
+            'per_page' => $request->input('per_page'),
+            'search' => $request->input('search'),
+            'tahun' => $request->input('tahun'),
+        ]);
+        
         $query = Kerjasama::pemerintahTipe()
             ->with(['admin', 'latestPeriode', 'finalDokumen', 'kategori']);
 
         $this->applyFilters($query, $request);
 
-        $kerjasama = $query->orderBy('id_kerjasama', 'asc')
-            ->paginate(10)
-            ->withQueryString();
-
-        $offset = ($kerjasama->currentPage() - 1) * $kerjasama->perPage();
-        $kerjasama->getCollection()->transform(fn ($k, $i) => $this->formatRow($k, $offset + $i));
+        $perPage = $request->input('per_page', 10);
+        
+        \Log::info("📊 After applyFilters, perPage:", ['perPage' => $perPage]);
+        
+        // Jika per_page besar (mode show all), gunakan get() untuk menampilkan semua
+        if ($perPage >= 5000) {
+            $collection = $query->orderBy('id_kerjasama', 'asc')->get();
+            $items = [];
+            foreach ($collection as $i => $k) {
+                $items[] = $this->formatRow($k, $i);
+            }
+            $total = count($items);
+            
+            // Format sebagai pagination object dengan last_page = 1
+            $kerjasama = new \Illuminate\Pagination\LengthAwarePaginator(
+                $items,
+                $total, // total items
+                $total, // per_page = total (sehingga last_page = 1)
+                1, // current page
+                [
+                    'path' => $request->url(),
+                    'query' => $request->query(),
+                    'fragment' => null,
+                ]
+            );
+        } else {
+            $kerjasama = $query->orderBy('id_kerjasama', 'asc')
+                ->paginate($perPage)
+                ->withQueryString();
+            
+            $offset = ($kerjasama->currentPage() - 1) * $kerjasama->perPage();
+            $kerjasama->getCollection()->transform(fn ($k, $i) => $this->formatRow($k, $offset + $i));
+        }
 
         return Inertia::render('Admin/RiwayatKerjasama/Pemerintah', [
             'data' => $kerjasama,

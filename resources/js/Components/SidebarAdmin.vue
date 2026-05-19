@@ -8,7 +8,7 @@
             <!-- LOGO -->
             <div class="px-6 pt-6 pb-4">
                 <div class="text-3xl font-extrabold tracking-widest">
-                    SIKOBOY
+                    SIKERSA
                 </div>
                 <p class="text-xs text-teal-100 mt-1">Admin Dashboard</p>
                 <div class="mt-4 border-t border-teal-700"></div>

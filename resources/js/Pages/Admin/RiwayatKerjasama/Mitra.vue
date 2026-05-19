@@ -36,6 +36,19 @@ const selectedKerjasama = ref(null);
 const openStatusDropdown = ref(null);
 const openFilterColumn = ref(null);
 
+// Computed untuk detect apakah ada filter aktif (cek dari props yang terupdate)
+const hasActiveFilter = computed(() => {
+    const searchVal = (props.filters?.search || "").trim();
+    const tahunVal = (props.filters?.tahun || "");
+    const hasFormFilter = searchVal !== "" || tahunVal !== "";
+    
+    // Check column filters
+    const hasColumnFilterActive = Object.values(columnFilters.value).some(arr => arr.length > 0);
+    
+    const isActive = hasFormFilter || hasColumnFilterActive;
+    return isActive;
+});
+
 const form = ref({
     id_mitra: "",
     mitra: "",
@@ -110,45 +123,50 @@ watch(
   }
 );
 
-const filter = () => {
-    console.log("🔍 FILTER CALLED - search:", search.value, "tahun:", tahun.value);
-    router.get(
-        route("admin.riwayat-kerjasama.mitra"),
-        {
-            search: search.value,
-            tahun: tahun.value,
-        },
-        {
-            preserveState: false,
-            preserveScroll: false
-        },
-    );
-};
-
 const applyFilters = () => {
     console.log("✅ MITRA APPLY FILTERS - search:", search.value, "tahun:", tahun.value);
+    // Auto-detect: jika ada filter, show all; jika tidak ada filter, paginasi normal
+    const hasFilter = search.value.trim() !== "" || tahun.value !== "";
+    const perPage = hasFilter ? 10000 : 10;
+    
     router.get(
         route("admin.riwayat-kerjasama.mitra"),
         {
             search: search.value,
             tahun: tahun.value,
+            page: 1,
+            per_page: perPage,
         },
-        { preserveState: true },
+        { preserveState: false },
     );
 };
 
 const resetAllFilters = () => {
     search.value = "";
     tahun.value = "";
-    applyFilters();
+    router.get(
+        route("admin.riwayat-kerjasama.mitra"),
+        {
+            search: "",
+            tahun: "",
+            page: 1,
+            per_page: 10, // Kembali ke paginasi normal
+        },
+        { preserveState: true },
+    );
 };
 
-// Watch search with debounce
+// Watch search dengan debounce
 watch(search, () => {
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => {
         applyFilters();
     }, 500);
+});
+
+// Watch tahun (tidak perlu debounce, langsung apply)
+watch(tahun, () => {
+    applyFilters();
 });
 
 // =========================
@@ -161,6 +179,50 @@ const columnFilters = ref({
     jenis_kerjasama: [],
     status: [],
 });
+
+// Helper untuk detect apakah ada column filter aktif
+const hasColumnFilter = computed(() => {
+    return Object.values(columnFilters.value).some(arr => arr.length > 0);
+});
+
+    
+    // LOAD DATA IMMEDIATELY
+    const hasActive = Object.values(columnFilters.value).some(arr => arr.length > 0);
+    const perPage = hasActive ? 10000 : 10;
+    console.log("🚀 Immediate load - hasActive:", hasActive, "perPage:", perPage);
+    
+    router.get(
+        route("admin.riwayat-kerjasama.mitra"),
+        {
+            search: search.value,
+            tahun: tahun.value,
+            page: 1,
+            per_page: perPage,
+        },
+        { preserveState: true }
+    );
+
+// Clear column filter
+const clearColumnFilter = (filterKey) => {
+    console.log("🧹 Clear column filter:", filterKey);
+    columnFilters.value[filterKey] = [];
+    
+    // Load with pagination reset
+    const hasActive = Object.values(columnFilters.value).some(arr => arr.length > 0);
+    const perPage = hasActive ? 10000 : 10;
+    console.log("🚀 After clear - hasActive:", hasActive, "perPage:", perPage);
+    
+    router.get(
+        route("admin.riwayat-kerjasama.mitra"),
+        {
+            search: search.value,
+            tahun: tahun.value,
+            page: 1,
+            per_page: perPage,
+        },
+        { preserveState: false }
+    );
+};
 
 const uniqueTahun = computed(() => {
     const values = (props.data?.data || []).map(item => String(item.tahun));
@@ -249,6 +311,7 @@ const goToPage = (page) => {
             search: search.value,
             tahun: tahun.value,
             page,
+            per_page: 10,
         },
         { preserveState: true, preserveScroll: true },
     );
@@ -567,7 +630,6 @@ onBeforeUnmount(() => {
 
                         <select
                             v-model="tahun"
-                            @change="applyFilters"
                             class="rounded-full px-4 py-2.5 text-sm border border-gray-200 bg-gray-50 focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition min-w-[180px]"
                         >
                             <option value="">Semua Tahun</option>
@@ -575,10 +637,6 @@ onBeforeUnmount(() => {
                                 {{ y }}
                             </option>
                         </select>
-
-                        <button @click="applyFilters" class="bg-teal-700 hover:bg-teal-800 text-white text-sm px-5 py-2.5 rounded-full font-medium transition">
-                            Filter
-                        </button>
 
                         <button v-if="search || tahun" @click="resetAllFilters" class="bg-gray-300 hover:bg-gray-400 text-gray-700 text-sm px-5 py-2.5 rounded-full font-medium transition">
                             Reset
@@ -639,6 +697,12 @@ onBeforeUnmount(() => {
 
                 <!-- TABLE -->
                 <div class="mt-4 bg-white rounded-2xl shadow overflow-hidden">
+                    <!-- DEBUG INFO -->
+                    <div class="bg-yellow-50 p-3 text-xs border-b border-yellow-200">
+                        <div>🔍 Search: "{{ search }}" | Tahun: "{{ tahun }}" | Filter Props: S:"{{ props.filters?.search }}" T:"{{ props.filters?.tahun }}"</div>
+                        <div>📊 Data: {{ filteredTableData.length }} rows | Last Page: {{ data?.last_page }} | hasActiveFilter: {{ hasActiveFilter }}</div>
+                        <div>➡️ Show Pagination: {{ (data?.last_page || 1) > 1 && !hasActiveFilter }}</div>
+                    </div>
                     <div class="p-6 overflow-x-auto">
                         <table class="min-w-full table-auto text-sm">
                             <thead
@@ -671,20 +735,14 @@ onBeforeUnmount(() => {
                                                     <input
                                                         type="checkbox"
                                                         :checked="columnFilters.tahun.includes(val)"
-                                                        @change="(e) => {
-                                                            if (e.target.checked) {
-                                                                columnFilters.tahun.push(val)
-                                                            } else {
-                                                                columnFilters.tahun = columnFilters.tahun.filter(v => v !== val)
-                                                            }
-                                                        }"
+                                                        @change="toggleColumnFilter('tahun', val)"
                                                         class="cursor-pointer"
                                                     />
                                                     <span class="text-xs">{{ val }}</span>
                                                 </label>
                                             </div>
                                             <button
-                                                @click="columnFilters.tahun = []"
+                                                @click="clearColumnFilter('tahun')"
                                                 class="w-full px-2 py-1 bg-gray-300 hover:bg-gray-400 rounded text-xs"
                                             >
                                                 Clear
@@ -712,20 +770,14 @@ onBeforeUnmount(() => {
                                                     <input
                                                         type="checkbox"
                                                         :checked="columnFilters.tipe.includes(val)"
-                                                        @change="(e) => {
-                                                            if (e.target.checked) {
-                                                                columnFilters.tipe.push(val)
-                                                            } else {
-                                                                columnFilters.tipe = columnFilters.tipe.filter(v => v !== val)
-                                                            }
-                                                        }"
+                                                        @change="toggleColumnFilter('tipe', val)"
                                                         class="cursor-pointer"
                                                     />
                                                     <span class="text-xs">{{ val }}</span>
                                                 </label>
                                             </div>
                                             <button
-                                                @click="columnFilters.tipe = []"
+                                                @click="clearColumnFilter('tipe')"
                                                 class="w-full px-2 py-1 bg-gray-300 hover:bg-gray-400 rounded text-xs"
                                             >
                                                 Clear
@@ -753,20 +805,14 @@ onBeforeUnmount(() => {
                                                     <input
                                                         type="checkbox"
                                                         :checked="columnFilters.mitra.includes(val)"
-                                                        @change="(e) => {
-                                                            if (e.target.checked) {
-                                                                columnFilters.mitra.push(val)
-                                                            } else {
-                                                                columnFilters.mitra = columnFilters.mitra.filter(v => v !== val)
-                                                            }
-                                                        }"
+                                                        @change="toggleColumnFilter('mitra', val)"
                                                         class="cursor-pointer"
                                                     />
                                                     <span class="text-xs">{{ val }}</span>
                                                 </label>
                                             </div>
                                             <button
-                                                @click="columnFilters.mitra = []"
+                                                @click="clearColumnFilter('mitra')"
                                                 class="w-full px-2 py-1 bg-gray-300 hover:bg-gray-400 rounded text-xs"
                                             >
                                                 Clear
@@ -814,20 +860,14 @@ onBeforeUnmount(() => {
                                                     <input
                                                         type="checkbox"
                                                         :checked="columnFilters.jenis_kerjasama.includes(val)"
-                                                        @change="(e) => {
-                                                            if (e.target.checked) {
-                                                                columnFilters.jenis_kerjasama.push(val)
-                                                            } else {
-                                                                columnFilters.jenis_kerjasama = columnFilters.jenis_kerjasama.filter(v => v !== val)
-                                                            }
-                                                        }"
+                                                        @change="toggleColumnFilter('jenis_kerjasama', val)"
                                                         class="cursor-pointer"
                                                     />
                                                     <span class="text-xs">{{ val }}</span>
                                                 </label>
                                             </div>
                                             <button
-                                                @click="columnFilters.jenis_kerjasama = []"
+                                                @click="clearColumnFilter('jenis_kerjasama')"
                                                 class="w-full px-2 py-1 bg-gray-300 hover:bg-gray-400 rounded text-xs"
                                             >
                                                 Clear
@@ -895,20 +935,14 @@ onBeforeUnmount(() => {
                                                     <input
                                                         type="checkbox"
                                                         :checked="columnFilters.status.includes(val)"
-                                                        @change="(e) => {
-                                                            if (e.target.checked) {
-                                                                columnFilters.status.push(val)
-                                                            } else {
-                                                                columnFilters.status = columnFilters.status.filter(v => v !== val)
-                                                            }
-                                                        }"
+                                                        @change="toggleColumnFilter('status', val)"
                                                         class="cursor-pointer"
                                                     />
                                                     <span class="text-xs">{{ val }}</span>
                                                 </label>
                                             </div>
                                             <button
-                                                @click="columnFilters.status = []"
+                                                @click="clearColumnFilter('status')"
                                                 class="w-full px-2 py-1 bg-gray-300 hover:bg-gray-400 rounded text-xs"
                                             >
                                                 Clear
@@ -1121,7 +1155,7 @@ onBeforeUnmount(() => {
                 </div>
 
                 <div
-                    v-if="(data?.last_page || 1) > 1"
+                    v-if="(data?.last_page || 1) > 1 && !hasActiveFilter"
                     class="mt-4 flex items-center justify-end gap-2"
                 >
                     <button

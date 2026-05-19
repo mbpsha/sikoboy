@@ -65,7 +65,7 @@ class HandleInertiaRequests extends Middleware
                 'info' => $request->session()->get('info'),
                 'generated_password' => $request->session()->get('generated_password'),
             ],
-            'recaptcha_site_key' => config('services.recaptcha.key'),
+            'recaptcha_site_key' => ($request->getHost() === 'localhost' || $request->getHost() === '127.0.0.1') ? null : config('services.recaptcha.key'),
             'notifications' => $mitraNotifications->take(5)->values()->all(),
             'notifications_count' => $mitraNotifications->count(),
             'admin_notifications' => $adminNotifications->take(5)->values()->all(),
