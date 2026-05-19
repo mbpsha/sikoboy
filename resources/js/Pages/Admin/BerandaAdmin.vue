@@ -86,12 +86,31 @@ onMounted(() => {
     // Gunakan data real dari backend, tidak ada dummy fallback
     const kerjasamaTahun = props.kerjasama_per_tahun || [];
     const kategoriKerjasama = props.kategori_kerjasama || [];
-    const isMobile = typeof window !== "undefined" && window.innerWidth < 640;
+    const isMobileViewport = () =>
+        typeof window !== "undefined" && window.innerWidth < 768;
+
+    const applyBarResponsiveOptions = (chart) => {
+        const isMobile = isMobileViewport();
+        chart.options.scales.x.ticks.maxRotation = isMobile ? 40 : 0;
+        chart.options.scales.x.ticks.minRotation = isMobile ? 30 : 0;
+        chart.options.scales.x.ticks.autoSkip = !isMobile;
+        chart.options.scales.x.ticks.maxTicksLimit = isMobile ? 6 : undefined;
+    };
+
+    const applyPieResponsiveOptions = (chart) => {
+        const isMobile = isMobileViewport();
+        chart.options.radius = isMobile ? "80%" : "88%";
+        chart.options.layout.padding = isMobile ? 8 : 16;
+        chart.options.plugins.legend.position = isMobile ? "bottom" : "right";
+        chart.options.plugins.legend.labels.boxWidth = isMobile ? 8 : 12;
+        chart.options.plugins.legend.labels.padding = isMobile ? 10 : 14;
+        chart.options.plugins.legend.labels.font.size = isMobile ? 10 : 12;
+    };
 
     // Hanya render chart jika ada data
     if (kerjasamaTahun.length > 0 && barChartRef.value) {
         // Chart 1: Kerjasama per Tahun (Bar Chart)
-        new Chart(barChartRef.value, {
+        const barChart = new Chart(barChartRef.value, {
             type: "bar",
             data: {
                 labels: kerjasamaTahun.map((row) => row.tahun),
@@ -116,10 +135,9 @@ onMounted(() => {
                 scales: {
                     x: {
                         ticks: {
-                            maxRotation: isMobile ? 40 : 0,
-                            minRotation: isMobile ? 30 : 0,
-                            autoSkip: !isMobile,
-                            maxTicksLimit: isMobile ? 6 : undefined,
+                            maxRotation: 0,
+                            minRotation: 0,
+                            autoSkip: true,
                         },
                     },
                     y: {
@@ -129,6 +147,12 @@ onMounted(() => {
                 },
             },
         });
+
+        applyBarResponsiveOptions(barChart);
+        barChart.options.onResize = (chart) => {
+            applyBarResponsiveOptions(chart);
+            chart.update("none");
+        };
     }
 
     // Hanya render chart jika ada data
@@ -140,7 +164,7 @@ onMounted(() => {
         const formatPercentage = (value) => Math.round((value / totalKategori) * 100) + "%";
 
         // Chart 2: Kategori Kerjasama (Pie Chart)
-        new Chart(categoryChartRef.value, {
+        const categoryChart = new Chart(categoryChartRef.value, {
             type: "pie",
             data: {
                 labels: kategoriKerjasama.map((row) => row.kategori),
@@ -170,20 +194,20 @@ onMounted(() => {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                radius: isMobile ? "80%" : "88%",
+                radius: "88%",
                 layout: {
-                    padding: isMobile ? 8 : 16,
+                    padding: 16,
                 },
                 plugins: {
                     legend: {
                         display: true,
-                        position: isMobile ? "bottom" : "right",
+                        position: "right",
                         labels: {
                             usePointStyle: true,
-                            boxWidth: isMobile ? 8 : 12,
-                            padding: isMobile ? 10 : 14,
+                            boxWidth: 12,
+                            padding: 14,
                             font: {
-                                size: isMobile ? 10 : 12,
+                                size: 12,
                             },
                         },
                     },
@@ -198,6 +222,12 @@ onMounted(() => {
                 },
             },
         });
+
+        applyPieResponsiveOptions(categoryChart);
+        categoryChart.options.onResize = (chart) => {
+            applyPieResponsiveOptions(chart);
+            chart.update("none");
+        };
     }
 });
 </script>

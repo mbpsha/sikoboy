@@ -267,7 +267,7 @@ const showLabel = computed(() => props.isMobile || !props.isDesktopCollapsed);
 
 const asideClass = computed(() => {
     const base =
-        "text-white h-dvh max-h-dvh fixed inset-y-0 left-0 z-50 lg:z-40 flex flex-col justify-between overflow-hidden transition-all duration-300 ease-in-out";
+        "text-white h-dvh fixed inset-y-0 left-0 z-50 lg:z-40 flex flex-col justify-between overflow-hidden transition-all duration-300 ease-in-out";
 
     if (props.isMobile) {
         return `${base} w-64 shadow-2xl border-r border-teal-900/70 ${props.isMobileOpen ? "translate-x-0" : "-translate-x-full"}`;
