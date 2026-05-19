@@ -16,7 +16,13 @@
                 @toggle-sidebar="handleSidebarToggle"
             />
 
-            <div class="p-4 pt-20 sm:p-6 sm:pt-20">
+            <div class="p-4 pt-20 sm:p-6 sm:pt-20 space-y-4 sm:space-y-6">
+                <h1
+                    v-if="title"
+                    class="text-xl sm:text-2xl font-bold text-gray-800 leading-tight"
+                >
+                    {{ title }}
+                </h1>
                 <slot />
             </div>
         </div>
