@@ -20,6 +20,9 @@ const props = defineProps({
     data: Object,
     filters: Object,
     years: Array,
+    mitras: Array,
+    jenisKerjasamaOptions: Array,
+    jenisDokumenOptions: Array,
 });
 
 const search = ref(props.filters?.search || "");
@@ -31,8 +34,10 @@ const showAdendumModal = ref(false);
 const adendumFileInput = ref(null);
 const selectedKerjasama = ref(null);
 const openStatusDropdown = ref(null);
+const openFilterColumn = ref(null);
 
 const form = ref({
+    id_mitra: "",
     mitra: "",
     tahun: "",
     judul: "",
@@ -40,12 +45,31 @@ const form = ref({
     mulai: "",
     selesai: "",
     jenis_kerjasama: "KSDD",
+    jenis_dokumen: "KSB",
     tipe_pengajuan: "mitra",
     nomor_suratM: '',
     nomor_suratP: '',
     urusan: '',
     pembiayaan: '',
     file: null,
+});
+
+const mitraIdSearch = ref("");
+
+const filteredMitraOptions = computed(() => {
+    const query = String(mitraIdSearch.value || "").trim();
+    const mitras = props.mitras || [];
+
+    if (!query) return mitras;
+
+    return mitras.filter((mitra) => String(mitra.id_mitra).includes(query));
+});
+
+const selectedMitra = computed(() => {
+    if (!form.value.id_mitra) return null;
+    return (props.mitras || []).find(
+        (mitra) => String(mitra.id_mitra) === String(form.value.id_mitra),
+    ) || null;
 });
 
 const adendumForm = ref({
@@ -206,6 +230,16 @@ onBeforeUnmount(() => {
     if (debounceTimer) clearTimeout(debounceTimer);
 });
 
+// Normalize status text and return badge classes
+const statusBadgeClasses = (status) => {
+    const s = String(status ?? '').trim().toLowerCase();
+    if (!s) return 'bg-gray-100 text-gray-600';
+    if (s === 'aktif' || s === 'active') return 'bg-green-100 text-green-700';
+    if (s === 'berakhir' || s === 'expired' || s === 'selesai') return 'bg-red-100 text-red-600';
+    if (s.includes('segera') || s.includes('soon') || s.includes('akan')) return 'bg-yellow-100 text-yellow-700';
+    return 'bg-gray-100 text-gray-600';
+};
+
 const goToPage = (page) => {
     if (!page || page === props.data?.current_page) return;
 
@@ -224,7 +258,7 @@ const goToPage = (page) => {
 const validate = () => {
     errors.value = {};
 
-    if (!form.value.mitra) errors.value.mitra = "Mitra wajib diisi";
+    if (!form.value.mitra) errors.value.mitra = "Nama mitra wajib diisi";
     if (!form.value.tahun) errors.value.tahun = "Tahun wajib diisi";
     if (!form.value.judul) errors.value.judul = "Judul wajib diisi";
     if (!form.value.nomor_suratM) errors.value.nomor_suratM = "Nomor surat mitra wajib diisi";
@@ -235,6 +269,7 @@ const validate = () => {
     if (!form.value.selesai)
         errors.value.selesai = "Tanggal selesai wajib diisi";
     if (!form.value.jenis_kerjasama) errors.value.jenis_kerjasama = "Jenis kerjasama wajib diisi";
+    if (!form.value.jenis_dokumen) errors.value.jenis_dokumen = "Jenis dokumen wajib diisi";
     if (!form.value.tipe_pengajuan) errors.value.tipe_pengajuan = "Tipe pengajuan wajib diisi";
     if (!form.value.pembiayaan) errors.value.pembiayaan = "Pembiayaan wajib diisi";
     if (!form.value.file) errors.value.file = "File wajib diupload";
@@ -307,7 +342,7 @@ const submit = () => {
     formData.append("pembiayaan", form.value.pembiayaan);
     formData.append("daerah", "Boyolali");
     formData.append("jenis_kerjasama", form.value.jenis_kerjasama);
-    formData.append("jenis_dokumen", "PDF");
+    formData.append("jenis_dokumen", form.value.jenis_dokumen);
     formData.append("nama_pihak_luar", form.value.mitra);
     formData.append("tanggal_mulai", form.value.mulai);
     formData.append("tanggal_berakhir", form.value.selesai);
@@ -403,7 +438,9 @@ const submitAdendum = () => {
 // CLOSE MODAL
 const closeModal = () => {
     showModal.value = false;
+    mitraIdSearch.value = "";
     form.value = {
+        id_mitra: "",
         mitra: "",
         tahun: "",
         judul: "",
@@ -411,6 +448,7 @@ const closeModal = () => {
         mulai: "",
         selesai: "",
         jenis_kerjasama: "KSDD",
+        jenis_dokumen: "KSB",
         tipe_pengajuan: "mitra",
         nomor_suratM: '',
         nomor_suratP: '',
@@ -617,11 +655,16 @@ onBeforeUnmount(() => {
                                     >
                                         <div class="flex items-center justify-between gap-1">
                                             <span>Tahun</span>
-                                            <button class="text-yellow-300 hover:text-yellow-100">⚙️</button>
+                                            <button @click.stop="openFilterColumn = openFilterColumn === 'tahun' ? null : 'tahun'" class="text-yellow-300 hover:text-yellow-100 flex items-center justify-center w-6 h-6 rounded-full bg-white/10 hover:bg-white/20">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                    <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.293l3.71-4.06a.75.75 0 111.08 1.04l-4.25 4.657a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+                                                </svg>
+                                            </button>
                                         </div>
                                         <!-- FILTER DROPDOWN TAHUN -->
                                         <div
-                                            class="hidden group-hover:block absolute left-0 top-full mt-1 bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200"
+                                            v-show="openFilterColumn === 'tahun'"
+                                            class="absolute left-0 top-full mt-1 bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200"
                                         >
                                             <div class="mb-2 max-h-40 overflow-y-auto">
                                                 <label v-for="val in uniqueTahun" :key="val" class="flex items-center gap-2 mb-1 cursor-pointer hover:bg-gray-100 p-1 rounded">
@@ -653,11 +696,16 @@ onBeforeUnmount(() => {
                                     >
                                         <div class="flex items-center justify-between gap-1">
                                             <span>Tipe</span>
-                                            <button class="text-yellow-300 hover:text-yellow-100">⚙️</button>
+                                            <button @click.stop="openFilterColumn = openFilterColumn === 'tipe' ? null : 'tipe'" class="text-yellow-300 hover:text-yellow-100 flex items-center justify-center w-6 h-6 rounded-full bg-white/10 hover:bg-white/20">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                    <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.293l3.71-4.06a.75.75 0 111.08 1.04l-4.25 4.657a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+                                                </svg>
+                                            </button>
                                         </div>
                                         <!-- FILTER DROPDOWN TIPE -->
                                         <div
-                                            class="hidden group-hover:block absolute left-0 top-full mt-1 bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200"
+                                            v-show="openFilterColumn === 'tipe'"
+                                            class="absolute left-0 top-full mt-1 bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200"
                                         >
                                             <div class="mb-2 max-h-40 overflow-y-auto">
                                                 <label v-for="val in uniqueTipe" :key="val" class="flex items-center gap-2 mb-1 cursor-pointer hover:bg-gray-100 p-1 rounded">
@@ -689,11 +737,16 @@ onBeforeUnmount(() => {
                                     >
                                         <div class="flex items-center justify-between gap-1">
                                             <span>Mitra</span>
-                                            <button class="text-yellow-300 hover:text-yellow-100">⚙️</button>
+                                            <button @click.stop="openFilterColumn = openFilterColumn === 'mitra' ? null : 'mitra'" class="text-yellow-300 hover:text-yellow-100 flex items-center justify-center w-6 h-6 rounded-full bg-white/10 hover:bg-white/20">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                    <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.293l3.71-4.06a.75.75 0 111.08 1.04l-4.25 4.657a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+                                                </svg>
+                                            </button>
                                         </div>
                                         <!-- FILTER DROPDOWN MITRA -->
                                         <div
-                                            class="hidden group-hover:block absolute left-0 top-full mt-1 bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200 max-w-xs"
+                                            v-show="openFilterColumn === 'mitra'"
+                                            class="absolute left-0 top-full mt-1 bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200 max-w-xs"
                                         >
                                             <div class="mb-2 max-h-40 overflow-y-auto">
                                                 <label v-for="val in uniqueMitra" :key="val" class="flex items-center gap-2 mb-1 cursor-pointer hover:bg-gray-100 p-1 rounded">
@@ -745,11 +798,16 @@ onBeforeUnmount(() => {
                                     >
                                         <div class="flex items-center justify-between gap-1">
                                             <span>Jenis Kerjasama</span>
-                                            <button class="text-yellow-300 hover:text-yellow-100">⚙️</button>
+                                            <button @click.stop="openFilterColumn = openFilterColumn === 'jenis_kerjasama' ? null : 'jenis_kerjasama'" class="text-yellow-300 hover:text-yellow-100 flex items-center justify-center w-6 h-6 rounded-full bg-white/10 hover:bg-white/20">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                    <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.293l3.71-4.06a.75.75 0 111.08 1.04l-4.25 4.657a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+                                                </svg>
+                                            </button>
                                         </div>
                                         <!-- FILTER DROPDOWN JENIS KERJASAMA -->
                                         <div
-                                            class="hidden group-hover:block absolute left-0 top-full mt-1 bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200"
+                                            v-show="openFilterColumn === 'jenis_kerjasama'"
+                                            class="absolute left-0 top-full mt-1 bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200"
                                         >
                                             <div class="mb-2 max-h-40 overflow-y-auto">
                                                 <label v-for="val in uniqueJenisKerjasama" :key="val" class="flex items-center gap-2 mb-1 cursor-pointer hover:bg-gray-100 p-1 rounded">
@@ -775,6 +833,11 @@ onBeforeUnmount(() => {
                                                 Clear
                                             </button>
                                         </div>
+                                    </th>
+                                    <th
+                                        class="px-4 py-3 text-left whitespace-nowrap border-r border-gray-200"
+                                    >
+                                        Jenis Dokumen
                                     </th>
                                     <th
                                         class="px-4 py-3 text-left whitespace-nowrap border-r border-gray-200"
@@ -812,9 +875,45 @@ onBeforeUnmount(() => {
                                         Adendum
                                     </th>
                                     <th
-                                        class="px-4 py-3 text-left whitespace-nowrap"
+                                        class="px-4 py-3 text-left whitespace-nowrap relative cursor-pointer"
                                     >
-                                        Status
+                                        <div class="flex items-center justify-between">
+                                            <span>Status</span>
+                                            <button @click.stop="openFilterColumn = openFilterColumn === 'status' ? null : 'status'" class="ml-2 text-yellow-300 hover:text-yellow-100 flex items-center justify-center w-6 h-6 rounded-full bg-white/10 hover:bg-white/20">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                    <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.293l3.71-4.06a.75.75 0 111.08 1.04l-4.25 4.657a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                        <!-- FILTER DROPDOWN STATUS -->
+                                        <div
+                                            v-show="openFilterColumn === 'status'"
+                                            class="absolute left-0 top-full mt-1 bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200"
+                                        >
+                                            <div class="mb-2 max-h-40 overflow-y-auto">
+                                                <label v-for="val in uniqueStatus" :key="val" class="flex items-center gap-2 mb-1 cursor-pointer hover:bg-gray-100 p-1 rounded">
+                                                    <input
+                                                        type="checkbox"
+                                                        :checked="columnFilters.status.includes(val)"
+                                                        @change="(e) => {
+                                                            if (e.target.checked) {
+                                                                columnFilters.status.push(val)
+                                                            } else {
+                                                                columnFilters.status = columnFilters.status.filter(v => v !== val)
+                                                            }
+                                                        }"
+                                                        class="cursor-pointer"
+                                                    />
+                                                    <span class="text-xs">{{ val }}</span>
+                                                </label>
+                                            </div>
+                                            <button
+                                                @click="columnFilters.status = []"
+                                                class="w-full px-2 py-1 bg-gray-300 hover:bg-gray-400 rounded text-xs"
+                                            >
+                                                Clear
+                                            </button>
+                                        </div>
                                     </th>
                                 </tr>
                             </thead>
@@ -880,6 +979,11 @@ onBeforeUnmount(() => {
                                         >
                                             {{ item.jenis_kerjasama || '-' }}
                                         </span>
+                                    </td>
+                                    <td
+                                        class="px-4 py-3 whitespace-nowrap border-r border-gray-200"
+                                    >
+                                        {{ item.jenis_dokumen || '-' }}
                                     </td>
                                     <td
                                         class="px-4 py-3 whitespace-nowrap border-r border-gray-200"
@@ -968,15 +1072,7 @@ onBeforeUnmount(() => {
                                         <div class="flex items-center justify-between gap-2">
                                             <span
                                                 class="inline-flex items-center px-3 py-1 rounded-full text-xs leading-none"
-                                                :class="{
-                                                    'bg-green-100 text-green-700':
-                                                        item.status === 'Aktif',
-                                                    'bg-red-100 text-red-600':
-                                                        item.status === 'Berakhir',
-                                                    'bg-yellow-100 text-yellow-700':
-                                                        item.status ===
-                                                        'Segera Berakhir',
-                                                }"
+                                                :class="statusBadgeClasses(item.status)"
                                             >
                                                 {{ item.status }}
                                             </span>
@@ -1085,8 +1181,39 @@ onBeforeUnmount(() => {
                                 Mitra <span class="text-red-500">*</span>
                             </label>
                             <input
-                                v-model="form.mitra"
+                                v-model="mitraIdSearch"
                                 class="w-full border rounded-lg px-3 py-2 mt-1"
+                                placeholder="Ketik ID mitra (contoh: 21)"
+                            />
+                            <select
+                                v-model="form.id_mitra"
+                                @change="form.mitra = selectedMitra?.nama_perusahaan || ''"
+                                class="w-full border rounded-lg px-3 py-2 mt-1 bg-white"
+                            >
+                                <option value="">Pilih ID mitra</option>
+                                <option
+                                    v-for="mitraOption in filteredMitraOptions"
+                                    :key="mitraOption.id_mitra"
+                                    :value="String(mitraOption.id_mitra)"
+                                >
+                                    {{ mitraOption.id_mitra }} - {{ mitraOption.nama_perusahaan }}
+                                </option>
+                            </select>
+                            <p
+                                v-if="mitraIdSearch && filteredMitraOptions.length === 0"
+                                class="text-xs text-gray-500 mt-1"
+                            >
+                                Data mitra tidak ditemukan untuk ID tersebut.
+                            </p>
+                            <p
+                                v-if="errors.id_mitra"
+                                class="text-red-500 text-xs mt-1"
+                            >
+                                {{ errors.id_mitra }}
+                            </p>
+                            <input
+                                v-model="form.mitra"
+                                class="w-full border rounded-lg px-3 py-2 mt-2"
                                 placeholder="Masukkan nama mitra"
                             />
                             <p
@@ -1095,6 +1222,16 @@ onBeforeUnmount(() => {
                             >
                                 {{ errors.mitra }}
                             </p>
+                            <div
+                                v-if="selectedMitra"
+                                class="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700 space-y-1"
+                            >
+                                <p><span class="font-semibold">Nama Perusahaan:</span> {{ selectedMitra.nama_perusahaan || '-' }}</p>
+                                <p><span class="font-semibold">NPWP:</span> {{ selectedMitra.npwp || '-' }}</p>
+                                <p><span class="font-semibold">PIC:</span> {{ selectedMitra.pic || '-' }}</p>
+                                <p><span class="font-semibold">No. HP:</span> {{ selectedMitra.no_handphone || '-' }}</p>
+                                <p><span class="font-semibold">Alamat:</span> {{ selectedMitra.alamat || '-' }}</p>
+                            </div>
                         </div>
 
                         <div>
@@ -1217,18 +1354,43 @@ onBeforeUnmount(() => {
                             v-model="form.jenis_kerjasama"
                             class="w-full border rounded-lg px-3 py-2 mt-1"
                         >
-                            <option value="KSDD">Kerjasama Daerah Antar Daerah (KSDD)</option>
-                            <option value="KSDPK">Kerjasama Dengan Pihak Ketiga (KSDPK)</option>
-                            <option value="NK/RK">Sinergi Dengan Pemerintah Pusat/Lembaga (NK/RK)</option>
-                            <option value="PERTEK">Perjanjian Teknis (PERTEK)</option>
-                            <option value="KSDPL">Kerjasama Daerah Dengan Pemerintah Daerah Di Luar Negeri (KSDPL)</option>
-                            <option value="KSDLL">Kerjasama Daerah Dengan Lembaga Di Luar Negeri (KSDLL)</option>
+                            <option
+                                v-for="option in (jenisKerjasamaOptions || [])"
+                                :key="option.value"
+                                :value="option.value"
+                            >
+                                {{ option.label }}
+                            </option>
                         </select>
                         <p
                             v-if="errors.jenis_kerjasama"
                             class="text-red-500 text-xs mt-1"
                         >
                             {{ errors.jenis_kerjasama }}
+                        </p>
+                    </div>
+
+                    <div>
+                        <label class="text-sm font-medium">
+                            Jenis Dokumen <span class="text-red-500">*</span>
+                        </label>
+                        <select
+                            v-model="form.jenis_dokumen"
+                            class="w-full border rounded-lg px-3 py-2 mt-1"
+                        >
+                            <option
+                                v-for="option in (jenisDokumenOptions || [])"
+                                :key="option"
+                                :value="option"
+                            >
+                                {{ option }}
+                            </option>
+                        </select>
+                        <p
+                            v-if="errors.jenis_dokumen"
+                            class="text-red-500 text-xs mt-1"
+                        >
+                            {{ errors.jenis_dokumen }}
                         </p>
                     </div>
 

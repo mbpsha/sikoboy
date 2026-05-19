@@ -20,6 +20,9 @@ const props = defineProps({
     data: Object,
     filters: Object,
     years: Array,
+    mitras: Array,
+    jenisKerjasamaOptions: Array,
+    jenisDokumenOptions: Array,
 });
 
 const search = ref(props.filters?.search || "");
@@ -31,6 +34,7 @@ const showAdendumModal = ref(false);
 const adendumFileInput = ref(null);
 const selectedKerjasama = ref(null);
 const openStatusDropdown = ref(null);
+const openFilterColumn = ref(null);
 
 let debounceTimer = null;
 
@@ -90,13 +94,15 @@ const goToPage = (page) => {
 };
 
 const form = ref({
+    id_mitra: "",
     mitra: "",
     tahun: "",
-    judul: "",
+    judul_adendum: "",
     jangka: "",
     mulai: "",
     selesai: "",
     jenis_kerjasama: "KSDD",
+    jenis_dokumen: "KSB",
     tipe_pengajuan: "mitra",
     nomor_suratM: '',
     nomor_suratP: '',
@@ -105,23 +111,116 @@ const form = ref({
     file: null,
 });
 
+const jenisKerjasamaOptions = [
+    { value: "KSDD", label: "Kerjasama Daerah Antar Daerah (KSDD)" },
+    { value: "KSDPK", label: "Kerjasama Dengan Pihak Ketiga (KSDPK)" },
+    { value: "NK/RK", label: "Sinergi Dengan Pemerintah Pusat/Lembaga (NK/RK)" },
+    { value: "PERTEK", label: "Perjanjian Teknis (PERTEK)" },
+    { value: "KSDPL", label: "Kerjasama Daerah Dengan Pemerintah Daerah Di Luar Negeri (KSDPL)" },
+    { value: "KSDLL", label: "Kerjasama Daerah Dengan Lembaga Di Luar Negeri (KSDLL)" },
+];
+
+const pembiayaanOptions = [
+    "APBN",
+    "APBD",
+    "PIHAK KETIGA",
+    "PARA PIHAK",
+    "SESUAI DENGAN PERATURAN PERUNDANG-UNDANGAN",
+];
+
 const adendumForm = ref({
+    mitra: "",
+    tahun: "",
     judul_adendum: "",
-    keterangan_adendum: "",
+    nomor_suratM_baru: "",
+    nomor_suratP_baru: "",
+    nomor_suratM_lama: "",
+    nomor_suratP_lama: "",
+    urusan: "",
+    jangka: "",
+    mulai: "",
+    selesai: "",
+    jenis_kerjasama: "KSDD",
+    pembiayaan: "",
     file: null,
 });
 
 const errors = ref({});
 const adendumErrors = ref({});
 const isSubmitting = ref(false);
+const showMitraSuggestions = ref(false);
+let hideMitraSuggestionsTimer = null;
+
+const filteredMitraOptions = computed(() => {
+    const query = String(form.value.mitra ?? "").trim().toLowerCase();
+
+    if (!query) return [];
+
+    return (props.mitras || [])
+        .filter((mitraOption) => {
+            const idMitra = String(mitraOption.id_mitra ?? "").toLowerCase();
+            const namaPerusahaan = String(mitraOption.nama_perusahaan ?? "").toLowerCase();
+
+            return idMitra.includes(query) || namaPerusahaan.includes(query);
+        })
+        .slice(0, 10);
+});
+
+const selectMitra = (mitraOption) => {
+    form.value.id_mitra = String(mitraOption.id_mitra);
+    form.value.mitra = mitraOption.nama_perusahaan || "";
+    showMitraSuggestions.value = false;
+};
+
+const handleMitraFocus = () => {
+    if (hideMitraSuggestionsTimer) {
+        clearTimeout(hideMitraSuggestionsTimer);
+        hideMitraSuggestionsTimer = null;
+    }
+    showMitraSuggestions.value = true;
+};
+
+const handleMitraBlur = () => {
+    hideMitraSuggestionsTimer = setTimeout(() => {
+        showMitraSuggestions.value = false;
+    }, 120);
+};
+
+watch(
+    () => form.value.mitra,
+    (value) => {
+        const keyword = String(value ?? "").trim().toLowerCase();
+
+        if (!keyword) {
+            form.value.id_mitra = "";
+            return;
+        }
+
+        const exactMatch = (props.mitras || []).find(
+            (mitraOption) =>
+                String(mitraOption.nama_perusahaan ?? "").trim().toLowerCase() === keyword,
+        );
+
+        form.value.id_mitra = exactMatch ? String(exactMatch.id_mitra) : "";
+    },
+);
+
+const parseJangkaToYears = (value) => {
+    const match = String(value ?? "").match(/(\d+)/);
+    if (!match) return null;
+
+    const years = Number.parseInt(match[1], 10);
+
+    return Number.isNaN(years) || years <= 0 ? null : years;
+};
 
 // AUTO CALCULATE TANGGAL SELESAI
 const calculateEndDate = () => {
   if (form.value.mulai && form.value.jangka) {
     const startDate = new Date(form.value.mulai);
-    const years = parseInt(form.value.jangka, 10);
+    const years = parseJangkaToYears(form.value.jangka);
 
-    if (!isNaN(years)) {
+    if (years !== null) {
       const endDate = new Date(startDate);
       endDate.setFullYear(endDate.getFullYear() + years);
 
@@ -143,6 +242,31 @@ watch(
   }
 );
 
+const calculateAdendumEndDate = () => {
+    if (adendumForm.value.mulai && adendumForm.value.jangka) {
+        const startDate = new Date(adendumForm.value.mulai);
+        const years = parseJangkaToYears(adendumForm.value.jangka);
+
+        if (years !== null) {
+            const endDate = new Date(startDate);
+            endDate.setFullYear(endDate.getFullYear() + years);
+
+            const year = endDate.getFullYear();
+            const month = String(endDate.getMonth() + 1).padStart(2, "0");
+            const day = String(endDate.getDate()).padStart(2, "0");
+
+            adendumForm.value.selesai = `${year}-${month}-${day}`;
+        }
+    }
+};
+
+watch(
+    [() => adendumForm.value.mulai, () => adendumForm.value.jangka],
+    () => {
+        calculateAdendumEndDate();
+    }
+);
+
 // VALIDASI
 const validate = () => {
     errors.value = {};
@@ -158,6 +282,7 @@ const validate = () => {
     if (!form.value.selesai)
         errors.value.selesai = "Tanggal selesai wajib diisi";
     if (!form.value.jenis_kerjasama) errors.value.jenis_kerjasama = "Jenis kerjasama wajib diisi";
+    if (!form.value.jenis_dokumen) errors.value.jenis_dokumen = "Jenis dokumen wajib diisi";
     if (!form.value.tipe_pengajuan) errors.value.tipe_pengajuan = "Tipe pengajuan wajib diisi";
     if (!form.value.pembiayaan) errors.value.pembiayaan = "Pembiayaan wajib diisi";
     if (!form.value.file) errors.value.file = "File wajib diupload";
@@ -169,8 +294,28 @@ const validate = () => {
 const validateAdendum = () => {
     adendumErrors.value = {};
 
+    if (!adendumForm.value.mitra)
+        adendumErrors.value.mitra = "Mitra wajib diisi";
+    if (!adendumForm.value.tahun)
+        adendumErrors.value.tahun = "Tahun wajib diisi";
     if (!adendumForm.value.judul_adendum)
         adendumErrors.value.judul_adendum = "Judul adendum wajib diisi";
+    if (!adendumForm.value.nomor_suratM_baru)
+        adendumErrors.value.nomor_suratM_baru = "Nomor surat mitra baru wajib diisi";
+    if (!adendumForm.value.nomor_suratP_baru)
+        adendumErrors.value.nomor_suratP_baru = "Nomor surat pemerintah baru wajib diisi";
+    if (!adendumForm.value.urusan)
+        adendumErrors.value.urusan = "Urusan wajib diisi";
+    if (!adendumForm.value.jangka)
+        adendumErrors.value.jangka = "Jangka waktu wajib diisi";
+    if (!adendumForm.value.mulai)
+        adendumErrors.value.mulai = "Tanggal mulai wajib diisi";
+    if (!adendumForm.value.selesai)
+        adendumErrors.value.selesai = "Tanggal berakhir wajib diisi";
+    if (!adendumForm.value.jenis_kerjasama)
+        adendumErrors.value.jenis_kerjasama = "Jenis kerjasama wajib diisi";
+    if (!adendumForm.value.pembiayaan)
+        adendumErrors.value.pembiayaan = "Pembiayaan wajib diisi";
     if (!adendumForm.value.file)
         adendumErrors.value.file = "File adendum wajib diupload";
 
@@ -231,7 +376,7 @@ const submit = () => {
     formData.append("daerah", "Boyolali");
     formData.append("jenis_kerjasama", form.value.jenis_kerjasama);
     formData.append("tipe_pengajuan", form.value.tipe_pengajuan);
-    formData.append("jenis_dokumen", "PDF");
+    formData.append("jenis_dokumen", form.value.jenis_dokumen);
     formData.append("nama_pihak_luar", form.value.mitra);
     formData.append("tanggal_mulai", form.value.mulai);
     formData.append("tanggal_berakhir", form.value.selesai);
@@ -258,8 +403,10 @@ const submit = () => {
                 }).then(() => {
                     closeModal();
 
+                    // Redirect to last page to see the newly created kerjasama
+                    const lastPage = props.data?.last_page || 1;
                     router.visit(
-                        route("admin.riwayat-kerjasama.gabungan"),
+                        route("admin.riwayat-kerjasama.gabungan", { page: lastPage }),
                         {
                             preserveState: false,
                         }
@@ -309,10 +456,24 @@ const submit = () => {
 const submitAdendum = () => {
     if (!validateAdendum()) return;
 
+    const currentPage = props.data?.current_page || 1;
     const formData = new FormData();
     formData.append("id_kerjasama", selectedKerjasama.value.id_kerjasama);
+    formData.append("mitra", adendumForm.value.mitra);
+    formData.append("tahun", adendumForm.value.tahun);
     formData.append("judul_adendum", adendumForm.value.judul_adendum);
-    formData.append("keterangan_adendum", adendumForm.value.keterangan_adendum);
+    formData.append("keterangan_adendum", JSON.stringify({
+        nomor_surat_mitra_lama: adendumForm.value.nomor_suratM_lama,
+        nomor_surat_mitra_baru: adendumForm.value.nomor_suratM_baru,
+        nomor_surat_pemerintah_lama: adendumForm.value.nomor_suratP_lama,
+        nomor_surat_pemerintah_baru: adendumForm.value.nomor_suratP_baru,
+        urusan: adendumForm.value.urusan,
+        jangka_waktu: adendumForm.value.jangka,
+        tanggal_mulai: adendumForm.value.mulai,
+        tanggal_berakhir: adendumForm.value.selesai,
+        jenis_kerjasama: adendumForm.value.jenis_kerjasama,
+        pembiayaan: adendumForm.value.pembiayaan,
+    }));
 
     if (adendumForm.value.file) {
         formData.append("file", adendumForm.value.file);
@@ -320,21 +481,31 @@ const submitAdendum = () => {
 
     router.post(route("admin.riwayat-kerjasama.adendum.store"), formData, {
         preserveScroll: true,
-        onSuccess: closeAdendumModal,
+        onSuccess: () => {
+            closeAdendumModal();
+            // Refresh to same page after adding adendum
+            router.visit(
+                route("admin.riwayat-kerjasama.gabungan", { page: currentPage }),
+                { preserveState: true }
+            );
+        },
     });
 };
 
 // CLOSE MODAL
 const closeModal = () => {
     showModal.value = false;
+    showMitraSuggestions.value = false;
     form.value = {
+        id_mitra: "",
         mitra: "",
         tahun: "",
-        judul: "",
+        judul_adendum: "",
         jangka: "",
         mulai: "",
         selesai: "",
         jenis_kerjasama: "KSDD",
+        jenis_dokumen: "KSB",
         tipe_pengajuan: "mitra",
         nomor_suratM: '',
         nomor_suratP: '',
@@ -351,8 +522,19 @@ const closeAdendumModal = () => {
     showAdendumModal.value = false;
     selectedKerjasama.value = null;
     adendumForm.value = {
+        mitra: "",
+        tahun: "",
         judul_adendum: "",
-        keterangan_adendum: "",
+        nomor_suratM_baru: "",
+        nomor_suratP_baru: "",
+        nomor_suratM_lama: "",
+        nomor_suratP_lama: "",
+        urusan: "",
+        jangka: "",
+        mulai: "",
+        selesai: "",
+        jenis_kerjasama: "KSDD",
+        pembiayaan: "",
         file: null,
     };
     adendumErrors.value = {};
@@ -361,6 +543,20 @@ const closeAdendumModal = () => {
 // OPEN ADENDUM MODAL
 const openAdendumModal = (item) => {
     selectedKerjasama.value = item;
+    adendumForm.value = {
+        judul_adendum: item?.judul || "",
+        nomor_suratM_baru: "",
+        nomor_suratP_baru: "",
+        nomor_suratM_lama: item?.nomor_suratM || "",
+        nomor_suratP_lama: item?.nomor_suratP || "",
+        urusan: item?.urusan || "",
+        jangka: item?.jangka_waktu || "",
+        mulai: item?.tanggal_mulai || "",
+        selesai: item?.tanggal_berakhir || "",
+        jenis_kerjasama: item?.jenis_kerjasama || "KSDD",
+        pembiayaan: item?.pembiayaan || "",
+        file: null,
+    };
     showAdendumModal.value = true;
 };
 
@@ -380,6 +576,8 @@ const toggleStatusDropdown = (idKerjasama) => {
 
 // UPDATE STATUS
 const handleStatusUpdate = (idKerjasama, newStatus) => {
+    const currentPage = props.data?.current_page || 1;
+
     Swal.fire({
         title: "Ubah Status",
         text: `Apakah Anda yakin ingin mengubah status menjadi "${newStatus}"?`,
@@ -406,7 +604,7 @@ const handleStatusUpdate = (idKerjasama, newStatus) => {
                             confirmButtonColor: "#0d9488",
                         }).then(() => {
                             router.visit(
-                                route("admin.riwayat-kerjasama.gabungan"),
+                                route("admin.riwayat-kerjasama.gabungan", { page: currentPage }),
                                 { preserveState: true }
                             );
                         });
@@ -427,8 +625,19 @@ const handleStatusUpdate = (idKerjasama, newStatus) => {
     });
 };
 
+// Normalize status text and return badge classes
+const statusBadgeClasses = (status) => {
+    const s = String(status ?? '').trim().toLowerCase();
+    if (!s) return 'bg-gray-100 text-gray-600';
+    if (s === 'aktif' || s === 'active') return 'bg-green-100 text-green-700';
+    if (s === 'berakhir' || s === 'expired' || s === 'selesai') return 'bg-red-100 text-red-600';
+    if (s.includes('segera') || s.includes('soon') || s.includes('akan')) return 'bg-yellow-100 text-yellow-700';
+    return 'bg-gray-100 text-gray-600';
+};
+
 onBeforeUnmount(() => {
     if (debounceTimer) clearTimeout(debounceTimer);
+    if (hideMitraSuggestionsTimer) clearTimeout(hideMitraSuggestionsTimer);
 });
 
 // =========================
@@ -611,15 +820,20 @@ const filteredTableData = computed(() => {
                                         No
                                     </th>
                                     <th
-                                        class="px-4 py-3 text-left whitespace-nowrap border-r border-gray-200 relative group cursor-pointer"
+                                        class="px-4 py-3 text-left whitespace-nowrap border-r border-gray-200 relative cursor-pointer"
                                     >
                                         <div class="flex items-center justify-between">
-                                            Tahun
-                                            <span class="ml-2">⚙️</span>
+                                            <span>Tahun</span>
+                                            <button @click.stop="openFilterColumn = openFilterColumn === 'tahun' ? null : 'tahun'" class="ml-2 text-yellow-300 hover:text-yellow-100 flex items-center justify-center w-6 h-6 rounded-full bg-white/10 hover:bg-white/20">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                    <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.293l3.71-4.06a.75.75 0 111.08 1.04l-4.25 4.657a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+                                                </svg>
+                                            </button>
                                         </div>
                                         <!-- FILTER DROPDOWN TAHUN -->
                                         <div
-                                            class="absolute left-0 top-full mt-1 hidden group-hover:block bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200"
+                                            v-show="openFilterColumn === 'tahun'"
+                                            class="absolute left-0 top-full mt-1 bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200"
                                         >
                                             <div class="mb-2 max-h-40 overflow-y-auto">
                                                 <label v-for="val in uniqueTahun" :key="val" class="flex items-center gap-2 mb-1 cursor-pointer hover:bg-gray-100 p-1 rounded">
@@ -647,15 +861,20 @@ const filteredTableData = computed(() => {
                                         </div>
                                     </th>
                                     <th
-                                        class="px-4 py-3 text-left whitespace-nowrap border-r border-gray-200 relative group cursor-pointer"
+                                        class="px-4 py-3 text-left whitespace-nowrap border-r border-gray-200 relative cursor-pointer"
                                     >
                                         <div class="flex items-center justify-between">
-                                            Tipe
-                                            <span class="ml-2">⚙️</span>
+                                            <span>Tipe</span>
+                                            <button @click.stop="openFilterColumn = openFilterColumn === 'tipe' ? null : 'tipe'" class="ml-2 text-yellow-300 hover:text-yellow-100 flex items-center justify-center w-6 h-6 rounded-full bg-white/10 hover:bg-white/20">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                    <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.293l3.71-4.06a.75.75 0 111.08 1.04l-4.25 4.657a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+                                                </svg>
+                                            </button>
                                         </div>
                                         <!-- FILTER DROPDOWN TIPE -->
                                         <div
-                                            class="absolute left-0 top-full mt-1 hidden group-hover:block bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200"
+                                            v-show="openFilterColumn === 'tipe'"
+                                            class="absolute left-0 top-full mt-1 bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200"
                                         >
                                             <div class="mb-2 max-h-40 overflow-y-auto">
                                                 <label v-for="val in uniqueTipe" :key="val" class="flex items-center gap-2 mb-1 cursor-pointer hover:bg-gray-100 p-1 rounded">
@@ -683,15 +902,20 @@ const filteredTableData = computed(() => {
                                         </div>
                                     </th>
                                     <th
-                                        class="px-4 py-3 text-left whitespace-nowrap border-r border-gray-200 relative group cursor-pointer"
+                                        class="px-4 py-3 text-left whitespace-nowrap border-r border-gray-200 relative cursor-pointer"
                                     >
                                         <div class="flex items-center justify-between">
-                                            Mitra
-                                            <span class="ml-2">⚙️</span>
+                                            <span>Mitra</span>
+                                            <button @click.stop="openFilterColumn = openFilterColumn === 'mitra' ? null : 'mitra'" class="ml-2 text-yellow-300 hover:text-yellow-100 flex items-center justify-center w-6 h-6 rounded-full bg-white/10 hover:bg-white/20">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                    <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.293l3.71-4.06a.75.75 0 111.08 1.04l-4.25 4.657a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+                                                </svg>
+                                            </button>
                                         </div>
                                         <!-- FILTER DROPDOWN MITRA -->
                                         <div
-                                            class="absolute left-0 top-full mt-1 hidden group-hover:block bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200 max-w-xs"
+                                            v-show="openFilterColumn === 'mitra'"
+                                            class="absolute left-0 top-full mt-1 bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200 max-w-xs"
                                         >
                                             <div class="mb-2 max-h-40 overflow-y-auto">
                                                 <label v-for="val in uniqueMitra" :key="val" class="flex items-center gap-2 mb-1 cursor-pointer hover:bg-gray-100 p-1 rounded">
@@ -739,15 +963,20 @@ const filteredTableData = computed(() => {
                                         Urusan
                                     </th>
                                     <th
-                                        class="px-4 py-3 text-left whitespace-nowrap border-r border-gray-200 relative group cursor-pointer"
+                                        class="px-4 py-3 text-left whitespace-nowrap border-r border-gray-200 relative cursor-pointer"
                                     >
                                         <div class="flex items-center justify-between">
-                                            Jenis Kerjasama
-                                            <span class="ml-2">⚙️</span>
+                                            <span>Jenis Kerjasama</span>
+                                            <button @click.stop="openFilterColumn = openFilterColumn === 'jenis_kerjasama' ? null : 'jenis_kerjasama'" class="ml-2 text-yellow-300 hover:text-yellow-100 flex items-center justify-center w-6 h-6 rounded-full bg-white/10 hover:bg-white/20">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                    <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.293l3.71-4.06a.75.75 0 111.08 1.04l-4.25 4.657a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+                                                </svg>
+                                            </button>
                                         </div>
                                         <!-- FILTER DROPDOWN JENIS KERJASAMA -->
                                         <div
-                                            class="absolute left-0 top-full mt-1 hidden group-hover:block bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200"
+                                            v-show="openFilterColumn === 'jenis_kerjasama'"
+                                            class="absolute left-0 top-full mt-1 bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200"
                                         >
                                             <div class="mb-2 max-h-40 overflow-y-auto">
                                                 <label v-for="val in uniqueJenisKerjasama" :key="val" class="flex items-center gap-2 mb-1 cursor-pointer hover:bg-gray-100 p-1 rounded">
@@ -773,6 +1002,11 @@ const filteredTableData = computed(() => {
                                                 Clear
                                             </button>
                                         </div>
+                                    </th>
+                                    <th
+                                        class="px-4 py-3 text-left whitespace-nowrap border-r border-gray-200"
+                                    >
+                                        Jenis Dokumen
                                     </th>
                                     <th
                                         class="px-4 py-3 text-left whitespace-nowrap border-r border-gray-200"
@@ -810,15 +1044,20 @@ const filteredTableData = computed(() => {
                                         Adendum
                                     </th>
                                     <th
-                                        class="px-4 py-3 text-left whitespace-nowrap relative group cursor-pointer"
+                                        class="px-4 py-3 text-left whitespace-nowrap relative cursor-pointer"
                                     >
                                         <div class="flex items-center justify-between">
-                                            Status
-                                            <span class="ml-2">⚙️</span>
+                                            <span>Status</span>
+                                            <button @click.stop="openFilterColumn = openFilterColumn === 'status' ? null : 'status'" class="ml-2 text-yellow-300 hover:text-yellow-100 flex items-center justify-center w-6 h-6 rounded-full bg-white/10 hover:bg-white/20">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                    <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.293l3.71-4.06a.75.75 0 111.08 1.04l-4.25 4.657a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+                                                </svg>
+                                            </button>
                                         </div>
                                         <!-- FILTER DROPDOWN STATUS -->
                                         <div
-                                            class="absolute left-0 top-full mt-1 hidden group-hover:block bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200"
+                                            v-show="openFilterColumn === 'status'"
+                                            class="absolute left-0 top-full mt-1 bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200"
                                         >
                                             <div class="mb-2 max-h-40 overflow-y-auto">
                                                 <label v-for="val in uniqueStatus" :key="val" class="flex items-center gap-2 mb-1 cursor-pointer hover:bg-gray-100 p-1 rounded">
@@ -913,6 +1152,11 @@ const filteredTableData = computed(() => {
                                     <td
                                         class="px-4 py-3 whitespace-nowrap border-r border-gray-200"
                                     >
+                                        {{ item.jenis_dokumen || '-' }}
+                                    </td>
+                                    <td
+                                        class="px-4 py-3 whitespace-nowrap border-r border-gray-200"
+                                    >
                                         {{ item.mulai }}
                                     </td>
                                     <td
@@ -997,15 +1241,7 @@ const filteredTableData = computed(() => {
                                         <div class="flex items-center justify-between gap-2">
                                             <span
                                                 class="inline-flex items-center px-3 py-1 rounded-full text-xs leading-none"
-                                                :class="{
-                                                    'bg-green-100 text-green-700':
-                                                        item.status === 'Aktif',
-                                                    'bg-red-100 text-red-600':
-                                                        item.status === 'Berakhir',
-                                                    'bg-yellow-100 text-yellow-700':
-                                                        item.status ===
-                                                        'Segera Berakhir',
-                                                }"
+                                                :class="statusBadgeClasses(item.status)"
                                             >
                                                 {{ item.status }}
                                             </span>
@@ -1024,22 +1260,19 @@ const filteredTableData = computed(() => {
                                                 >
                                                     <button
                                                         @click.stop="handleStatusUpdate(item.id_kerjasama, 'Aktif')"
-                                                        :disabled="item.status === 'Aktif'"
-                                                        class="block w-full text-left px-4 py-2 hover:bg-gray-100 transition first:rounded-t-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                                                        class="block w-full text-left px-4 py-2 hover:bg-gray-100 transition first:rounded-t-lg"
                                                     >
                                                         Aktif
                                                     </button>
                                                     <button
                                                         @click.stop="handleStatusUpdate(item.id_kerjasama, 'Segera Berakhir')"
-                                                        :disabled="item.status === 'Segera Berakhir'"
-                                                        class="block w-full text-left px-4 py-2 hover:bg-gray-100 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                                                        class="block w-full text-left px-4 py-2 hover:bg-gray-100 transition"
                                                     >
                                                         Segera Berakhir
                                                     </button>
                                                     <button
                                                         @click.stop="handleStatusUpdate(item.id_kerjasama, 'Berakhir')"
-                                                        :disabled="item.status === 'Berakhir'"
-                                                        class="block w-full text-left px-4 py-2 hover:bg-gray-100 transition last:rounded-b-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                                                        class="block w-full text-left px-4 py-2 hover:bg-gray-100 transition last:rounded-b-lg"
                                                     >
                                                         Berakhir
                                                     </button>
@@ -1115,9 +1348,31 @@ const filteredTableData = computed(() => {
                             </label>
                             <input
                                 v-model="form.mitra"
+                                @focus="handleMitraFocus"
+                                @blur="handleMitraBlur"
                                 class="w-full border rounded-lg px-3 py-2 mt-1"
-                                placeholder="Masukkan nama mitra"
+                                placeholder="Ketik nama atau ID mitra"
                             />
+                            <div
+                                v-if="showMitraSuggestions && form.mitra && filteredMitraOptions.length > 0"
+                                class="mt-1 max-h-44 overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-sm"
+                            >
+                                <button
+                                    v-for="mitraOption in filteredMitraOptions"
+                                    :key="mitraOption.id_mitra"
+                                    type="button"
+                                    class="w-full px-3 py-2 text-left text-sm hover:bg-gray-50"
+                                    @mousedown.prevent="selectMitra(mitraOption)"
+                                >
+                                    {{ mitraOption.id_mitra }} - {{ mitraOption.nama_perusahaan }}
+                                </button>
+                            </div>
+                            <p
+                                v-if="showMitraSuggestions && form.mitra && filteredMitraOptions.length === 0"
+                                class="text-xs text-gray-500 mt-1"
+                            >
+                                Data mitra tidak ditemukan.
+                            </p>
                             <p
                                 v-if="errors.mitra"
                                 class="text-red-500 text-xs mt-1"
@@ -1246,18 +1501,43 @@ const filteredTableData = computed(() => {
                             v-model="form.jenis_kerjasama"
                             class="w-full border rounded-lg px-3 py-2 mt-1"
                         >
-                            <option value="KSDD">Kerjasama Daerah Antar Daerah (KSDD)</option>
-                            <option value="KSDPK">Kerjasama Dengan Pihak Ketiga (KSDPK)</option>
-                            <option value="NK/RK">Sinergi Dengan Pemerintah Pusat/Lembaga (NK/RK)</option>
-                            <option value="PERTEK">Perjanjian Teknis (PERTEK)</option>
-                            <option value="KSDPL">Kerjasama Daerah Dengan Pemerintah Daerah Di Luar Negeri (KSDPL)</option>
-                            <option value="KSDLL">Kerjasama Daerah Dengan Lembaga Di Luar Negeri (KSDLL)</option>
+                            <option
+                                v-for="option in (jenisKerjasamaOptions || [])"
+                                :key="option.value"
+                                :value="option.value"
+                            >
+                                {{ option.label }}
+                            </option>
                         </select>
                         <p
                             v-if="errors.jenis_kerjasama"
                             class="text-red-500 text-xs mt-1"
                         >
                             {{ errors.jenis_kerjasama }}
+                        </p>
+                    </div>
+
+                    <div>
+                        <label class="text-sm font-medium">
+                            Jenis Dokumen <span class="text-red-500">*</span>
+                        </label>
+                        <select
+                            v-model="form.jenis_dokumen"
+                            class="w-full border rounded-lg px-3 py-2 mt-1"
+                        >
+                            <option
+                                v-for="option in (jenisDokumenOptions || [])"
+                                :key="option"
+                                :value="option"
+                            >
+                                {{ option }}
+                            </option>
+                        </select>
+                        <p
+                            v-if="errors.jenis_dokumen"
+                            class="text-red-500 text-xs mt-1"
+                        >
+                            {{ errors.jenis_dokumen }}
                         </p>
                     </div>
 
@@ -1413,7 +1693,7 @@ const filteredTableData = computed(() => {
             class="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
         >
             <div
-                class="bg-white rounded-2xl p-6 w-[600px] max-h-[85vh] shadow-lg relative flex flex-col"
+                class="bg-white rounded-2xl p-6 w-[760px] max-h-[85vh] shadow-lg relative flex flex-col"
             >
                 <!-- CLOSE -->
                 <button
@@ -1447,17 +1727,158 @@ const filteredTableData = computed(() => {
                             </p>
                         </div>
 
-                        <!-- KETERANGAN ADENDUM -->
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="text-sm font-medium">
+                                    Nomor Surat Mitra baru <span class="text-red-500">*</span>
+                                </label>
+                                <input
+                                    v-model="adendumForm.nomor_suratM_baru"
+                                    type="text"
+                                    class="w-full border rounded-lg px-3 py-2 mt-1"
+                                    placeholder="Masukkan nomor surat mitra baru"
+                                />
+                                <p v-if="adendumErrors.nomor_suratM_baru" class="text-red-500 text-xs mt-1">
+                                    {{ adendumErrors.nomor_suratM_baru }}
+                                </p>
+                            </div>
+                            <div>
+                                <label class="text-sm font-medium">
+                                    Nomor Surat Pemerintah baru <span class="text-red-500">*</span>
+                                </label>
+                                <input
+                                    v-model="adendumForm.nomor_suratP_baru"
+                                    type="text"
+                                    class="w-full border rounded-lg px-3 py-2 mt-1"
+                                    placeholder="Masukkan nomor surat pemerintah baru"
+                                />
+                                <p v-if="adendumErrors.nomor_suratP_baru" class="text-red-500 text-xs mt-1">
+                                    {{ adendumErrors.nomor_suratP_baru }}
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="text-sm font-medium">
+                                    Nomor Surat Mitra lama
+                                </label>
+                                <input
+                                    v-model="adendumForm.nomor_suratM_lama"
+                                    type="text"
+                                    class="w-full border rounded-lg px-3 py-2 mt-1 bg-gray-100"
+                                    readonly
+                                />
+                            </div>
+                            <div>
+                                <label class="text-sm font-medium">
+                                    Nomor Surat Pemerintah lama
+                                </label>
+                                <input
+                                    v-model="adendumForm.nomor_suratP_lama"
+                                    type="text"
+                                    class="w-full border rounded-lg px-3 py-2 mt-1 bg-gray-100"
+                                    readonly
+                                />
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="text-sm font-medium">
+                                    Urusan <span class="text-red-500">*</span>
+                                </label>
+                                <textarea
+                                    v-model="adendumForm.urusan"
+                                    rows="3"
+                                    class="w-full border rounded-lg px-3 py-2 mt-1"
+                                    placeholder="Masukkan urusan kerjasama"
+                                ></textarea>
+                                <p v-if="adendumErrors.urusan" class="text-red-500 text-xs mt-1">
+                                    {{ adendumErrors.urusan }}
+                                </p>
+                            </div>
+                            <div>
+                                <label class="text-sm font-medium">
+                                    Jangka Waktu <span class="text-red-500">*</span>
+                                </label>
+                                <input
+                                    v-model="adendumForm.jangka"
+                                    type="text"
+                                    class="w-full border rounded-lg px-3 py-2 mt-1"
+                                    placeholder="Contoh: 2 Tahun"
+                                />
+                                <p v-if="adendumErrors.jangka" class="text-red-500 text-xs mt-1">
+                                    {{ adendumErrors.jangka }}
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="text-sm font-medium">
+                                    Jenis Kerjasama <span class="text-red-500">*</span>
+                                </label>
+                                <select
+                                    v-model="adendumForm.jenis_kerjasama"
+                                    class="w-full border rounded-lg px-3 py-2 mt-1"
+                                >
+                                    <option
+                                        v-for="option in jenisKerjasamaOptions"
+                                        :key="option.value"
+                                        :value="option.value"
+                                    >
+                                        {{ option.label }}
+                                    </option>
+                                </select>
+                                <p v-if="adendumErrors.jenis_kerjasama" class="text-red-500 text-xs mt-1">
+                                    {{ adendumErrors.jenis_kerjasama }}
+                                </p>
+                            </div>
+                            <div>
+                                <label class="text-sm font-medium">
+                                    Tanggal Mulai <span class="text-red-500">*</span>
+                                </label>
+                                <input
+                                    type="date"
+                                    v-model="adendumForm.mulai"
+                                    class="w-full border rounded-lg px-3 py-2 mt-1"
+                                />
+                                <p v-if="adendumErrors.mulai" class="text-red-500 text-xs mt-1">
+                                    {{ adendumErrors.mulai }}
+                                </p>
+                            </div>
+                        </div>
+
                         <div>
                             <label class="text-sm font-medium">
-                                Keterangan (Opsional)
+                                Tanggal Berakhir <span class="text-red-500">*</span>
                             </label>
-                            <textarea
-                                v-model="adendumForm.keterangan_adendum"
+                            <input
+                                type="date"
+                                v-model="adendumForm.selesai"
                                 class="w-full border rounded-lg px-3 py-2 mt-1"
-                                placeholder="Masukkan keterangan adendum"
-                                rows="4"
-                            ></textarea>
+                            />
+                            <p v-if="adendumErrors.selesai" class="text-red-500 text-xs mt-1">
+                                {{ adendumErrors.selesai }}
+                            </p>
+                        </div>
+
+                        <div>
+                            <label class="text-sm font-medium">
+                                Pembiayaan <span class="text-red-500">*</span>
+                            </label>
+                            <select
+                                v-model="adendumForm.pembiayaan"
+                                class="w-full border rounded-lg px-3 py-2 mt-1"
+                            >
+                                <option v-for="option in pembiayaanOptions" :key="option" :value="option">
+                                    {{ option }}
+                                </option>
+                            </select>
+                            <p v-if="adendumErrors.pembiayaan" class="text-red-500 text-xs mt-1">
+                                {{ adendumErrors.pembiayaan }}
+                            </p>
                         </div>
 
                         <!-- FILE UPLOAD -->

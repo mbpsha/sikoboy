@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Admin;
+use Illuminate\Support\Facades\Schema;
 
 class RiwayatStatus extends Model
 {
@@ -28,7 +30,9 @@ class RiwayatStatus extends Model
         'id_status',
         'id_admin',
         'catatan',
+        'judul',
         'penanggung_jawab',
+        'file',
         'tanggal',
     ];
 
@@ -38,19 +42,37 @@ class RiwayatStatus extends Model
     public static function recordStatus(
         int $idKerjasama,
         string $jenisStatus,
-        int $idAdmin,
+        ?int $idAdmin = null,
         ?string $catatan = null,
-        ?string $penanggungJawab = null
+        ?string $penanggungJawab = null,
+        ?string $judul = null,
+        ?string $file = null
     ): self {
         $status = Status::query()->firstOrCreate(['jenis_status' => $jenisStatus]);
-        $riwayat = self::create([
+        // If an admin id is provided but no penanggungJawab string, prefer storing the admin's divisi
+        if ($idAdmin !== null && empty($penanggungJawab)) {
+            $admin = Admin::find($idAdmin);
+            if ($admin) {
+                $penanggungJawab = $admin->divisi ?? null;
+            }
+        }
+        $data = [
             'id_kerjasama' => $idKerjasama,
             'id_status' => $status->id_status,
-            'id_admin' => $idAdmin,
-            'catatan' => $catatan ?? '-',
+            'id_admin' => $idAdmin ?: null,
+            // store catatan and a separate judul (title) if provided
+            'catatan' => $catatan ?? null,
+            'judul' => $judul ?? null,
             'penanggung_jawab' => $penanggungJawab,
             'tanggal' => now(),
-        ]);
+        ];
+
+        // Only include 'file' if the database column exists (migration may not have run yet)
+        if (Schema::hasColumn('riwayat_status', 'file')) {
+            $data['file'] = $file ?? null;
+        }
+
+        $riwayat = self::create($data);
 
         if (in_array($jenisStatus, self::SNAPSHOT_SYNCABLE_STATUSES, true)) {
             Kerjasama::query()

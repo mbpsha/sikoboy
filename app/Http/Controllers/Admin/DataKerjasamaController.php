@@ -14,23 +14,77 @@ use Illuminate\Http\UploadedFile;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Inertia\Inertia;
 
 class DataKerjasamaController extends Controller
 {
     public function index(Request $request)
     {
+        \Log::debug('DataKerjasama index called', ['query' => $request->query()]);
         $query = Kerjasama::with(['mitra', 'admin', 'latestPeriode', 'kategori', 'riwayatStatus']);
 
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
-                $q->where('judul', 'like', "%{$search}%")
-                    ->orWhere('nomor_suratM', 'like', "%{$search}%")
-                    ->orWhere('nomor_suratP', 'like', "%{$search}%")
-                    ->orWhere('urusan', 'like', "%{$search}%")
-                    ->orWhere('nama_pihak_luar', 'like', "%{$search}%")
-                    ->orWhereHas('mitra', fn ($q) => $q->where('nama_perusahaan', 'like', "%{$search}%"));
+                $q->where('judul', 'like', "%{$search}%");
+
+                if (Schema::hasColumn('kerjasama', 'nomor_suratM')) {
+                    $q->orWhere('nomor_suratM', 'like', "%{$search}%");
+                }
+
+                if (Schema::hasColumn('kerjasama', 'nomor_suratP')) {
+                    $q->orWhere('nomor_suratP', 'like', "%{$search}%");
+                }
+
+                if (Schema::hasColumn('kerjasama', 'urusan')) {
+                    $q->orWhere('urusan', 'like', "%{$search}%");
+                }
+
+                if (Schema::hasColumn('kerjasama', 'jenis_kerjasama')) {
+                    $q->orWhere('jenis_kerjasama', 'like', "%{$search}%");
+                }
+
+                if (Schema::hasColumn('kerjasama', 'jenis_dokumen')) {
+                    $q->orWhere('jenis_dokumen', 'like', "%{$search}%");
+                }
+
+                if (Schema::hasColumn('kerjasama', 'pembiayaan')) {
+                    $q->orWhere('pembiayaan', 'like', "%{$search}%");
+                }
+
+                if (Schema::hasColumn('kerjasama', 'daerah')) {
+                    $q->orWhere('daerah', 'like', "%{$search}%");
+                }
+
+                if (Schema::hasColumn('kerjasama', 'nama_pihak_luar')) {
+                    $q->orWhere('nama_pihak_luar', 'like', "%{$search}%");
+                }
+
+                // Related models
+                $q->orWhereHas('kategori', fn ($q) => $q->where('nama_kategori', 'like', "%{$search}%"))
+                  ->orWhereHas('mitra', function ($q) use ($search) {
+                        $q->where('nama_perusahaan', 'like', "%{$search}%");
+                        if (Schema::hasColumn('mitras', 'pic')) {
+                            $q->orWhere('pic', 'like', "%{$search}%");
+                        }
+                        if (Schema::hasColumn('mitras', 'no_handphone')) {
+                            $q->orWhere('no_handphone', 'like', "%{$search}%");
+                        }
+                        if (Schema::hasColumn('mitras', 'alamat')) {
+                            $q->orWhere('alamat', 'like', "%{$search}%");
+                        }
+                  })
+                                ->orWhereHas('riwayatStatus', function ($q) use ($search) {
+                                                $q->where('catatan', 'like', "%{$search}%")
+                                                    ->orWhere('judul', 'like', "%{$search}%");
+                                    })
+                                    // If the search is numeric, also allow searching by year on the latest periode
+                                    ->orWhere(function ($q) use ($search) {
+                                            if (is_numeric($search)) {
+                                                    $q->orWhereHas('latestPeriode', fn ($p) => $p->whereYear('tanggal_mulai', $search));
+                                            }
+                                    });
             });
         }
 
@@ -98,6 +152,18 @@ class DataKerjasamaController extends Controller
 
         [$sortBy, $sortDir] = $this->resolveSort($request);
 
+        // Debug: when a search is present, log the generated SQL and bindings to inspect why unexpected rows are returned
+        if ($request->filled('search')) {
+            try {
+                \Log::debug('DataKerjasama SQL', [
+                    'sql' => $query->toSql(),
+                    'bindings' => $query->getBindings(),
+                ]);
+            } catch (\Throwable $e) {
+                \Log::warning('Failed to dump query SQL for DataKerjasama', ['err' => $e->getMessage()]);
+            }
+        }
+
         $kerjasama = $query->orderBy($sortBy, $sortDir)
             ->paginate(15)
             ->withQueryString();
@@ -108,14 +174,30 @@ class DataKerjasamaController extends Controller
             $statusKontrak = $this->computeStatusKontrak($k, $periode?->tanggal_berakhir);
 
             $prosesList = $k->riwayatStatus->map(function ($r) {
-                $label = $r->catatan ?: ($r->status?->jenis_status ?? null);
+                // Prefer stored title (`judul`) if present, otherwise fall back to catatan or status name
+                $label = $r->judul ?: ($r->catatan ?: ($r->status?->jenis_status ?? null));
                 
-                // Get divisi from admin user
-                $divisi = null;
-                if ($r->penanggung_jawab) {
+                // Prefer divisi from Eloquent relation if available
+                $divisi = $r->admin?->divisi ?? null;
+
+                // Fallback: attempt to resolve penanggung_jawab string to an Admin
+                if (! $divisi && $r->penanggung_jawab) {
                     $adminUser = Admin::whereHas('user', function ($q) use ($r) {
                         $q->where('email', $r->penanggung_jawab);
+                        if (Schema::hasColumn('users', 'username')) {
+                            $q->orWhere('username', $r->penanggung_jawab);
+                        }
+                        if (Schema::hasColumn('users', 'name')) {
+                            $q->orWhere('name', $r->penanggung_jawab);
+                        }
                     })->first();
+
+                    if (! $adminUser) {
+                        $adminUser = Admin::where('nama', $r->penanggung_jawab)
+                            ->orWhere('divisi', $r->penanggung_jawab)
+                            ->first();
+                    }
+
                     $divisi = $adminUser?->divisi ?? $r->penanggung_jawab;
                 }
                 
@@ -127,16 +209,21 @@ class DataKerjasamaController extends Controller
                     'catatan' => $r->catatan,
                     'penanggung' => $divisi,
                     'tanggal' => $r->tanggal,
+                    'file' => $r->file,
                 ];
             })->toArray();
 
             $riwayatCount = $k->riwayatStatus->count();
 
-            $statusDisplay = null;
-            if ($riwayatCount > 0) {
-                $statusDisplay = 'Proses ' . $riwayatCount;
+            // If finalized, clearly mark as Selesai so frontend can display orange badge
+            if ($k->is_finalized) {
+                $statusDisplay = 'Selesai';
             } else {
-                $statusDisplay = $k->status_persetujuan?->value === 'disetujui' ? 'Diterima' : ($k->status_persetujuan?->value ?? 'Proses');
+                if ($riwayatCount > 0) {
+                    $statusDisplay = 'Proses ' . $riwayatCount;
+                } else {
+                    $statusDisplay = $k->status_persetujuan?->value === 'disetujui' ? 'Diterima' : ($k->status_persetujuan?->value ?? 'Proses');
+                }
             }
 
             return [
@@ -167,6 +254,24 @@ class DataKerjasamaController extends Controller
                 'status_aktif'       => $statusKontrak,
                 'created_at'         => $k->created_at?->format('d/m/Y'),
                 'proses'             => $prosesList,
+                'latest_mitra_revision' => (function () use ($k) {
+                    $row = DB::table('dokumen as d')
+                        ->join('users as u', 'u.id_user', '=', 'd.created_by')
+                        ->where('d.id_kerjasama', $k->id_kerjasama)
+                        ->where('u.role', 'mitra')
+                        ->orderByDesc('d.created_at')
+                        ->first(['d.id_dokumen', 'd.nama_file', 'd.lokasi_file', 'd.versi_dokumen', 'd.created_at']);
+
+                    if (! $row) return null;
+
+                    return [
+                        'id_dokumen' => $row->id_dokumen,
+                        'nama_file' => $row->nama_file,
+                        'lokasi_file' => $row->lokasi_file,
+                        'versi' => $row->versi_dokumen,
+                        'created_at' => $row->created_at,
+                    ];
+                })(),
             ];
         });
 
@@ -203,12 +308,8 @@ class DataKerjasamaController extends Controller
         // Prioritas 2: dari data admin yang login
         $admin = $request->user()?->admin;
         if ($admin) {
-            $parts = array_filter([
-                trim($admin->divisi ?? ''),
-                trim($admin->nama   ?? ''),
-            ]);
-            $name = implode(' - ', $parts);
-            if ($name !== '') return $name;
+            $divisi = trim($admin->divisi ?? '');
+            if ($divisi !== '') return $divisi;
         }
 
         // Prioritas 3: email user
@@ -248,7 +349,7 @@ class DataKerjasamaController extends Controller
         $createdDokumen = null;
         $createdRiwayat = null;
 
-        DB::transaction(function () use ($kerjasama, $file, $request, $admin, $isFinished, $penanggung) {
+        DB::transaction(function () use ($kerjasama, $file, $request, $admin, $isFinished, $penanggung, &$createdDokumen, &$createdRiwayat) {
             $title   = (string) $request->input('title');
             $catatan = $request->input('catatan');
 
@@ -278,8 +379,10 @@ class DataKerjasamaController extends Controller
                 idKerjasama:     (int) $kerjasama->id_kerjasama,
                 jenisStatus:     $jenisStatus,
                 idAdmin:         (int) $admin->id_admin,
-                catatan:         $catatan ?? $title,
+                catatan:         $catatan,
                 penanggungJawab: $penanggung,
+                judul:           $title,
+                file:            $createdDokumen ? $createdDokumen->lokasi_file : null,
             );
 
             \Log::info('RiwayatStatus created', [
@@ -289,13 +392,13 @@ class DataKerjasamaController extends Controller
             ]);
 
             if ($isFinished) {
-                // mark negotiation finished and move to riwayat (finalized)
                 $kerjasama->update([
-                    'status_negosiasi' => 'Selesai',
-                    'is_finalized'     => true,
-                    'tipe'             => 'mitra',
-                    'status_aktif'     => 'aktif',
-                    'pemrakarsa'       => 'M',
+                    'status_negosiasi'   => 'Selesai',
+                    'is_finalized'       => true,
+                    'tipe'               => 'mitra',
+                    'pemrakarsa'         => 'M',
+                    'status_aktif'       => 'aktif',
+                    'status_persetujuan' => 'disetujui',
                 ]);
             }
         });
@@ -366,8 +469,10 @@ class DataKerjasamaController extends Controller
                 idKerjasama:     (int) $kerjasama->id_kerjasama,
                 jenisStatus:     $jenisStatus,
                 idAdmin:         (int) $admin->id_admin,
-                catatan:         $catatan ?? $title,
+                catatan:         $catatan,
                 penanggungJawab: $penanggung,
+                judul:           $title,
+                file:            $createdDokumen ? $createdDokumen->lokasi_file : null,
             );
 
             \Log::info('RiwayatStatus updated/created', [
@@ -440,12 +545,8 @@ class DataKerjasamaController extends Controller
                 'created_by'    => $admin->id_user,
             ]);
 
-            RiwayatStatus::recordStatus(
-                idKerjasama: (int) $kerjasama->id_kerjasama,
-                jenisStatus: 'disetujui',
-                idAdmin:     (int) $admin->id_admin,
-                catatan:     'Data kerjasama mitra ditambahkan admin',
-            );
+            // Do not create an initial riwayat/proses entry for admin-created kerjasama.
+            // New admin entries should start with no proses; status_persetujuan is set to 'disetujui'.
         });
 
         return redirect()

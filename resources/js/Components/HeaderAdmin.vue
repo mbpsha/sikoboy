@@ -62,12 +62,9 @@
             <div 
               v-for="notif in notifications" 
               :key="notif.id"
-              :class="[
-                'px-4 py-3 border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer',
-                !notif.read && 'bg-yellow-50'
-              ]"
-              @click="handleNotificationClick(notif)"
-            >
+                class="px-4 py-3 border-b border-gray-100 hover:bg-yellow-50 transition-colors cursor-pointer"
+                @click="handleNotificationClick(notif)"
+              >
               <div class="flex gap-3">
                 <!-- Icon -->
                 <div class="flex-shrink-0">
@@ -123,10 +120,7 @@
                     >
                       {{ notif.type }}
                     </span>
-                    <span 
-                      v-if="!notif.read"
-                      class="w-2 h-2 bg-red-500 rounded-full flex-shrink-0 mt-1.5"
-                    ></span>
+                    <span class="w-2 h-2 bg-red-500 rounded-full flex-shrink-0 mt-1.5"></span>
                   </div>
                   
                   <p class="font-semibold text-gray-800 text-sm mt-1 truncate">
@@ -232,61 +226,21 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted, onUnmounted } from 'vue'
+import { computed, ref, onMounted, onUnmounted, watch } from 'vue'
 import { usePage, Link, router } from '@inertiajs/vue3'
 
 const props = defineProps({ title: String })
 const page = usePage()
 const showNotifications = ref(false)
 
-// 🎭 DUMMY DATA - Ganti dengan API nanti
-const notifications = ref([
-  {
-    id: 1,
-    type: 'MITRA',
-    title: 'Kerjasama akan berakhir dalam 90 hari',
-    description: 'Masa kerjasama dengan PT BPR Bank Boyolali akan berakhir pada 2 Januari 2027.',
-    countdown: '90 hari lagi',
-    status: 'warning',
-    read: false
-  },
-  {
-    id: 2,
-    type: 'MITRA',
-    title: 'Kerjasama akan berakhir dalam 30 hari',
-    description: 'Masa kerjasama dengan CV Sumber Rejeki akan berakhir pada 15 Desember 2026.',
-    countdown: '30 hari lagi',
-    status: 'urgent',
-    read: false
-  },
-  {
-    id: 3,
-    type: 'SETDA',
-    title: 'Arsip dokumen akan berakhir dalam 90 hari',
-    description: 'Dokumen kerjasama dengan PT Maju Jaya akan berakhir pada 10 Maret 2027.',
-    countdown: '90 hari lagi',
-    status: 'warning',
-    read: false
-  },
-  {
-    id: 4,
-    type: 'SETDA',
-    title: 'Arsip dokumen akan berakhir dalam 60 hari',
-    description: 'Dokumen kerjasama dengan CV Berkah Jaya akan berakhir pada 20 Februari 2027.',
-    countdown: '60 hari lagi',
-    status: 'warning',
-    read: true
-  },
-  {
-    id: 5,
-    type: 'MITRA',
-    title: 'Kerjasama telah berakhir',
-    description: 'Masa kerjasama dengan PT Sejahtera Abadi telah berakhir pada 1 November 2026.',
-    countdown: 'Telah berakhir',
-    status: 'expired',
-    read: false
-  }
-])
+const rawAdminNotifications = computed(() => page.props.admin_notifications ?? [])
+
+// local state: closed notifications (persisted in localStorage) to hide from header popup
+const closedAdminNotifications = ref([])
+
+const notifications = computed(() => {
+  return rawAdminNotifications.value.filter(n => !closedAdminNotifications.value.includes(n.id))
+})
 
 const authUser = computed(() => page.props.auth?.user ?? null)
 
@@ -296,13 +250,14 @@ const displayName = computed(() => {
 })
 
 const roleLabel = computed(() => {
-  // Show admin.divisi directly (if present)
-  const divisi = authUser.value?.admin?.divisi ?? ''
+  // Show only the division for admins/ users that have it
+  const divisi = authUser.value?.admin?.divisi ?? authUser.value?.divisi ?? ''
   return divisi || ''
 })
 
 const initial = computed(() => displayName.value?.charAt(0).toUpperCase() || '')
-const totalNotifications = computed(() => notifications.value.filter(n => !n.read).length)
+// show count for visible (not-closed) notifications in header
+const totalNotifications = computed(() => notifications.value.length)
 
 const toggleNotifications = () => {
   showNotifications.value = !showNotifications.value
@@ -310,18 +265,21 @@ const toggleNotifications = () => {
 
 // 🔔 UPDATE: Navigasi ke halaman NotifAdmin dengan query parameter ID
 const handleNotificationClick = (notif) => {
-  markAsRead(notif.id)
   // Navigasi ke halaman notifikasi dengan highlight notifikasi yang diklik
+  // hide this notification from header popup (but keep in full list)
+  if (!closedAdminNotifications.value.includes(notif.id)) {
+    closedAdminNotifications.value.push(notif.id)
+    try { localStorage.setItem('closed_admin_notifications', JSON.stringify(closedAdminNotifications.value)) } catch (e) {}
+  }
   router.visit(`/admin/notifikasi?highlight=${notif.id}`)
 }
 
-const markAsRead = (id) => {
-  const notif = notifications.value.find(n => n.id === id)
-  if (notif) notif.read = true
-}
-
 const markAllAsRead = () => {
-  notifications.value.forEach(notif => { notif.read = true })
+  // add all current raw admin notification ids to closed list
+  const ids = rawAdminNotifications.value.map(n => n.id)
+  closedAdminNotifications.value = Array.from(new Set([...closedAdminNotifications.value, ...ids]))
+  try { localStorage.setItem('closed_admin_notifications', JSON.stringify(closedAdminNotifications.value)) } catch (e) {}
+  showNotifications.value = false
 }
 
 const handleClickOutside = (event) => {
@@ -332,6 +290,13 @@ const handleClickOutside = (event) => {
 
 onMounted(() => {
   document.addEventListener('click', handleClickOutside)
+  // load closed admin notifications
+  try {
+    const stored = localStorage.getItem('closed_admin_notifications')
+    if (stored) closedAdminNotifications.value = JSON.parse(stored)
+  } catch (e) {
+    closedAdminNotifications.value = []
+  }
 })
 
 onUnmounted(() => {

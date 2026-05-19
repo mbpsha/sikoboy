@@ -17,6 +17,7 @@ class StoreKerjasamaPemerintahRequest extends FormRequest
     public function rules(): array
     {
         $documentRule = $this->isMethod('post') ? 'required' : 'nullable';
+        $jenisDokumenRule = $this->isMethod('post') ? 'required' : 'nullable';
 
         return [
             'tahun' => ['required', 'integer', 'min:1900', 'max:2100'],
@@ -26,8 +27,15 @@ class StoreKerjasamaPemerintahRequest extends FormRequest
             'tanggal_selesai' => ['required', 'date', 'after:tanggal_mulai'],
             'dokumen_file' => [$documentRule, 'file', 'mimes:pdf', 'max:10240'],
             'nomor_suratP' => ['nullable', 'string', 'max:100'],
-            'jenis_kerjasama' => ['nullable', 'string', 'max:100'],
-            'jenis_dokumen' => ['nullable', 'string', Rule::in([
+            'jenis_kerjasama' => ['nullable', 'string', Rule::in([
+                'KSDD',
+                'KSDPK',
+                'NK/RK',
+                'PERTEK',
+                'KSDPL',
+                'KSDLL',
+            ])],
+            'jenis_dokumen' => [$jenisDokumenRule, 'string', Rule::in([
                 'KSB',
                 'Nota Kesepakatan',
                 'Perjanjian Teknis',

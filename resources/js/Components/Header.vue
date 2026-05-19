@@ -15,38 +15,17 @@ const isDev = typeof import.meta !== 'undefined' && import.meta.env && import.me
 // 🔔 Notification state
 const showNotificationDropdown = ref(false);
 
-// DUMMY NOTIFICATIONS (Hardcoded) - fallback jika props kosong
-const dummyNotifications = [
-  {
-    id: 1,
-    type: 'expiring_soon',
-    title: 'Kerjasama Anda akan berakhir dalam 90 hari',
-    message: 'Masa kerjasama dengan SETDA Boyolali akan berakhir pada tanggal 2 Januari 2027. Harap perhatikan tanggal berakhir kerjasama Anda.',
-    days_left: 90,
-    nomor_kerjasama: '012/SP-KS/PT-ABC/V/2026',
-    tanggal_berakhir: '2027-01-02',
-  },
-  {
-    id: 2,
-    type: 'expiring_soon',
-    title: 'Kerjasama Anda akan berakhir dalam 30 hari',
-    message: 'Masa kerjasama dengan SETDA Boyolali akan berakhir pada  tanggal 15 Desember 2026. Harap perhatikan tanggal berakhir kerjasama Anda.',
-    days_left: 30,
-    nomor_kerjasama: '045/SP-KS/DINKES/VI/2026',
-    tanggal_berakhir: '2026-12-15',
-  }
-];
+const rawNotifications = computed(() => page.props?.notifications || [])
 
-// Gunakan dummy jika props tidak ada
+// local state: closed notifications (persisted in localStorage) to hide from header popup
+const closedMitraNotifications = ref([])
+
 const notifications = computed(() => {
-  const propsNotif = page.props?.notifications || [];
-  return propsNotif.length > 0 ? propsNotif : dummyNotifications;
-});
+  return rawNotifications.value.filter(n => !closedMitraNotifications.value.includes(n.id))
+})
 
-const notificationsCount = computed(() => {
-  const count = page.props?.notifications_count || 0;
-  return count > 0 ? count : 1; // Default 1 jika tidak ada
-});
+// show count for visible (not-closed) notifications in header
+const notificationsCount = computed(() => notifications.value.length)
 
 const toggleNotificationDropdown = () => {
   showNotificationDropdown.value = !showNotificationDropdown.value;
@@ -59,6 +38,11 @@ const closeNotificationDropdown = () => {
 // 🔔 Handler ketika notifikasi diklik → REDIRECT ke ListNotif.vue
 const handleNotificationClick = (notification) => {
   console.log('[Header] Notification clicked, redirecting to list:', notification);
+  // hide this notification from header popup (but keep in full list)
+  if (!closedMitraNotifications.value.includes(notification.id)) {
+    closedMitraNotifications.value.push(notification.id)
+    try { localStorage.setItem('closed_mitra_notifications', JSON.stringify(closedMitraNotifications.value)) } catch (e) {}
+  }
   closeNotificationDropdown();
   
   // Redirect ke halaman list notifikasi
@@ -70,6 +54,13 @@ const handleNotificationClick = (notification) => {
   }
 };
 
+const markAllAsRead = () => {
+  const ids = rawNotifications.value.map(n => n.id)
+  closedMitraNotifications.value = Array.from(new Set([...closedMitraNotifications.value, ...ids]))
+  try { localStorage.setItem('closed_mitra_notifications', JSON.stringify(closedMitraNotifications.value)) } catch (e) {}
+  showNotificationDropdown.value = false
+}
+
 // Close dropdown when clicking outside
 onMounted(() => {
   const handleClickOutside = (event) => {
@@ -77,25 +68,21 @@ onMounted(() => {
       closeNotificationDropdown();
     }
   };
-  
+
   document.addEventListener('click', handleClickOutside);
-  
+
+  // load closed mitra notifications from localStorage
+  try {
+    const stored = localStorage.getItem('closed_mitra_notifications')
+    if (stored) closedMitraNotifications.value = JSON.parse(stored)
+  } catch (e) {
+    closedMitraNotifications.value = []
+  }
+
   // Cleanup listener
   return () => {
     document.removeEventListener('click', handleClickOutside);
   };
-  
-  try {
-    if (import.meta.env && import.meta.env.DEV) {
-      console.log('[Header] page.props.auth:', page.props?.auth)
-      console.log('[Header] userRole:', userRole.value)
-      console.log('[Header] userRoleNorm:', userRoleNorm.value)
-      console.log('[Header] isAuthenticated:', isAuthenticated.value)
-      console.log('[Header] notifications:', notifications.value)
-    }
-  } catch (e) {
-    console.error('[Header] Debug error:', e)
-  }
 })
 
 const currentUrl = computed(() => {
@@ -233,7 +220,7 @@ const portalLabel = computed(() => {
                         <p class="text-sm font-semibold text-gray-800">{{ notif.title }}</p>
                         <p class="text-xs text-gray-600 mt-1">{{ notif.message }}</p>
                         <p class="text-xs text-yellow-600 mt-2 font-medium">
-                          {{ notif.days_left }} hari lagi
+                          {{ notif.days_left === null || notif.days_left === undefined ? 'Baru' : `${notif.days_left} hari lagi` }}
                         </p>
                       </div>
                     </div>
