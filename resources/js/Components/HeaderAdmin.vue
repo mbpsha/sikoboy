@@ -53,7 +53,7 @@
                 <p class="text-sm font-extrabold tracking-wider text-gray-800 truncate">
                     SIKOBOY
                 </p>
-                <p class="text-[11px] text-gray-500 truncate">Admin Dashboard</p>
+                <p class="text-xs text-gray-500 truncate">Admin Dashboard</p>
             </div>
         </div>
 

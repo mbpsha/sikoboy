@@ -64,6 +64,7 @@ import Chart from "chart.js/auto";
 import AdminLayout from "@/Layouts/AdminLayout.vue";
 
 const MOBILE_BREAKPOINT = 768;
+const MOBILE_MAX_TICKS = 6;
 
 const props = defineProps({
     metrics: {
@@ -85,7 +86,7 @@ const barChartRef = ref(null);
 const categoryChartRef = ref(null);
 let barChartInstance = null;
 let categoryChartInstance = null;
-let handleResize = null;
+let resizeHandler = null;
 
 onMounted(() => {
     // Gunakan data real dari backend, tidak ada dummy fallback
@@ -99,7 +100,9 @@ onMounted(() => {
         chart.options.scales.x.ticks.maxRotation = isMobile ? 40 : 0;
         chart.options.scales.x.ticks.minRotation = isMobile ? 30 : 0;
         chart.options.scales.x.ticks.autoSkip = !isMobile;
-        chart.options.scales.x.ticks.maxTicksLimit = isMobile ? 6 : undefined;
+        chart.options.scales.x.ticks.maxTicksLimit = isMobile
+            ? MOBILE_MAX_TICKS
+            : undefined;
     };
 
     const applyPieResponsiveOptions = (chart) => {
@@ -229,7 +232,7 @@ onMounted(() => {
         categoryChartInstance.update();
     }
 
-    handleResize = () => {
+    resizeHandler = () => {
         if (barChartInstance) {
             applyBarResponsiveOptions(barChartInstance);
             barChartInstance.update();
@@ -240,13 +243,11 @@ onMounted(() => {
         }
     };
 
-    window.addEventListener("resize", handleResize);
+    window.addEventListener("resize", resizeHandler);
 });
 
 onUnmounted(() => {
-    if (handleResize) {
-        window.removeEventListener("resize", handleResize);
-    }
+    window.removeEventListener("resize", resizeHandler);
     if (barChartInstance) {
         barChartInstance.destroy();
         barChartInstance = null;
