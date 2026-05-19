@@ -716,15 +716,15 @@ const filteredTableData = computed(() => {
 
 <template>
     <AdminLayout title="Riwayat Kerjasama - Semua Kerjasama">
-        <div class="p-6">
+        <div class="p-4 sm:p-6">
             <div class="max-w-7xl mx-auto">
                 <!-- SEARCH -->
                 <div
                     class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100"
                 >
-                    <div class="flex gap-3 items-center overflow-x-auto mb-3">
+                    <div class="flex flex-col gap-3 lg:flex-row lg:items-center">
                         <div
-                            class="flex items-center gap-2 flex-1 min-w-[220px] rounded-full px-4 py-2.5 border border-gray-200 bg-gray-50 focus-within:border-teal-600 focus-within:ring-1 focus-within:ring-teal-600 transition"
+                            class="flex items-center gap-2 w-full min-w-0 rounded-full px-4 py-2.5 border border-gray-200 bg-gray-50 focus-within:border-teal-600 focus-within:ring-1 focus-within:ring-teal-600 transition lg:flex-1"
                         >
                             <MagnifyingGlassIcon class="w-5 h-5 text-gray-400" />
                             <input
@@ -734,36 +734,38 @@ const filteredTableData = computed(() => {
                             />
                         </div>
 
-                        <select
-                            v-model="tahun"
-                            @change="applyFilters"
-                            class="rounded-full px-4 py-2.5 text-sm border border-gray-200 bg-gray-50 focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition min-w-[180px]"
-                        >
-                            <option value="">Semua Tahun</option>
-                            <option v-for="y in years" :key="y" :value="y">
-                                {{ y }}
-                            </option>
-                        </select>
+                        <div class="flex w-full flex-col gap-3 sm:flex-row lg:w-auto">
+                            <select
+                                v-model="tahun"
+                                @change="applyFilters"
+                                class="w-full rounded-full px-4 py-2.5 text-sm border border-gray-200 bg-gray-50 focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition sm:min-w-[180px] sm:w-auto"
+                            >
+                                <option value="">Semua Tahun</option>
+                                <option v-for="y in years" :key="y" :value="y">
+                                    {{ y }}
+                                </option>
+                            </select>
 
-                        <button @click="applyFilters" class="bg-teal-700 hover:bg-teal-800 text-white text-sm px-5 py-2.5 rounded-full font-medium transition">
-                            Filter
-                        </button>
+                            <button @click="applyFilters" class="w-full bg-teal-700 hover:bg-teal-800 text-white text-sm px-5 py-2.5 rounded-full font-medium transition sm:w-auto">
+                                Filter
+                            </button>
 
-                        <button v-if="search || tahun" @click="resetAllFilters" class="bg-gray-300 hover:bg-gray-400 text-gray-700 text-sm px-5 py-2.5 rounded-full font-medium transition">
-                            Reset
-                        </button>
+                            <button v-if="search || tahun" @click="resetAllFilters" class="w-full bg-gray-300 hover:bg-gray-400 text-gray-700 text-sm px-5 py-2.5 rounded-full font-medium transition sm:w-auto">
+                                Reset
+                            </button>
+                        </div>
                     </div>
                 </div>
 
                 <!-- TAB + BUTTON -->
-                <div class="flex justify-between items-center mt-6">
+                <div class="mt-6 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                     <div
-                        class="bg-white border-gray-300 rounded-xl p-1 flex gap-1 shadow-sm"
+                        class="bg-white border-gray-300 rounded-xl p-1 flex flex-wrap gap-1 shadow-sm w-full lg:w-auto"
                     >
                         <Link
                             :href="route('admin.riwayat-kerjasama.gabungan')"
                             :class="[
-                                'px-4 py-2 rounded-lg text-sm transition',
+                                'px-3 sm:px-4 py-2 rounded-lg text-sm transition whitespace-nowrap',
                                 isActiveTab('/admin/riwayat-kerjasama/gabungan')
                                     ? 'bg-teal-700 text-white'
                                     : 'text-gray-600 hover:text-gray-900'
@@ -775,7 +777,7 @@ const filteredTableData = computed(() => {
                         <Link
                             :href="route('admin.riwayat-kerjasama.pemerintah')"
                             :class="[
-                                'px-4 py-2 rounded-lg text-sm transition',
+                                'px-3 sm:px-4 py-2 rounded-lg text-sm transition whitespace-nowrap',
                                 isActiveTab('/admin/riwayat-kerjasama/pemerintah')
                                     ? 'bg-teal-700 text-white'
                                     : 'text-gray-600 hover:text-gray-900'
@@ -787,7 +789,7 @@ const filteredTableData = computed(() => {
                         <Link
                             :href="route('admin.riwayat-kerjasama.mitra')"
                             :class="[
-                                'px-4 py-2 rounded-lg text-sm transition',
+                                'px-3 sm:px-4 py-2 rounded-lg text-sm transition whitespace-nowrap',
                                 isActiveTab('/admin/riwayat-kerjasama/mitra')
                                     ? 'bg-teal-700 text-white'
                                     : 'text-gray-600 hover:text-gray-900'
@@ -800,7 +802,7 @@ const filteredTableData = computed(() => {
                     <!-- BUTTON -->
                     <button
                         @click="showModal = true"
-                        class="bg-teal-600 text-white px-5 py-2 rounded-xl shadow hover:bg-teal-700"
+                        class="w-full sm:w-auto bg-teal-600 text-white px-5 py-2 rounded-xl shadow hover:bg-teal-700"
                     >
                         + Tambah Kerjasama
                     </button>
