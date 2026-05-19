@@ -49,6 +49,8 @@ const hasActiveFilter = computed(() => {
     return isActive;
 });
 
+let debounceTimer = null;
+
 const form = ref({
     id_mitra: "",
     mitra: "",
@@ -180,17 +182,16 @@ const columnFilters = ref({
     status: [],
 });
 
-// Helper untuk detect apakah ada column filter aktif
-const hasColumnFilter = computed(() => {
-    return Object.values(columnFilters.value).some(arr => arr.length > 0);
-});
+const toggleColumnFilter = (filterKey, value) => {
+    if (columnFilters.value[filterKey].includes(value)) {
+        columnFilters.value[filterKey] = columnFilters.value[filterKey].filter(v => v !== value);
+    } else {
+        columnFilters.value[filterKey] = [...columnFilters.value[filterKey], value];
+    }
 
-    
-    // LOAD DATA IMMEDIATELY
     const hasActive = Object.values(columnFilters.value).some(arr => arr.length > 0);
     const perPage = hasActive ? 10000 : 10;
-    console.log("🚀 Immediate load - hasActive:", hasActive, "perPage:", perPage);
-    
+
     router.get(
         route("admin.riwayat-kerjasama.mitra"),
         {
@@ -201,6 +202,7 @@ const hasColumnFilter = computed(() => {
         },
         { preserveState: true }
     );
+};
 
 // Clear column filter
 const clearColumnFilter = (filterKey) => {
@@ -284,12 +286,6 @@ const filteredTableData = computed(() => {
     }
 
     return data;
-});
-
-let debounceTimer = null;
-
-onBeforeUnmount(() => {
-    if (debounceTimer) clearTimeout(debounceTimer);
 });
 
 // Normalize status text and return badge classes
@@ -638,6 +634,10 @@ onBeforeUnmount(() => {
                             </option>
                         </select>
 
+                        <button @click="applyFilters" class="bg-teal-700 hover:bg-teal-800 text-white text-sm px-5 py-2.5 rounded-full font-medium transition">
+                            Filter
+                        </button>
+
                         <button v-if="search || tahun" @click="resetAllFilters" class="bg-gray-300 hover:bg-gray-400 text-gray-700 text-sm px-5 py-2.5 rounded-full font-medium transition">
                             Reset
                         </button>
@@ -697,12 +697,6 @@ onBeforeUnmount(() => {
 
                 <!-- TABLE -->
                 <div class="mt-4 bg-white rounded-2xl shadow overflow-hidden">
-                    <!-- DEBUG INFO -->
-                    <div class="bg-yellow-50 p-3 text-xs border-b border-yellow-200">
-                        <div>🔍 Search: "{{ search }}" | Tahun: "{{ tahun }}" | Filter Props: S:"{{ props.filters?.search }}" T:"{{ props.filters?.tahun }}"</div>
-                        <div>📊 Data: {{ filteredTableData.length }} rows | Last Page: {{ data?.last_page }} | hasActiveFilter: {{ hasActiveFilter }}</div>
-                        <div>➡️ Show Pagination: {{ (data?.last_page || 1) > 1 && !hasActiveFilter }}</div>
-                    </div>
                     <div class="p-6 overflow-x-auto">
                         <table class="min-w-full table-auto text-sm">
                             <thead
