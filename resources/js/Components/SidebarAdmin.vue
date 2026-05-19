@@ -2,7 +2,7 @@
     <div>
         <div
             v-if="isMobile && isMobileOpen"
-            class="fixed inset-0 bg-black/50 z-30 lg:hidden"
+            class="fixed inset-0 bg-black/50 z-40 lg:hidden"
             @click="$emit('close-mobile')"
         ></div>
 
@@ -267,10 +267,10 @@ const showLabel = computed(() => props.isMobile || !props.isDesktopCollapsed);
 
 const asideClass = computed(() => {
     const base =
-        "text-white h-screen fixed left-0 top-0 z-40 flex flex-col justify-between overflow-hidden transition-all duration-300 ease-in-out";
+        "text-white h-dvh max-h-dvh fixed inset-y-0 left-0 z-50 lg:z-40 flex flex-col justify-between overflow-hidden transition-all duration-300 ease-in-out";
 
     if (props.isMobile) {
-        return `${base} w-64 ${props.isMobileOpen ? "translate-x-0" : "-translate-x-full"}`;
+        return `${base} w-64 shadow-2xl border-r border-teal-900/70 ${props.isMobileOpen ? "translate-x-0" : "-translate-x-full"}`;
     }
 
     return `${base} ${props.isDesktopCollapsed ? "w-20" : "w-64"}`;

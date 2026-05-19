@@ -1,8 +1,8 @@
 <template>
     <header
-        class="bg-white shadow px-4 sm:px-6 py-4 flex justify-between items-center sticky top-0 z-30"
+        class="bg-white shadow px-3 sm:px-6 py-3 sm:py-4 flex justify-between items-center sticky top-0 z-30"
     >
-        <div class="flex items-center gap-3 min-w-0">
+        <div class="flex items-center gap-2 sm:gap-3 min-w-0">
             <button
                 type="button"
                 class="p-2 rounded-lg hover:bg-gray-100 transition-colors"
@@ -48,6 +48,13 @@
                     />
                 </svg>
             </button>
+
+            <div v-if="isMobile" class="min-w-0 leading-tight">
+                <p class="text-sm font-extrabold tracking-wider text-gray-800 truncate">
+                    SIKOBOY
+                </p>
+                <p class="text-[11px] text-gray-500 truncate">Admin Dashboard</p>
+            </div>
         </div>
 
         <div class="flex items-center gap-2 sm:gap-3">
@@ -265,12 +272,21 @@
 import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { usePage, Link, router } from '@inertiajs/vue3'
 
+defineProps({
+    isMobile: {
+        type: Boolean,
+        default: false,
+    },
+    isSidebarCollapsed: {
+        type: Boolean,
+        default: false,
+    },
+});
+
 defineEmits(["toggle-sidebar"]);
 
 const page = usePage();
 const showNotifications = ref(false);
-const isMobile = ref(window.innerWidth < 768);
-const isSidebarCollapsed = ref(false);
 
 const rawAdminNotifications = computed(() => page.props.admin_notifications ?? [])
 
@@ -325,13 +341,8 @@ const handleClickOutside = (event) => {
     }
 };
 
-const handleWindowResize = () => {
-  isMobile.value = window.innerWidth < 768;
-};
-
 onMounted(() => {
   document.addEventListener('click', handleClickOutside)
-  window.addEventListener('resize', handleWindowResize)
   // load closed admin notifications
   try {
     const stored = localStorage.getItem('closed_admin_notifications')
@@ -343,7 +354,6 @@ onMounted(() => {
 
 onUnmounted(() => {
     document.removeEventListener("click", handleClickOutside);
-    window.removeEventListener('resize', handleWindowResize);
 });
 </script>
 
