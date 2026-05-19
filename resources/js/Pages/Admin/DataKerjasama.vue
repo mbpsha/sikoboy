@@ -35,22 +35,27 @@
         </div>
       </div>
 
-      <!-- Search & Filter Bar -->
-      <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-        <div class="flex flex-wrap items-center gap-3">
-          <input
-            v-model="local.search"
-            placeholder="Cari berdasarkan mitra atau nama kerjasama..."
-            class="flex-1 min-w-[220px] rounded-full px-4 py-2.5 text-sm border border-gray-200 bg-gray-50 focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition"
-          />
-          <select v-model="local.tahun" @change="applyFilters" class="rounded-full px-4 py-2.5 text-sm border border-gray-200 bg-gray-50 focus:outline-none focus:border-teal-600">
+      <!-- SEARCH & FILTER -->
+      <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+        <div class="flex gap-3 items-center overflow-x-auto">
+          <div
+            class="flex items-center gap-2 flex-1 min-w-[220px] rounded-full px-4 py-2.5 border border-gray-200 bg-gray-50 focus-within:border-teal-600 focus-within:ring-1 focus-within:ring-teal-600 transition"
+          >
+            <MagnifyingGlassIcon class="w-5 h-5 text-gray-400 shrink-0" />
+            <input
+              v-model="search"
+              placeholder="Cari berdasarkan tahun, nama mitra, atau judul kerjasama..."
+              class="w-full bg-transparent outline-none text-sm text-gray-700 placeholder-gray-400"
+            />
+          </div>
+          <select v-model="tahun" class="rounded-full px-4 py-2.5 text-sm border border-gray-200 bg-gray-50 focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition min-w-[180px]">
             <option value="">Semua Tahun</option>
             <option v-for="y in years" :key="y" :value="y">{{ y }}</option>
           </select>
-          <button @click="applyFilters" class="bg-teal-700 hover:bg-teal-800 text-white text-sm px-5 py-2.5 rounded-full font-medium transition">
+          <button @click="applyFilters" class="bg-teal-700 hover:bg-teal-800 text-white text-sm px-5 py-2.5 rounded-full font-medium transition shrink-0">
             Filter
           </button>
-          <button v-if="local.search || local.tahun || local.status" @click="resetAllFilters" class="bg-gray-300 hover:bg-gray-400 text-gray-700 text-sm px-5 py-2.5 rounded-full font-medium transition">
+          <button v-if="search || tahun" @click="resetAllFilters" class="bg-gray-300 hover:bg-gray-400 text-gray-700 text-sm px-5 py-2.5 rounded-full font-medium transition shrink-0">
             Reset
           </button>
         </div>
@@ -63,10 +68,23 @@
             <thead>
               <tr class="bg-teal-700 text-white text-xs uppercase tracking-wide">
                 <th class="py-3 px-4 text-left font-medium border-r border-white/10">No</th>
-                <th class="py-3 px-4 text-left font-medium border-r border-white/10">
+                <th class="py-3 px-4 text-left font-medium border-r border-white/10 relative">
                   <div class="flex items-center justify-between gap-1">
                     <span>Tahun</span>
-                    <button v-if="local.tahun" @click="local.tahun = ''; applyFilters()" class="text-yellow-300 hover:text-yellow-100" title="Clear filter">✕</button>
+                    <button @click.stop="openFilterColumn = openFilterColumn === 'tahun' ? null : 'tahun'" class="text-yellow-300 hover:text-yellow-100 flex items-center justify-center w-6 h-6 rounded-full bg-white/10 hover:bg-white/20">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                        <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.293l3.71-4.06a.75.75 0 111.08 1.04l-4.25 4.657a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+                      </svg>
+                    </button>
+                  </div>
+                  <div v-show="openFilterColumn === 'tahun'" @click.stop class="absolute left-0 top-full mt-1 bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200">
+                    <div class="mb-2 max-h-40 overflow-y-auto">
+                      <label v-for="val in uniqueTahun" :key="val" class="flex items-center gap-2 mb-1 cursor-pointer hover:bg-gray-100 p-1 rounded">
+                        <input type="checkbox" :checked="columnFilters.tahun.includes(val)" @change="toggleColumnFilter('tahun', val)" class="cursor-pointer" />
+                        <span class="text-xs">{{ val }}</span>
+                      </label>
+                    </div>
+                    <button @click="clearColumnFilter('tahun')" class="w-full px-2 py-1 bg-gray-300 hover:bg-gray-400 rounded text-xs">Clear</button>
                   </div>
                 </th>
                 <th class="py-3 px-4 text-left font-medium border-r border-white/10">
@@ -81,17 +99,11 @@
                     <div v-show="openFilterColumn === 'mitra'" @click.stop class="absolute left-0 top-full mt-1 bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200 max-w-xs">
                       <div class="mb-2 max-h-40 overflow-y-auto">
                         <label v-for="val in uniqueMitra" :key="val" class="flex items-center gap-2 mb-1 cursor-pointer hover:bg-gray-100 p-1 rounded">
-                          <input type="checkbox" :checked="columnFilters.mitra.includes(val)" @change="(e) => {
-                            if (e.target.checked) {
-                              columnFilters.mitra.push(val)
-                            } else {
-                              columnFilters.mitra = columnFilters.mitra.filter(v => v !== val)
-                            }
-                          }" class="cursor-pointer" />
+                          <input type="checkbox" :checked="columnFilters.mitra.includes(val)" @change="toggleColumnFilter('mitra', val)" class="cursor-pointer" />
                           <span class="text-xs">{{ val }}</span>
                         </label>
                       </div>
-                      <button @click="columnFilters.mitra = []" class="w-full px-2 py-1 bg-gray-300 hover:bg-gray-400 rounded text-xs">Clear</button>
+                      <button @click="clearColumnFilter('mitra')" class="w-full px-2 py-1 bg-gray-300 hover:bg-gray-400 rounded text-xs">Clear</button>
                     </div>
                   </div>
                 </th>
@@ -108,17 +120,11 @@
                     <div v-show="openFilterColumn === 'jenis_kerjasama'" @click.stop class="absolute left-0 top-full mt-1 bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200">
                       <div class="mb-2 max-h-40 overflow-y-auto">
                         <label v-for="val in uniqueJenisKerjasama" :key="val" class="flex items-center gap-2 mb-1 cursor-pointer hover:bg-gray-100 p-1 rounded">
-                          <input type="checkbox" :checked="columnFilters.jenis_kerjasama.includes(val)" @change="(e) => {
-                            if (e.target.checked) {
-                              columnFilters.jenis_kerjasama.push(val)
-                            } else {
-                              columnFilters.jenis_kerjasama = columnFilters.jenis_kerjasama.filter(v => v !== val)
-                            }
-                          }" class="cursor-pointer" />
+                          <input type="checkbox" :checked="columnFilters.jenis_kerjasama.includes(val)" @change="toggleColumnFilter('jenis_kerjasama', val)" class="cursor-pointer" />
                           <span class="text-xs">{{ val }}</span>
                         </label>
                       </div>
-                      <button @click="columnFilters.jenis_kerjasama = []" class="w-full px-2 py-1 bg-gray-300 hover:bg-gray-400 rounded text-xs">Clear</button>
+                      <button @click="clearColumnFilter('jenis_kerjasama')" class="w-full px-2 py-1 bg-gray-300 hover:bg-gray-400 rounded text-xs">Clear</button>
                     </div>
                   </div>
                 </th>
@@ -134,17 +140,11 @@
                     <div v-show="openFilterColumn === 'jenis_dokumen'" @click.stop class="absolute left-0 top-full mt-1 bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200">
                       <div class="mb-2 max-h-40 overflow-y-auto">
                         <label v-for="val in uniqueJenisDokumen" :key="val" class="flex items-center gap-2 mb-1 cursor-pointer hover:bg-gray-100 p-1 rounded">
-                          <input type="checkbox" :checked="columnFilters.jenis_dokumen.includes(val)" @change="(e) => {
-                            if (e.target.checked) {
-                              columnFilters.jenis_dokumen.push(val)
-                            } else {
-                              columnFilters.jenis_dokumen = columnFilters.jenis_dokumen.filter(v => v !== val)
-                            }
-                          }" class="cursor-pointer" />
+                          <input type="checkbox" :checked="columnFilters.jenis_dokumen.includes(val)" @change="toggleColumnFilter('jenis_dokumen', val)" class="cursor-pointer" />
                           <span class="text-xs">{{ val }}</span>
                         </label>
                       </div>
-                      <button @click="columnFilters.jenis_dokumen = []" class="w-full px-2 py-1 bg-gray-300 hover:bg-gray-400 rounded text-xs">Clear</button>
+                      <button @click="clearColumnFilter('jenis_dokumen')" class="w-full px-2 py-1 bg-gray-300 hover:bg-gray-400 rounded text-xs">Clear</button>
                     </div>
                   </div>
                 </th>
@@ -160,17 +160,11 @@
                     <div v-show="openFilterColumn === 'urusan'" @click.stop class="absolute left-0 top-full mt-1 bg-white text-black text-sm rounded-lg shadow-2xl z-50 p-3 min-w-max border border-gray-200">
                       <div class="mb-2 max-h-40 overflow-y-auto">
                         <label v-for="val in uniqueUrusan" :key="val" class="flex items-center gap-2 mb-1 cursor-pointer hover:bg-gray-100 p-1 rounded">
-                          <input type="checkbox" :checked="columnFilters.urusan.includes(val)" @change="(e) => {
-                            if (e.target.checked) {
-                              columnFilters.urusan.push(val)
-                            } else {
-                              columnFilters.urusan = columnFilters.urusan.filter(v => v !== val)
-                            }
-                          }" class="cursor-pointer" />
+                          <input type="checkbox" :checked="columnFilters.urusan.includes(val)" @change="toggleColumnFilter('urusan', val)" class="cursor-pointer" />
                           <span class="text-xs">{{ val }}</span>
                         </label>
                       </div>
-                      <button @click="columnFilters.urusan = []" class="w-full px-2 py-1 bg-gray-300 hover:bg-gray-400 rounded text-xs">Clear</button>
+                      <button @click="clearColumnFilter('urusan')" class="w-full px-2 py-1 bg-gray-300 hover:bg-gray-400 rounded text-xs">Clear</button>
                     </div>
                   </div>
                 </th>
@@ -274,7 +268,7 @@
         </div>
 
         <!-- Pagination Footer -->
-        <div v-if="(kerjasama?.last_page || 1) > 1" class="px-5 py-3.5 flex items-center justify-between border-t border-gray-100">
+        <div v-if="(kerjasama?.last_page || 1) > 1 && !hasActiveFilter" class="px-5 py-3.5 flex items-center justify-between border-t border-gray-100">
           <span class="text-xs text-gray-500">Tampilkan {{ kerjasama.per_page }} data / halaman</span>
           <div class="flex items-center justify-end gap-2">
             <button
@@ -381,13 +375,18 @@
 
 <script setup>
 import AdminLayout from '@/Layouts/AdminLayout.vue'
+import { MagnifyingGlassIcon } from '@heroicons/vue/24/outline'
 import { Link, router, usePage } from '@inertiajs/vue3'
-import { ref, computed, reactive, watch } from 'vue'
+import { ref, computed, reactive, watch, onBeforeUnmount } from 'vue'
 import Swal from 'sweetalert2'
 
 const props = defineProps({
   kerjasama: Object,
   filters: Object,
+  years: {
+    type: Array,
+    default: () => [],
+  },
 })
 
 const page = usePage()
@@ -398,42 +397,97 @@ const kerjasama = computed(() => props.kerjasama ?? {
   data: [], per_page: 15, prev_page_url: null, next_page_url: null, current_page: 1,
 })
 
-const filters     = computed(() => props.filters ?? {})
+const filters = computed(() => props.filters ?? {})
 const indexOffset = computed(() =>
   kerjasama.value.current_page ? (kerjasama.value.current_page - 1) * kerjasama.value.per_page : 0
 )
 
-const local = ref({
-  search: filters.value?.search ?? '',
-  tahun:  filters.value?.tahun  ?? '',
-  status: filters.value?.status ?? '',
+const search = ref(props.filters?.search ?? '')
+const tahun = ref(props.filters?.tahun ?? '')
+
+let debounceTimer = null
+
+const columnFilters = ref({
+  tahun: [],
+  mitra: [],
+  jenis_kerjasama: [],
+  jenis_dokumen: [],
+  urusan: [],
+})
+const openFilterColumn = ref(null)
+const closeAllFilters = () => { openFilterColumn.value = null }
+const showAddMenu = ref(false)
+
+const hasActiveFilter = computed(() => {
+  const searchVal = (props.filters?.search || '').trim()
+  const tahunVal = props.filters?.tahun || ''
+  const hasFormFilter = searchVal !== '' || tahunVal !== ''
+  const hasColumnFilterActive = Object.values(columnFilters.value).some(arr => arr.length > 0)
+  return hasFormFilter || hasColumnFilterActive
 })
 
-const columnFilters = ref({ mitra: [], jenis_kerjasama: [], jenis_dokumen: [], urusan: [] })
-const openFilterColumn = ref(null)
-const closeAllFilters  = () => { openFilterColumn.value = null }
-const showAddMenu      = ref(false)
-
-const uniqueMitra          = computed(() => [...new Set(kerjasama.value.data.map(i => i.mitra))].filter(Boolean).sort())
-const uniqueJenisKerjasama = computed(() => [...new Set(kerjasama.value.data.map(i => i.jenis_kerjasama))].filter(Boolean).sort())
-const uniqueJenisDokumen   = computed(() => [...new Set(kerjasama.value.data.map(i => i.jenis_dokumen))].filter(Boolean).sort())
-const uniqueUrusan         = computed(() => [...new Set(kerjasama.value.data.map(i => i.urusan))].filter(Boolean).sort())
+const uniqueTahun = computed(() => {
+  const values = (kerjasama.value.data || []).map(item => String(item.tahun))
+  return [...new Set(values)].filter(Boolean).sort().reverse()
+})
+const uniqueMitra = computed(() => [...new Set((kerjasama.value.data || []).map(i => i.mitra))].filter(Boolean).sort())
+const uniqueJenisKerjasama = computed(() => [...new Set((kerjasama.value.data || []).map(i => i.jenis_kerjasama))].filter(Boolean).sort())
+const uniqueJenisDokumen = computed(() => [...new Set((kerjasama.value.data || []).map(i => i.jenis_dokumen))].filter(Boolean).sort())
+const uniqueUrusan = computed(() => [...new Set((kerjasama.value.data || []).map(i => i.urusan))].filter(Boolean).sort())
 
 const filteredKerjasama = computed(() => {
-  // preserve any existing proses; ensure it's at least an array
   let data = (kerjasama.value.data || []).map(i => ({ ...i, proses: Array.isArray(i.proses) ? i.proses : [] }))
 
-  if (columnFilters.value.mitra.length)           data = data.filter(i => columnFilters.value.mitra.includes(i.mitra))
-  if (columnFilters.value.jenis_kerjasama.length) data = data.filter(i => columnFilters.value.jenis_kerjasama.includes(i.jenis_kerjasama))
-  if (columnFilters.value.jenis_dokumen.length)   data = data.filter(i => columnFilters.value.jenis_dokumen.includes(i.jenis_dokumen))
-  if (columnFilters.value.urusan.length)           data = data.filter(i => columnFilters.value.urusan.includes(i.urusan))
+  if (columnFilters.value.tahun.length) {
+    data = data.filter(i => columnFilters.value.tahun.includes(String(i.tahun)))
+  }
+  if (columnFilters.value.mitra.length) {
+    data = data.filter(i => columnFilters.value.mitra.includes(i.mitra))
+  }
+  if (columnFilters.value.jenis_kerjasama.length) {
+    data = data.filter(i => columnFilters.value.jenis_kerjasama.includes(i.jenis_kerjasama))
+  }
+  if (columnFilters.value.jenis_dokumen.length) {
+    data = data.filter(i => columnFilters.value.jenis_dokumen.includes(i.jenis_dokumen))
+  }
+  if (columnFilters.value.urusan.length) {
+    data = data.filter(i => columnFilters.value.urusan.includes(i.urusan))
+  }
   return data
 })
 
 const years = computed(() => {
+  if (props.years?.length) return props.years
   const now = new Date().getFullYear()
   return Array.from({ length: 6 }).map((_, i) => now - i)
 })
+
+function buildFilterParams(page = 1) {
+  const hasFormFilter = search.value.trim() !== '' || tahun.value !== ''
+  const hasColumnFilter = Object.values(columnFilters.value).some(arr => arr.length > 0)
+  const perPage = (hasFormFilter || hasColumnFilter) ? 10000 : 15
+
+  const params = { page, per_page: perPage }
+  const q = search.value.trim()
+  if (q) params.search = q
+  if (tahun.value) params.tahun = tahun.value
+  return params
+}
+
+const toggleColumnFilter = (filterKey, value) => {
+  if (columnFilters.value[filterKey].includes(value)) {
+    columnFilters.value[filterKey] = columnFilters.value[filterKey].filter(v => v !== value)
+  } else {
+    columnFilters.value[filterKey] = [...columnFilters.value[filterKey], value]
+  }
+
+  router.get(route('admin.data-kerjasama.index'), buildFilterParams(1), { preserveState: true })
+}
+
+const clearColumnFilter = (filterKey) => {
+  columnFilters.value[filterKey] = []
+  router.get(route('admin.data-kerjasama.index'), buildFilterParams(1), { preserveState: false })
+}
 
 function statusBadgeClass(k) {
   const status = (k?.status_display || '').toString().toLowerCase()
@@ -478,34 +532,34 @@ function formatJangkaWaktu(startStr, endStr) {
   return parts.length ? parts.join(' ') : '0 hari'
 }
 
-let searchTimeout = null
-watch(() => local.value.search, () => {
-  clearTimeout(searchTimeout)
-  searchTimeout = setTimeout(() => applyFilters(), 500)
+watch(search, () => {
+  clearTimeout(debounceTimer)
+  debounceTimer = setTimeout(() => applyFilters(), 500)
+})
+
+watch(tahun, () => {
+  applyFilters()
 })
 
 function applyFilters() {
-  const params = {}
-  const q = (local.value.search || '').trim()
-  if (q)               params.search = q
-  if (local.value.tahun)  params.tahun  = local.value.tahun
-  if (local.value.status) params.status = local.value.status
-  router.get(route('admin.data-kerjasama.index'), params, { preserveState: true })
+  router.get(route('admin.data-kerjasama.index'), buildFilterParams(1), { preserveState: false })
 }
 
 function resetAllFilters() {
-  local.value = { search: '', tahun: '', status: '' }
-  columnFilters.value = { mitra: [], jenis_kerjasama: [], jenis_dokumen: [], urusan: [] }
-  router.get(route('admin.data-kerjasama.index'), {}, { preserveState: false })
+  search.value = ''
+  tahun.value = ''
+  columnFilters.value = { tahun: [], mitra: [], jenis_kerjasama: [], jenis_dokumen: [], urusan: [] }
+  router.get(route('admin.data-kerjasama.index'), { page: 1, per_page: 15 }, { preserveState: true })
 }
 
 function goToPage(p) {
-  if (!p) return
-  const params = {}
-  if (local.value.search) params.search = local.value.search
-  if (local.value.tahun)  params.tahun  = local.value.tahun
-  router.get(route('admin.data-kerjasama.index'), { ...params, page: p }, { preserveState: true, preserveScroll: true })
+  if (!p || p === kerjasama.value.current_page) return
+  router.get(route('admin.data-kerjasama.index'), buildFilterParams(p), { preserveState: true, preserveScroll: true })
 }
+
+onBeforeUnmount(() => {
+  if (debounceTimer) clearTimeout(debounceTimer)
+})
 
 // ─── Add process form ────────────────────────────────────────────────────────
 const showAddFormFor = reactive({})

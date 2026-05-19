@@ -164,8 +164,10 @@ class DataKerjasamaController extends Controller
             }
         }
 
+        $perPage = min(max((int) $request->input('per_page', 15), 1), 10000);
+
         $kerjasama = $query->orderBy($sortBy, $sortDir)
-            ->paginate(15)
+            ->paginate($perPage)
             ->withQueryString();
 
         $kerjasama->getCollection()->transform(function (Kerjasama $k) {
@@ -275,8 +277,14 @@ class DataKerjasamaController extends Controller
             ];
         });
 
+        $currentYear = (int) date('Y');
+
         return Inertia::render('Admin/DataKerjasama', [
             'kerjasama' => $kerjasama,
+            'years' => array_map(
+                fn (int $offset) => $currentYear - $offset,
+                range(0, 5)
+            ),
             'mitras'    => Mitra::orderBy('nama_perusahaan')
                 ->get(['id_mitra', 'nama_perusahaan'])
                 ->map(fn (Mitra $mitra) => [
