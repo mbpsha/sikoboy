@@ -1,30 +1,42 @@
 <template>
     <aside
         style="background-color: #0c505c"
-        class="text-white h-screen fixed left-0 top-0 z-40 flex flex-col justify-between overflow-hidden transition-all duration-300"
-        :class="isCollapsed ? 'w-20' : 'w-64'"
+        class="text-white fixed left-0 top-0 z-40 flex h-dvh flex-col justify-between overflow-hidden transition-all duration-300"
+        :class="sidebarClasses"
     >
         <!-- TOP -->
-        <div class="overflow-y-auto flex-1">
+        <div class="flex-1 overflow-hidden">
             <!-- LOGO -->
-            <div :class="isCollapsed ? 'px-2 pt-4 pb-3' : 'px-6 pt-6 pb-4'">
-                <div class="flex items-center" :class="isCollapsed ? 'justify-center' : 'justify-between'">
-                    <div v-if="!isCollapsed">
+            <div :class="isCompact ? 'px-2 pt-4 pb-3' : 'px-6 pt-6 pb-4'">
+                <div class="flex items-center" :class="isCompact ? 'justify-center' : 'justify-between'">
+                    <div v-if="!isCompact">
                         <div class="text-3xl font-extrabold tracking-widest">
                             SIKOBOY
                         </div>
                         <p class="text-xs text-teal-100 mt-1">Admin Dashboard</p>
                     </div>
                     <button
+                        v-if="isMobile"
+                        type="button"
+                        class="rounded-lg p-2 hover:bg-teal-700/40 transition"
+                        title="Tutup menu"
+                        @click="emit('close-mobile')"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+                        </svg>
+                    </button>
+                    <button
+                        v-else
                         type="button"
                         class="rounded-lg p-2 hover:bg-teal-700/40 transition"
                         @click="isCollapsed = !isCollapsed"
-                        :title="isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'"
+                        :title="isCompact ? 'Expand sidebar' : 'Collapse sidebar'"
                     >
                         <svg
                             xmlns="http://www.w3.org/2000/svg"
                             class="w-6 h-6 transition-transform"
-                            :class="isCollapsed ? 'rotate-180' : ''"
+                            :class="isCompact ? 'rotate-180' : ''"
                             fill="none"
                             viewBox="0 0 24 24"
                             stroke="currentColor"
@@ -42,12 +54,12 @@
             </div>
 
             <!-- MENU -->
-            <nav class="mt-2 space-y-1" :class="isCollapsed ? 'px-2' : 'px-3'">
+            <nav class="mt-2 space-y-1" :class="isCompact ? 'px-2' : 'px-3'">
                 <Link :href="route('admin.dashboard')" :class="navClass('/admin/dashboard')" aria-label="Beranda">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M3 10.5L12 3l9 7.5V20a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1v-9.5z"/>
                     </svg>
-                    <span v-if="!isCollapsed" class="text-sm">Beranda</span>
+                    <span v-if="!isCompact" class="text-sm">Beranda</span>
                 </Link>
 
                 <Link :href="route('admin.pengguna.index')" :class="navClass('/admin/pengguna')" aria-label="Pengguna">
@@ -55,7 +67,7 @@
                         <circle cx="9" cy="8" r="3"/>
                         <path stroke-linecap="round" stroke-linejoin="round" d="M4 20c0-3 3-5 5-5s5 2 5 5"/>
                     </svg>
-                    <span v-if="!isCollapsed" class="text-sm">Pengguna</span>
+                    <span v-if="!isCompact" class="text-sm">Pengguna</span>
                 </Link>
 
                 <Link :href="route('admin.data-kerjasama.index')" :class="navClass('/admin/data-kerjasama')" aria-label="Ajuan Kerjasama">
@@ -63,10 +75,10 @@
                         <path stroke-linecap="round" stroke-linejoin="round" d="M7 3h7l5 5v13a1 1 0 01-1 1H7a1 1 0 01-1-1V4a1 1 0 011-1z"/>
                         <path stroke-linecap="round" stroke-linejoin="round" d="M14 3v5h5"/>
                     </svg>
-                    <span v-if="!isCollapsed" class="text-sm">Ajuan Kerjasama</span>
+                    <span v-if="!isCompact" class="text-sm">Ajuan Kerjasama</span>
                 </Link>
 
-                <template v-if="isCollapsed">
+                <template v-if="isCompact">
                     <div ref="collapsedRiwayatMenuRef" class="relative">
                         <button
                             type="button"
@@ -136,7 +148,7 @@
                         <circle cx="15" cy="12" r="2"/>
                         <circle cx="11" cy="18" r="2"/>
                     </svg>
-                    <span v-if="!isCollapsed" class="text-sm">Manajemen Potensi</span>
+                    <span v-if="!isCompact" class="text-sm">Manajemen Potensi</span>
                 </Link>
 
                 <Link :href="route('admin.manajemen-dokumen.index')" :class="navClass('/admin/manajemen-dokumen')" aria-label="Manajemen Dokumen">
@@ -145,7 +157,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" d="M14 3v5h5"/>
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 14v6M9 17h6"/>
                     </svg>
-                    <span v-if="!isCollapsed" class="text-sm">Manajemen Dokumen</span>
+                    <span v-if="!isCompact" class="text-sm">Manajemen Dokumen</span>
                 </Link>
 
                 <Link :href="route('admin.manajemen-peraturan.index')" :class="navClass('/admin/manajemen-peraturan')" aria-label="Manajemen Peraturan">
@@ -153,7 +165,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" d="M7 3h7l5 5v13a1 1 0 01-1 1H7a1 1 0 01-1-1V4a1 1 0 011-1z"/>
                         <path stroke-linecap="round" stroke-linejoin="round" d="M14 3v5h5"/>
                     </svg>
-                    <span v-if="!isCollapsed" class="text-sm">Manajemen Peraturan</span>
+                    <span v-if="!isCompact" class="text-sm">Manajemen Peraturan</span>
                 </Link>
             </nav>
         </div>
@@ -168,7 +180,7 @@
                     page.url?.startsWith('/admin/profile')
                         ? 'bg-white/15 border-white/30'
                         : 'border-transparent hover:bg-white/10 hover:border-white/10',
-                    isCollapsed ? 'justify-center px-2 py-2.5' : 'gap-3 px-3 py-2.5'
+                    isCompact ? 'justify-center px-2 py-2.5' : 'gap-3 px-3 py-2.5'
                 ]"
             >
                 <div
@@ -179,11 +191,11 @@
                 >
                     {{ adminInitial }}
                 </div>
-                <div v-if="!isCollapsed" class="flex-1 min-w-0">
+                <div v-if="!isCompact" class="flex-1 min-w-0">
                     <p class="text-sm font-semibold text-white truncate leading-tight">{{ adminName }}</p>
                     <p class="text-xs text-teal-300 leading-tight">Lihat Profil</p>
                 </div>
-                <svg v-if="!isCollapsed" class="w-4 h-4 text-white/40 shrink-0 group-hover:text-white/70 transition" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                <svg v-if="!isCompact" class="w-4 h-4 text-white/40 shrink-0 group-hover:text-white/70 transition" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
                 </svg>
             </Link>
@@ -192,9 +204,9 @@
                 @click="showConfirm = true"
                 class="w-full bg-red-600 hover:bg-red-700 transition rounded-xl font-semibold text-sm flex items-center justify-center p-2.5"
                 aria-label="Logout"
-                :title="isCollapsed ? 'Logout' : ''"
+                :title="isCompact ? 'Logout' : ''"
             >
-                <svg v-if="isCollapsed" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <svg v-if="isCompact" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1"/>
                 </svg>
                 <span v-else>Logout</span>
@@ -233,8 +245,16 @@ const props = defineProps({
         type: Boolean,
         default: false,
     },
+    isMobile: {
+        type: Boolean,
+        default: false,
+    },
+    mobileOpen: {
+        type: Boolean,
+        default: false,
+    },
 })
-const emit = defineEmits(["update:collapsed"])
+const emit = defineEmits(["update:collapsed", "close-mobile"])
 
 const page          = usePage()
 const showConfirm   = ref(false)
@@ -247,6 +267,18 @@ const isCollapsed = computed({
     get: () => props.collapsed,
     set: (value) => emit("update:collapsed", value),
 })
+const isCompact = computed(() => !props.isMobile && isCollapsed.value)
+const isMobile = computed(() => props.isMobile)
+const sidebarClasses = computed(() => {
+    if (isMobile.value) {
+        return [
+            "w-72 max-w-[85vw] shadow-2xl",
+            props.mobileOpen ? "translate-x-0" : "-translate-x-full",
+        ]
+    }
+
+    return [isCollapsed.value ? "w-20" : "w-64", "translate-x-0"]
+})
 
 const closeCollapsedMenu = () => {
     showCollapsedRiwayatMenu.value = false
@@ -256,6 +288,9 @@ watch(
     () => page.url,
     (url) => {
         closeCollapsedMenu()
+        if (isMobile.value) {
+            emit("close-mobile")
+        }
         if (url?.startsWith("/admin/riwayat-kerjasama")) {
             showRiwayatMenu.value = true
         }
@@ -284,6 +319,9 @@ const handleDocumentClick = (event) => {
 const handleEscapeKey = (event) => {
     if (event.key === "Escape") {
         closeCollapsedMenu()
+        if (isMobile.value && props.mobileOpen) {
+            emit("close-mobile")
+        }
     }
 }
 
@@ -308,7 +346,7 @@ const adminInitial = computed(() => {
 })
 
 const navClass = (url) => {
-    const base = isCollapsed.value
+    const base = isCompact.value
         ? "flex items-center justify-center px-0 py-2 rounded-full transition w-full"
         : "flex items-center gap-3 px-3 py-2 rounded-full transition w-full"
     if (page.url && page.url.startsWith(url)) {

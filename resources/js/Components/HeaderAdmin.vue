@@ -1,11 +1,23 @@
 <template>
-  <header class="bg-white shadow px-6 py-4 flex justify-between items-center sticky top-0 z-30">
-    
-    <div>
-      <p class="text-sm text-gray-500">Dashboard / {{ title }}</p>
-      <h1 class="text-2xl font-semibold text-gray-700">
-        {{ title }}
-      </h1>
+  <header class="bg-white shadow px-4 sm:px-6 py-3 sm:py-4 flex justify-between items-start sm:items-center sticky top-0 z-30">
+    <div class="flex items-start gap-3 min-w-0">
+      <button
+        v-if="showMenuButton"
+        type="button"
+        class="mt-0.5 p-2 rounded-lg hover:bg-gray-100 transition-colors"
+        aria-label="Buka menu"
+        @click="emit('toggle-menu')"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      </button>
+      <div class="min-w-0">
+        <p class="text-xs sm:text-sm text-gray-500 truncate">Dashboard / {{ title }}</p>
+        <h1 class="text-xl sm:text-2xl font-semibold text-gray-700 truncate">
+          {{ title }}
+        </h1>
+      </div>
     </div>
 
     <div class="flex items-center gap-3">
@@ -44,7 +56,7 @@
         <!-- Dropdown Notifications -->
         <div 
           v-if="showNotifications" 
-          class="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-xl border border-gray-200 z-50"
+          class="absolute right-0 mt-2 w-[calc(100vw-2rem)] sm:w-96 bg-white rounded-lg shadow-xl border border-gray-200 z-50"
         >
           <!-- Header -->
           <div class="px-4 py-3 border-b border-gray-200 flex justify-between items-center">
@@ -216,7 +228,7 @@
         <div class="bg-teal-600 text-white rounded-full w-10 h-10 flex items-center justify-center font-semibold">
           {{ initial }}
         </div>
-        <div>
+        <div class="hidden sm:block">
           <p class="font-semibold">{{ displayName }}</p>
           <p class="text-sm text-gray-500">{{ roleLabel }}</p>
         </div>
@@ -226,10 +238,17 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted, onUnmounted, watch } from 'vue'
+import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { usePage, Link, router } from '@inertiajs/vue3'
 
-const props = defineProps({ title: String })
+defineProps({
+  title: String,
+  showMenuButton: {
+    type: Boolean,
+    default: false
+  }
+})
+const emit = defineEmits(['toggle-menu'])
 const page = usePage()
 const showNotifications = ref(false)
 
