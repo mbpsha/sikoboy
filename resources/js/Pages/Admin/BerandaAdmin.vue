@@ -1,57 +1,185 @@
 <template>
     <AdminLayout title="Beranda">
-        <!-- Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div class="bg-teal-500 text-white p-6 rounded-xl">
-                <p>Total Kerjasama</p>
-                <h2 class="text-3xl font-bold mt-2">{{ metrics.total_kerjasama ?? 0 }}</h2>
-            </div>
 
-            <div class="bg-green-500 text-white p-6 rounded-xl">
-                <p>Kerjasama Aktif</p>
-                <h2 class="text-3xl font-bold mt-2">{{ metrics.aktif ?? 0 }}</h2>
-            </div>
+        <!-- WRAPPER -->
+        <div class="w-full overflow-x-hidden">
 
-            <div class="bg-yellow-500 text-white p-6 rounded-xl">
-                <p>Akan Berakhir</p>
-                <h2 class="text-3xl font-bold mt-2">{{ metrics.akan_berakhir ?? 0 }}</h2>
-            </div>
+            <!-- METRIC CARDS -->
+            <div
+                class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6"
+            >
 
-            <div class="bg-red-500 text-white p-6 rounded-xl">
-                <p>Berakhir</p>
-                <h2 class="text-3xl font-bold mt-2">{{ metrics.berakhir ?? 0 }}</h2>
-            </div>
+                <!-- CARD -->
+                <div
+                    class="bg-teal-500 text-white p-5 md:p-6 rounded-2xl shadow-sm"
+                >
+                    <p class="text-sm md:text-base opacity-90">
+                        Total Kerjasama
+                    </p>
 
-            <div class="bg-blue-500 text-white p-6 rounded-xl">
-                <p>Total Mitra</p>
-                <h2 class="text-3xl font-bold mt-2">{{ metrics.total_mitra ?? 0 }}</h2>
-            </div>
-
-            <div class="bg-purple-500 text-white p-6 rounded-xl">
-                <p>Total Dokumen</p>
-                <h2 class="text-3xl font-bold mt-2">{{ metrics.total_dokumen ?? 0 }}</h2>
-            </div>
-        </div>
-
-        <!-- Charts -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-            <div class="bg-white p-6 rounded-xl shadow">
-                <h2 class="font-semibold mb-4">Jumlah Kerjasama per Tahun</h2>
-                <div v-if="kerjasama_per_tahun.length > 0">
-                    <canvas id="barChart"></canvas>
+                    <h2 class="text-3xl md:text-4xl font-bold mt-3">
+                        {{ metrics.total_kerjasama ?? 0 }}
+                    </h2>
                 </div>
-                <div v-else class="flex items-center justify-center h-64 text-gray-400">
-                    <p>Tidak ada data kerjasama</p>
+
+                <div
+                    class="bg-green-500 text-white p-5 md:p-6 rounded-2xl shadow-sm"
+                >
+                    <p class="text-sm md:text-base opacity-90">
+                        Kerjasama Aktif
+                    </p>
+
+                    <h2 class="text-3xl md:text-4xl font-bold mt-3">
+                        {{ metrics.aktif ?? 0 }}
+                    </h2>
+                </div>
+
+                <div
+                    class="bg-yellow-500 text-white p-5 md:p-6 rounded-2xl shadow-sm"
+                >
+                    <p class="text-sm md:text-base opacity-90">
+                        Akan Berakhir
+                    </p>
+
+                    <h2 class="text-3xl md:text-4xl font-bold mt-3">
+                        {{ metrics.akan_berakhir ?? 0 }}
+                    </h2>
+                </div>
+
+                <div
+                    class="bg-red-500 text-white p-5 md:p-6 rounded-2xl shadow-sm"
+                >
+                    <p class="text-sm md:text-base opacity-90">
+                        Berakhir
+                    </p>
+
+                    <h2 class="text-3xl md:text-4xl font-bold mt-3">
+                        {{ metrics.berakhir ?? 0 }}
+                    </h2>
+                </div>
+
+                <div
+                    class="bg-blue-500 text-white p-5 md:p-6 rounded-2xl shadow-sm"
+                >
+                    <p class="text-sm md:text-base opacity-90">
+                        Total Mitra
+                    </p>
+
+                    <h2 class="text-3xl md:text-4xl font-bold mt-3">
+                        {{ metrics.total_mitra ?? 0 }}
+                    </h2>
+                </div>
+
+                <div
+                    class="bg-purple-500 text-white p-5 md:p-6 rounded-2xl shadow-sm"
+                >
+                    <p class="text-sm md:text-base opacity-90">
+                        Total Dokumen
+                    </p>
+
+                    <h2 class="text-3xl md:text-4xl font-bold mt-3">
+                        {{ metrics.total_dokumen ?? 0 }}
+                    </h2>
                 </div>
             </div>
 
-            <div class="bg-white p-6 rounded-xl shadow">
-                <h2 class="font-semibold mb-4">Kategori Kerjasama</h2>
-                <div v-if="kategori_kerjasama.length > 0">
-                    <canvas id="categoryChart"></canvas>
+            <!-- CHARTS -->
+            <div
+                class="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-6 mt-6 items-start"
+            >
+
+                <!-- BAR CHART -->
+                <div
+                    class="bg-white p-4 md:p-6 rounded-2xl shadow-sm overflow-hidden"
+                >
+                    <h2
+                        class="font-semibold text-gray-800 text-base md:text-lg mb-4"
+                    >
+                        Jumlah Kerjasama per Tahun
+                    </h2>
+
+                    <div
+                        v-if="kerjasama_per_tahun.length > 0"
+                        class="relative h-[260px] sm:h-[300px] md:h-[360px]"
+                    >
+                        <canvas
+                            ref="barChartRef"
+                            class="!w-full !h-full"
+                        ></canvas>
+                    </div>
+
+                    <div
+                        v-else
+                        class="flex items-center justify-center h-[260px] sm:h-[300px] md:h-[360px] text-gray-400"
+                    >
+                        <p>Tidak ada data kerjasama</p>
+                    </div>
                 </div>
-                <div v-else class="flex items-center justify-center h-64 text-gray-400">
-                    <p>Tidak ada data kategori</p>
+
+                <!-- PIE CHART -->
+                <div
+                    class="bg-white p-4 md:p-6 rounded-2xl shadow-sm overflow-hidden"
+                >
+                    <h2
+                        class="font-semibold text-gray-800 text-base md:text-lg mb-4"
+                    >
+                        Kategori Kerjasama
+                    </h2>
+
+                    <div
+                        v-if="kategori_kerjasama.length > 0"
+                    >
+
+                        <!-- PIE -->
+                        <div
+                            class="h-[300px] md:h-[380px]"
+                        >
+                            <canvas ref="categoryChartRef"></canvas>
+                        </div>
+
+                        <!-- LEGEND LIST -->
+                        <div
+                            class="mt-5 grid grid-cols-1 gap-3"
+                        >
+                            <div
+                                v-for="(item, index) in kategori_kerjasama"
+                                :key="index"
+                                class="flex items-start gap-3 p-3 rounded-xl bg-gray-50"
+                            >
+
+                                <!-- COLOR -->
+                                <div
+                                    class="w-4 h-4 rounded-full mt-1 shrink-0"
+                                    :style="{
+                                        backgroundColor: pieColors[index]
+                                    }"
+                                ></div>
+
+                                <!-- TEXT -->
+                                <div class="min-w-0 flex-1">
+
+                                    <p
+                                        class="text-sm font-medium text-gray-800 break-words"
+                                    >
+                                        {{ item.kategori }}
+                                    </p>
+
+                                    <p
+                                        class="text-xs text-gray-500 mt-1"
+                                    >
+                                        {{ item.total }} kerjasama
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div
+                        v-else
+                        class="flex items-center justify-center h-[320px] md:h-[380px] text-gray-400"
+                    >
+                        <p>Tidak ada data kategori</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -59,19 +187,29 @@
 </template>
 
 <script setup>
-import { onMounted } from "vue";
+import {
+    onMounted,
+    onUnmounted,
+    ref,
+} from "vue";
+
 import Chart from "chart.js/auto";
+
 import AdminLayout from "@/Layouts/AdminLayout.vue";
+
+const MOBILE_BREAKPOINT = 768;
 
 const props = defineProps({
     metrics: {
         type: Object,
         default: () => ({}),
     },
+
     kerjasama_per_tahun: {
         type: Array,
         default: () => [],
     },
+
     kategori_kerjasama: {
         type: Array,
         default: () => [],
@@ -80,143 +218,276 @@ const props = defineProps({
 
 const metrics = props.metrics ?? {};
 
-onMounted(() => {
-    // Gunakan data real dari backend, tidak ada dummy fallback
-    const kerjasamaTahun = props.kerjasama_per_tahun || [];
-    const kategoriKerjasama = props.kategori_kerjasama || [];
+const barChartRef = ref(null);
+const categoryChartRef = ref(null);
 
-    // Hanya render chart jika ada data
-    if (kerjasamaTahun.length > 0) {
-        // Chart 1: Kerjasama per Tahun (Bar Chart)
-        new Chart(document.getElementById("barChart"), {
-            type: "bar",
-            data: {
-                labels: kerjasamaTahun.map((row) => row.tahun),
-                datasets: [
-                    {
-                        label: "Jumlah Kerjasama",
-                        data: kerjasamaTahun.map((row) => row.total),
-                        backgroundColor: "rgba(54, 162, 235, 0.7)",
-                        borderColor: "rgba(54, 162, 235, 1)",
-                        borderWidth: 1,
+let barChartInstance = null;
+let categoryChartInstance = null;
+
+let resizeHandler = null;
+let resizeRafId = null;
+
+const pieColors = [
+    "rgba(20, 184, 166, 0.9)",
+    "rgba(45, 212, 191, 0.9)",
+    "rgba(59, 130, 246, 0.9)",
+    "rgba(96, 165, 250, 0.9)",
+    "rgba(168, 85, 247, 0.9)",
+    "rgba(236, 72, 153, 0.9)",
+];
+
+onMounted(() => {
+
+    const kerjasamaTahun =
+        props.kerjasama_per_tahun || [];
+
+    const kategoriKerjasama =
+        props.kategori_kerjasama || [];
+
+    const isMobileViewport = () =>
+        typeof window !== "undefined" &&
+        window.innerWidth < MOBILE_BREAKPOINT;
+
+    // BAR CHART
+    if (
+        kerjasamaTahun.length > 0 &&
+        barChartRef.value
+    ) {
+
+        barChartInstance = new Chart(
+            barChartRef.value,
+            {
+                type: "bar",
+
+                data: {
+                    labels: kerjasamaTahun.map(
+                        row => row.tahun
+                    ),
+
+                    datasets: [
+                        {
+                            label: "Jumlah Kerjasama",
+
+                            data: kerjasamaTahun.map(
+                                row => row.total
+                            ),
+
+                            backgroundColor:
+                                "rgba(54, 162, 235, 0.7)",
+
+                            borderColor:
+                                "rgba(54, 162, 235, 1)",
+
+                            borderWidth: 1,
+
+                            borderRadius: 8,
+                        },
+                    ],
+                },
+
+                options: {
+                    responsive: true,
+
+                    maintainAspectRatio: false,
+
+                    plugins: {
+                        legend: {
+                            display: false,
+                        },
                     },
-                ],
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: { stepSize: 1 },
+
+                    scales: {
+                        x: {
+                            ticks: {
+                                maxRotation: isMobileViewport()
+                                    ? 40
+                                    : 0,
+
+                                minRotation: isMobileViewport()
+                                    ? 30
+                                    : 0,
+
+                                autoSkip: true,
+
+                                color: "#6B7280",
+                            },
+
+                            grid: {
+                                display: false,
+                            },
+                        },
+
+                        y: {
+                            beginAtZero: true,
+
+                            ticks: {
+                                stepSize: 1,
+                                precision: 0,
+                                color: "#6B7280",
+                            },
+
+                            grid: {
+                                color: "rgba(0,0,0,0.05)",
+                            },
+                        },
                     },
                 },
-            },
-        });
+            }
+        );
     }
 
-    // Hanya render chart jika ada data
-    if (kategoriKerjasama.length > 0) {
-        // Hitung total untuk persentase
-        const totalKategori = kategoriKerjasama.reduce((sum, row) => sum + row.total, 0) || 1;
+    // PIE CHART
+    if (
+        kategoriKerjasama.length > 0 &&
+        categoryChartRef.value
+    ) {
 
-        // Helper untuk format persentase agar konsisten
-        const formatPercentage = (value) => Math.round((value / totalKategori) * 100) + '%';
+        categoryChartInstance = new Chart(
+            categoryChartRef.value,
+            {
+                type: "pie",
 
-        // Chart 2: Kategori Kerjasama (Pie Chart)
-        new Chart(document.getElementById("categoryChart"), {
-            type: "pie",
-            data: {
-                labels: kategoriKerjasama.map((row) => row.kategori),
-                datasets: [
-                    {
-                        data: kategoriKerjasama.map((row) => row.total),
-                        backgroundColor: [
-                            "rgba(20, 184, 166, 0.8)",   // KSDD
-                            "rgba(45, 212, 191, 0.8)",   // KSDPK
-                            "rgba(59, 130, 246, 0.8)",   // NK/RK
-                            "rgba(96, 165, 250, 0.8)",   // PERTEK
-                            "rgba(168, 85, 247, 0.8)",   // KSDPL
-                            "rgba(236, 72, 153, 0.8)",   // KSDLL
-                        ],
-                        borderColor: [
-                            "rgba(20, 184, 166, 1)",
-                            "rgba(45, 212, 191, 1)",
-                            "rgba(59, 130, 246, 1)",
-                            "rgba(96, 165, 250, 1)",
-                            "rgba(168, 85, 247, 1)",
-                            "rgba(236, 72, 153, 1)",
-                        ],
-                        borderWidth: 2,
+                data: {
+                    labels: kategoriKerjasama.map(
+                        row => row.kategori
+                    ),
+
+                    datasets: [
+                        {
+                            data: kategoriKerjasama.map(
+                                row => row.total
+                            ),
+
+                            backgroundColor: pieColors,
+
+                            borderWidth: 2,
+
+                            borderColor: "#ffffff",
+                        },
+                    ],
+                },
+
+                options: {
+                    responsive: true,
+
+                    maintainAspectRatio: false,
+
+                    radius: isMobileViewport()
+                        ? "80%"
+                        : "88%",
+
+                    layout: {
+                        padding: isMobileViewport()
+                            ? 8
+                            : 16,
                     },
-                ],
-            },
-            options: {
-                responsive: true,
-                radius: '65%',
-                layout: {
-                    padding: {
-                        top: 50,
-                        right: 40,
-                        bottom: 40,
-                        left: 40
-                    }
-                },
-                plugins: {
-                    legend: {
-                        display: false,
+
+                    plugins: {
+
+                        // HIDE DEFAULT LEGEND
+                        legend: {
+                            display: false,
+                        },
+
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) {
+
+                                    const total =
+                                        context.dataset.data.reduce(
+                                            (a, b) => a + b,
+                                            0
+                                        );
+
+                                    const percentage =
+                                        Math.round(
+                                            (
+                                                context.parsed /
+                                                total
+                                            ) * 100
+                                        );
+
+                                    return ` ${context.label}: ${context.parsed} (${percentage}%)`;
+                                },
+                            },
+                        },
                     },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                return ` ${context.label}: ${formatPercentage(context.parsed)}`;
-                            }
-                        }
-                    }
                 },
-            },
-            plugins: [{
-                id: 'externalLabels',
-                afterDraw: (chart) => {
-                    const ctx = chart.ctx;
-                    const chartArea = chart.chartArea;
-                    const centerX = (chartArea.left + chartArea.right) / 2;
-                    const centerY = (chartArea.top + chartArea.bottom) / 2;
-                    const radius = Math.min(chartArea.right - chartArea.left, chartArea.bottom - chartArea.top) / 2.5;
-                    
-                    const abbreviations = ['KSDD', 'KSDPK', 'NK/RK', 'PERTEK', 'KSDPL', 'KSDLL'];
-                    
-                    chart.data.datasets[0].data.forEach((value, index) => {
-                        const percentage = formatPercentage(value);
-                        const abbr = abbreviations[index] || '';
-                        const color = chart.data.datasets[0].backgroundColor[index];
-                        
-                        const meta = chart._metasets[0];
-                        const startAngle = meta.data[index].startAngle;
-                        const endAngle = meta.data[index].endAngle;
-                        const midAngle = (startAngle + endAngle) / 2;
-                        
-                        const labelRadius = radius + 25;
-                        const x = centerX + Math.cos(midAngle) * labelRadius;
-                        const y = centerY + Math.sin(midAngle) * labelRadius;
-                        
-                        ctx.save();
-                        
-                        // Kotak warna
-                        ctx.fillStyle = color;
-                        ctx.fillRect(x - 45, y - 6, 10, 10);
-                        
-                        // Teks
-                        ctx.font = 'bold 11px Arial';
-                        ctx.fillStyle = '#333';
-                        ctx.textAlign = 'left';
-                        ctx.textBaseline = 'middle';
-                        ctx.fillText(`${abbr} ${percentage}`, x - 30, y);
-                        
-                        ctx.restore();
-                    });
-                },
-            }],
-        });
+            }
+        );
+    }
+
+    // RESIZE
+    resizeHandler = () => {
+
+        if (resizeRafId) {
+            cancelAnimationFrame(
+                resizeRafId
+            );
+        }
+
+        resizeRafId =
+            requestAnimationFrame(() => {
+
+                if (barChartInstance) {
+                    barChartInstance.resize();
+                }
+
+                if (categoryChartInstance) {
+                    categoryChartInstance.resize();
+                }
+
+                resizeRafId = null;
+            });
+    };
+
+    window.addEventListener(
+        "resize",
+        resizeHandler
+    );
+});
+
+onUnmounted(() => {
+
+    if (resizeHandler) {
+
+        window.removeEventListener(
+            "resize",
+            resizeHandler
+        );
+    }
+
+    if (resizeRafId) {
+
+        cancelAnimationFrame(
+            resizeRafId
+        );
+
+        resizeRafId = null;
+    }
+
+    if (barChartInstance) {
+
+        barChartInstance.destroy();
+
+        barChartInstance = null;
+    }
+
+    if (categoryChartInstance) {
+
+        categoryChartInstance.destroy();
+
+        categoryChartInstance = null;
     }
 });
 </script>
+
+<style scoped>
+canvas {
+    max-width: 100% !important;
+}
+
+* {
+    word-break: break-word;
+}
+</style>

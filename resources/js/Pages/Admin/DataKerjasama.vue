@@ -330,7 +330,7 @@
 
           <div>
             <label class="block text-xs font-medium text-gray-600 mb-1">Upload Dokumen (PDF)</label>
-            
+
             <!-- Tampilkan file yang sudah ada jika proses read-only -->
             <div v-if="isProcessReadOnly && activeProcess?.file" class="mb-3 p-3 bg-blue-50 border border-blue-100 rounded-lg">
               <p class="text-xs text-blue-700 font-medium mb-1">✓ File Tersimpan:</p>
