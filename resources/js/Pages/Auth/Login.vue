@@ -39,7 +39,9 @@
 
                     <!-- EMAIL / USERNAME -->
                     <div>
-                        <p class="text-center mb-2 font-semibold text-xl">Email/Username</p>
+                        <p class="text-center mb-2 font-semibold text-xl">
+                            Email/Username <span class="text-red-400">*</span>
+                        </p>
                         <input
                             type="text"
                             v-model="form.login"
@@ -53,7 +55,9 @@
 
                     <!-- PASSWORD -->
                     <div class="relative">
-                        <p class="text-center mb-2 font-semibold text-xl">Password</p>
+                        <p class="text-center mb-2 font-semibold text-xl">
+                            Password <span class="text-red-400">*</span>
+                        </p>
                         <input
                             :type="showPassword ? 'text' : 'password'"
                             v-model="form.password"
@@ -135,6 +139,7 @@
 <script setup>
 import { useForm, router, Head, usePage } from "@inertiajs/vue3"
 import { ref, computed, onMounted } from "vue"
+import Swal from "sweetalert2"
 
 const page = usePage()
 
@@ -170,6 +175,30 @@ const submit = () => {
 
     form.post(typeof route !== 'undefined' ? route('login') : '/login', {
         onError: () => {
+            const priorityKeys = ['captcha', 'login', 'password']
+            const collected = []
+
+            priorityKeys.forEach((key) => {
+                const value = form.errors[key]
+                if (value && !collected.includes(value)) collected.push(value)
+            })
+
+            Object.entries(form.errors).forEach(([key, value]) => {
+                if (!priorityKeys.includes(key) && value && !collected.includes(value)) {
+                    collected.push(value)
+                }
+            })
+
+            if (collected.length > 0) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Login Gagal',
+                    html: `<div style="text-align:center">${collected.map((err) => `${err}`).join('<br>')}</div>`,
+                    confirmButtonText: 'OK',
+                    confirmButtonColor: '#0d9488',
+                })
+            }
+
             // Reset widget reCAPTCHA jika login gagal
             window.grecaptcha?.reset?.()
         },

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Mitra;
 
+use App\Enums\UrusanEnum;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Mitra\StoreKerjasamaRequest;
 use App\Models\Admin;
@@ -121,6 +122,7 @@ class KerjasamaController extends Controller
             ] : null,
             'kategoris' => $kategoris,
             'jenisDokumen' => $jenisDokumen,
+            'urusanOptions' => UrusanEnum::cases(),
         ]);
     }
 

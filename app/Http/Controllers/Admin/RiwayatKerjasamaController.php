@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\UrusanEnum;
 use App\Exports\RiwayatKerjasamaExport;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreKerjasamaPemerintahRequest;
@@ -15,6 +16,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
@@ -38,12 +40,37 @@ class RiwayatKerjasamaController extends Controller
 
         $this->applyFilters($query, $request);
 
-        $kerjasama = $query->orderBy('id_kerjasama', 'asc')
-            ->paginate(10)
-            ->withQueryString();
-
-        $offset = ($kerjasama->currentPage() - 1) * $kerjasama->perPage();
-        $kerjasama->getCollection()->transform(fn ($k, $i) => $this->formatRow($k, $offset + $i));
+        $perPage = $request->input('per_page', 10);
+        
+        // Jika per_page besar (mode show all), gunakan get() untuk menampilkan semua
+        if ($perPage >= 5000) {
+            $collection = $query->orderBy('id_kerjasama', 'asc')->get();
+            $items = [];
+            foreach ($collection as $i => $k) {
+                $items[] = $this->formatRow($k, $i);
+            }
+            $total = count($items);
+            
+            // Format sebagai pagination object dengan last_page = 1
+            $kerjasama = new \Illuminate\Pagination\LengthAwarePaginator(
+                $items,
+                $total, // total items
+                $total, // per_page = total (sehingga last_page = 1)
+                1, // current page
+                [
+                    'path' => $request->url(),
+                    'query' => $request->query(),
+                    'fragment' => null,
+                ]
+            );
+        } else {
+            $kerjasama = $query->orderBy('id_kerjasama', 'asc')
+                ->paginate($perPage)
+                ->withQueryString();
+            
+            $offset = ($kerjasama->currentPage() - 1) * $kerjasama->perPage();
+            $kerjasama->getCollection()->transform(fn ($k, $i) => $this->formatRow($k, $offset + $i));
+        }
 
         return Inertia::render('Admin/RiwayatKerjasama/Gabungan', [
             'data' => $kerjasama,
@@ -56,6 +83,7 @@ class RiwayatKerjasamaController extends Controller
             'mitras' => $this->mitraOptions(),
             'jenisKerjasamaOptions' => $this->jenisKerjasamaOptions(),
             'jenisDokumenOptions' => $this->jenisDokumenOptions(),
+            'urusanOptions' => $this->urusanOptions(),
         ]);
     }
 
@@ -74,12 +102,37 @@ class RiwayatKerjasamaController extends Controller
 
         $this->applyFilters($query, $request);
 
-        $kerjasama = $query->orderBy('id_kerjasama', 'asc')
-            ->paginate(10)
-            ->withQueryString();
-
-        $offset = ($kerjasama->currentPage() - 1) * $kerjasama->perPage();
-        $kerjasama->getCollection()->transform(fn ($k, $i) => $this->formatRow($k, $offset + $i));
+        $perPage = $request->input('per_page', 10);
+        
+        // Jika per_page besar (mode show all), gunakan get() untuk menampilkan semua
+        if ($perPage >= 5000) {
+            $collection = $query->orderBy('id_kerjasama', 'asc')->get();
+            $items = [];
+            foreach ($collection as $i => $k) {
+                $items[] = $this->formatRow($k, $i);
+            }
+            $total = count($items);
+            
+            // Format sebagai pagination object dengan last_page = 1
+            $kerjasama = new \Illuminate\Pagination\LengthAwarePaginator(
+                $items,
+                $total, // total items
+                $total, // per_page = total (sehingga last_page = 1)
+                1, // current page
+                [
+                    'path' => $request->url(),
+                    'query' => $request->query(),
+                    'fragment' => null,
+                ]
+            );
+        } else {
+            $kerjasama = $query->orderBy('id_kerjasama', 'asc')
+                ->paginate($perPage)
+                ->withQueryString();
+            
+            $offset = ($kerjasama->currentPage() - 1) * $kerjasama->perPage();
+            $kerjasama->getCollection()->transform(fn ($k, $i) => $this->formatRow($k, $offset + $i));
+        }
 
         return Inertia::render('Admin/RiwayatKerjasama/Mitra', [
             'data' => $kerjasama,
@@ -92,6 +145,7 @@ class RiwayatKerjasamaController extends Controller
             'mitras' => $this->mitraOptions(),
             'jenisKerjasamaOptions' => $this->jenisKerjasamaOptions(),
             'jenisDokumenOptions' => $this->jenisDokumenOptions(),
+            'urusanOptions' => $this->urusanOptions(),
         ]);
     }
 
@@ -104,17 +158,50 @@ class RiwayatKerjasamaController extends Controller
      */
     public function pemerintah(Request $request)
     {
+        \Log::info("🔍 PEMERINTAH REQUEST", [
+            'per_page' => $request->input('per_page'),
+            'search' => $request->input('search'),
+            'tahun' => $request->input('tahun'),
+        ]);
+        
         $query = Kerjasama::pemerintahTipe()
             ->with(['admin', 'latestPeriode', 'finalDokumen', 'kategori']);
 
         $this->applyFilters($query, $request);
 
-        $kerjasama = $query->orderBy('id_kerjasama', 'asc')
-            ->paginate(10)
-            ->withQueryString();
-
-        $offset = ($kerjasama->currentPage() - 1) * $kerjasama->perPage();
-        $kerjasama->getCollection()->transform(fn ($k, $i) => $this->formatRow($k, $offset + $i));
+        $perPage = $request->input('per_page', 10);
+        
+        \Log::info("📊 After applyFilters, perPage:", ['perPage' => $perPage]);
+        
+        // Jika per_page besar (mode show all), gunakan get() untuk menampilkan semua
+        if ($perPage >= 5000) {
+            $collection = $query->orderBy('id_kerjasama', 'asc')->get();
+            $items = [];
+            foreach ($collection as $i => $k) {
+                $items[] = $this->formatRow($k, $i);
+            }
+            $total = count($items);
+            
+            // Format sebagai pagination object dengan last_page = 1
+            $kerjasama = new \Illuminate\Pagination\LengthAwarePaginator(
+                $items,
+                $total, // total items
+                $total, // per_page = total (sehingga last_page = 1)
+                1, // current page
+                [
+                    'path' => $request->url(),
+                    'query' => $request->query(),
+                    'fragment' => null,
+                ]
+            );
+        } else {
+            $kerjasama = $query->orderBy('id_kerjasama', 'asc')
+                ->paginate($perPage)
+                ->withQueryString();
+            
+            $offset = ($kerjasama->currentPage() - 1) * $kerjasama->perPage();
+            $kerjasama->getCollection()->transform(fn ($k, $i) => $this->formatRow($k, $offset + $i));
+        }
 
         return Inertia::render('Admin/RiwayatKerjasama/Pemerintah', [
             'data' => $kerjasama,
@@ -127,6 +214,7 @@ class RiwayatKerjasamaController extends Controller
             'mitras' => $this->mitraOptions(),
             'jenisKerjasamaOptions' => $this->jenisKerjasamaOptions(),
             'jenisDokumenOptions' => $this->jenisDokumenOptions(),
+            'urusanOptions' => $this->urusanOptions(),
         ]);
     }
 
@@ -155,6 +243,11 @@ class RiwayatKerjasamaController extends Controller
             ['value' => 'KSDPL', 'label' => 'Kerjasama Daerah Dengan Pemerintah Daerah Di Luar Negeri (KSDPL)'],
             ['value' => 'KSDLL', 'label' => 'Kerjasama Daerah Dengan Lembaga Di Luar Negeri (KSDLL)'],
         ];
+    }
+
+    private function urusanOptions(): array
+    {
+        return UrusanEnum::cases();
     }
 
     private function jenisDokumenOptions(): array
@@ -238,7 +331,7 @@ class RiwayatKerjasamaController extends Controller
                 'keterangan' => $path,
             ]);
 
-            Dokumen::create([
+            $this->createDokumen([
                 'id_kerjasama' => $kerjasama->id_kerjasama,
                 'jenis_dokumen' => $kerjasama->jenis_dokumen,
                 'nama_file' => $originalFileName,
@@ -387,7 +480,7 @@ class RiwayatKerjasamaController extends Controller
 
             $dok = null;
             if ($path && $originalFileName) {
-                $dok = Dokumen::create([
+                $dok = $this->createDokumen([
                     'id_kerjasama' => $kerjasama->id_kerjasama,
                     'jenis_dokumen' => $validated['jenis_dokumen'],
                     'nama_file' => $originalFileName,
@@ -504,7 +597,7 @@ class RiwayatKerjasamaController extends Controller
 
                 $dok = null;
                 if ($path && $originalFileName) {
-                    $dok = Dokumen::create([
+                    $dok = $this->createDokumen([
                         'id_kerjasama' => $kerjasama->id_kerjasama,
                         'jenis_dokumen' => $validated['jenis_dokumen'],
                         'nama_file' => $originalFileName,
@@ -553,7 +646,7 @@ class RiwayatKerjasamaController extends Controller
                 ]);
 
                 if ($path && $originalFileName) {
-                    Dokumen::create([
+                    $this->createDokumen([
                         'id_kerjasama' => $kerjasama->id_kerjasama,
                         'jenis_dokumen' => $validated['jenis_dokumen'],
                         'nama_file' => $originalFileName,
@@ -683,7 +776,7 @@ class RiwayatKerjasamaController extends Controller
                         file: $path,
                     );
                 } else {
-                    Dokumen::create([
+                    $this->createDokumen([
                         'id_kerjasama' => $kerjasama->id_kerjasama,
                         'nama_file' => $originalFileName,
                         'lokasi_file' => $path,
@@ -805,7 +898,7 @@ class RiwayatKerjasamaController extends Controller
         $path = $file->store('dokumen-kerjasama', 'public');
         $jenisDokumen = $kerjasama->jenis_dokumen ?: ($kerjasama->finalDokumen?->jenis_dokumen ?: 'KSB');
 
-        Dokumen::create([
+        $this->createDokumen([
             'id_kerjasama' => $kerjasama->id_kerjasama,
             'jenis_dokumen' => $jenisDokumen,
             'nama_file' => $file->getClientOriginalName(),
@@ -822,6 +915,27 @@ class RiwayatKerjasamaController extends Controller
             catatan: 'Dokumen versi baru diunggah oleh admin',
             file: $path,
         );
+    }
+
+    private function createDokumen(array $attributes): Dokumen
+    {
+        $payload = [
+            'id_kerjasama' => $attributes['id_kerjasama'],
+            'nama_file' => $attributes['nama_file'],
+            'lokasi_file' => $attributes['lokasi_file'],
+            'versi_dokumen' => $attributes['versi_dokumen'] ?? 1,
+            'created_by' => $attributes['created_by'],
+        ];
+
+        if (Schema::hasColumn('dokumen', 'jenis_dokumen') && array_key_exists('jenis_dokumen', $attributes)) {
+            $payload['jenis_dokumen'] = $attributes['jenis_dokumen'];
+        }
+
+        if (Schema::hasColumn('dokumen', 'tipe_dokumen') && array_key_exists('tipe_dokumen', $attributes)) {
+            $payload['tipe_dokumen'] = $attributes['tipe_dokumen'];
+        }
+
+        return Dokumen::create($payload);
     }
 
     private function applyFilters($query, Request $request): void

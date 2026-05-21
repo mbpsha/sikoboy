@@ -7,37 +7,11 @@
         <!-- TOP -->
         <div class="overflow-y-auto flex-1">
             <!-- LOGO -->
-            <div :class="isCollapsed ? 'px-2 pt-4 pb-3' : 'px-6 pt-6 pb-4'">
-                <div class="flex items-center" :class="isCollapsed ? 'justify-center' : 'justify-between'">
-                    <div v-if="!isCollapsed">
-                        <div class="text-3xl font-extrabold tracking-widest">
-                            SIKOBOY
-                        </div>
-                        <p class="text-xs text-teal-100 mt-1">Admin Dashboard</p>
-                    </div>
-                    <button
-                        type="button"
-                        class="rounded-lg p-2 hover:bg-teal-700/40 transition"
-                        @click="isCollapsed = !isCollapsed"
-                        :title="isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'"
-                    >
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            class="w-6 h-6 transition-transform"
-                            :class="isCollapsed ? 'rotate-180' : ''"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            stroke-width="1.8"
-                        >
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                d="M11 5l-7 7 7 7M20 5v14"
-                            />
-                        </svg>
-                    </button>
+            <div class="px-6 pt-6 pb-4">
+                <div class="text-3xl font-extrabold tracking-widest">
+                    SIKERSA
                 </div>
+                <p class="text-xs text-teal-100 mt-1">Admin Dashboard</p>
                 <div class="mt-4 border-t border-teal-700"></div>
             </div>
 

@@ -18,7 +18,19 @@ return new class extends Migration
             $table->unsignedBigInteger('id_kategori');
             $table->string('judul');
             $table->string('nomor_surat');
-            $table->string('urusan');
+            $table->enum('urusan', [
+                'SEMUA URUSAN',
+                'PENDIDIKAN',
+                'KESEHATAN',
+                'PEKERJAAN UMUM DAN PENATAAN RUANG',
+                'PERUMAHAN RAKYAT DAN KAWASAN PERMUKIMAN',
+                'KETENTRAMAN, KETERTIBAN UMUM DAN PERLINDUNGAN MASYARAKAT',
+                'SOSIAL',
+                'TENAGA KERJA',
+                'PEMBERDAYAAN PEREMPUAN DAN PERLINDUNGAN ANAK',
+                'PANGAN',
+                'PERTANAHAN',
+            ]);
             $table->string('daerah');
             $table->string('status_aktif');
             $table->timestamp('created_at')->useCurrent();

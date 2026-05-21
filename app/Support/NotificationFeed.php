@@ -35,11 +35,13 @@ class NotificationFeed
                 $nomor = $row->nomor_suratM ?: $row->nomor_suratP;
                 $versiLabel = (int) $row->versi_dokumen > 1 ? 'revisi dokumen' : 'dokumen pengajuan';
                 $namaMitra = $row->nama_perusahaan ?: 'Mitra';
+                $kind = (int) $row->versi_dokumen > 1 ? 'revisi_mitra' : 'pengajuan_kerjasama';
                 $title = $namaMitra.' mengunggah '.$versiLabel;
 
                 return [
                     'id' => 'admin-upload-'.$row->id_dokumen,
                     'type' => 'MITRA',
+                    'kind' => $kind,
                     'title' => $title,
                     'description' => 'File '.$row->nama_file.' untuk kerjasama '.$row->judul.' telah diunggah oleh mitra.',
                     'nomor' => $nomor,

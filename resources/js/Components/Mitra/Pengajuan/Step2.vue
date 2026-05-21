@@ -10,6 +10,7 @@ const props = defineProps({
   step1Data: Object,
   kategoris: Array,
   jenisDokumen: Array,
+  urusanOptions: Array,
 });
 
 const form = useForm({
@@ -204,17 +205,13 @@ const submit = () => {
                       class="w-full px-4 sm:px-5 py-2 sm:py-3 bg-gray-50 border border-gray-200 rounded-lg sm:rounded-xl text-xs sm:text-sm focus:ring-2 focus:ring-[#17464E]/20 outline-none transition-all"
                     >
                       <option value="">Pilih urusan</option>
-                      <option value="SEMUA URUSAN">SEMUA URUSAN</option>
-                      <option value="PENDIDIKAN">PENDIDIKAN</option>
-                      <option value="KESEHATAN">KESEHATAN</option>
-                      <option value="PEKERJAAN UMUM DAN PENATAAN RUANG">PEKERJAAN UMUM DAN PENATAAN RUANG</option>
-                      <option value="PERUMAHAN RAKYAT DAN KAWASAN PERMUKIMAN">PERUMAHAN RAKYAT DAN KAWASAN PERMUKIMAN</option>
-                      <option value="KETANTRAMAN, KETERTIBAN UMUM DAN PERLINDUNGAN MASYARAKAT">KETANTRAMAN, KETERTIBAN UMUM DAN PERLINDUNGAN MASYARAKAT</option>
-                      <option value="SOSIAL">SOSIAL</option>
-                      <option value="TENAGA KERJA">TENAGA KERJA</option>
-                      <option value="PEMBERDAYAAN PEREMPUAN DAN PERLINDUNGAN ANAK">PEMBERDAYAAN PEREMPUAN DAN PERLINDUNGAN ANAK</option>
-                      <option value="PANGAN">PANGAN</option>
-                      <option value="PERTANAHAN">PERTANAHAN</option>
+                      <option
+                        v-for="urusan in props.urusanOptions"
+                        :key="urusan"
+                        :value="urusan"
+                      >
+                        {{ urusan }}
+                      </option>
                     </select>
                     <p v-if="form.errors.urusan" class="text-red-500 text-xs mt-1">{{ form.errors.urusan }}</p>
                   </div>

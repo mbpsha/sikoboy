@@ -1,6 +1,5 @@
 <script setup>
 import { ref, watch } from 'vue'
-import Swal from 'sweetalert2'
 
 const props = defineProps({
   isOpen:        { type: Boolean, default: false },
@@ -13,41 +12,6 @@ defineEmits(['close'])
 
 const progressItems = ref([])
 watch(() => props.items, (v) => { progressItems.value = v || [] }, { immediate: true })
-
-// File input & state per item index
-const selectedFiles  = ref({})
-const isUploading    = ref({})
-const fileInputRefs  = ref({})
-
-const setFileRef = (el, idx) => { if (el) fileInputRefs.value[idx] = el }
-
-const handleFileSelect = (e, idx) => {
-  const file = e.target.files?.[0]
-  if (file) selectedFiles.value = { ...selectedFiles.value, [idx]: file }
-}
-
-const doUpload = async (idx) => {
-  const file = selectedFiles.value[idx]
-  if (!file || !props.kerjasamaId) return
-
-  isUploading.value = { ...isUploading.value, [idx]: true }
-  try {
-    const fd    = new FormData()
-    fd.append('file', file)
-    const token = document.querySelector('meta[name="csrf-token"]')?.content ?? ''
-    const res   = await fetch(`/mitra/kerjasama/${props.kerjasamaId}/revisi`, {
-      method: 'POST', body: fd, credentials: 'same-origin',
-      headers: token ? { 'X-CSRF-TOKEN': token } : {},
-    })
-    if (!res.ok) throw new Error()
-    await Swal.fire({ icon: 'success', title: 'Berhasil!', text: 'Dokumen revisi berhasil diupload.', timer: 2000, showConfirmButton: false })
-    window.location.reload()
-  } catch {
-    Swal.fire({ icon: 'error', title: 'Gagal', text: 'Gagal upload. Coba lagi.' })
-  } finally {
-    isUploading.value = { ...isUploading.value, [idx]: false }
-  }
-}
 
 const getIcon = (item) => {
   const t = (item.title || '').toLowerCase()
@@ -97,13 +61,6 @@ const getIcon = (item) => {
 
           <div v-for="(item, idx) in progressItems" :key="item.id ?? idx" class="relative flex gap-4 mb-4 last:mb-0">
 
-            <!-- Hidden file input per item -->
-            <input
-              :ref="el => setFileRef(el, idx)"
-              type="file" accept=".pdf" class="hidden"
-              @change="(e) => handleFileSelect(e, idx)"
-            />
-
             <!-- Dot — selalu ceklis hijau kecuali ada kondisi khusus -->
             <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0 z-10 shadow-sm"
               :class="getIcon(item).bg">
@@ -133,75 +90,15 @@ const getIcon = (item) => {
                   </p>
                 </div>
 
-                <!-- File dari admin — selalu tampil jika ada, tidak bisa hilang -->
-                <div v-if="item.file">
-                  <p class="text-[10px] font-semibold text-gray-400 uppercase mb-1">File Revisi</p>
+                <div v-if="item.file" class="pt-2 border-t border-gray-100">
+                  <p class="text-[10px] font-semibold text-gray-500 uppercase mb-1">Lampiran Dokumen</p>
                   <a :href="'/storage/' + item.file" target="_blank"
                     class="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-50 border border-blue-100 rounded-lg text-xs text-blue-700 font-medium hover:bg-blue-100 transition">
                     <svg class="w-3.5 h-3.5 shrink-0" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/>
                     </svg>
                     <span class="truncate max-w-[180px]">{{ item.file.split('/').pop() }}</span>
-                    <span class="text-blue-400 text-[10px] font-bold shrink-0">Download</span>
                   </a>
-                </div>
-
-                <!-- Upload dokumen mitra — HANYA muncul jika admin sudah upload file di item ini -->
-                <div v-if="item.file" class="pt-2 border-t border-gray-100">
-                  <p class="text-[10px] font-semibold text-gray-500 uppercase mb-1">
-                    Upload Dokumen Revisi dari Mitra
-                  </p>
-                  <p class="text-[10px] text-gray-400 mb-2">
-                    Selesai pada {{ item.file_mitra ? item.tanggal : '-' }}
-                  </p>
-
-                  <!-- Sudah upload — tampil nama file, tidak bisa upload lagi -->
-                  <div v-if="item.file_mitra"
-                    class="flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-100 rounded-lg">
-                    <svg class="w-4 h-4 text-green-600 shrink-0" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
-                    </svg>
-                    <span class="text-xs text-green-700 font-medium flex-1 truncate">
-                      {{ item.file_mitra.split('/').pop() }}
-                    </span>
-                    <a :href="'/storage/' + item.file_mitra" target="_blank"
-                      class="text-green-600 text-[10px] font-bold hover:underline shrink-0">Lihat</a>
-                  </div>
-
-                  <!-- Belum upload -->
-                  <div v-else>
-                    <!-- File sudah dipilih -->
-                    <div v-if="selectedFiles[idx]"
-                      class="flex items-center gap-2 mb-2 px-3 py-1.5 bg-green-50 border border-green-100 rounded-lg">
-                      <svg class="w-3.5 h-3.5 text-green-600 shrink-0" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/>
-                      </svg>
-                      <span class="text-xs text-green-700 font-medium flex-1 truncate">{{ selectedFiles[idx].name }}</span>
-                      <button @click="delete selectedFiles[idx]" class="text-red-400 hover:text-red-600 text-[10px] font-bold shrink-0">✕</button>
-                    </div>
-
-                    <!-- Belum pilih file -->
-                    <div v-else @click="fileInputRefs[idx]?.click()"
-                      class="flex items-center gap-3 px-3 py-2.5 bg-gray-100 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-200 transition mb-2">
-                      <svg class="w-5 h-5 text-gray-500 shrink-0" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/>
-                      </svg>
-                      <span class="text-xs text-gray-500 font-medium">Pilih File (*PDF)</span>
-                    </div>
-
-                    <div class="flex gap-2">
-                      <button v-if="selectedFiles[idx]" @click="fileInputRefs[idx]?.click()"
-                        class="px-3 py-1.5 text-xs border border-gray-200 text-gray-600 bg-white rounded-lg hover:bg-gray-50 transition">
-                        Ganti File
-                      </button>
-                      <button @click="doUpload(idx)"
-                        :disabled="!selectedFiles[idx] || isUploading[idx]"
-                        class="flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:opacity-40 disabled:cursor-not-allowed transition">
-                        <span v-if="isUploading[idx]" class="animate-spin inline-block w-3 h-3 border border-white border-t-transparent rounded-full"></span>
-                        {{ isUploading[idx] ? 'Mengirim...' : 'Upload Sekarang' }}
-                      </button>
-                    </div>
-                  </div>
                 </div>
 
               </div>

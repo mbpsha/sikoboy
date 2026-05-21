@@ -23,6 +23,7 @@ const props = defineProps({
     mitras: Array,
     jenisKerjasamaOptions: Array,
     jenisDokumenOptions: Array,
+    urusanOptions: Array,
 });
 
 const search = ref(props.filters?.search || "");
@@ -36,59 +37,65 @@ const selectedKerjasama = ref(null);
 const openStatusDropdown = ref(null);
 const openFilterColumn = ref(null);
 
-const filter = () => {
-    console.log("🔍 PEMERINTAH FILTER CALLED - search:", search.value, "tahun:", tahun.value);
-    router.get(
-        route("admin.riwayat-kerjasama.pemerintah"),
-        {
-            search: search.value,
-            tahun: tahun.value,
-        },
-        {
-            preserveState: false,
-            preserveScroll: false
-        },
-    );
-};
+// Computed untuk detect apakah ada filter aktif (cek dari props yang terupdate)
+const hasActiveFilter = computed(() => {
+    const searchVal = (props.filters?.search || "").trim();
+    const tahunVal = (props.filters?.tahun || "");
+    const hasFormFilter = searchVal !== "" || tahunVal !== "";
+    
+    // Check column filters
+    const hasColumnFilterActive = Object.values(columnFilters.value).some(arr => arr.length > 0);
+    
+    const isActive = hasFormFilter || hasColumnFilterActive;
+    return isActive;
+});
+
+
 
 const applyFilters = () => {
     console.log("✅ PEMERINTAH APPLY FILTERS - search:", search.value, "tahun:", tahun.value);
+    // Auto-detect: jika ada filter, show all; jika tidak ada filter, paginasi normal
+    const hasFilter = search.value.trim() !== "" || tahun.value !== "";
+    const perPage = hasFilter ? 10000 : 10;
+    
     router.get(
         route("admin.riwayat-kerjasama.pemerintah"),
         {
             search: search.value,
             tahun: tahun.value,
+            page: 1,
+            per_page: perPage,
         },
-        { preserveState: true },
+        { preserveState: false },
     );
 };
 
 const resetAllFilters = () => {
     search.value = "";
     tahun.value = "";
-    applyFilters();
+    router.get(
+        route("admin.riwayat-kerjasama.pemerintah"),
+        {
+            search: "",
+            tahun: "",
+            page: 1,
+            per_page: 10, // Kembali ke paginasi normal
+        },
+        { preserveState: true },
+    );
 };
 
-const buildExportParams = () => ({
-    search: search.value || undefined,
-    tahun: tahun.value || undefined,
-    tahun_column: columnFilters.value.tahun.length ? columnFilters.value.tahun : undefined,
-    tipe: columnFilters.value.tipe.length ? columnFilters.value.tipe : undefined,
-    mitra: columnFilters.value.mitra.length ? columnFilters.value.mitra : undefined,
-    jenis_kerjasama: columnFilters.value.jenis_kerjasama.length ? columnFilters.value.jenis_kerjasama : undefined,
-    status: columnFilters.value.status.length ? columnFilters.value.status : undefined,
-});
-
-const exportSpreadsheet = () => {
-    window.location.href = route("admin.riwayat-kerjasama.pemerintah.export", buildExportParams());
-};
-
-// Watch search with debounce
+// Watch search dengan debounce
 watch(search, () => {
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => {
         applyFilters();
     }, 500);
+});
+
+// Watch tahun (tidak perlu debounce, langsung apply)
+watch(tahun, () => {
+    applyFilters();
 });
 
 // =========================
@@ -101,6 +108,55 @@ const columnFilters = ref({
     jenis_kerjasama: [],
     status: [],
 });
+
+// Helper function untuk update column filter dengan immutable approach
+const toggleColumnFilter = (filterKey, value) => {
+    console.log("🔄 Toggle column filter:", filterKey, value);
+    if (columnFilters.value[filterKey].includes(value)) {
+        columnFilters.value[filterKey] = columnFilters.value[filterKey].filter(v => v !== value);
+    } else {
+        columnFilters.value[filterKey] = [...columnFilters.value[filterKey], value];
+    }
+    console.log("✅ After toggle:", filterKey, columnFilters.value[filterKey]);
+    
+    // LOAD DATA IMMEDIATELY
+    const hasActive = Object.values(columnFilters.value).some(arr => arr.length > 0);
+    const perPage = hasActive ? 10000 : 10;
+    console.log("🚀 Immediate load - hasActive:", hasActive, "perPage:", perPage);
+    
+    router.get(
+        route("admin.riwayat-kerjasama.pemerintah"),
+        {
+            search: search.value,
+            tahun: tahun.value,
+            page: 1,
+            per_page: perPage,
+        },
+        { preserveState: true }
+    );
+};
+
+// Clear column filter
+const clearColumnFilter = (filterKey) => {
+    console.log("🧹 Clear column filter:", filterKey);
+    columnFilters.value[filterKey] = [];
+    
+    // Load with pagination reset
+    const hasActive = Object.values(columnFilters.value).some(arr => arr.length > 0);
+    const perPage = hasActive ? 10000 : 10;
+    console.log("🚀 After clear - hasActive:", hasActive, "perPage:", perPage);
+    
+    router.get(
+        route("admin.riwayat-kerjasama.pemerintah"),
+        {
+            search: search.value,
+            tahun: tahun.value,
+            page: 1,
+            per_page: perPage,
+        },
+        { preserveState: false }
+    );
+};
 
 const uniqueTahun = computed(() => {
     const values = (props.data?.data || []).map(item => String(item.tahun));
@@ -189,6 +245,7 @@ const goToPage = (page) => {
             search: search.value,
             tahun: tahun.value,
             page,
+            per_page: 10,
         },
         { preserveState: true, preserveScroll: true },
     );
@@ -202,8 +259,8 @@ const form = ref({
     jangka: "",
     mulai: "",
     selesai: "",
-    jenis_kerjasama: "KSDD",
-    jenis_dokumen: "KSB",
+    jenis_kerjasama: "",
+    jenis_dokumen: "",
     tipe_pengajuan: "pemerintah",
     nomor_suratM: '',
     nomor_suratP: '',
@@ -242,31 +299,51 @@ const errors = ref({});
 const adendumErrors = ref({});
 const isSubmitting = ref(false);
 
-// AUTO CALCULATE TANGGAL SELESAI
-const calculateEndDate = () => {
-  if (form.value.mulai && form.value.jangka) {
+// AUTO CALCULATE JANGKA WAKTU (dari tanggal mulai & selesai)
+const calculateJangka = () => {
+  if (form.value.mulai && form.value.selesai) {
     const startDate = new Date(form.value.mulai);
-    const years = parseInt(form.value.jangka, 10);
-
-    if (!isNaN(years)) {
-      const endDate = new Date(startDate);
-      endDate.setFullYear(endDate.getFullYear() + years);
-
-      // Format ke YYYY-MM-DD
-      const year = endDate.getFullYear();
-      const month = String(endDate.getMonth() + 1).padStart(2, '0');
-      const day = String(endDate.getDate()).padStart(2, '0');
-
-      form.value.selesai = `${year}-${month}-${day}`;
+    const endDate = new Date(form.value.selesai);
+    
+    // Ensure valid dates
+    if (isNaN(startDate) || isNaN(endDate) || startDate >= endDate) {
+      form.value.jangka = '';
+      return;
     }
+    
+    // Calculate years, months, days accurately
+    let years = endDate.getFullYear() - startDate.getFullYear();
+    let months = endDate.getMonth() - startDate.getMonth();
+    let days = endDate.getDate() - startDate.getDate();
+    
+    // Adjust for negative days
+    if (days < 0) {
+      months--;
+      const prevMonth = new Date(endDate.getFullYear(), endDate.getMonth(), 0);
+      days += prevMonth.getDate();
+    }
+    
+    // Adjust for negative months
+    if (months < 0) {
+      years--;
+      months += 12;
+    }
+    
+    // Build jangka string - only show non-zero values
+    const parts = [];
+    if (years > 0) parts.push(`${years} tahun`);
+    if (months > 0) parts.push(`${months} bulan`);
+    if (days > 0) parts.push(`${days} hari`);
+    
+    form.value.jangka = parts.join(' ') || '';
   }
 };
 
-// WATCHER untuk auto-calculate
+// WATCHER untuk auto-calculate jangka dari tanggal
 watch(
-  [() => form.value.mulai, () => form.value.jangka],
+  [() => form.value.mulai, () => form.value.selesai],
   () => {
-    calculateEndDate();
+    calculateJangka();
   }
 );
 
@@ -280,7 +357,6 @@ const validate = () => {
     if (!form.value.nomor_suratM) errors.value.nomor_suratM = "Nomor surat mitra wajib diisi";
     if (!form.value.nomor_suratP) errors.value.nomor_suratP = "Nomor surat pemerintah wajib diisi";
     if (!form.value.urusan) errors.value.urusan = "Urusan wajib diisi";
-    if (!form.value.jangka) errors.value.jangka = "Jangka waktu wajib diisi";
     if (!form.value.mulai) errors.value.mulai = "Tanggal mulai wajib diisi";
     if (!form.value.selesai)
         errors.value.selesai = "Tanggal selesai wajib diisi";
@@ -463,8 +539,8 @@ const closeModal = () => {
         jangka: "",
         mulai: "",
         selesai: "",
-        jenis_kerjasama: "KSDD",
-        jenis_dokumen: "KSB",
+        jenis_kerjasama: "",
+        jenis_dokumen: "",
         tipe_pengajuan: "pemerintah",
         nomor_suratM: '',
         nomor_suratP: '',
@@ -565,12 +641,11 @@ onBeforeUnmount(() => {
     <AdminLayout title="Riwayat Kerjasama - Boyolali">
         <div class="p-6">
             <div class="max-w-7xl mx-auto">
-                <!-- SEARCH + FILTER CARD -->
+                <!-- SEARCH -->
                 <div
                     class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100"
                 >
                     <div class="flex gap-3 items-center overflow-x-auto mb-3">
-                        <!-- SEARCH -->
                         <div
                             class="flex items-center gap-2 flex-1 min-w-[220px] rounded-full px-4 py-2.5 border border-gray-200 bg-gray-50 focus-within:border-teal-600 focus-within:ring-1 focus-within:ring-teal-600 transition"
                         >
@@ -582,10 +657,8 @@ onBeforeUnmount(() => {
                             />
                         </div>
 
-                        <!-- DROPDOWN -->
                         <select
                             v-model="tahun"
-                            @change="applyFilters"
                             class="rounded-full px-4 py-2.5 text-sm border border-gray-200 bg-gray-50 focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition min-w-[180px]"
                         >
                             <option value="">Semua Tahun</option>
@@ -593,10 +666,6 @@ onBeforeUnmount(() => {
                                 {{ y }}
                             </option>
                         </select>
-
-                        <button @click="applyFilters" class="bg-teal-700 hover:bg-teal-800 text-white text-sm px-5 py-2.5 rounded-full font-medium transition">
-                            Filter
-                        </button>
 
                         <button v-if="search || tahun" @click="resetAllFilters" class="bg-gray-300 hover:bg-gray-400 text-gray-700 text-sm px-5 py-2.5 rounded-full font-medium transition">
                             Reset
@@ -694,20 +763,14 @@ onBeforeUnmount(() => {
                                                     <input
                                                         type="checkbox"
                                                         :checked="columnFilters.tahun.includes(val)"
-                                                        @change="(e) => {
-                                                            if (e.target.checked) {
-                                                                columnFilters.tahun.push(val)
-                                                            } else {
-                                                                columnFilters.tahun = columnFilters.tahun.filter(v => v !== val)
-                                                            }
-                                                        }"
+                                                        @change="toggleColumnFilter('tahun', val)"
                                                         class="cursor-pointer"
                                                     />
                                                     <span class="text-xs">{{ val }}</span>
                                                 </label>
                                             </div>
                                             <button
-                                                @click="columnFilters.tahun = []"
+                                                @click="clearColumnFilter('tahun')"
                                                 class="w-full px-2 py-1 bg-gray-300 hover:bg-gray-400 rounded text-xs"
                                             >
                                                 Clear
@@ -735,20 +798,14 @@ onBeforeUnmount(() => {
                                                     <input
                                                         type="checkbox"
                                                         :checked="columnFilters.tipe.includes(val)"
-                                                        @change="(e) => {
-                                                            if (e.target.checked) {
-                                                                columnFilters.tipe.push(val)
-                                                            } else {
-                                                                columnFilters.tipe = columnFilters.tipe.filter(v => v !== val)
-                                                            }
-                                                        }"
+                                                        @change="toggleColumnFilter('tipe', val)"
                                                         class="cursor-pointer"
                                                     />
                                                     <span class="text-xs">{{ val }}</span>
                                                 </label>
                                             </div>
                                             <button
-                                                @click="columnFilters.tipe = []"
+                                                @click="clearColumnFilter('tipe')"
                                                 class="w-full px-2 py-1 bg-gray-300 hover:bg-gray-400 rounded text-xs"
                                             >
                                                 Clear
@@ -776,20 +833,14 @@ onBeforeUnmount(() => {
                                                     <input
                                                         type="checkbox"
                                                         :checked="columnFilters.mitra.includes(val)"
-                                                        @change="(e) => {
-                                                            if (e.target.checked) {
-                                                                columnFilters.mitra.push(val)
-                                                            } else {
-                                                                columnFilters.mitra = columnFilters.mitra.filter(v => v !== val)
-                                                            }
-                                                        }"
+                                                        @change="toggleColumnFilter('mitra', val)"
                                                         class="cursor-pointer"
                                                     />
                                                     <span class="text-xs">{{ val }}</span>
                                                 </label>
                                             </div>
                                             <button
-                                                @click="columnFilters.mitra = []"
+                                                @click="clearColumnFilter('mitra')"
                                                 class="w-full px-2 py-1 bg-gray-300 hover:bg-gray-400 rounded text-xs"
                                             >
                                                 Clear
@@ -837,20 +888,14 @@ onBeforeUnmount(() => {
                                                     <input
                                                         type="checkbox"
                                                         :checked="columnFilters.jenis_kerjasama.includes(val)"
-                                                        @change="(e) => {
-                                                            if (e.target.checked) {
-                                                                columnFilters.jenis_kerjasama.push(val)
-                                                            } else {
-                                                                columnFilters.jenis_kerjasama = columnFilters.jenis_kerjasama.filter(v => v !== val)
-                                                            }
-                                                        }"
+                                                        @change="toggleColumnFilter('jenis_kerjasama', val)"
                                                         class="cursor-pointer"
                                                     />
                                                     <span class="text-xs">{{ val }}</span>
                                                 </label>
                                             </div>
                                             <button
-                                                @click="columnFilters.jenis_kerjasama = []"
+                                                @click="clearColumnFilter('jenis_kerjasama')"
                                                 class="w-full px-2 py-1 bg-gray-300 hover:bg-gray-400 rounded text-xs"
                                             >
                                                 Clear
@@ -918,20 +963,14 @@ onBeforeUnmount(() => {
                                                     <input
                                                         type="checkbox"
                                                         :checked="columnFilters.status.includes(val)"
-                                                        @change="(e) => {
-                                                            if (e.target.checked) {
-                                                                columnFilters.status.push(val)
-                                                            } else {
-                                                                columnFilters.status = columnFilters.status.filter(v => v !== val)
-                                                            }
-                                                        }"
+                                                        @change="toggleColumnFilter('status', val)"
                                                         class="cursor-pointer"
                                                     />
                                                     <span class="text-xs">{{ val }}</span>
                                                 </label>
                                             </div>
                                             <button
-                                                @click="columnFilters.status = []"
+                                                @click="clearColumnFilter('status')"
                                                 class="w-full px-2 py-1 bg-gray-300 hover:bg-gray-400 rounded text-xs"
                                             >
                                                 Clear
@@ -1144,7 +1183,7 @@ onBeforeUnmount(() => {
                 </div>
 
                 <div
-                    v-if="(data?.last_page || 1) > 1"
+                    v-if="(data?.last_page || 1) > 1 && !hasActiveFilter"
                     class="mt-4 flex items-center justify-end gap-2"
                 >
                     <button
@@ -1314,43 +1353,6 @@ onBeforeUnmount(() => {
                         </p>
                     </div>
 
-                    <!-- Urusan -->
-                    <div>
-                        <label class="text-sm font-medium">
-                            Urusan <span class="text-red-500">*</span>
-                        </label>
-                        <textarea
-                            v-model="form.urusan"
-                            rows="3"
-                            class="w-full border rounded-lg px-3 py-2 mt-1"
-                            placeholder="Masukkan urusan kerjasama"
-                        ></textarea>
-                        <p
-                            v-if="errors.urusan"
-                            class="text-red-500 text-xs mt-1"
-                        >
-                            {{ errors.urusan }}
-                        </p>
-                    </div>
-
-                    <!-- JANGKA -->
-                    <div>
-                        <label class="text-sm font-medium">
-                            Jangka Waktu <span class="text-red-500">*</span>
-                        </label>
-                        <input
-                            v-model="form.jangka"
-                            class="w-full border rounded-lg px-3 py-2 mt-1"
-                            placeholder="Masa kerjasama"
-                        />
-                        <p
-                            v-if="errors.jangka"
-                            class="text-red-500 text-xs mt-1"
-                        >
-                            {{ errors.jangka }}
-                        </p>
-                    </div>
-
                     <!-- JENIS KERJASAMA -->
                     <div>
                         <label class="text-sm font-medium">
@@ -1360,6 +1362,7 @@ onBeforeUnmount(() => {
                             v-model="form.jenis_kerjasama"
                             class="w-full border rounded-lg px-3 py-2 mt-1"
                         >
+                            <option value="">-- Pilih Jenis Kerjasama --</option>
                             <option
                                 v-for="option in (jenisKerjasamaOptions || [])"
                                 :key="option.value"
@@ -1384,6 +1387,7 @@ onBeforeUnmount(() => {
                             v-model="form.jenis_dokumen"
                             class="w-full border rounded-lg px-3 py-2 mt-1"
                         >
+                            <option value="">-- Pilih Jenis Dokumen --</option>
                             <option
                                 v-for="option in (jenisDokumenOptions || [])"
                                 :key="option"
@@ -1458,6 +1462,12 @@ onBeforeUnmount(() => {
                         </div>
                     </div>
 
+                    <!-- JANGKA WAKTU DISPLAY (Auto-calculated from dates) -->
+                    <div v-if="form.jangka || (form.mulai && form.selesai)" class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                        <label class="text-sm font-medium text-blue-900 block mb-2">Jangka Waktu</label>
+                        <p class="text-base font-semibold text-blue-900">{{ form.jangka }}</p>
+                    </div>
+
                     <!-- PEMBIAYAAN -->
                     <div>
                         <label class="text-sm font-medium">
@@ -1467,6 +1477,7 @@ onBeforeUnmount(() => {
                             v-model="form.pembiayaan"
                             class="w-full border rounded-lg px-3 py-2 mt-1"
                         >
+                            <option value="">-- Pilih Pembiayaan --</option>
                             <option value="APBN">APBN</option>
                             <option value="APBD">APBD</option>
                             <option value="PIHAK KETIGA">PIHAK KETIGA</option>
@@ -1478,6 +1489,32 @@ onBeforeUnmount(() => {
                             class="text-red-500 text-xs mt-1"
                         >
                             {{ errors.pembiayaan }}
+                        </p>
+                    </div>
+
+                    <!-- Urusan -->
+                    <div>
+                        <label class="text-sm font-medium">
+                            Urusan <span class="text-red-500">*</span>
+                        </label>
+                        <select
+                            v-model="form.urusan"
+                            class="w-full border rounded-lg px-3 py-2 mt-1"
+                        >
+                            <option value="">-- Pilih Urusan --</option>
+                            <option
+                                v-for="urusan in props.urusanOptions"
+                                :key="urusan"
+                                :value="urusan"
+                            >
+                                {{ urusan }}
+                            </option>
+                        </select>
+                        <p
+                            v-if="errors.urusan"
+                            class="text-red-500 text-xs mt-1"
+                        >
+                            {{ errors.urusan }}
                         </p>
                     </div>
 

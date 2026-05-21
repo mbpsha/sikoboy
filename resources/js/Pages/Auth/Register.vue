@@ -50,7 +50,7 @@
                 <form @submit.prevent="submit" class="space-y-4 mr-4 ml-4">
                     <div>
                         <p class="text-center mb-2 font-semibold text-xl">
-                            Email
+                            Email <span class="text-red-400">*</span>
                         </p>
                         <input
                             type="email"
@@ -69,7 +69,7 @@
 
                     <div>
                         <p class="text-center mb-2 font-semibold text-xl">
-                            Nama Perusahaan
+                            Nama Perusahaan <span class="text-red-400">*</span>
                         </p>
                         <input
                             type="text"
@@ -88,7 +88,7 @@
 
                     <div>
                         <p class="text-center mb-2 font-semibold text-xl">
-                            Nomor Handphone
+                            Nomor Handphone <span class="text-red-400">*</span>
                         </p>
                         <input
                             type="text"
@@ -107,7 +107,7 @@
 
                     <div>
                         <p class="text-center mb-2 font-semibold text-xl">
-                            Penanggung Jawab (PIC)
+                            Penanggung Jawab (PIC) <span class="text-red-400">*</span>
                         </p>
                         <input
                             type="text"
@@ -126,7 +126,7 @@
 
                     <div>
                         <p class="text-center mb-2 font-semibold text-xl">
-                            Alamat
+                            Alamat <span class="text-red-400">*</span>
                         </p>
                         <textarea
                             v-model="form.alamat"
@@ -145,7 +145,7 @@
                     <!-- Password -->
                     <div class="relative">
                         <p class="text-center mb-2 font-semibold text-xl">
-                            Password
+                            Password <span class="text-red-400">*</span>
                         </p>
                         <input
                             :type="showPassword ? 'text' : 'password'"
@@ -202,7 +202,7 @@
                     <!-- Konfirmasi Password -->
                     <div class="relative">
                         <p class="text-center mb-2 font-semibold text-xl">
-                            Konfirmasi Password
+                            Konfirmasi Password <span class="text-red-400">*</span>
                         </p>
                         <input
                             :type="showPasswordConfirmation ? 'text' : 'password'"

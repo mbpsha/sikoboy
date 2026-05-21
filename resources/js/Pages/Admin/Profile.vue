@@ -84,12 +84,14 @@
         </div>
         <form @submit.prevent="submitPassword" class="px-6 py-5 space-y-4">
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Password Saat Ini</label>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Password Saat Ini <span class="text-red-500">*</span></label>
             <div class="relative">
               <input
                 v-model="passwordForm.current_password"
                 :type="showCurrent ? 'text' : 'password'"
                 placeholder="********"
+                required
+                autocomplete="current-password"
                 class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm pr-10 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition"
               />
               <button type="button" @click="toggleShowCurrent" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">

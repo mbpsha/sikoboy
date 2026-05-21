@@ -23,6 +23,7 @@ const props = defineProps({
     mitras: Array,
     jenisKerjasamaOptions: Array,
     jenisDokumenOptions: Array,
+    urusanOptions: Array,
 });
 
 const search = ref(props.filters?.search || "");
@@ -35,25 +36,54 @@ const adendumFileInput = ref(null);
 const selectedKerjasama = ref(null);
 const openStatusDropdown = ref(null);
 const openFilterColumn = ref(null);
+const mitraIdSearch = ref("");
+
+// Computed untuk detect apakah ada filter aktif (cek dari props yang terupdate)
+const hasActiveFilter = computed(() => {
+    const searchVal = (props.filters?.search || "").trim();
+    const tahunVal = (props.filters?.tahun || "");
+    const hasFormFilter = searchVal !== "" || tahunVal !== "";
+    
+    // Check column filters
+    const hasColumnFilterActive = Object.values(columnFilters.value).some(arr => arr.length > 0);
+    
+    const isActive = hasFormFilter || hasColumnFilterActive;
+    return isActive;
+});
 
 let debounceTimer = null;
 
 const applyFilters = () => {
     console.log("✅ APPLY FILTERS - search:", search.value, "tahun:", tahun.value);
+    // Auto-detect: jika ada filter, show all; jika tidak ada filter, paginasi normal
+    const hasFilter = search.value.trim() !== "" || tahun.value !== "";
+    const perPage = hasFilter ? 10000 : 10;
+    
     router.get(
         route("admin.riwayat-kerjasama.gabungan"),
         {
             search: search.value,
             tahun: tahun.value,
+            page: 1,
+            per_page: perPage,
         },
-        { preserveState: true },
+        { preserveState: false },
     );
 };
 
 const resetAllFilters = () => {
     search.value = "";
     tahun.value = "";
-    applyFilters();
+    router.get(
+        route("admin.riwayat-kerjasama.gabungan"),
+        {
+            search: "",
+            tahun: "",
+            page: 1,
+            per_page: 10, // Kembali ke paginasi normal
+        },
+        { preserveState: true },
+    );
 };
 
 const buildExportParams = () => ({
@@ -71,12 +101,14 @@ const exportSpreadsheet = () => {
 };
 
 const filter = () => {
-    console.log("🔍 GABUNGAN FILTER CALLED - search:", search.value, "tahun:", tahun.value);
+    console.log("🔍 GABUNGAN FILTER CALLED - search:", search.value, "tahun:", tahun.value, "showAll:", showAllResults.value);
     router.get(
         route("admin.riwayat-kerjasama.gabungan"),
         {
             search: search.value,
             tahun: tahun.value,
+            page: showAllResults.value ? 1 : undefined, // Selalu page 1 jika show all
+            per_page: showAllResults.value ? 10000 : 15, // Ambil semua data jika show all aktif
         },
         {
             preserveState: false,
@@ -85,12 +117,17 @@ const filter = () => {
     );
 };
 
-// Watch search with debounce
+// Watch search dengan debounce
 watch(search, () => {
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => {
         applyFilters();
     }, 500);
+});
+
+// Watch tahun (tidak perlu debounce, langsung apply)
+watch(tahun, () => {
+    applyFilters();
 });
 
 const goToPage = (page) => {
@@ -102,6 +139,7 @@ const goToPage = (page) => {
             search: search.value,
             tahun: tahun.value,
             page,
+            per_page: 10,
         },
         { preserveState: true, preserveScroll: true },
     );
@@ -115,9 +153,9 @@ const form = ref({
     jangka: "",
     mulai: "",
     selesai: "",
-    jenis_kerjasama: "KSDD",
-    jenis_dokumen: "KSB",
-    tipe_pengajuan: "mitra",
+    jenis_kerjasama: "",
+    jenis_dokumen: "",
+    tipe_pengajuan: "",
     nomor_suratM: '',
     nomor_suratP: '',
     urusan: '',
@@ -154,7 +192,7 @@ const adendumForm = ref({
     jangka: "",
     mulai: "",
     selesai: "",
-    jenis_kerjasama: "KSDD",
+    jenis_kerjasama: "",
     pembiayaan: "",
     file: null,
 });
@@ -162,13 +200,10 @@ const adendumForm = ref({
 const errors = ref({});
 const adendumErrors = ref({});
 const isSubmitting = ref(false);
-const showMitraSuggestions = ref(false);
-let hideMitraSuggestionsTimer = null;
-
 const filteredMitraOptions = computed(() => {
-    const query = String(form.value.mitra ?? "").trim().toLowerCase();
+    const query = String(mitraIdSearch.value || "").trim().toLowerCase();
 
-    if (!query) return [];
+    if (!query) return props.mitras || [];
 
     return (props.mitras || [])
         .filter((mitraOption) => {
@@ -180,44 +215,22 @@ const filteredMitraOptions = computed(() => {
         .slice(0, 10);
 });
 
-const selectMitra = (mitraOption) => {
-    form.value.id_mitra = String(mitraOption.id_mitra);
-    form.value.mitra = mitraOption.nama_perusahaan || "";
-    showMitraSuggestions.value = false;
+const selectedMitra = computed(() => {
+    if (!form.value.id_mitra) return null;
+
+    return (props.mitras || []).find(
+        (mitraOption) => String(mitraOption.id_mitra) === String(form.value.id_mitra),
+    ) || null;
+});
+
+const applySelectedMitra = (idMitra) => {
+    const selected = (props.mitras || []).find(
+        (mitraOption) => String(mitraOption.id_mitra) === String(idMitra),
+    );
+
+    form.value.id_mitra = selected ? String(selected.id_mitra) : "";
+    form.value.mitra = selected?.nama_perusahaan || "";
 };
-
-const handleMitraFocus = () => {
-    if (hideMitraSuggestionsTimer) {
-        clearTimeout(hideMitraSuggestionsTimer);
-        hideMitraSuggestionsTimer = null;
-    }
-    showMitraSuggestions.value = true;
-};
-
-const handleMitraBlur = () => {
-    hideMitraSuggestionsTimer = setTimeout(() => {
-        showMitraSuggestions.value = false;
-    }, 120);
-};
-
-watch(
-    () => form.value.mitra,
-    (value) => {
-        const keyword = String(value ?? "").trim().toLowerCase();
-
-        if (!keyword) {
-            form.value.id_mitra = "";
-            return;
-        }
-
-        const exactMatch = (props.mitras || []).find(
-            (mitraOption) =>
-                String(mitraOption.nama_perusahaan ?? "").trim().toLowerCase() === keyword,
-        );
-
-        form.value.id_mitra = exactMatch ? String(exactMatch.id_mitra) : "";
-    },
-);
 
 const parseJangkaToYears = (value) => {
     const match = String(value ?? "").match(/(\d+)/);
@@ -227,6 +240,43 @@ const parseJangkaToYears = (value) => {
 
     return Number.isNaN(years) || years <= 0 ? null : years;
 };
+
+const calculateJangkaWaktuDisplay = computed(() => {
+  if (!form.value.mulai || !form.value.selesai) return '';
+  
+  const start = new Date(form.value.mulai);
+  const end = new Date(form.value.selesai);
+  
+  if (start >= end) return '';
+  
+  // Calculate years, months, days accurately
+  let years = end.getFullYear() - start.getFullYear();
+  let months = end.getMonth() - start.getMonth();
+  let days = end.getDate() - start.getDate();
+  
+  // Adjust for negative days
+  if (days < 0) {
+    months--;
+    const prevMonth = new Date(end.getFullYear(), end.getMonth(), 0);
+    days += prevMonth.getDate();
+  }
+  
+  // Adjust for negative months
+  if (months < 0) {
+    years--;
+    months += 12;
+  }
+  
+  // Build display string - only show non-zero values
+  const parts = [];
+  if (years > 0) parts.push(`${years} tahun`);
+  if (months > 0) parts.push(`${months} bulan`);
+  if (days > 0) parts.push(`${days} hari`);
+  
+  return parts.join(' ') || '';
+});
+
+const effectiveJangka = computed(() => form.value.jangka || calculateJangkaWaktuDisplay.value || '');
 
 // AUTO CALCULATE TANGGAL SELESAI
 const calculateEndDate = () => {
@@ -285,13 +335,14 @@ watch(
 const validate = () => {
     errors.value = {};
 
+    if (!form.value.id_mitra) errors.value.id_mitra = "ID mitra wajib dipilih";
     if (!form.value.mitra) errors.value.mitra = "Mitra wajib diisi";
     if (!form.value.tahun) errors.value.tahun = "Tahun wajib diisi";
     if (!form.value.judul) errors.value.judul = "Judul wajib diisi";
     if (!form.value.nomor_suratM) errors.value.nomor_suratM = "Nomor surat mitra wajib diisi";
     if (!form.value.nomor_suratP) errors.value.nomor_suratP = "Nomor surat pemerintah wajib diisi";
     if (!form.value.urusan) errors.value.urusan = "Urusan wajib diisi";
-    if (!form.value.jangka) errors.value.jangka = "Jangka waktu wajib diisi";
+    if (!effectiveJangka.value) errors.value.jangka = "Jangka waktu wajib diisi";
     if (!form.value.mulai) errors.value.mulai = "Tanggal mulai wajib diisi";
     if (!form.value.selesai)
         errors.value.selesai = "Tanggal selesai wajib diisi";
@@ -358,6 +409,8 @@ const handleAdendumDrop = (e) => {
 
 // SUBMIT
 const submit = () => {
+    form.value.jangka = effectiveJangka.value;
+
     if (!validate()) {
         Swal.fire({
             icon: "error",
@@ -379,10 +432,11 @@ const submit = () => {
 
     const formData = new FormData();
 
+    formData.append("id_mitra", form.value.id_mitra);
     formData.append("mitra", form.value.mitra);
     formData.append("tahun", form.value.tahun);
     formData.append("judul", form.value.judul);
-    formData.append("jangka", form.value.jangka);
+    formData.append("jangka", effectiveJangka.value);
     formData.append("nomor_suratM", form.value.nomor_suratM);
     formData.append("nomor_suratP", form.value.nomor_suratP);
     formData.append("urusan", form.value.urusan);
@@ -518,15 +572,16 @@ const closeModal = () => {
         jangka: "",
         mulai: "",
         selesai: "",
-        jenis_kerjasama: "KSDD",
-        jenis_dokumen: "KSB",
-        tipe_pengajuan: "mitra",
+        jenis_kerjasama: "",
+        jenis_dokumen: "",
+        tipe_pengajuan: "",
         nomor_suratM: '',
         nomor_suratP: '',
         urusan: '',
         pembiayaan: '',
         file: null,
     };
+    mitraIdSearch.value = "";
     errors.value = {};
     if (fileInput.value) fileInput.value.value = "";
 };
@@ -547,7 +602,7 @@ const closeAdendumModal = () => {
         jangka: "",
         mulai: "",
         selesai: "",
-        jenis_kerjasama: "KSDD",
+        jenis_kerjasama: "",
         pembiayaan: "",
         file: null,
     };
@@ -567,7 +622,7 @@ const openAdendumModal = (item) => {
         jangka: item?.jangka_waktu || "",
         mulai: item?.tanggal_mulai || "",
         selesai: item?.tanggal_berakhir || "",
-        jenis_kerjasama: item?.jenis_kerjasama || "KSDD",
+        jenis_kerjasama: item?.jenis_kerjasama || "",
         pembiayaan: item?.pembiayaan || "",
         file: null,
     };
@@ -651,7 +706,6 @@ const statusBadgeClasses = (status) => {
 
 onBeforeUnmount(() => {
     if (debounceTimer) clearTimeout(debounceTimer);
-    if (hideMitraSuggestionsTimer) clearTimeout(hideMitraSuggestionsTimer);
 });
 
 // =========================
@@ -726,6 +780,55 @@ const filteredTableData = computed(() => {
 
     return data;
 });
+
+// Helper function untuk update column filter dengan immutable approach
+const toggleColumnFilter = (filterKey, value) => {
+    console.log("🔄 Toggle column filter:", filterKey, value);
+    if (columnFilters.value[filterKey].includes(value)) {
+        columnFilters.value[filterKey] = columnFilters.value[filterKey].filter(v => v !== value);
+    } else {
+        columnFilters.value[filterKey] = [...columnFilters.value[filterKey], value];
+    }
+    console.log("✅ After toggle:", filterKey, columnFilters.value[filterKey]);
+    
+    // LOAD DATA IMMEDIATELY
+    const hasActive = Object.values(columnFilters.value).some(arr => arr.length > 0);
+    const perPage = hasActive ? 10000 : 10;
+    console.log("🚀 Immediate load - hasActive:", hasActive, "perPage:", perPage);
+    
+    router.get(
+        route("admin.riwayat-kerjasama.gabungan"),
+        {
+            search: search.value,
+            tahun: tahun.value,
+            page: 1,
+            per_page: perPage,
+        },
+        { preserveState: true }
+    );
+};
+
+// Clear column filter
+const clearColumnFilter = (filterKey) => {
+    console.log("🧹 Clear column filter:", filterKey);
+    columnFilters.value[filterKey] = [];
+    
+    // Load with pagination reset
+    const hasActive = Object.values(columnFilters.value).some(arr => arr.length > 0);
+    const perPage = hasActive ? 10000 : 10;
+    console.log("🚀 After clear - hasActive:", hasActive, "perPage:", perPage);
+    
+    router.get(
+        route("admin.riwayat-kerjasama.gabungan"),
+        {
+            search: search.value,
+            tahun: tahun.value,
+            page: 1,
+            per_page: perPage,
+        },
+        { preserveState: false }
+    );
+};
 </script>
 
 <template>
@@ -750,7 +853,6 @@ const filteredTableData = computed(() => {
 
                         <select
                             v-model="tahun"
-                            @change="applyFilters"
                             class="rounded-full px-4 py-2.5 text-sm border border-gray-200 bg-gray-50 focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition min-w-[180px]"
                         >
                             <option value="">Semua Tahun</option>
@@ -858,20 +960,14 @@ const filteredTableData = computed(() => {
                                                     <input
                                                         type="checkbox"
                                                         :checked="columnFilters.tahun.includes(val)"
-                                                        @change="(e) => {
-                                                            if (e.target.checked) {
-                                                                columnFilters.tahun.push(val)
-                                                            } else {
-                                                                columnFilters.tahun = columnFilters.tahun.filter(v => v !== val)
-                                                            }
-                                                        }"
+                                                        @change="toggleColumnFilter('tahun', val)"
                                                         class="cursor-pointer"
                                                     />
                                                     <span class="text-xs">{{ val }}</span>
                                                 </label>
                                             </div>
                                             <button
-                                                @click="columnFilters.tahun = []"
+                                                @click="clearColumnFilter('tahun')"
                                                 class="w-full px-2 py-1 bg-gray-300 hover:bg-gray-400 rounded text-xs"
                                             >
                                                 Clear
@@ -899,20 +995,14 @@ const filteredTableData = computed(() => {
                                                     <input
                                                         type="checkbox"
                                                         :checked="columnFilters.tipe.includes(val)"
-                                                        @change="(e) => {
-                                                            if (e.target.checked) {
-                                                                columnFilters.tipe.push(val)
-                                                            } else {
-                                                                columnFilters.tipe = columnFilters.tipe.filter(v => v !== val)
-                                                            }
-                                                        }"
+                                                        @change="toggleColumnFilter('tipe', val)"
                                                         class="cursor-pointer"
                                                     />
                                                     <span class="text-xs">{{ val }}</span>
                                                 </label>
                                             </div>
                                             <button
-                                                @click="columnFilters.tipe = []"
+                                                @click="clearColumnFilter('tipe')"
                                                 class="w-full px-2 py-1 bg-gray-300 hover:bg-gray-400 rounded text-xs"
                                             >
                                                 Clear
@@ -940,20 +1030,14 @@ const filteredTableData = computed(() => {
                                                     <input
                                                         type="checkbox"
                                                         :checked="columnFilters.mitra.includes(val)"
-                                                        @change="(e) => {
-                                                            if (e.target.checked) {
-                                                                columnFilters.mitra.push(val)
-                                                            } else {
-                                                                columnFilters.mitra = columnFilters.mitra.filter(v => v !== val)
-                                                            }
-                                                        }"
+                                                        @change="toggleColumnFilter('mitra', val)"
                                                         class="cursor-pointer"
                                                     />
                                                     <span class="text-xs">{{ val }}</span>
                                                 </label>
                                             </div>
                                             <button
-                                                @click="columnFilters.mitra = []"
+                                                @click="clearColumnFilter('mitra')"
                                                 class="w-full px-2 py-1 bg-gray-300 hover:bg-gray-400 rounded text-xs"
                                             >
                                                 Clear
@@ -1001,20 +1085,14 @@ const filteredTableData = computed(() => {
                                                     <input
                                                         type="checkbox"
                                                         :checked="columnFilters.jenis_kerjasama.includes(val)"
-                                                        @change="(e) => {
-                                                            if (e.target.checked) {
-                                                                columnFilters.jenis_kerjasama.push(val)
-                                                            } else {
-                                                                columnFilters.jenis_kerjasama = columnFilters.jenis_kerjasama.filter(v => v !== val)
-                                                            }
-                                                        }"
+                                                        @change="toggleColumnFilter('jenis_kerjasama', val)"
                                                         class="cursor-pointer"
                                                     />
                                                     <span class="text-xs">{{ val }}</span>
                                                 </label>
                                             </div>
                                             <button
-                                                @click="columnFilters.jenis_kerjasama = []"
+                                                @click="clearColumnFilter('jenis_kerjasama')"
                                                 class="w-full px-2 py-1 bg-gray-300 hover:bg-gray-400 rounded text-xs"
                                             >
                                                 Clear
@@ -1082,20 +1160,14 @@ const filteredTableData = computed(() => {
                                                     <input
                                                         type="checkbox"
                                                         :checked="columnFilters.status.includes(val)"
-                                                        @change="(e) => {
-                                                            if (e.target.checked) {
-                                                                columnFilters.status.push(val)
-                                                            } else {
-                                                                columnFilters.status = columnFilters.status.filter(v => v !== val)
-                                                            }
-                                                        }"
+                                                        @change="toggleColumnFilter('status', val)"
                                                         class="cursor-pointer"
                                                     />
                                                     <span class="text-xs">{{ val }}</span>
                                                 </label>
                                             </div>
                                             <button
-                                                @click="columnFilters.status = []"
+                                                @click="clearColumnFilter('status')"
                                                 class="w-full px-2 py-1 bg-gray-300 hover:bg-gray-400 rounded text-xs"
                                             >
                                                 Clear
@@ -1305,7 +1377,7 @@ const filteredTableData = computed(() => {
                 </div>
 
                 <div
-                    v-if="(data?.last_page || 1) > 1"
+                    v-if="(data?.last_page || 1) > 1 && !hasActiveFilter"
                     class="mt-4 flex items-center justify-end gap-2"
                 >
                     <button
@@ -1365,38 +1437,57 @@ const filteredTableData = computed(() => {
                                 Mitra <span class="text-red-500">*</span>
                             </label>
                             <input
-                                v-model="form.mitra"
-                                @focus="handleMitraFocus"
-                                @blur="handleMitraBlur"
+                                v-model="mitraIdSearch"
                                 class="w-full border rounded-lg px-3 py-2 mt-1"
-                                placeholder="Ketik nama atau ID mitra"
+                                placeholder="Ketik ID mitra atau nama perusahaan"
                             />
-                            <div
-                                v-if="showMitraSuggestions && form.mitra && filteredMitraOptions.length > 0"
-                                class="mt-1 max-h-44 overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-sm"
+                            <select
+                                v-model="form.id_mitra"
+                                @change="applySelectedMitra(form.id_mitra)"
+                                class="w-full border rounded-lg px-3 py-2 mt-1 bg-white"
                             >
-                                <button
+                                <option value="">Pilih ID mitra</option>
+                                <option
                                     v-for="mitraOption in filteredMitraOptions"
                                     :key="mitraOption.id_mitra"
-                                    type="button"
-                                    class="w-full px-3 py-2 text-left text-sm hover:bg-gray-50"
-                                    @mousedown.prevent="selectMitra(mitraOption)"
+                                    :value="String(mitraOption.id_mitra)"
                                 >
                                     {{ mitraOption.id_mitra }} - {{ mitraOption.nama_perusahaan }}
-                                </button>
-                            </div>
+                                </option>
+                            </select>
                             <p
-                                v-if="showMitraSuggestions && form.mitra && filteredMitraOptions.length === 0"
+                                v-if="mitraIdSearch && filteredMitraOptions.length === 0"
                                 class="text-xs text-gray-500 mt-1"
                             >
-                                Data mitra tidak ditemukan.
+                                Data mitra tidak ditemukan untuk kata kunci tersebut.
                             </p>
+                            <p
+                                v-if="errors.id_mitra"
+                                class="text-red-500 text-xs mt-1"
+                            >
+                                {{ errors.id_mitra }}
+                            </p>
+                            <input
+                                v-model="form.mitra"
+                                class="w-full border rounded-lg px-3 py-2 mt-2"
+                                placeholder="Nama mitra akan terisi setelah memilih ID"
+                            />
                             <p
                                 v-if="errors.mitra"
                                 class="text-red-500 text-xs mt-1"
                             >
                                 {{ errors.mitra }}
                             </p>
+                            <div
+                                v-if="selectedMitra"
+                                class="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700 space-y-1"
+                            >
+                                <p><span class="font-semibold">Nama Perusahaan:</span> {{ selectedMitra.nama_perusahaan || '-' }}</p>
+                                <p><span class="font-semibold">NPWP:</span> {{ selectedMitra.npwp || '-' }}</p>
+                                <p><span class="font-semibold">PIC:</span> {{ selectedMitra.pic || '-' }}</p>
+                                <p><span class="font-semibold">No. HP:</span> {{ selectedMitra.no_handphone || '-' }}</p>
+                                <p><span class="font-semibold">Alamat:</span> {{ selectedMitra.alamat || '-' }}</p>
+                            </div>
                         </div>
 
                         <div>
@@ -1473,43 +1564,6 @@ const filteredTableData = computed(() => {
                         </p>
                     </div>
 
-                    <!-- Urusan -->
-                    <div>
-                        <label class="text-sm font-medium">
-                            Urusan <span class="text-red-500">*</span>
-                        </label>
-                        <textarea
-                            v-model="form.urusan"
-                            rows="3"
-                            class="w-full border rounded-lg px-3 py-2 mt-1"
-                            placeholder="Masukkan urusan kerjasama"
-                        ></textarea>
-                        <p
-                            v-if="errors.urusan"
-                            class="text-red-500 text-xs mt-1"
-                        >
-                            {{ errors.urusan }}
-                        </p>
-                    </div>
-
-                    <!-- JANGKA -->
-                    <div>
-                        <label class="text-sm font-medium">
-                            Jangka Waktu <span class="text-red-500">*</span>
-                        </label>
-                        <input
-                            v-model="form.jangka"
-                            class="w-full border rounded-lg px-3 py-2 mt-1"
-                            placeholder="Masa kerjasama"
-                        />
-                        <p
-                            v-if="errors.jangka"
-                            class="text-red-500 text-xs mt-1"
-                        >
-                            {{ errors.jangka }}
-                        </p>
-                    </div>
-
                     <!-- JENIS KERJASAMA -->
                     <div>
                         <label class="text-sm font-medium">
@@ -1519,6 +1573,7 @@ const filteredTableData = computed(() => {
                             v-model="form.jenis_kerjasama"
                             class="w-full border rounded-lg px-3 py-2 mt-1"
                         >
+                            <option value="">-- Pilih Jenis Kerjasama --</option>
                             <option
                                 v-for="option in (jenisKerjasamaOptions || [])"
                                 :key="option.value"
@@ -1543,6 +1598,7 @@ const filteredTableData = computed(() => {
                             v-model="form.jenis_dokumen"
                             class="w-full border rounded-lg px-3 py-2 mt-1"
                         >
+                            <option value="">-- Pilih Jenis Dokumen --</option>
                             <option
                                 v-for="option in (jenisDokumenOptions || [])"
                                 :key="option"
@@ -1568,6 +1624,7 @@ const filteredTableData = computed(() => {
                             v-model="form.tipe_pengajuan"
                             class="w-full border rounded-lg px-3 py-2 mt-1"
                         >
+                            <option value="">-- Pilih Tipe Pengajuan --</option>
                             <option value="mitra">Mitra</option>
                             <option value="pemerintah">Pemerintah</option>
                         </select>
@@ -1618,6 +1675,12 @@ const filteredTableData = computed(() => {
                         </div>
                     </div>
 
+                    <!-- JANGKA WAKTU DISPLAY (Auto-calculated from dates) -->
+                    <div v-if="calculateJangkaWaktuDisplay" class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                        <label class="text-sm font-medium text-blue-900 block mb-2">Jangka Waktu</label>
+                        <p class="text-base font-semibold text-blue-900">{{ calculateJangkaWaktuDisplay }}</p>
+                    </div>
+
                     <!-- PEMBIAYAAN -->
                     <div>
                         <label class="text-sm font-medium">
@@ -1627,17 +1690,46 @@ const filteredTableData = computed(() => {
                             v-model="form.pembiayaan"
                             class="w-full border rounded-lg px-3 py-2 mt-1"
                         >
-                            <option value="APBN">APBN</option>
-                            <option value="APBD">APBD</option>
-                            <option value="PIHAK KETIGA">PIHAK KETIGA</option>
-                            <option value="PARA PIHAK">PARA PIHAK</option>
-                            <option value="SESUAI DENGAN PERATURAN PERUNDANG-UNDANGAN">SESUAI DENGAN PERATURAN PERUNDANG-UNDANGAN</option>
+                            <option value="">-- Pilih Pembiayaan --</option>
+                            <option
+                                v-for="option in pembiayaanOptions"
+                                :key="option"
+                                :value="option"
+                            >
+                                {{ option }}
+                            </option>
                         </select>
                         <p
                             v-if="errors.pembiayaan"
                             class="text-red-500 text-xs mt-1"
                         >
                             {{ errors.pembiayaan }}
+                        </p>
+                    </div>
+
+                    <!-- Urusan (Dropdown) -->
+                    <div>
+                        <label class="text-sm font-medium">
+                            Urusan <span class="text-red-500">*</span>
+                        </label>
+                        <select
+                            v-model="form.urusan"
+                            class="w-full border rounded-lg px-3 py-2 mt-1"
+                        >
+                            <option value="">-- Pilih Urusan --</option>
+                            <option
+                                v-for="urusan in props.urusanOptions"
+                                :key="urusan"
+                                :value="urusan"
+                            >
+                                {{ urusan }}
+                            </option>
+                        </select>
+                        <p
+                            v-if="errors.urusan"
+                            class="text-red-500 text-xs mt-1"
+                        >
+                            {{ errors.urusan }}
                         </p>
                     </div>
 
@@ -1806,28 +1898,21 @@ const filteredTableData = computed(() => {
                                 <label class="text-sm font-medium">
                                     Urusan <span class="text-red-500">*</span>
                                 </label>
-                                <textarea
+                                <select
                                     v-model="adendumForm.urusan"
-                                    rows="3"
                                     class="w-full border rounded-lg px-3 py-2 mt-1"
-                                    placeholder="Masukkan urusan kerjasama"
-                                ></textarea>
+                                >
+                                    <option value="">-- Pilih Urusan --</option>
+                                    <option
+                                        v-for="urusan in props.urusanOptions"
+                                        :key="urusan"
+                                        :value="urusan"
+                                    >
+                                        {{ urusan }}
+                                    </option>
+                                </select>
                                 <p v-if="adendumErrors.urusan" class="text-red-500 text-xs mt-1">
                                     {{ adendumErrors.urusan }}
-                                </p>
-                            </div>
-                            <div>
-                                <label class="text-sm font-medium">
-                                    Jangka Waktu <span class="text-red-500">*</span>
-                                </label>
-                                <input
-                                    v-model="adendumForm.jangka"
-                                    type="text"
-                                    class="w-full border rounded-lg px-3 py-2 mt-1"
-                                    placeholder="Contoh: 2 Tahun"
-                                />
-                                <p v-if="adendumErrors.jangka" class="text-red-500 text-xs mt-1">
-                                    {{ adendumErrors.jangka }}
                                 </p>
                             </div>
                         </div>
@@ -1841,6 +1926,7 @@ const filteredTableData = computed(() => {
                                     v-model="adendumForm.jenis_kerjasama"
                                     class="w-full border rounded-lg px-3 py-2 mt-1"
                                 >
+                                    <option value="">-- Pilih Jenis Kerjasama --</option>
                                     <option
                                         v-for="option in jenisKerjasamaOptions"
                                         :key="option.value"
@@ -1880,6 +1966,12 @@ const filteredTableData = computed(() => {
                             <p v-if="adendumErrors.selesai" class="text-red-500 text-xs mt-1">
                                 {{ adendumErrors.selesai }}
                             </p>
+                        </div>
+
+                        <!-- JANGKA WAKTU DISPLAY (Auto-calculated from dates) -->
+                        <div v-if="calculateJangkaWaktuDisplay" class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                            <label class="text-sm font-medium text-blue-900 block mb-2">Jangka Waktu</label>
+                            <p class="text-base font-semibold text-blue-900">{{ calculateJangkaWaktuDisplay }}</p>
                         </div>
 
                         <div>
