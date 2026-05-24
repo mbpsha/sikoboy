@@ -286,7 +286,7 @@
                 :key="page"
                 @click.prevent="goToPage(page)"
                 class="px-3 py-2 text-sm rounded-lg border"
-                :class="page === kerjasama.current_page ? 'bg-teal-600 text-white' : 'bg-white'"
+                :class="page === kerjasama.current_page ? 'bg-teal-600 text-white border-teal-600' : 'bg-white text-gray-700'"
               >
                 {{ page }}
               </button>
@@ -295,7 +295,7 @@
                 class="px-3 py-2 text-sm rounded-lg border bg-white disabled:opacity-50"
                 :disabled="!kerjasama.next_page_url"
                 @click.prevent="goToPage(kerjasama.current_page + 1)"
-              >Berikutnya</button>
+              >Selanjutnya</button>
             </div>
           </div>
 
