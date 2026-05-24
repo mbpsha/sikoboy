@@ -112,6 +112,11 @@ const visiblePages = computed(() => {
         (_, index) => startPage + index,
     );
 });
+const hasLeftEllipsis = computed(() => visiblePages.value.length > 0 && visiblePages.value[0] > 1);
+const hasRightEllipsis = computed(() => {
+    if (!visiblePages.value.length) return false;
+    return visiblePages.value[visiblePages.value.length - 1] < Number(props.data?.last_page || 1);
+});
 
 const form = ref({
     id_mitra: "",
@@ -1310,37 +1315,78 @@ const filteredTableData = computed(() => {
 
                 <div
                     v-if="(data?.last_page || 1) > 1"
-                    class="mt-4 flex items-center justify-end gap-2"
+                    class="mt-4 px-5 py-3.5 border border-gray-100 rounded-xl bg-white"
                 >
-                    <button
-                        class="px-3 py-2 text-sm rounded-lg border bg-white disabled:opacity-50"
-                        :disabled="!data?.prev_page_url"
-                        @click="goToPage(data.current_page - 1)"
-                    >
-                        Sebelumnya
-                    </button>
+                    <div class="hidden md:flex items-center justify-between">
+                        <span class="text-xs text-gray-500">Tampilkan 10 data / halaman</span>
+                        <div class="flex items-center justify-end gap-2">
+                            <button
+                                class="px-3 py-2 text-sm rounded-lg border bg-white disabled:opacity-50"
+                                :disabled="!data?.prev_page_url"
+                                @click="goToPage(data.current_page - 1)"
+                            >
+                                Sebelumnya
+                            </button>
 
-                    <button
-                        v-for="page in visiblePages"
-                        :key="page"
-                        class="px-3 py-2 text-sm rounded-lg border"
-                        :class="
-                            page === data.current_page
-                                ? 'bg-teal-600 text-white'
-                                : 'bg-white'
-                        "
-                        @click="goToPage(page)"
-                    >
-                        {{ page }}
-                    </button>
+                            <button
+                                v-for="page in visiblePages"
+                                :key="page"
+                                class="px-3 py-2 text-sm rounded-lg border"
+                                :class="
+                                    page === data.current_page
+                                        ? 'bg-teal-600 text-white'
+                                        : 'bg-white'
+                                "
+                                @click="goToPage(page)"
+                            >
+                                {{ page }}
+                            </button>
 
-                    <button
-                        class="px-3 py-2 text-sm rounded-lg border bg-white disabled:opacity-50"
-                        :disabled="!data?.next_page_url"
-                        @click="goToPage(data.current_page + 1)"
-                    >
-                        Selanjutnya
-                    </button>
+                            <button
+                                class="px-3 py-2 text-sm rounded-lg border bg-white disabled:opacity-50"
+                                :disabled="!data?.next_page_url"
+                                @click="goToPage(data.current_page + 1)"
+                            >
+                                Selanjutnya
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="flex md:hidden items-center justify-center gap-2">
+                        <button
+                            class="px-3 py-2 text-sm rounded-lg border bg-white disabled:opacity-50"
+                            :disabled="!data?.prev_page_url"
+                            @click="goToPage(data.current_page - 1)"
+                        >
+                            &lt;
+                        </button>
+
+                        <span v-if="hasLeftEllipsis" class="px-1 text-sm text-gray-600">...</span>
+
+                        <button
+                            v-for="page in visiblePages"
+                            :key="`mobile-${page}`"
+                            class="px-3 py-2 text-sm rounded-lg border"
+                            :class="
+                                page === data.current_page
+                                    ? 'bg-teal-600 text-white'
+                                    : 'bg-white'
+                            "
+                            @click="goToPage(page)"
+                        >
+                            {{ page }}
+                        </button>
+
+                        <span v-if="hasRightEllipsis" class="px-1 text-sm text-gray-600">...</span>
+
+                        <button
+                            class="px-3 py-2 text-sm rounded-lg border bg-white disabled:opacity-50"
+                            :disabled="!data?.next_page_url"
+                            @click="goToPage(data.current_page + 1)"
+                        >
+                            &gt;
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
