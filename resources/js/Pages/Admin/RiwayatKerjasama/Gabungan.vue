@@ -1334,8 +1334,8 @@ const filteredTableData = computed(() => {
                                 class="px-3 py-2 text-sm rounded-lg border"
                                 :class="
                                     page === data.current_page
-                                        ? 'bg-teal-600 text-white'
-                                        : 'bg-white'
+                                        ? 'bg-teal-600 text-white border-teal-600'
+                                        : 'bg-white text-gray-700'
                                 "
                                 @click="goToPage(page)"
                             >
@@ -1369,8 +1369,8 @@ const filteredTableData = computed(() => {
                             class="px-3 py-2 text-sm rounded-lg border"
                             :class="
                                 page === data.current_page
-                                    ? 'bg-teal-600 text-white'
-                                    : 'bg-white'
+                                    ? 'bg-teal-600 text-white border-teal-600'
+                                    : 'bg-white text-gray-700'
                             "
                             @click="goToPage(page)"
                         >
