@@ -271,30 +271,60 @@
         </div>
 
         <!-- Pagination Footer -->
-        <div v-if="(kerjasama?.last_page || 1) > 1" class="px-5 py-3.5 flex items-center justify-between border-t border-gray-100">
-          <span class="text-xs text-gray-500">Tampilkan {{ kerjasama.per_page }} data / halaman</span>
-          <div class="flex items-center justify-end gap-2">
+        <div v-if="(kerjasama?.last_page || 1) > 1" class="px-5 py-3.5 border-t border-gray-100 space-y-3 md:space-y-0 md:flex md:items-center md:justify-between">
+          <div class="hidden md:flex md:items-center md:justify-between md:w-full">
+            <span class="text-xs text-gray-500">Tampilkan {{ kerjasama.per_page }} data / halaman</span>
+            <div class="flex items-center justify-end gap-2">
+              <button
+                class="px-3 py-2 text-sm rounded-lg border bg-white disabled:opacity-50"
+                :disabled="!kerjasama.prev_page_url"
+                @click.prevent="goToPage(kerjasama.current_page - 1)"
+              >Sebelumnya</button>
+
+              <button
+                v-for="page in kerjasama.last_page"
+                :key="page"
+                @click.prevent="goToPage(page)"
+                class="px-3 py-2 text-sm rounded-lg border"
+                :class="page === kerjasama.current_page ? 'bg-teal-600 text-white border-teal-600' : 'bg-white text-gray-700'"
+              >
+                {{ page }}
+              </button>
+
+              <button
+                class="px-3 py-2 text-sm rounded-lg border bg-white disabled:opacity-50"
+                :disabled="!kerjasama.next_page_url"
+                @click.prevent="goToPage(kerjasama.current_page + 1)"
+              >Selanjutnya</button>
+            </div>
+          </div>
+
+          <div class="flex md:hidden items-center justify-center gap-2">
             <button
               class="px-3 py-2 text-sm rounded-lg border bg-white disabled:opacity-50"
               :disabled="!kerjasama.prev_page_url"
               @click.prevent="goToPage(kerjasama.current_page - 1)"
-            >Sebelumnya</button>
+            >&lt;</button>
+
+            <span v-if="hasLeftEllipsis" class="px-1 text-sm text-gray-600">...</span>
 
             <button
-              v-for="page in kerjasama.last_page"
-              :key="page"
+              v-for="page in visiblePages"
+              :key="`mobile-${page}`"
               @click.prevent="goToPage(page)"
               class="px-3 py-2 text-sm rounded-lg border"
-              :class="page === kerjasama.current_page ? 'bg-teal-600 text-white' : 'bg-white'"
+              :class="page === kerjasama.current_page ? 'bg-teal-600 text-white border-teal-600' : 'bg-white text-gray-700'"
             >
               {{ page }}
             </button>
+
+            <span v-if="hasRightEllipsis" class="px-1 text-sm text-gray-600">...</span>
 
             <button
               class="px-3 py-2 text-sm rounded-lg border bg-white disabled:opacity-50"
               :disabled="!kerjasama.next_page_url"
               @click.prevent="goToPage(kerjasama.current_page + 1)"
-            >Berikutnya</button>
+            >&gt;</button>
           </div>
         </div>
       </div>
@@ -399,6 +429,30 @@ const filters     = computed(() => props.filters ?? {})
 const indexOffset = computed(() =>
   kerjasama.value.current_page ? (kerjasama.value.current_page - 1) * kerjasama.value.per_page : 0
 )
+const visiblePages = computed(() => {
+  const lastPage = Number(kerjasama.value?.last_page || 1)
+  const currentPage = Number(kerjasama.value?.current_page || 1)
+
+  if (lastPage <= 3) {
+    return Array.from({ length: lastPage }, (_, index) => index + 1)
+  }
+
+  let startPage = Math.max(1, currentPage - 1)
+  let endPage = Math.min(lastPage, currentPage + 1)
+
+  if (startPage === 1) endPage = 3
+  if (endPage === lastPage) startPage = lastPage - 2
+
+  return Array.from(
+    { length: endPage - startPage + 1 },
+    (_, index) => startPage + index
+  )
+})
+const hasLeftEllipsis = computed(() => visiblePages.value.length > 0 && visiblePages.value[0] > 1)
+const hasRightEllipsis = computed(() => {
+  if (!visiblePages.value.length) return false
+  return visiblePages.value[visiblePages.value.length - 1] < Number(kerjasama.value?.last_page || 1)
+})
 
 const local = ref({
   search: filters.value?.search ?? '',
