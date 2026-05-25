@@ -20,6 +20,7 @@ use App\Http\Controllers\Mitra\KerjasamaController as MitraKerjasamaController;
 use App\Http\Controllers\Mitra\ProfileController as MitraProfileController;
 use App\Http\Controllers\PotensiController;
 use App\Http\Controllers\TemplateDokumenController;
+use App\Models\TemplateDokumen;
 use App\Models\Peraturan;
 use App\Models\Potensi;
 use Illuminate\Http\Request;
@@ -116,20 +117,54 @@ Route::get('/potensi', [PotensiController::class, 'index'])
 
 // Dokumen (dengan data kategori)
 Route::get('/dokumen', function () {
-    $kategoris = DB::table('kategori_kerjasama')->get()->map(function ($k) {
-        $file = $k->file_template ?? '';
-        $filename = basename($file);
-        $pdfname = preg_replace('/\.(docx|doc|xlsx|pptx)$/i', '.pdf', $filename);
-        $pdfPath = storage_path('app/public/docs/'.$pdfname);
-        $preview = null;
-        if ($filename && file_exists($pdfPath)) {
-            $preview = '/storage/docs/'.$pdfname;
-        }
+    $shortLabel = function (?string $name): string {
+        $name = $name ?? '';
 
-        return (array) array_merge((array) $k, ['preview' => $preview]);
-    })->all();
+        return match (true) {
+            str_contains($name, 'KSDD') => 'KSDD',
+            str_contains($name, 'KSDPK') => 'KSDPK',
+            str_contains($name, 'NK/RK') || str_contains($name, 'Sinergi') => 'Sinergi',
+            str_contains($name, 'PERTEK') => 'PERTEK',
+            str_contains($name, 'KSDPL') => 'KSDPL',
+            str_contains($name, 'KSDLL') => 'KSDLL',
+            default => $name,
+        };
+    };
 
-    return Inertia::render('Dokumen', ['kategoris' => $kategoris]);
+    $templates = TemplateDokumen::query()
+        ->with('kategori:id_kategori,nama_kategori,deskripsi')
+        ->where('is_active', true)
+        ->orderBy('id_kategori')
+        ->orderByDesc('created_at')
+        ->get();
+
+    $dokumenGroups = $templates
+        ->filter(fn (TemplateDokumen $template) => $template->kategori !== null)
+        ->groupBy(fn (TemplateDokumen $template) => $template->kategori?->nama_kategori)
+        ->map(function ($items, $groupName) use ($shortLabel) {
+            $first = $items->first();
+
+            return [
+                'nama_kategori' => $groupName,
+                'label' => $shortLabel($groupName),
+                'deskripsi' => $first?->kategori?->deskripsi ?? '',
+                'items' => $items->values()->map(function (TemplateDokumen $template) {
+                    $fileExtension = strtolower(pathinfo($template->nama_file ?? '', PATHINFO_EXTENSION) ?: 'pdf');
+
+                    return [
+                        'id' => $template->id_template_dokumen,
+                        'title' => $template->judul ?: $template->jenis_dokumen ?: $template->nama_file,
+                        'description' => $template->deskripsi ?: ($template->kategori?->deskripsi ?? ''),
+                        'badge' => strtoupper($fileExtension),
+                        'href' => route('template-dokumen.download', $template->id_template_dokumen),
+                        'preview' => route('template-dokumen.preview', $template->id_template_dokumen),
+                    ];
+                })->values(),
+            ];
+        })
+        ->values();
+
+    return Inertia::render('Dokumen', ['dokumenGroups' => $dokumenGroups]);
 })->name('dokumen');
 
 // Template Dokumen

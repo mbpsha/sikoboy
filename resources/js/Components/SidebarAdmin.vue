@@ -32,6 +32,7 @@
                         @click="emit('close')"
                         class="w-10 h-10 rounded-xl hover:bg-white/10 flex items-center justify-center transition"
                     >
+                        <!-- ✅ Close Icon -->
                         <svg
                             xmlns="http://www.w3.org/2000/svg"
                             class="w-5 h-5"
@@ -76,7 +77,7 @@
             <!-- MENU -->
             <div class="flex-1 px-3 py-4 space-y-2">
 
-                <!-- BERANDA -->
+                <!-- ✅ BERANDA / DASHBOARD -->
                 <Link
                     :href="route('admin.dashboard')"
                     :class="navClass('/admin/dashboard')"
@@ -88,12 +89,12 @@
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
-                        stroke-width="1.8"
+                        stroke-width="2"
                     >
                         <path
                             stroke-linecap="round"
                             stroke-linejoin="round"
-                            d="M3 10.5L12 3l9 7.5V20a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1v-9.5z"
+                            d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
                         />
                     </svg>
 
@@ -105,7 +106,7 @@
                     </span>
                 </Link>
 
-                <!-- PENGGUNA -->
+                <!-- ✅ PENGGUNA / USERS -->
                 <Link
                     :href="route('admin.pengguna.index')"
                     :class="navClass('/admin/pengguna')"
@@ -117,13 +118,12 @@
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
-                        stroke-width="1.8"
+                        stroke-width="2"
                     >
-                        <circle cx="9" cy="8" r="3"/>
                         <path
                             stroke-linecap="round"
                             stroke-linejoin="round"
-                            d="M4 20c0-3 3-5 5-5s5 2 5 5"
+                            d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
                         />
                     </svg>
 
@@ -135,7 +135,7 @@
                     </span>
                 </Link>
 
-                <!-- AJUAN -->
+                <!-- ✅ AJUAN KERJASAMA -->
                 <Link
                     :href="route('admin.data-kerjasama.index')"
                     :class="navClass('/admin/data-kerjasama')"
@@ -147,17 +147,12 @@
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
-                        stroke-width="1.8"
+                        stroke-width="2"
                     >
                         <path
                             stroke-linecap="round"
                             stroke-linejoin="round"
-                            d="M7 3h7l5 5v13a1 1 0 01-1 1H7a1 1 0 01-1-1V4a1 1 0 011-1z"
-                        />
-                        <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            d="M14 3v5h5"
+                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                         />
                     </svg>
 
@@ -169,7 +164,7 @@
                     </span>
                 </Link>
 
-                <!-- RIWAYAT -->
+                <!-- ✅ RIWAYAT KERJASAMA -->
                 <div>
 
                     <!-- EXPANDED -->
@@ -185,13 +180,12 @@
                             fill="none"
                             viewBox="0 0 24 24"
                             stroke="currentColor"
-                            stroke-width="1.8"
+                            stroke-width="2"
                         >
-                            <circle cx="12" cy="12" r="9"/>
                             <path
                                 stroke-linecap="round"
                                 stroke-linejoin="round"
-                                d="M12 7v5l3 2"
+                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
                             />
                         </svg>
 
@@ -208,12 +202,12 @@
                             fill="none"
                             viewBox="0 0 24 24"
                             stroke="currentColor"
-                            stroke-width="1.8"
+                            stroke-width="2"
                         >
                             <path
                                 stroke-linecap="round"
                                 stroke-linejoin="round"
-                                d="M6 9l6 6 6-6"
+                                d="M19 9l-7 7-7-7"
                             />
                         </svg>
                     </button>
@@ -231,13 +225,12 @@
                             fill="none"
                             viewBox="0 0 24 24"
                             stroke="currentColor"
-                            stroke-width="1.8"
+                            stroke-width="2"
                         >
-                            <circle cx="12" cy="12" r="9"/>
                             <path
                                 stroke-linecap="round"
                                 stroke-linejoin="round"
-                                d="M12 7v5l3 2"
+                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
                             />
                         </svg>
                     </Link>
@@ -252,6 +245,20 @@
                             :class="subNavClass('/admin/riwayat-kerjasama/gabungan')"
                             @click="handleMobileClose"
                         >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                class="w-4 h-4 mr-2 shrink-0"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                                stroke-width="2"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                                />
+                            </svg>
                             Semua Kerjasama
                         </Link>
 
@@ -260,6 +267,20 @@
                             :class="subNavClass('/admin/riwayat-kerjasama/pemerintah')"
                             @click="handleMobileClose"
                         >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                class="w-4 h-4 mr-2 shrink-0"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                                stroke-width="2"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                                />
+                            </svg>
                             Pemrakarsa Boyolali
                         </Link>
 
@@ -268,27 +289,43 @@
                             :class="subNavClass('/admin/riwayat-kerjasama/mitra')"
                             @click="handleMobileClose"
                         >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                class="w-4 h-4 mr-2 shrink-0"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                                stroke-width="2"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                                />
+                            </svg>
                             Pemrakarsa Mitra
                         </Link>
                     </div>
                 </div>
 
-                <!-- MANAJEMEN POTENSI -->
+                <!-- ✅ MANAJEMEN POTENSI -->
                 <Link
                     :href="route('admin.manajemen-potensi.index')"
                     :class="navClass('/admin/manajemen-potensi')"
                     @click="handleMobileClose"
                 >
-                    <svg xmlns="http://www.w3.org/2000/svg"
+                    <svg 
+                        xmlns="http://www.w3.org/2000/svg"
                         class="w-5 h-5 shrink-0"
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
-                        stroke-width="1.8"
+                        stroke-width="2"
                     >
-                        <path stroke-linecap="round"
+                        <path
+                            stroke-linecap="round"
                             stroke-linejoin="round"
-                            d="M4 6h16M4 12h16M4 18h16"
+                            d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
                         />
                     </svg>
 
@@ -300,23 +337,24 @@
                     </span>
                 </Link>
 
-                <!-- MANAJEMEN DOKUMEN -->
+                <!-- ✅ MANAJEMEN DOKUMEN -->
                 <Link
                     :href="route('admin.manajemen-dokumen.index')"
                     :class="navClass('/admin/manajemen-dokumen')"
                     @click="handleMobileClose"
                 >
-                    <svg xmlns="http://www.w3.org/2000/svg"
+                    <svg 
+                        xmlns="http://www.w3.org/2000/svg"
                         class="w-5 h-5 shrink-0"
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
-                        stroke-width="1.8"
+                        stroke-width="2"
                     >
                         <path
                             stroke-linecap="round"
                             stroke-linejoin="round"
-                            d="M7 3h7l5 5v13a1 1 0 01-1 1H7a1 1 0 01-1-1V4a1 1 0 011-1z"
+                            d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"
                         />
                     </svg>
 
@@ -328,23 +366,29 @@
                     </span>
                 </Link>
 
-                <!-- MANAJEMEN PERATURAN -->
+                <!-- ✅ MANAJEMEN PERATURAN -->
                 <Link
                     :href="route('admin.manajemen-peraturan.index')"
                     :class="navClass('/admin/manajemen-peraturan')"
                     @click="handleMobileClose"
                 >
-                    <svg xmlns="http://www.w3.org/2000/svg"
+                    <svg 
+                        xmlns="http://www.w3.org/2000/svg"
                         class="w-5 h-5 shrink-0"
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
-                        stroke-width="1.8"
+                        stroke-width="2"
                     >
                         <path
                             stroke-linecap="round"
                             stroke-linejoin="round"
-                            d="M7 3h7l5 5v13a1 1 0 01-1 1H7a1 1 0 01-1-1V4a1 1 0 011-1z"
+                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                        />
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            d="M14 2v6h6"
                         />
                     </svg>
 
@@ -360,7 +404,7 @@
             <!-- BOTTOM -->
             <div class="p-3 border-t border-teal-700 shrink-0 space-y-2 mt-auto">
 
-                <!-- PROFILE -->
+                <!-- ✅ PROFILE -->
                 <Link
                     :href="route('admin.profile.show')"
                     @click="handleMobileClose"
@@ -390,20 +434,15 @@
                     </div>
                 </Link>
 
-                <!-- LOGOUT -->
+                <!-- ✅ LOGOUT -->
                 <button
                     @click="showConfirm = true"
                     class="bg-red-600 hover:bg-red-700 transition rounded-2xl font-semibold text-sm"
                     :class="(isCollapsedDesktop)
                         ? 'w-14 h-14 mx-auto flex items-center justify-center'
-                        : 'w-full p-3'"
+                        : 'w-full p-3 flex items-center justify-center gap-2'"
                 >
-                    <span v-if="!isCollapsedDesktop || isMobile">
-                        Logout
-                    </span>
-
                     <svg
-                        v-else-if="!isMobile"
                         xmlns="http://www.w3.org/2000/svg"
                         class="w-5 h-5"
                         fill="none"
@@ -414,40 +453,63 @@
                         <path
                             stroke-linecap="round"
                             stroke-linejoin="round"
-                            d="M17 16l4-4m0 0l-4-4m4 4H7"
+                            d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
                         />
                     </svg>
+
+                    <span v-if="!isCollapsedDesktop || isMobile">
+                        Logout
+                    </span>
                 </button>
             </div>
         </div>
 
-        <!-- MODAL -->
+        <!-- ✅ MODAL CONFIRM LOGOUT -->
         <div
             v-if="showConfirm"
-            class="fixed inset-0 bg-black/50 flex items-center justify-center z-[60]"
+            class="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4"
         >
-            <div class="bg-white rounded-2xl p-6 w-80 text-center shadow-xl">
-                <h2 class="text-base font-semibold text-gray-800 mb-2">
+            <div class="bg-white rounded-2xl p-6 w-full max-w-sm text-center shadow-2xl">
+                
+                <!-- Icon Warning -->
+                <div class="mx-auto w-14 h-14 rounded-full bg-red-100 flex items-center justify-center mb-4">
+                    <svg 
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="w-7 h-7 text-red-600"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        stroke-width="2"
+                    >
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                        />
+                    </svg>
+                </div>
+
+                <h2 class="text-lg font-bold text-gray-800 mb-2">
                     Yakin ingin logout?
                 </h2>
 
-                <p class="text-sm text-gray-500 mb-5">
-                    Sesi Anda akan diakhiri.
+                <p class="text-sm text-gray-500 mb-6">
+                    Sesi Anda akan diakhiri dan Anda harus login kembali.
                 </p>
 
-                <div class="flex justify-center gap-3">
+                <div class="flex gap-3">
                     <button
                         @click="showConfirm = false"
-                        class="px-5 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-sm"
+                        class="flex-1 px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-sm font-semibold transition"
                     >
                         Batal
                     </button>
 
                     <button
                         @click="logout"
-                        class="px-5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm"
+                        class="flex-1 px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-semibold transition"
                     >
-                        Logout
+                        Ya, Logout
                     </button>
                 </div>
             </div>

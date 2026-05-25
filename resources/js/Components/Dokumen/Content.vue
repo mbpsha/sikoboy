@@ -1,35 +1,10 @@
 <script setup>
 import CardDokumen from './CardDokumen.vue'
-import ExtraTemplate from './ExtraTemplate.vue'
 import CTASection from './CTASection.vue'
 
 const props = defineProps({
-  kategoris: { type: Array, default: () => [] }
+  dokumenGroups: { type: Array, default: () => [] }
 })
-
-const getTemplate = (matchName) => {
-  if (!props.kategoris || props.kategoris.length === 0) {
-    return '/storage/docs/your-template.docx'
-  }
-  const found = props.kategoris.find(k => {
-    if (!k.nama_kategori) return false
-    return k.nama_kategori.toLowerCase().includes((matchName||'').toLowerCase())
-  })
-  if (found && found.file_template) return found.file_template
-  const firstWith = props.kategoris.find(k => k.file_template)
-  return (firstWith && firstWith.file_template) || '/storage/docs/your-template.docx'
-}
-
-const getPreview = (matchName) => {
-  if (!props.kategoris || props.kategoris.length === 0) return null
-  const found = props.kategoris.find(k => {
-    if (!k.nama_kategori) return false
-    return k.nama_kategori.toLowerCase().includes((matchName||'').toLowerCase())
-  })
-  if (found && found.preview) return found.preview
-  const firstWith = props.kategoris.find(k => k.preview)
-  return (firstWith && firstWith.preview) || null
-}
 </script>
 
 <template>
@@ -42,68 +17,47 @@ const getPreview = (matchName) => {
         </p>
       </div>
 
-      <div class="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
-        <!-- KSDD -->
-        <div class="bg-white/80 backdrop-blur rounded-3xl p-8 shadow-xl border border-white/50">
-          <h3 class="text-2xl font-bold text-[#0C505C] text-center">KSDD</h3>
-          <p class="text-md font-bold text-[#0C505C] text-center text-slate-600 mt-2">(Kerja Sama Daerah Dengan Daerah Lain)</p>
+      <div
+        v-if="dokumenGroups.length"
+        class="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8"
+      >
+        <section
+          v-for="group in dokumenGroups"
+          :key="group.nama_kategori"
+          class="bg-white/80 backdrop-blur rounded-3xl p-8 shadow-xl border border-white/50"
+        >
+          <h3 class="text-2xl font-bold text-[#0C505C] text-center">
+            {{ group.label }}
+          </h3>
+
+          <p
+            v-if="group.deskripsi"
+            class="text-md font-bold text-[#0C505C] text-center text-slate-600 mt-2"
+          >
+            ({{ group.deskripsi }})
+          </p>
 
           <div class="mt-8 space-y-6">
             <CardDokumen
-              title="PERJANJIAN KERJA SAMA"
-              description="Perjanjian Kerja Sama antara Pemerintah Kabupaten Boyolali dengan Pemerintah Daerah Kabupaten Boyolali"
-              :href="getTemplate('PKS KSDD')"
-              :preview="getPreview('PKS KSDD')"
-            />
-
-            <CardDokumen
-              title="KESEPAKATAN BERSAMA"
-              description="Kesepakatan bersama antara Pemerintah Daerah Kabupaten Boyolali dan Pemerintah Daerah Kabupaten Boyolali"
-              :href="getTemplate('KESEPAKATAN BERSAMA')"
-              :preview="getPreview('KESEPAKATAN BERSAMA')"
+              v-for="item in group.items"
+              :key="item.id"
+              :title="item.title"
+              :description="item.description"
+              :badge="item.badge"
+              :href="item.href"
+              :preview="item.preview"
             />
           </div>
-        </div>
-
-        <!-- KSDPK -->
-        <div class="bg-white/80 backdrop-blur rounded-3xl p-8 shadow-xl border border-white/50">
-          <h3 class="text-2xl font-bold text-[#0C505C] text-center">KSDPK</h3>
-          <p class="text-md font-bold text-[#0C505C] text-center text-slate-600 mt-2">(Kerja Sama Daerah Dengan Pihak Ketiga)</p>
-
-          <div class="mt-8 space-y-6">
-            <CardDokumen
-              title="PERJANJIAN KERJA SAMA"
-              description="Perjanjian Kerja Sama antara Pemerintah Kabupaten Boyolali dengan Pihak Ketiga"
-              :href="getTemplate('PKS KSDPK')"
-              :preview="getPreview('PKS KSDPK')"
-            />
-
-            <CardDokumen
-              title="KESEPAKATAN BERSAMA"
-              description="Kesepakatan bersama antara Pemerintah Daerah Kabupaten Boyolali dengan Pihak Ketiga"
-              :href="getTemplate('KESEPAKATAN BERSAMA')"
-              :preview="getPreview('KESEPAKATAN BERSAMA')"
-            />
-          </div>
-        </div>
+        </section>
       </div>
 
-      <!-- Additional templates -->
-      <div class="mt-12 max-w-3xl mx-auto space-y-8 px-4 sm:px-0">
-        <div class="bg-white/80 backdrop-blur rounded-3xl p-8 shadow-xl border border-white/50">
-          <h3 class="text-2xl font-bold text-[#0C505C] text-center">Nota Kesepakatan Sinergi</h3>
-          <div class="mt-6 flex justify-center">
-            <CardDokumen
-              title="SINERGI"
-              description="Nota Kesepakatan antara Kementerian/Lembaga/Instansi Vertikal dan Pemerintah Kabupaten Boyolali"
-              :href="getTemplate('NOTA KESEPAKATAN')"
-              :preview="getPreview('NOTA KESEPAKATAN')"
-            />
-          </div>
-        </div>
-
-        <ExtraTemplate />
+      <div
+        v-else
+        class="bg-white/80 backdrop-blur rounded-3xl p-10 shadow-xl border border-white/50 text-center text-slate-600"
+      >
+        Belum ada template dokumen yang aktif.
       </div>
+
       <CTASection />
 
     </div>

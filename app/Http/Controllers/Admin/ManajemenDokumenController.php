@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\KategoriKerjasama;
 use App\Models\TemplateDokumen;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -32,6 +33,10 @@ class ManajemenDokumenController extends Controller
     {
         return Inertia::render('Admin/ManajemenDokumen', [
             'templates' => $this->templateList(),
+            'publicDokumenGroups' => $this->publicDokumenGroups(),
+            'kategoris' => KategoriKerjasama::query()
+                ->orderBy('nama_kategori')
+                ->get(['id_kategori', 'nama_kategori', 'deskripsi']),
         ]);
     }
 
@@ -40,6 +45,8 @@ class ManajemenDokumenController extends Controller
         $validated = $request->validate([
             'template_file' => ['required', 'file', 'mimes:pdf', 'max:10240'],
             'id_kategori' => ['nullable', 'exists:kategori_kerjasama,id_kategori'],
+            'judul' => ['nullable', 'string', 'max:255'],
+            'deskripsi' => ['nullable', 'string'],
             'jenis_dokumen' => ['nullable', 'string', Rule::in(self::JENIS_DOKUMEN)],
             'is_active' => ['sometimes', 'boolean'],
         ]);
@@ -53,6 +60,8 @@ class ManajemenDokumenController extends Controller
         TemplateDokumen::create([
             'id_admin' => $admin->id_admin,
             'id_kategori' => $validated['id_kategori'] ?? null,
+            'judul' => $validated['judul'] ?? null,
+            'deskripsi' => $validated['deskripsi'] ?? null,
             'nama_file' => $file->getClientOriginalName(),
             'jenis_dokumen' => $validated['jenis_dokumen'] ?? null,
             'lokasi_file' => $path,
@@ -67,6 +76,8 @@ class ManajemenDokumenController extends Controller
         $validated = $request->validate([
             'template_file' => ['nullable', 'file', 'mimes:pdf', 'max:10240'],
             'id_kategori' => ['nullable', 'exists:kategori_kerjasama,id_kategori'],
+            'judul' => ['nullable', 'string', 'max:255'],
+            'deskripsi' => ['nullable', 'string'],
             'jenis_dokumen' => ['nullable', 'string', Rule::in(self::JENIS_DOKUMEN)],
             'is_active' => ['sometimes', 'boolean'],
             'nama_file' => ['nullable', 'string', 'max:255'],
@@ -76,6 +87,8 @@ class ManajemenDokumenController extends Controller
 
         $payload = [
             'id_kategori' => $validated['id_kategori'] ?? $template->id_kategori,
+            'judul' => $validated['judul'] ?? $template->judul,
+            'deskripsi' => $validated['deskripsi'] ?? $template->deskripsi,
             'jenis_dokumen' => $validated['jenis_dokumen'] ?? $template->jenis_dokumen,
         ];
 
@@ -187,6 +200,8 @@ class ManajemenDokumenController extends Controller
                 'id_template_dokumen' => $template->id_template_dokumen,
                 'id_kategori' => $template->id_kategori,
                 'nama_kategori' => $template->kategori?->nama_kategori,
+                'judul' => $template->judul,
+                'deskripsi' => $template->deskripsi,
                 'nama_file' => $template->nama_file,
                 'jenis_dokumen' => $template->jenis_dokumen,
                 'is_active' => (bool) $template->is_active,
@@ -208,5 +223,56 @@ class ManajemenDokumenController extends Controller
         }
 
         return null;
+    }
+
+    private function publicDokumenGroups()
+    {
+        $templates = TemplateDokumen::query()
+            ->with('kategori:id_kategori,nama_kategori,deskripsi')
+            ->where('is_active', true)
+            ->whereHas('kategori')
+            ->orderBy('id_kategori')
+            ->orderByDesc('created_at')
+            ->get();
+
+        return $templates
+            ->groupBy(fn (TemplateDokumen $template) => $template->kategori?->nama_kategori)
+            ->map(function ($items, $groupName) {
+                $first = $items->first();
+
+                return [
+                    'nama_kategori' => $groupName,
+                    'label' => $this->shortLabel($groupName),
+                    'deskripsi' => $first?->kategori?->deskripsi ?? '',
+                    'items' => $items->values()->map(function (TemplateDokumen $template) {
+                        $fileExtension = strtolower(pathinfo($template->nama_file ?? '', PATHINFO_EXTENSION) ?: 'pdf');
+
+                        return [
+                            'id' => $template->id_template_dokumen,
+                            'title' => $template->judul ?: $template->jenis_dokumen ?: $template->nama_file,
+                            'description' => $template->deskripsi ?: ($template->kategori?->deskripsi ?? ''),
+                            'badge' => strtoupper($fileExtension),
+                            'href' => route('template-dokumen.download', $template->id_template_dokumen),
+                            'preview' => route('template-dokumen.preview', $template->id_template_dokumen),
+                        ];
+                    })->values(),
+                ];
+            })
+            ->values();
+    }
+
+    private function shortLabel(?string $name): string
+    {
+        $name = $name ?? '';
+
+        return match (true) {
+            str_contains($name, 'KSDD') => 'KSDD',
+            str_contains($name, 'KSDPK') => 'KSDPK',
+            str_contains($name, 'NK/RK') || str_contains($name, 'Sinergi') => 'Sinergi',
+            str_contains($name, 'PERTEK') => 'PERTEK',
+            str_contains($name, 'KSDPL') => 'KSDPL',
+            str_contains($name, 'KSDLL') => 'KSDLL',
+            default => $name,
+        };
     }
 }
