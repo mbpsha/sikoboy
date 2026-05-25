@@ -38,6 +38,7 @@ const openStatusDropdown = ref(null);
 const openFilterColumn = ref(null);
 const mitraIdSearch = ref("");
 const showMitraSuggestions = ref(false);
+const MITRA_SUGGESTION_HIDE_DELAY = 120;
 
 // Computed untuk detect apakah ada filter aktif (cek dari props yang terupdate)
 const hasActiveFilter = computed(() => {
@@ -265,7 +266,7 @@ const applySelectedMitra = (mitraOption) => {
 const hideMitraSuggestions = () => {
     setTimeout(() => {
         showMitraSuggestions.value = false;
-    }, 120);
+    }, MITRA_SUGGESTION_HIDE_DELAY);
 };
 
 const parseJangkaToYears = (value) => {

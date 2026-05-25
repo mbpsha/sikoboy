@@ -441,7 +441,7 @@ const currentUsername    = computed(() => page.props.auth?.user?.username ?? '')
 const currentUserDivisi = computed(() => page.props.auth?.user?.divisi ?? currentUsername.value)
 
 const kerjasama = computed(() => props.kerjasama ?? {
-  data: [], per_page: 15, prev_page_url: null, next_page_url: null, current_page: 1,
+  data: [], per_page: 10, prev_page_url: null, next_page_url: null, current_page: 1,
 })
 
 const filters = computed(() => props.filters ?? {})
@@ -525,7 +525,7 @@ const years = computed(() => {
 function buildFilterParams(page = 1) {
   const hasFormFilter = local.search.trim() !== '' || local.tahun !== ''
   const hasColumnFilter = Object.values(columnFilters.value).some(arr => arr.length > 0)
-  const perPage = (hasFormFilter || hasColumnFilter) ? 10000 : 15
+  const perPage = (hasFormFilter || hasColumnFilter) ? 10000 : 10
 
   const params = { page, per_page: perPage }
   const q = local.search.trim()
@@ -631,7 +631,7 @@ function resetAllFilters() {
   local.tahun = ''
   columnFilters.value = { tahun: [], mitra: [], jenis_kerjasama: [], jenis_dokumen: [], urusan: [] }
   isFiltering.value = true
-  router.get(route('admin.data-kerjasama.index'), { page: 1, per_page: 15 }, {
+  router.get(route('admin.data-kerjasama.index'), { page: 1, per_page: 10 }, {
     preserveState: true,
     preserveScroll: true,
     onFinish: () => {
