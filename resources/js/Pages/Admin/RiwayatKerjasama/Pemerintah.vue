@@ -66,7 +66,7 @@ const applyFilters = () => {
             page: 1,
             per_page: perPage,
         },
-        { preserveState: false },
+        { preserveState: true, preserveScroll: true },
     );
 };
 
@@ -1014,7 +1014,7 @@ onBeforeUnmount(() => {
                                     <td
                                         class="px-4 py-3 whitespace-nowrap border-r border-gray-200"
                                     >
-                                        {{ item.id_kerjasama }}
+                                        {{ item.no }}
                                     </td>
                                     <td
                                         class="px-4 py-3 whitespace-nowrap border-r border-gray-200"

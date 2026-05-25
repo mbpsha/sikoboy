@@ -274,14 +274,20 @@
         </div>
 
         <!-- Pagination Footer -->
-        <div v-if="(kerjasama?.last_page || 1) > 1 && !hasActiveFilter" class="px-5 py-3.5 flex items-center justify-between border-t border-gray-100">
-          <span class="text-xs text-gray-500">Tampilkan {{ kerjasama.per_page }} data / halaman</span>
-          <div class="flex items-center justify-end gap-2">
-            <button
-              class="px-3 py-2 text-sm rounded-lg border bg-white disabled:opacity-50"
-              :disabled="!kerjasama.prev_page_url"
-              @click.prevent="goToPage(kerjasama.current_page - 1)"
-            >Sebelumnya</button>
+        <div
+          v-if="(kerjasama?.last_page || 1) > 1 && !hasActiveFilter"
+          class="px-5 py-3.5 border-t border-gray-100"
+        >
+          <div class="hidden md:flex items-center justify-between">
+            <span class="text-xs text-gray-500 mr-6">Tampilkan 10 data / halaman</span>
+            <div class="flex items-center justify-end gap-2">
+              <button
+                class="px-3 py-2 text-sm rounded-lg border bg-white disabled:opacity-50"
+                :disabled="!kerjasama.prev_page_url"
+                @click.prevent="goToPage(kerjasama.current_page - 1)"
+              >
+                Sebelumnya
+              </button>
 
               <button
                 v-for="page in visiblePages"
@@ -293,22 +299,24 @@
                 {{ page }}
               </button>
 
-              <span v-if="hasRightEllipsis" class="px-1 text-sm text-gray-600">...</span>
-
               <button
                 class="px-3 py-2 text-sm rounded-lg border bg-white disabled:opacity-50"
                 :disabled="!kerjasama.next_page_url"
                 @click.prevent="goToPage(kerjasama.current_page + 1)"
-              >&gt;</button>
+              >
+                Selanjutnya
+              </button>
             </div>
           </div>
 
-          <div class="flex md:hidden items-center justify-center gap-2">
+          <div class="flex md:hidden items-center justify-center gap-2 mt-3 md:mt-0">
             <button
               class="px-3 py-2 text-sm rounded-lg border bg-white disabled:opacity-50"
               :disabled="!kerjasama.prev_page_url"
               @click.prevent="goToPage(kerjasama.current_page - 1)"
-            >&lt;</button>
+            >
+              &lt;
+            </button>
 
             <span v-if="hasLeftEllipsis" class="px-1 text-sm text-gray-600">...</span>
 
@@ -328,7 +336,9 @@
               class="px-3 py-2 text-sm rounded-lg border bg-white disabled:opacity-50"
               :disabled="!kerjasama.next_page_url"
               @click.prevent="goToPage(kerjasama.current_page + 1)"
-            >&gt;</button>
+            >
+              &gt;
+            </button>
           </div>
         </div>
       </div>
