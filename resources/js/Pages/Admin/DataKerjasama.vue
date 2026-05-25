@@ -26,10 +26,10 @@
       <!-- Header with Add Button -->
       <div class="flex items-center justify-between">
 
-        <div class="relative ml-0 md:ml-auto">
+        <div class="relative ml-0 md:ml-auto w-full md:w-auto">
           <button
             @click="showAddMenu = !showAddMenu"
-            class="bg-teal-600 hover:bg-teal-700 text-white px-5 py-2.5 rounded-lg font-medium flex items-center gap-2 transition"
+            class="w-full sm:w-auto justify-center bg-teal-600 hover:bg-teal-700 text-white px-5 py-2.5 rounded-lg font-medium flex items-center gap-2 transition"
           >
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
@@ -279,11 +279,13 @@
                 class="px-3 py-2 text-sm rounded-lg border bg-white disabled:opacity-50"
                 :disabled="!kerjasama.prev_page_url"
                 @click.prevent="goToPage(kerjasama.current_page - 1)"
-              >Sebelumnya</button>
+              >&lt;</button>
+
+              <span v-if="hasLeftEllipsis" class="px-1 text-sm text-gray-600">...</span>
 
               <button
-                v-for="page in kerjasama.last_page"
-                :key="page"
+                v-for="page in visiblePages"
+                :key="`desktop-${page}`"
                 @click.prevent="goToPage(page)"
                 class="px-3 py-2 text-sm rounded-lg border"
                 :class="page === kerjasama.current_page ? 'bg-teal-600 text-white border-teal-600' : 'bg-white text-gray-700'"
@@ -291,11 +293,13 @@
                 {{ page }}
               </button>
 
+              <span v-if="hasRightEllipsis" class="px-1 text-sm text-gray-600">...</span>
+
               <button
                 class="px-3 py-2 text-sm rounded-lg border bg-white disabled:opacity-50"
                 :disabled="!kerjasama.next_page_url"
                 @click.prevent="goToPage(kerjasama.current_page + 1)"
-              >Selanjutnya</button>
+              >&gt;</button>
             </div>
           </div>
 
