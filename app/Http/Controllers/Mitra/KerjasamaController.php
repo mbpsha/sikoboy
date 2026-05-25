@@ -96,7 +96,7 @@ class KerjasamaController extends Controller
             ];
         })->values();
 
-        $urusanOptions = $this->getUrusanOptionsFromDatabase();
+        $urusanOptions = UrusanEnum::cases();
 
         $jenisDokumen = [
             'KSB',
@@ -126,25 +126,6 @@ class KerjasamaController extends Controller
             'jenisDokumen' => $jenisDokumen,
             'urusanOptions' => $urusanOptions,
         ]);
-    }
-
-    private function getUrusanOptionsFromDatabase(): array
-    {
-        $row = DB::selectOne(
-            "SELECT COLUMN_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'kerjasama' AND COLUMN_NAME = 'urusan' LIMIT 1"
-        );
-
-        if (! $row || ! isset($row->COLUMN_TYPE)) {
-            return UrusanEnum::cases();
-        }
-
-        preg_match_all("/'((?:''|[^'])*)'/", $row->COLUMN_TYPE, $matches);
-
-        if (empty($matches[1])) {
-            return UrusanEnum::cases();
-        }
-
-        return array_map(static fn (string $value): string => str_replace("''", "'", $value), $matches[1]);
     }
 
     /**

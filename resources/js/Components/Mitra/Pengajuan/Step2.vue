@@ -1,17 +1,32 @@
 <script setup>
 import { ref } from 'vue';
-import { useForm, Link, usePage, router } from '@inertiajs/vue3';
+import { useForm, Link, router } from '@inertiajs/vue3';
 import Swal from 'sweetalert2'
 import Header from '@/Components/Header.vue';
 import Footer from '@/Components/Footer.vue';
 
-const page = usePage();
 const props = defineProps({
   step1Data: Object,
   kategoris: Array,
   jenisDokumen: Array,
   urusanOptions: Array,
 });
+
+const DEFAULT_URUSAN_OPTIONS = [
+  'SEMUA URUSAN',
+  'PENDIDIKAN',
+  'KESEHATAN',
+  'PEKERJAAN UMUM DAN PENATAAN RUANG',
+  'PERUMAHAN RAKYAT DAN KAWASAN PERMUKIMAN',
+  'KETENTRAMAN, KETERTIBAN UMUM DAN PERLINDUNGAN MASYARAKAT',
+  'SOSIAL',
+  'TENAGA KERJA',
+  'PEMBERDAYAAN PEREMPUAN DAN PERLINDUNGAN ANAK',
+  'PANGAN',
+  'PERTANAHAN',
+];
+
+const urusanOptions = props.urusanOptions?.length ? props.urusanOptions : DEFAULT_URUSAN_OPTIONS;
 
 const form = useForm({
   jenis_kerjasama: '',
@@ -205,11 +220,7 @@ const submit = () => {
                       class="w-full px-4 sm:px-5 py-2 sm:py-3 bg-gray-50 border border-gray-200 rounded-lg sm:rounded-xl text-xs sm:text-sm focus:ring-2 focus:ring-[#17464E]/20 outline-none transition-all"
                     >
                       <option value="">Pilih urusan</option>
-                      <option
-                        v-for="urusan in props.urusanOptions"
-                        :key="urusan"
-                        :value="urusan"
-                      >
+                      <option v-for="urusan in urusanOptions" :key="urusan" :value="urusan">
                         {{ urusan }}
                       </option>
                     </select>
