@@ -9,6 +9,7 @@ class Peraturan extends Model
     protected $fillable = [
         'judul',
         'file',
+        'nama_file',
         'thumbnail',
     ];
 }

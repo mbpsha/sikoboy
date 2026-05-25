@@ -88,7 +88,7 @@ const submit = () => {
     <Header />
 
     <main class="flex-1 flex flex-col">
-      
+
       <div class="max-w-5xl mx-auto w-full px-4 sm:px-6 md:px-10 pt-28 sm:pt-32 pb-8">
         <h1 class="text-2xl sm:text-3xl md:text-4xl font-bold text-[#17464E]">Profil Mitra</h1>
         <p class="text-xs sm:text-sm text-[#17464E]/80 mt-2">Kelola informasi dan pantau status pengajuan kerjasama Anda</p>
@@ -106,9 +106,9 @@ const submit = () => {
 
       <div class="flex-1 bg-[#8AB4BB] relative">
         <div class="max-w-5xl mx-auto px-4 sm:px-6">
-          
+
           <div class="relative -mt-20 sm:-mt-24 mb-16 sm:mb-20">
-            
+
             <div class="relative flex items-center justify-center max-w-xs mx-auto mb-8 sm:mb-10">
               <div class="absolute left-0 right-0 h-[2px] bg-gray-400/50 z-0"></div>
               <div class="flex justify-between w-full relative z-10">

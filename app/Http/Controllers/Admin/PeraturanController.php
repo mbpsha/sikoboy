@@ -14,7 +14,14 @@ class PeraturanController extends Controller
     public function index()
     {
         return Inertia::render('Admin/ManajemenPeraturan', [
-            'peraturans' => Peraturan::latest()->get()
+            'peraturans' => Peraturan::latest()->get()->map(fn (Peraturan $p) => [
+                'id' => $p->id,
+                'judul' => $p->judul,
+                'file' => $p->file,
+                'nama_file' => $p->nama_file ?? basename($p->file),
+                'thumbnail' => $p->thumbnail,
+                'created_at' => $p->created_at,
+            ]),
         ]);
     }
 
@@ -27,6 +34,7 @@ class PeraturanController extends Controller
                 'id_peraturan' => $peraturan->id_peraturan,
                 'judul' => $peraturan->judul,
                 'file' => $peraturan->file,
+                'nama_file' => $peraturan->nama_file ?? basename($peraturan->file),
                 'thumbnail' => $peraturan->thumbnail,
                 'created_at' => $peraturan->created_at,
             ]);
@@ -53,7 +61,9 @@ class PeraturanController extends Controller
                 return back()->withErrors(['file' => 'File tidak valid atau gagal terupload']);
             }
 
-            $filePath = $request->file('file')->store('peraturan', 'public');
+            $uploadedFile = $request->file('file');
+            $originalFileName = $uploadedFile->getClientOriginalName();
+            $filePath = $uploadedFile->store('peraturan', 'public');
 
             if (!$filePath) {
                 return back()->withErrors(['file' => 'Gagal menyimpan file ke storage']);
@@ -67,6 +77,7 @@ class PeraturanController extends Controller
             $peraturan = Peraturan::create([
                 'judul' => $request->judul,
                 'file' => $filePath,
+                'nama_file' => $originalFileName,
                 'thumbnail' => $thumbPath
             ]);
 
@@ -108,6 +119,7 @@ class PeraturanController extends Controller
                 }
 
                 $peraturan->file = $newFile;
+                $peraturan->nama_file = $request->file('file')->getClientOriginalName();
             }
 
             if ($request->file('thumbnail')) {
