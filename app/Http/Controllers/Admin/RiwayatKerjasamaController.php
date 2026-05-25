@@ -98,7 +98,7 @@ class RiwayatKerjasamaController extends Controller
     {
         $query = Kerjasama::finalized()
             ->mitraTipe()
-            ->with(['mitra', 'latestPeriode', 'finalDokumen', 'kategori']);
+            ->with(['mitra', 'latestPeriode', 'finalDokumen', 'kategori', 'adendum']);
 
         $this->applyFilters($query, $request);
 
@@ -165,7 +165,7 @@ class RiwayatKerjasamaController extends Controller
         ]);
         
         $query = Kerjasama::pemerintahTipe()
-            ->with(['admin', 'latestPeriode', 'finalDokumen', 'kategori']);
+            ->with(['admin', 'latestPeriode', 'finalDokumen', 'kategori', 'adendum']);
 
         $this->applyFilters($query, $request);
 
@@ -798,23 +798,26 @@ class RiwayatKerjasamaController extends Controller
     {
         $validated = $request->validate([
             'id_kerjasama' => ['required', 'integer', 'exists:kerjasama,id_kerjasama'],
-            'mitra' => ['required', 'string', 'max:255'],
-            'tahun' => ['required', 'digits:4'],
+            'mitra' => ['nullable', 'string', 'max:255'],
+            'tahun' => ['nullable', 'digits:4'],
             'judul_adendum' => ['required', 'string', 'max:255'],
-            'nomor_surat_mitra_baru' => ['required', 'string', 'max:255'],
-            'nomor_surat_pemerintah_baru' => ['required', 'string', 'max:255'],
-            'nomor_surat_mitra_lama' => ['required', 'string', 'max:255'],
-            'nomor_surat_pemerintah_lama' => ['required', 'string', 'max:255'],
-            'urusan' => ['required', 'string', 'max:255'],
-            'jangka_waktu' => ['required', 'string', 'max:255'],
-            'jenis_kerjasama' => ['required', 'string', 'max:255'],
-            'tanggal_mulai' => ['required', 'date'],
-            'tanggal_berakhir' => ['required', 'date', 'after_or_equal:tanggal_mulai'],
-            'pembiayaan' => ['required', 'string'],
+            'keterangan_adendum' => ['nullable', 'string'],
+            'nomor_surat_mitra_baru' => ['nullable', 'string', 'max:255'],
+            'nomor_surat_pemerintah_baru' => ['nullable', 'string', 'max:255'],
+            'nomor_surat_mitra_lama' => ['nullable', 'string', 'max:255'],
+            'nomor_surat_pemerintah_lama' => ['nullable', 'string', 'max:255'],
+            'urusan' => ['nullable', 'string', 'max:255'],
+            'jangka_waktu' => ['nullable', 'string', 'max:255'],
+            'jenis_kerjasama' => ['nullable', 'string', 'max:255'],
+            'tanggal_mulai' => ['nullable', 'date'],
+            'tanggal_berakhir' => ['nullable', 'date', 'after_or_equal:tanggal_mulai'],
+            'pembiayaan' => ['nullable', 'string'],
             'file' => ['required', 'file', 'mimes:pdf', 'max:10240'],
         ]);
 
         $admin = $request->user()->admin;
+        $kerjasama = Kerjasama::with(['mitra', 'latestPeriode'])->findOrFail((int) $validated['id_kerjasama']);
+        $periode = $kerjasama->latestPeriode;
         $path = null;
         $originalFileName = null;
 
@@ -825,19 +828,22 @@ class RiwayatKerjasamaController extends Controller
 
         \App\Models\Adendum::create([
             'id_kerjasama' => $validated['id_kerjasama'],
-            'mitra' => $validated['mitra'],
-            'tahun' => $validated['tahun'],
+            'mitra' => $validated['mitra']
+                ?? ($kerjasama->mitra->nama_perusahaan ?? $kerjasama->nama_pihak_luar ?? null),
+            'tahun' => $validated['tahun']
+                ?? ($periode?->tanggal_mulai ? Carbon::parse($periode->tanggal_mulai)->format('Y') : null),
             'judul_adendum' => $validated['judul_adendum'],
-            'nomor_surat_mitra_baru' => $validated['nomor_surat_mitra_baru'],
-            'nomor_surat_pemerintah_baru' => $validated['nomor_surat_pemerintah_baru'],
-            'nomor_surat_mitra_lama' => $validated['nomor_surat_mitra_lama'],
-            'nomor_surat_pemerintah_lama' => $validated['nomor_surat_pemerintah_lama'],
-            'urusan' => $validated['urusan'],
-            'jangka_waktu' => $validated['jangka_waktu'],
-            'jenis_kerjasama' => $validated['jenis_kerjasama'],
-            'tanggal_mulai' => $validated['tanggal_mulai'],
-            'tanggal_berakhir' => $validated['tanggal_berakhir'],
-            'pembiayaan' => $validated['pembiayaan'],
+            'keterangan_adendum' => $validated['keterangan_adendum'] ?? null,
+            'nomor_surat_mitra_baru' => $validated['nomor_surat_mitra_baru'] ?? null,
+            'nomor_surat_pemerintah_baru' => $validated['nomor_surat_pemerintah_baru'] ?? null,
+            'nomor_surat_mitra_lama' => $validated['nomor_surat_mitra_lama'] ?? $kerjasama->nomor_suratM,
+            'nomor_surat_pemerintah_lama' => $validated['nomor_surat_pemerintah_lama'] ?? $kerjasama->nomor_suratP,
+            'urusan' => $validated['urusan'] ?? $kerjasama->urusan,
+            'jangka_waktu' => $validated['jangka_waktu'] ?? null,
+            'jenis_kerjasama' => $validated['jenis_kerjasama'] ?? $kerjasama->jenis_kerjasama,
+            'tanggal_mulai' => $validated['tanggal_mulai'] ?? $periode?->tanggal_mulai,
+            'tanggal_berakhir' => $validated['tanggal_berakhir'] ?? $periode?->tanggal_berakhir,
+            'pembiayaan' => $validated['pembiayaan'] ?? $kerjasama->pembiayaan,
             'nama_file' => $originalFileName,
             'lokasi_file' => $path,
             'created_by' => $admin->id_user,
@@ -1156,7 +1162,35 @@ class RiwayatKerjasamaController extends Controller
             $storedFileName = basename($storedFilePath);
         }
 
-        $hasAdendum = $k->relationLoaded('adendum') && $k->adendum->count() > 0;
+        $adendumItems = collect($k->relationLoaded('adendum') ? $k->adendum : [])
+            ->sortBy('id_adendum')
+            ->values()
+            ->map(function ($adendum, int $index) {
+                return [
+                    'id_adendum' => $adendum->id_adendum,
+                    'urutan' => $index + 1,
+                    'judul_adendum' => $adendum->judul_adendum,
+                    'keterangan_adendum' => $adendum->keterangan_adendum,
+                    'mitra' => $adendum->mitra,
+                    'tahun' => $adendum->tahun,
+                    'nomor_surat_mitra_baru' => $adendum->nomor_surat_mitra_baru,
+                    'nomor_surat_pemerintah_baru' => $adendum->nomor_surat_pemerintah_baru,
+                    'nomor_surat_mitra_lama' => $adendum->nomor_surat_mitra_lama,
+                    'nomor_surat_pemerintah_lama' => $adendum->nomor_surat_pemerintah_lama,
+                    'urusan' => $adendum->urusan,
+                    'jangka_waktu' => $adendum->jangka_waktu,
+                    'jenis_kerjasama' => $adendum->jenis_kerjasama,
+                    'tanggal_mulai' => $adendum->tanggal_mulai,
+                    'tanggal_berakhir' => $adendum->tanggal_berakhir,
+                    'pembiayaan' => $adendum->pembiayaan,
+                    'file_name' => $adendum->nama_file,
+                    'file_url' => $this->resolveFileUrl($adendum->lokasi_file),
+                    'created_at' => $adendum->created_at
+                        ? Carbon::parse($adendum->created_at)->translatedFormat('d F Y')
+                        : null,
+                ];
+            });
+        $hasAdendum = $adendumItems->isNotEmpty();
 
         // 🔥 HITUNG SISA HARI
         $daysRemaining = null;
@@ -1188,6 +1222,8 @@ class RiwayatKerjasamaController extends Controller
             'jenis_kerjasama' => $k->jenis_kerjasama,
             'jenis_dokumen' => $k->jenis_dokumen,
             'has_adendum' => $hasAdendum,
+            'adendum_count' => $adendumItems->count(),
+            'adendum_items' => $adendumItems->all(),
             'nomor_suratM' => $k->nomor_suratM,
             'nomor_suratP' => $k->nomor_suratP,
             'urusan' => $k->urusan,
