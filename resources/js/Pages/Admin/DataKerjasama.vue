@@ -309,7 +309,7 @@
             </div>
           </div>
 
-          <div class="flex md:hidden items-center justify-center gap-2 mt-3 md:mt-0">
+          <div class="flex md:hidden items-center justify-center gap-2 mt-3">
             <button
               class="px-3 py-2 text-sm rounded-lg border bg-white disabled:opacity-50"
               :disabled="!kerjasama.prev_page_url"

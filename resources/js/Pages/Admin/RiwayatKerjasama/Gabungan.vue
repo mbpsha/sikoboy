@@ -38,7 +38,8 @@ const openStatusDropdown = ref(null);
 const openFilterColumn = ref(null);
 const mitraIdSearch = ref("");
 const showMitraSuggestions = ref(false);
-const mitraSuggestionHideDelayMs = 120;
+// Delay penutupan dropdown agar klik pilihan (mousedown) sempat diproses sebelum blur.
+const dropdownCloseDelayMs = 120;
 const hideMitraSuggestionsTimer = ref(null);
 
 // Computed untuk detect apakah ada filter aktif (cek dari props yang terupdate)
@@ -272,7 +273,7 @@ const hideMitraSuggestions = () => {
     hideMitraSuggestionsTimer.value = setTimeout(() => {
         showMitraSuggestions.value = false;
         hideMitraSuggestionsTimer.value = null;
-    }, mitraSuggestionHideDelayMs);
+    }, dropdownCloseDelayMs);
 };
 
 const parseJangkaToYears = (value) => {
@@ -1531,6 +1532,7 @@ const clearColumnFilter = (filterKey) => {
                                 v-if="showMitraSuggestions && mitraIdSearch"
                                 class="mt-1 max-h-48 overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-sm"
                             >
+                                <!-- gunakan mousedown agar pilihan tetap terproses saat input blur -->
                                 <button
                                     v-for="mitraOption in filteredMitraOptions"
                                     :key="mitraOption.id_mitra"
