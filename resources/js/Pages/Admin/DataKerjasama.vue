@@ -36,16 +36,6 @@
             </svg>
             Tambah Kerjasama
           </button>
-          <div
-            class="flex items-center gap-2 flex-1 min-w-[220px] rounded-full px-4 py-2.5 border border-gray-200 bg-gray-50 focus-within:border-teal-600 focus-within:ring-1 focus-within:ring-teal-600 transition"
-          >
-            <MagnifyingGlassIcon class="w-5 h-5 text-gray-400 shrink-0" />
-            <input
-              v-model="search"
-              placeholder="Cari berdasarkan tahun, nama mitra, atau judul kerjasama..."
-              class="w-full bg-transparent outline-none text-sm text-gray-700 placeholder-gray-400"
-            />
-          </div>
         </div>
       </div>
 
