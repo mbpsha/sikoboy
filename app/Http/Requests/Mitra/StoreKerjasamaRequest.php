@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Mitra;
 
+use App\Enums\UrusanEnum;
 use DateTimeImmutable;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -38,7 +39,7 @@ class StoreKerjasamaRequest extends FormRequest
                 'PARA PIHAK',
                 'SESUAI DENGAN PERATURAN PERUNDANG-UNDANGAN',
             ])],
-            'urusan' => ['required', 'string', 'max:255'],
+            'urusan' => ['required', 'string', Rule::in(UrusanEnum::cases())],
             'tanggal_mulai' => ['required', 'date'],
             'tanggal_selesai' => ['required', 'date'],
             'dokumen_file' => ['required', 'file', 'mimes:pdf', 'max:10240'],

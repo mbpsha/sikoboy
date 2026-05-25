@@ -96,6 +96,8 @@ class KerjasamaController extends Controller
             ];
         })->values();
 
+        $urusanOptions = $this->getUrusanOptionsFromDatabase();
+
         $jenisDokumen = [
             'KSB',
             'Nota Kesepakatan',
@@ -122,8 +124,27 @@ class KerjasamaController extends Controller
             ] : null,
             'kategoris' => $kategoris,
             'jenisDokumen' => $jenisDokumen,
-            'urusanOptions' => UrusanEnum::cases(),
+            'urusanOptions' => $urusanOptions,
         ]);
+    }
+
+    private function getUrusanOptionsFromDatabase(): array
+    {
+        $row = DB::selectOne(
+            "SELECT COLUMN_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'kerjasama' AND COLUMN_NAME = 'urusan' LIMIT 1"
+        );
+
+        if (! $row || ! isset($row->COLUMN_TYPE)) {
+            return UrusanEnum::cases();
+        }
+
+        preg_match_all("/'((?:''|[^'])*)'/", $row->COLUMN_TYPE, $matches);
+
+        if (empty($matches[1])) {
+            return UrusanEnum::cases();
+        }
+
+        return array_map(static fn (string $value): string => str_replace("''", "'", $value), $matches[1]);
     }
 
     /**
@@ -168,7 +189,7 @@ class KerjasamaController extends Controller
         $defaultAdminEmail = (string) config('services.default_admin_email');
 
         $admin = Admin::query()
-        
+
             ->whereHas('user', fn ($query) => $query->where('email', $defaultAdminEmail))
             ->first();
         $admin ??= Admin::query()->orderBy('id_admin')->first();

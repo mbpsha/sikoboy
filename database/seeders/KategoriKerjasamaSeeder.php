@@ -24,7 +24,7 @@ class KategoriKerjasamaSeeder extends Seeder
                 'file_template' => '-',
             ],
             [
-                'nama_kategori' => 'Sinergi Dengan Pemerintah Pusat/Lembaga (NK/RK)',
+                'nama_kategori' => 'Sinergi Dengan Pemerintah Pusat / Lembaga (NK/RK)',
                 'deskripsi' => 'Sinergi dengan pemerintah pusat atau lembaga',
                 'file_template' => '-',
             ],

@@ -2,46 +2,66 @@
 
 namespace Database\Seeders;
 
+use App\Enums\UrusanEnum;
+use App\Models\Admin;
+use App\Models\Adendum;
+use App\Models\Dokumen;
+use App\Models\Kerjasama;
+use App\Models\Mitra;
+use App\Models\PeriodeKerjasama;
+use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use App\Models\Kerjasama;
-use App\Models\PeriodeKerjasama;
-use App\Models\Dokumen;
-use App\Models\Adendum;
-use App\Models\Admin;
-use App\Models\Mitra;
-use Carbon\Carbon;
 
 class RiwayatKerjasamaSeeder extends Seeder
 {
+    private const JENIS_KERJASAMA = [
+        'Kerjasama Daerah Antar Daerah (KSDD)',
+        'Kerjasama Dengan Pihak Ketiga (KSDPK)',
+        'Sinergi Dengan Pemerintah Pusat/Lembaga (NK/RK)',
+        'Perjanjian Teknis (PERTEK)',
+        'Kerjasama Daerah Dengan Pemerintah Daerah Di Luar Negeri (KSDPL)',
+        'Kerjasama Daerah Dengan Lembaga Di Luar Negeri (KSDLL)',
+    ];
+
+    private const JENIS_DOKUMEN = [
+        'KSB',
+        'Nota Kesepakatan',
+        'Perjanjian Teknis',
+        'PKS',
+        'Rencana Kerja',
+        'MOU',
+        'RKT',
+        'LOI',
+    ];
+
+    private const PEMBIAYAAN = [
+        'APBN',
+        'APBD',
+        'PIHAK KETIGA',
+        'PARA PIHAK',
+        'SESUAI DENGAN PERATURAN PERUNDANG-UNDANGAN',
+    ];
+
     public function run(): void
     {
-        $admin = Admin::first();
+        $admin = Admin::query()->first();
+        if ($admin === null) {
+            throw new \RuntimeException('Seeder riwayat kerjasama membutuhkan data admin terlebih dahulu.');
+        }
 
-        $mitras = Mitra::all();
+        $mitras = Mitra::query()->get();
+        if ($mitras->isEmpty()) {
+            throw new \RuntimeException('Seeder riwayat kerjasama membutuhkan data mitra terlebih dahulu.');
+        }
 
         $kategoriIds = DB::table('kategori_kerjasama')
             ->pluck('id_kategori');
+        if ($kategoriIds->isEmpty()) {
+            throw new \RuntimeException('Seeder riwayat kerjasama membutuhkan data kategori kerjasama terlebih dahulu.');
+        }
 
-        $jenisKerjasamaList = [
-            'Kerjasama Daerah Antar Daerah (KSDD)',
-            'Kerjasama Dengan Pihak Ketiga (KSDPK)',
-            'Sinergi Dengan Pemerintah Pusat/Lembaga (NK/RK)',
-            'Perjanjian Teknis (PERTEK)',
-            'Kerjasama Daerah Dengan Pemerintah Daerah Di Luar Negeri (KSDPL)',
-            'Kerjasama Daerah Dengan Lembaga Di Luar Negeri (KSDLL)',
-        ];
-
-        $jenisDokumenList = [
-            'KSB',
-            'Nota Kesepakatan',
-            'Perjanjian Teknis',
-            'PKS',
-            'Rencana Kerja',
-            'MOU',
-            'RKT',
-            'LOI',
-        ];
+        $urusanList = UrusanEnum::cases();
 
         // =========================
         // DATA PEMERINTAH
@@ -50,6 +70,9 @@ class RiwayatKerjasamaSeeder extends Seeder
         for ($i = 1; $i <= 15; $i++) {
 
             $mitra = $mitras->random();
+            $jenisKerjasama = $this->randomJenisKerjasama();
+            $jenisDokumen = $this->randomJenisDokumen();
+            $pembiayaan = $this->randomPembiayaan();
 
             $kerjasama = Kerjasama::create([
                 'id_mitra' => null,
@@ -58,13 +81,15 @@ class RiwayatKerjasamaSeeder extends Seeder
 
                 'judul' => "Kerjasama Pemerintah #{$i}",
 
-                'nomor_suratP' => 'SR-P-' . rand(100, 999),
+                'nomor_suratP' => 'SR-P-' . random_int(100, 999),
 
-                'urusan' => 'Kerjasama Pemerintah Daerah',
+                'urusan' => $urusanList[array_rand($urusanList)],
                 'daerah' => 'Boyolali',
 
-                'jenis_kerjasama' => $jenisKerjasamaList[array_rand($jenisKerjasamaList)],
-                'jenis_dokumen' => $jenisDokumenList[array_rand($jenisDokumenList)],
+                'jenis_kerjasama' => $jenisKerjasama,
+                'jenis_dokumen' => $jenisDokumen,
+
+                'pembiayaan' => $pembiayaan,
 
                 'tipe' => 'pemerintah',
                 'pemrakarsa' => 'P',
@@ -82,9 +107,9 @@ class RiwayatKerjasamaSeeder extends Seeder
                 'catatan_persetujuan' => null,
             ]);
 
-            $periode = $this->createPeriode($kerjasama->id_kerjasama, $i);
+            $this->createPeriode($kerjasama->id_kerjasama, $i, $pembiayaan);
 
-            $this->createDokumen($kerjasama, $admin);
+            $this->createDokumen($kerjasama, $admin, $jenisDokumen);
 
             if ($i % 4 == 0) {
                 $this->createAdendum($kerjasama, $admin);
@@ -98,6 +123,9 @@ class RiwayatKerjasamaSeeder extends Seeder
         for ($i = 1; $i <= 15; $i++) {
 
             $mitra = $mitras->random();
+            $jenisKerjasama = $this->randomJenisKerjasama();
+            $jenisDokumen = $this->randomJenisDokumen();
+            $pembiayaan = $this->randomPembiayaan();
 
             $kerjasama = Kerjasama::create([
                 'id_mitra' => $mitra->id_mitra,
@@ -108,13 +136,15 @@ class RiwayatKerjasamaSeeder extends Seeder
 
                 'judul' => "Kerjasama Mitra #{$i}",
 
-                'nomor_suratM' => 'SR-M-' . rand(100, 999),
+                'nomor_suratM' => 'SR-M-' . random_int(100, 999),
 
-                'urusan' => 'Kemitraan Daerah',
+                'urusan' => $urusanList[array_rand($urusanList)],
                 'daerah' => 'Boyolali',
 
-                'jenis_kerjasama' => $jenisKerjasamaList[array_rand($jenisKerjasamaList)],
-                'jenis_dokumen' => $jenisDokumenList[array_rand($jenisDokumenList)],
+                'jenis_kerjasama' => $jenisKerjasama,
+                'jenis_dokumen' => $jenisDokumen,
+
+                'pembiayaan' => $pembiayaan,
 
                 'tipe' => 'mitra',
                 'pemrakarsa' => 'M',
@@ -132,9 +162,9 @@ class RiwayatKerjasamaSeeder extends Seeder
                 'catatan_persetujuan' => null,
             ]);
 
-            $periode = $this->createPeriode($kerjasama->id_kerjasama, $i + 20);
+            $this->createPeriode($kerjasama->id_kerjasama, $i + 20, $pembiayaan);
 
-            $this->createDokumen($kerjasama, $admin);
+            $this->createDokumen($kerjasama, $admin, $jenisDokumen);
 
             if ($i % 3 == 0) {
                 $this->createAdendum($kerjasama, $admin);
@@ -142,11 +172,26 @@ class RiwayatKerjasamaSeeder extends Seeder
         }
     }
 
+    private function randomJenisKerjasama(): string
+    {
+        return self::JENIS_KERJASAMA[array_rand(self::JENIS_KERJASAMA)];
+    }
+
+    private function randomJenisDokumen(): string
+    {
+        return self::JENIS_DOKUMEN[array_rand(self::JENIS_DOKUMEN)];
+    }
+
+    private function randomPembiayaan(): string
+    {
+        return self::PEMBIAYAAN[array_rand(self::PEMBIAYAAN)];
+    }
+
     // =========================================================
     // PERIODE
     // =========================================================
 
-    private function createPeriode($idKerjasama, $index)
+    private function createPeriode($idKerjasama, $index, string $pembiayaan)
     {
         // BERAKHIR
         if ($index % 3 == 0) {
@@ -179,7 +224,7 @@ class RiwayatKerjasamaSeeder extends Seeder
 
             'tanggal_berakhir' => $berakhir,
 
-            'keterangan' => 'cooperation_docs/dummy.pdf',
+            'keterangan' => $pembiayaan,
         ]);
     }
 
@@ -187,10 +232,12 @@ class RiwayatKerjasamaSeeder extends Seeder
     // DOKUMEN
     // =========================================================
 
-    private function createDokumen($kerjasama, $admin)
+    private function createDokumen($kerjasama, $admin, string $jenisDokumen)
     {
         Dokumen::create([
             'id_kerjasama' => $kerjasama->id_kerjasama,
+
+            'jenis_dokumen' => $jenisDokumen,
 
             'nama_file' => 'dummy.pdf',
 

@@ -96,5 +96,9 @@ class DatabaseSeeder extends Seeder
             'pic' => 'Ahmad Dahlan',
             'alamat' => 'Jl. Pemuda No. 78, Boyolali',
         ]);
+
+        $this->call([
+            RiwayatKerjasamaSeeder::class,
+        ]);
     }
 }
