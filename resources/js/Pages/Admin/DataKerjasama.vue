@@ -652,6 +652,32 @@ function goToPage(p) {
   })
 }
 
+const visiblePages = computed(() => {
+  const lastPage = Number(kerjasama.value?.last_page || 1)
+  const currentPage = Number(kerjasama.value?.current_page || 1)
+
+  if (lastPage <= 3) {
+    return Array.from({ length: lastPage }, (_, index) => index + 1)
+  }
+
+  let startPage = Math.max(1, currentPage - 1)
+  let endPage = Math.min(lastPage, currentPage + 1)
+
+  if (startPage === 1) endPage = 3
+  if (endPage === lastPage) startPage = lastPage - 2
+
+  return Array.from(
+    { length: endPage - startPage + 1 },
+    (_, index) => startPage + index
+  )
+})
+
+const hasLeftEllipsis = computed(() => visiblePages.value.length > 0 && visiblePages.value[0] > 1)
+const hasRightEllipsis = computed(() => {
+  if (!visiblePages.value.length) return false
+  return visiblePages.value[visiblePages.value.length - 1] < Number(kerjasama.value?.last_page || 1)
+})
+
 onBeforeUnmount(() => {
   if (debounceTimer) clearTimeout(debounceTimer)
 })
