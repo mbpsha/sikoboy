@@ -4,15 +4,32 @@ namespace App\Http\Controllers\Mitra;
 
 use App\Http\Controllers\Controller;
 use App\Support\NotificationFeed;
-use App\Models\Admin;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Schema;
 use Inertia\Inertia;
 
 class ProfileController extends Controller
 {
+    /**
+     * Show the mitra profile page.
+     */
+    public function index(Request $request)
+    {
+        $user = $request->user();
+
+        return Inertia::render('Mitra/Profile/Profile', [
+            'mitra' => $user?->mitra,
+            'stats' => [
+                'total_pengajuan' => 0,
+                'disetujui' => 0,
+                'dalam_proses' => 0,
+                'pending' => 0,
+            ],
+            'kerjasama_list' => [],
+            'notifications' => NotificationFeed::forMitra($user, 50),
+        ]);
+    }
+
     /**
      * Show profile completion form for mitra without profile.
      */
@@ -107,5 +124,15 @@ class ProfileController extends Controller
         ]);
 
         return back()->with('success', 'Password berhasil diperbarui.');
+    }
+
+    /**
+     * Show the mitra notifications page.
+     */
+    public function notifications(Request $request)
+    {
+        return Inertia::render('Mitra/Profile/ListNotif', [
+            'allNotifications' => NotificationFeed::forMitra($request->user(), 50),
+        ]);
     }
 }

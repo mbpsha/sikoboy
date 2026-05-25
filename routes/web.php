@@ -18,15 +18,15 @@ use App\Http\Controllers\Auth\VerificationController;
 use App\Http\Controllers\Mitra\DashboardController as MitraDashboardController;
 use App\Http\Controllers\Mitra\KerjasamaController as MitraKerjasamaController;
 use App\Http\Controllers\Mitra\ProfileController as MitraProfileController;
-use App\Http\Controllers\PotensiController;
 use App\Http\Controllers\TemplateDokumenController;
-use App\Models\TemplateDokumen;
 use App\Models\Peraturan;
 use App\Models\Potensi;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+
+$loginThrottleAttempts = 6;
 
 // ========================================
 // PUBLIC ROUTES

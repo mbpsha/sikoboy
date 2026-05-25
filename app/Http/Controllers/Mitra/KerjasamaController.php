@@ -79,6 +79,9 @@ class KerjasamaController extends Controller
             'mitra' => $mitra ? [
                 'id_mitra' => $mitra->id_mitra,
                 'nama_perusahaan' => $mitra->nama_perusahaan,
+                'no_handphone' => $mitra->no_handphone,
+                'alamat' => $mitra->alamat,
+                'pic' => $mitra->pic,
             ] : null,
         ]);
     }
