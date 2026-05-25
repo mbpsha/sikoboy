@@ -32,8 +32,10 @@ const tahun = ref(props.filters?.tahun || "");
 const showModal = ref(false);
 const fileInput = ref(null);
 const showAdendumModal = ref(false);
+const showAdendumDetailModal = ref(false);
 const adendumFileInput = ref(null);
 const selectedKerjasama = ref(null);
+const selectedAdendumKerjasama = ref(null);
 const openStatusDropdown = ref(null);
 const openFilterColumn = ref(null);
 
@@ -66,7 +68,7 @@ const applyFilters = () => {
             page: 1,
             per_page: perPage,
         },
-        { preserveState: false },
+        { preserveState: true, preserveScroll: true },
     );
 };
 
@@ -539,8 +541,10 @@ const submitAdendum = () => {
 
     const formData = new FormData();
     formData.append("id_kerjasama", selectedKerjasama.value.id_kerjasama);
+    formData.append("mitra", selectedKerjasama.value?.mitra || "");
+    formData.append("tahun", selectedKerjasama.value?.tahun || "");
     formData.append("judul_adendum", adendumForm.value.judul_adendum);
-    formData.append("keterangan_adendum", adendumForm.value.keterangan_adendum);
+    formData.append("keterangan_adendum", adendumForm.value.keterangan_adendum || "");
 
     if (adendumForm.value.file) {
         formData.append("file", adendumForm.value.file);
@@ -588,10 +592,21 @@ const closeAdendumModal = () => {
     adendumErrors.value = {};
 };
 
+const closeAdendumDetailModal = () => {
+    showAdendumDetailModal.value = false;
+    selectedAdendumKerjasama.value = null;
+};
+
 // OPEN ADENDUM MODAL
 const openAdendumModal = (item) => {
     selectedKerjasama.value = item;
+    adendumForm.value.judul_adendum = item?.judul || "";
     showAdendumModal.value = true;
+};
+
+const openAdendumDetailModal = (item) => {
+    selectedAdendumKerjasama.value = item;
+    showAdendumDetailModal.value = true;
 };
 
 // CLOSE STATUS DROPDOWN
@@ -1014,7 +1029,7 @@ onBeforeUnmount(() => {
                                     <td
                                         class="px-4 py-3 whitespace-nowrap border-r border-gray-200"
                                     >
-                                        {{ item.id_kerjasama }}
+                                        {{ item.no }}
                                     </td>
                                     <td
                                         class="px-4 py-3 whitespace-nowrap border-r border-gray-200"
@@ -1132,24 +1147,22 @@ onBeforeUnmount(() => {
                                     <td
                                         class="px-4 py-3 border-r border-gray-200"
                                     >
-                                        <div class="flex items-center gap-2">
-                                            <span
-                                                v-if="!item.has_adendum"
-                                                class="text-sm text-gray-500"
-                                            >
-                                                Belum ada adendum
+                                        <div class="flex flex-wrap items-center gap-2">
+                                            <span class="text-sm text-gray-600">
+                                                {{ item.adendum_count ? `${item.adendum_count} adendum` : 'Belum ada adendum' }}
                                             </span>
-                                            <span
-                                                v-else
-                                                class="text-sm text-green-600 font-semibold"
+                                            <button
+                                                v-if="item.adendum_count"
+                                                @click="openAdendumDetailModal(item)"
+                                                class="px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 whitespace-nowrap"
                                             >
-                                                ✓ Ada adendum
-                                            </span>
+                                                Lihat
+                                            </button>
                                             <button
                                                 @click="openAdendumModal(item)"
                                                 class="px-2 py-1 bg-teal-600 text-white rounded text-xs hover:bg-teal-700 whitespace-nowrap"
                                             >
-                                                + Upload
+                                                + Tambah
                                             </button>
                                         </div>
                                     </td>
@@ -1650,10 +1663,10 @@ onBeforeUnmount(() => {
         <!-- MODAL UPLOAD ADENDUM -->
         <div
             v-if="showAdendumModal"
-            class="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
+            class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4 sm:px-6 py-6"
         >
             <div
-                class="bg-white rounded-2xl p-6 w-[600px] max-h-[85vh] shadow-lg relative flex flex-col"
+                class="bg-white rounded-2xl p-4 sm:p-6 w-full max-w-[600px] max-h-[90dvh] shadow-lg relative flex flex-col"
             >
                 <!-- CLOSE -->
                 <button
@@ -1746,7 +1759,7 @@ onBeforeUnmount(() => {
 
                 <!-- BUTTONS -->
                 <div
-                    class="flex gap-3 justify-end mt-4 pt-4 border-t border-gray-200"
+                    class="flex flex-col-reverse sm:flex-row gap-3 justify-end mt-4 pt-4 border-t border-gray-200"
                 >
                     <button
                         @click="closeAdendumModal"
@@ -1759,6 +1772,60 @@ onBeforeUnmount(() => {
                         class="px-4 py-2 bg-teal-600 text-white rounded-lg text-sm hover:bg-teal-700"
                     >
                         Upload
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div
+            v-if="showAdendumDetailModal"
+            class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4 sm:px-6 py-6"
+        >
+            <div class="bg-white rounded-2xl p-4 sm:p-6 w-full max-w-[680px] max-h-[90dvh] shadow-lg relative flex flex-col">
+                <button
+                    @click="closeAdendumDetailModal"
+                    class="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+                >
+                    ✕
+                </button>
+
+                <h2 class="text-lg font-semibold mb-1">Data Adendum</h2>
+                <p class="text-sm text-gray-500 mb-4">{{ selectedAdendumKerjasama?.judul }}</p>
+
+                <div class="overflow-y-auto flex-1 space-y-3 pr-1">
+                    <div
+                        v-for="adendum in (selectedAdendumKerjasama?.adendum_items || [])"
+                        :key="adendum.id_adendum"
+                        class="border border-gray-200 rounded-xl p-4 bg-gray-50"
+                    >
+                        <div class="flex items-center justify-between gap-2 mb-3">
+                            <h3 class="font-semibold text-sm text-gray-800">Adendum {{ adendum.urutan }}</h3>
+                            <span v-if="adendum.created_at" class="text-xs text-gray-500">{{ adendum.created_at }}</span>
+                        </div>
+                        <div class="space-y-3 text-sm">
+                            <div><p class="text-gray-500 text-xs">Judul Adendum</p><p class="font-medium">{{ adendum.judul_adendum || '-' }}</p></div>
+                            <div v-if="adendum.keterangan_adendum"><p class="text-gray-500 text-xs">Keterangan</p><p class="font-medium whitespace-pre-line">{{ adendum.keterangan_adendum }}</p></div>
+                            <div v-if="adendum.file_url">
+                                <a
+                                    :href="adendum.file_url"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    class="inline-flex items-center gap-2 text-teal-700 text-sm font-medium hover:underline"
+                                >
+                                    <DocumentTextIcon class="w-4 h-4" />
+                                    {{ adendum.file_name || 'Lihat dokumen adendum' }}
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-end mt-4 pt-4 border-t border-gray-200">
+                    <button
+                        @click="closeAdendumDetailModal"
+                        class="px-4 py-2 border rounded-lg text-sm hover:bg-gray-50"
+                    >
+                        Tutup
                     </button>
                 </div>
             </div>
