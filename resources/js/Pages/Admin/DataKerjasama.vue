@@ -285,7 +285,7 @@
 
               <button
                 v-for="page in visiblePages"
-                :key="`desktop-${page}`"
+                :key="`page-${page}`"
                 @click.prevent="goToPage(page)"
                 class="px-3 py-2 text-sm rounded-lg border"
                 :class="page === kerjasama.current_page ? 'bg-teal-600 text-white border-teal-600' : 'bg-white text-gray-700'"
