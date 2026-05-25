@@ -19,4 +19,12 @@ class ExampleTest extends TestCase
 
         $response->assertStatus(200);
     }
+
+    public function test_dokumen_page_shows_empty_state_when_no_templates_exist(): void
+    {
+        $response = $this->get('/dokumen');
+
+        $response->assertStatus(200);
+        $response->assertSee('&quot;dokumenGroups&quot;:[]', false);
+    }
 }

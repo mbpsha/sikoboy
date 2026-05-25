@@ -32,9 +32,10 @@ const props = defineProps({
         </svg>
       </template>
       <template v-else>
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 sm:w-6 sm:h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h3l2-3h6l2 3h3a2 2 0 0 1 2 2z" />
-          <circle cx="12" cy="13" r="4" />
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 sm:w-6 sm:h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <title>Camera</title>
+          <path d="M3 7h4l2-3h6l2 3h4v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z" />
+          <circle cx="12" cy="13" r="3" />
         </svg>
       </template>
     </div>

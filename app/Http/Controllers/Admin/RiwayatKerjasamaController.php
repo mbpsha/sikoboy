@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\UrusanEnum;
+use App\Exports\RiwayatKerjasamaExport;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreKerjasamaPemerintahRequest;
 use App\Models\Adendum;
@@ -14,10 +16,13 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
+use Maatwebsite\Excel\Facades\Excel;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class RiwayatKerjasamaController extends Controller
 {
@@ -35,12 +40,37 @@ class RiwayatKerjasamaController extends Controller
 
         $this->applyFilters($query, $request);
 
-        $kerjasama = $query->orderBy('id_kerjasama', 'asc')
-            ->paginate(10)
-            ->withQueryString();
-
-        $offset = ($kerjasama->currentPage() - 1) * $kerjasama->perPage();
-        $kerjasama->getCollection()->transform(fn ($k, $i) => $this->formatRow($k, $offset + $i));
+        $perPage = $request->input('per_page', 10);
+        
+        // Jika per_page besar (mode show all), gunakan get() untuk menampilkan semua
+        if ($perPage >= 5000) {
+            $collection = $query->orderBy('id_kerjasama', 'asc')->get();
+            $items = [];
+            foreach ($collection as $i => $k) {
+                $items[] = $this->formatRow($k, $i);
+            }
+            $total = count($items);
+            
+            // Format sebagai pagination object dengan last_page = 1
+            $kerjasama = new \Illuminate\Pagination\LengthAwarePaginator(
+                $items,
+                $total, // total items
+                $total, // per_page = total (sehingga last_page = 1)
+                1, // current page
+                [
+                    'path' => $request->url(),
+                    'query' => $request->query(),
+                    'fragment' => null,
+                ]
+            );
+        } else {
+            $kerjasama = $query->orderBy('id_kerjasama', 'asc')
+                ->paginate($perPage)
+                ->withQueryString();
+            
+            $offset = ($kerjasama->currentPage() - 1) * $kerjasama->perPage();
+            $kerjasama->getCollection()->transform(fn ($k, $i) => $this->formatRow($k, $offset + $i));
+        }
 
         return Inertia::render('Admin/RiwayatKerjasama/Gabungan', [
             'data' => $kerjasama,
@@ -53,6 +83,7 @@ class RiwayatKerjasamaController extends Controller
             'mitras' => $this->mitraOptions(),
             'jenisKerjasamaOptions' => $this->jenisKerjasamaOptions(),
             'jenisDokumenOptions' => $this->jenisDokumenOptions(),
+            'urusanOptions' => $this->urusanOptions(),
         ]);
     }
 
@@ -71,12 +102,37 @@ class RiwayatKerjasamaController extends Controller
 
         $this->applyFilters($query, $request);
 
-        $kerjasama = $query->orderBy('id_kerjasama', 'asc')
-            ->paginate(10)
-            ->withQueryString();
-
-        $offset = ($kerjasama->currentPage() - 1) * $kerjasama->perPage();
-        $kerjasama->getCollection()->transform(fn ($k, $i) => $this->formatRow($k, $offset + $i));
+        $perPage = $request->input('per_page', 10);
+        
+        // Jika per_page besar (mode show all), gunakan get() untuk menampilkan semua
+        if ($perPage >= 5000) {
+            $collection = $query->orderBy('id_kerjasama', 'asc')->get();
+            $items = [];
+            foreach ($collection as $i => $k) {
+                $items[] = $this->formatRow($k, $i);
+            }
+            $total = count($items);
+            
+            // Format sebagai pagination object dengan last_page = 1
+            $kerjasama = new \Illuminate\Pagination\LengthAwarePaginator(
+                $items,
+                $total, // total items
+                $total, // per_page = total (sehingga last_page = 1)
+                1, // current page
+                [
+                    'path' => $request->url(),
+                    'query' => $request->query(),
+                    'fragment' => null,
+                ]
+            );
+        } else {
+            $kerjasama = $query->orderBy('id_kerjasama', 'asc')
+                ->paginate($perPage)
+                ->withQueryString();
+            
+            $offset = ($kerjasama->currentPage() - 1) * $kerjasama->perPage();
+            $kerjasama->getCollection()->transform(fn ($k, $i) => $this->formatRow($k, $offset + $i));
+        }
 
         return Inertia::render('Admin/RiwayatKerjasama/Mitra', [
             'data' => $kerjasama,
@@ -89,6 +145,7 @@ class RiwayatKerjasamaController extends Controller
             'mitras' => $this->mitraOptions(),
             'jenisKerjasamaOptions' => $this->jenisKerjasamaOptions(),
             'jenisDokumenOptions' => $this->jenisDokumenOptions(),
+            'urusanOptions' => $this->urusanOptions(),
         ]);
     }
 
@@ -101,17 +158,50 @@ class RiwayatKerjasamaController extends Controller
      */
     public function pemerintah(Request $request)
     {
+        \Log::info("🔍 PEMERINTAH REQUEST", [
+            'per_page' => $request->input('per_page'),
+            'search' => $request->input('search'),
+            'tahun' => $request->input('tahun'),
+        ]);
+        
         $query = Kerjasama::pemerintahTipe()
             ->with(['admin', 'latestPeriode', 'finalDokumen', 'kategori']);
 
         $this->applyFilters($query, $request);
 
-        $kerjasama = $query->orderBy('id_kerjasama', 'asc')
-            ->paginate(10)
-            ->withQueryString();
-
-        $offset = ($kerjasama->currentPage() - 1) * $kerjasama->perPage();
-        $kerjasama->getCollection()->transform(fn ($k, $i) => $this->formatRow($k, $offset + $i));
+        $perPage = $request->input('per_page', 10);
+        
+        \Log::info("📊 After applyFilters, perPage:", ['perPage' => $perPage]);
+        
+        // Jika per_page besar (mode show all), gunakan get() untuk menampilkan semua
+        if ($perPage >= 5000) {
+            $collection = $query->orderBy('id_kerjasama', 'asc')->get();
+            $items = [];
+            foreach ($collection as $i => $k) {
+                $items[] = $this->formatRow($k, $i);
+            }
+            $total = count($items);
+            
+            // Format sebagai pagination object dengan last_page = 1
+            $kerjasama = new \Illuminate\Pagination\LengthAwarePaginator(
+                $items,
+                $total, // total items
+                $total, // per_page = total (sehingga last_page = 1)
+                1, // current page
+                [
+                    'path' => $request->url(),
+                    'query' => $request->query(),
+                    'fragment' => null,
+                ]
+            );
+        } else {
+            $kerjasama = $query->orderBy('id_kerjasama', 'asc')
+                ->paginate($perPage)
+                ->withQueryString();
+            
+            $offset = ($kerjasama->currentPage() - 1) * $kerjasama->perPage();
+            $kerjasama->getCollection()->transform(fn ($k, $i) => $this->formatRow($k, $offset + $i));
+        }
 
         return Inertia::render('Admin/RiwayatKerjasama/Pemerintah', [
             'data' => $kerjasama,
@@ -124,7 +214,23 @@ class RiwayatKerjasamaController extends Controller
             'mitras' => $this->mitraOptions(),
             'jenisKerjasamaOptions' => $this->jenisKerjasamaOptions(),
             'jenisDokumenOptions' => $this->jenisDokumenOptions(),
+            'urusanOptions' => $this->urusanOptions(),
         ]);
+    }
+
+    public function exportGabungan(Request $request): StreamedResponse|BinaryFileResponse
+    {
+        return $this->exportByType($request, 'gabungan');
+    }
+
+    public function exportMitra(Request $request): StreamedResponse|BinaryFileResponse
+    {
+        return $this->exportByType($request, 'mitra');
+    }
+
+    public function exportPemerintah(Request $request): StreamedResponse|BinaryFileResponse
+    {
+        return $this->exportByType($request, 'pemerintah');
     }
 
     private function jenisKerjasamaOptions(): array
@@ -137,6 +243,11 @@ class RiwayatKerjasamaController extends Controller
             ['value' => 'KSDPL', 'label' => 'Kerjasama Daerah Dengan Pemerintah Daerah Di Luar Negeri (KSDPL)'],
             ['value' => 'KSDLL', 'label' => 'Kerjasama Daerah Dengan Lembaga Di Luar Negeri (KSDLL)'],
         ];
+    }
+
+    private function urusanOptions(): array
+    {
+        return UrusanEnum::cases();
     }
 
     private function jenisDokumenOptions(): array
@@ -220,7 +331,7 @@ class RiwayatKerjasamaController extends Controller
                 'keterangan' => $path,
             ]);
 
-            Dokumen::create([
+            $this->createDokumen([
                 'id_kerjasama' => $kerjasama->id_kerjasama,
                 'jenis_dokumen' => $kerjasama->jenis_dokumen,
                 'nama_file' => $originalFileName,
@@ -369,7 +480,7 @@ class RiwayatKerjasamaController extends Controller
 
             $dok = null;
             if ($path && $originalFileName) {
-                $dok = Dokumen::create([
+                $dok = $this->createDokumen([
                     'id_kerjasama' => $kerjasama->id_kerjasama,
                     'jenis_dokumen' => $validated['jenis_dokumen'],
                     'nama_file' => $originalFileName,
@@ -486,7 +597,7 @@ class RiwayatKerjasamaController extends Controller
 
                 $dok = null;
                 if ($path && $originalFileName) {
-                    $dok = Dokumen::create([
+                    $dok = $this->createDokumen([
                         'id_kerjasama' => $kerjasama->id_kerjasama,
                         'jenis_dokumen' => $validated['jenis_dokumen'],
                         'nama_file' => $originalFileName,
@@ -535,7 +646,7 @@ class RiwayatKerjasamaController extends Controller
                 ]);
 
                 if ($path && $originalFileName) {
-                    Dokumen::create([
+                    $this->createDokumen([
                         'id_kerjasama' => $kerjasama->id_kerjasama,
                         'jenis_dokumen' => $validated['jenis_dokumen'],
                         'nama_file' => $originalFileName,
@@ -665,7 +776,7 @@ class RiwayatKerjasamaController extends Controller
                         file: $path,
                     );
                 } else {
-                    Dokumen::create([
+                    $this->createDokumen([
                         'id_kerjasama' => $kerjasama->id_kerjasama,
                         'nama_file' => $originalFileName,
                         'lokasi_file' => $path,
@@ -787,7 +898,7 @@ class RiwayatKerjasamaController extends Controller
         $path = $file->store('dokumen-kerjasama', 'public');
         $jenisDokumen = $kerjasama->jenis_dokumen ?: ($kerjasama->finalDokumen?->jenis_dokumen ?: 'KSB');
 
-        Dokumen::create([
+        $this->createDokumen([
             'id_kerjasama' => $kerjasama->id_kerjasama,
             'jenis_dokumen' => $jenisDokumen,
             'nama_file' => $file->getClientOriginalName(),
@@ -806,19 +917,33 @@ class RiwayatKerjasamaController extends Controller
         );
     }
 
+    private function createDokumen(array $attributes): Dokumen
+    {
+        $payload = [
+            'id_kerjasama' => $attributes['id_kerjasama'],
+            'nama_file' => $attributes['nama_file'],
+            'lokasi_file' => $attributes['lokasi_file'],
+            'versi_dokumen' => $attributes['versi_dokumen'] ?? 1,
+            'created_by' => $attributes['created_by'],
+        ];
+
+        if (Schema::hasColumn('dokumen', 'jenis_dokumen') && array_key_exists('jenis_dokumen', $attributes)) {
+            $payload['jenis_dokumen'] = $attributes['jenis_dokumen'];
+        }
+
+        if (Schema::hasColumn('dokumen', 'tipe_dokumen') && array_key_exists('tipe_dokumen', $attributes)) {
+            $payload['tipe_dokumen'] = $attributes['tipe_dokumen'];
+        }
+
+        return Dokumen::create($payload);
+    }
+
     private function applyFilters($query, Request $request): void
     {
-        // SIMPLE SEARCH - Focus on main fields
         if ($request->filled('search')) {
             $search = trim($request->search);
 
-            \Log::info("🔍 SEARCH FILTER", [
-                'search' => $search,
-                'filled' => $request->filled('search'),
-            ]);
-
             $query->where(function ($q) use ($search) {
-                // Main table fields
                 $q->where('judul', 'like', "%{$search}%")
                   ->orWhere('nomor_suratM', 'like', "%{$search}%")
                   ->orWhere('nomor_suratP', 'like', "%{$search}%")
@@ -828,12 +953,10 @@ class RiwayatKerjasamaController extends Controller
                   ->orWhere('jenis_kerjasama', 'like', "%{$search}%")
                   ->orWhere('jenis_dokumen', 'like', "%{$search}%");
 
-                // Mitra name search
                 $q->orWhereHas('mitra', function ($mitra) use ($search) {
                     $mitra->where('nama_perusahaan', 'like', "%{$search}%");
                 });
 
-                // Year search
                 if (is_numeric($search)) {
                     $q->orWhereHas('latestPeriode', function ($periode) use ($search) {
                         $periode->whereYear('tanggal_mulai', $search);
@@ -842,11 +965,148 @@ class RiwayatKerjasamaController extends Controller
             });
         }
 
-        // TAHUN FILTER
         if ($request->filled('tahun')) {
             $query->whereHas('latestPeriode', function ($q) use ($request) {
                 $q->whereYear('tanggal_mulai', $request->tahun);
             });
+        }
+    }
+
+    private function exportByType(Request $request, string $type): StreamedResponse|BinaryFileResponse
+    {
+        $query = match ($type) {
+            'mitra' => Kerjasama::finalized()
+                ->mitraTipe()
+                ->with(['mitra', 'latestPeriode', 'finalDokumen', 'kategori', 'adendum']),
+            'pemerintah' => Kerjasama::pemerintahTipe()
+                ->with(['admin', 'latestPeriode', 'finalDokumen', 'kategori', 'adendum']),
+            default => Kerjasama::finalized()
+                ->with(['mitra', 'latestPeriode', 'finalDokumen', 'kategori', 'adendum']),
+        };
+
+        $this->applyFilters($query, $request);
+        $this->applyExportColumnFilters($query, $request);
+
+        $rows = $query->orderBy('id_kerjasama', 'asc')
+            ->get()
+            ->values()
+            ->map(fn (Kerjasama $k, int $i) => $this->formatRow($k, $i));
+
+        $format = strtolower((string) $request->query('format', 'csv'));
+        $baseFilename = 'riwayat-kerjasama-'.$type.'-'.now()->format('Ymd_His');
+
+        if ($format === 'xlsx') {
+            return Excel::download(new RiwayatKerjasamaExport($rows), $baseFilename.'.xlsx');
+        }
+
+        $filename = $baseFilename.'.csv';
+
+        return response()->streamDownload(function () use ($rows) {
+            $handle = fopen('php://output', 'w');
+            fwrite($handle, "\xEF\xBB\xBF");
+
+            fputcsv($handle, [
+                'No',
+                'Tahun',
+                'Tipe',
+                'Pemrakarsa',
+                'Mitra/Pihak',
+                'Judul',
+                'Tanggal Mulai',
+                'Tanggal Berakhir',
+                'Jangka Waktu',
+                'Status',
+                'Jenis Kerjasama',
+                'Jenis Dokumen',
+                'Nomor Surat Mitra',
+                'Nomor Surat Pemerintah',
+                'Urusan',
+                'Pembiayaan',
+            ]);
+
+            foreach ($rows as $row) {
+                fputcsv($handle, [
+                    $row['no'] ?? '',
+                    $row['tahun'] ?? '',
+                    $row['tipe'] ?? '',
+                    $row['pemrakarsa'] ?? '',
+                    $row['mitra'] ?? '',
+                    $row['judul'] ?? '',
+                    $row['tanggal_mulai'] ?? '',
+                    $row['tanggal_berakhir'] ?? '',
+                    $row['jangka_waktu'] ?? '',
+                    $row['status'] ?? '',
+                    $row['jenis_kerjasama'] ?? '',
+                    $row['jenis_dokumen'] ?? '',
+                    $row['nomor_suratM'] ?? '',
+                    $row['nomor_suratP'] ?? '',
+                    $row['urusan'] ?? '',
+                    $row['pembiayaan'] ?? '',
+                ]);
+            }
+
+            fclose($handle);
+        }, $filename, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+        ]);
+    }
+
+    private function applyExportColumnFilters($query, Request $request): void
+    {
+        $tahunColumns = collect($request->input('tahun_column', []))
+            ->filter(fn ($value) => is_numeric($value))
+            ->map(fn ($value) => (int) $value)
+            ->unique()
+            ->values();
+
+        if ($tahunColumns->isNotEmpty()) {
+            $query->whereHas('latestPeriode', function ($q) use ($tahunColumns) {
+                $q->whereIn(DB::raw('YEAR(tanggal_mulai)'), $tahunColumns->all());
+            });
+        }
+
+        $tipe = collect($request->input('tipe', []))
+            ->map(fn ($value) => trim((string) $value))
+            ->filter()
+            ->unique()
+            ->values();
+
+        if ($tipe->isNotEmpty()) {
+            $query->whereIn('tipe', $tipe->all());
+        }
+
+        $mitra = collect($request->input('mitra', []))
+            ->map(fn ($value) => trim((string) $value))
+            ->filter()
+            ->unique()
+            ->values();
+
+        if ($mitra->isNotEmpty()) {
+            $query->where(function ($q) use ($mitra) {
+                $q->whereHas('mitra', function ($mitraQuery) use ($mitra) {
+                    $mitraQuery->whereIn('nama_perusahaan', $mitra->all());
+                })->orWhereIn('nama_pihak_luar', $mitra->all());
+            });
+        }
+
+        $jenisKerjasama = collect($request->input('jenis_kerjasama', []))
+            ->map(fn ($value) => trim((string) $value))
+            ->filter()
+            ->unique()
+            ->values();
+
+        if ($jenisKerjasama->isNotEmpty()) {
+            $query->whereIn('jenis_kerjasama', $jenisKerjasama->all());
+        }
+
+        $status = collect($request->input('status', []))
+            ->map(fn ($value) => trim((string) $value))
+            ->filter()
+            ->unique()
+            ->values();
+
+        if ($status->isNotEmpty()) {
+            $query->whereIn('status_aktif', $status->all());
         }
     }
 

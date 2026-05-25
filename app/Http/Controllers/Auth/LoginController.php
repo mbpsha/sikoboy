@@ -40,12 +40,12 @@ class LoginController extends Controller
             'g-recaptcha-response' => 'nullable|string',
         ]);
 
-        // ✅ Validasi reCAPTCHA untuk semua role
+        // ✅ Validasi reCAPTCHA untuk semua role selama key tersedia
         $captchaToken  = (string) $request->input('g-recaptcha-response', '');
         $captchaSecret = (string) config('services.recaptcha.secret');
-
+        
         if (!empty($captchaSecret)) {
-            $captchaResponse = Http::asForm()->timeout(5)->post(
+            $captchaResponse = Http::asForm()->timeout(5)->withoutVerifying()->post(
                 'https://www.google.com/recaptcha/api/siteverify',
                 [
                     'secret'   => $captchaSecret,

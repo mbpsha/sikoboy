@@ -20,6 +20,7 @@ use App\Http\Controllers\Mitra\KerjasamaController as MitraKerjasamaController;
 use App\Http\Controllers\Mitra\ProfileController as MitraProfileController;
 use App\Http\Controllers\PotensiController;
 use App\Http\Controllers\TemplateDokumenController;
+use App\Models\TemplateDokumen;
 use App\Models\Peraturan;
 use App\Models\Potensi;
 use Illuminate\Http\Request;
@@ -116,20 +117,54 @@ Route::get('/potensi', [PotensiController::class, 'index'])
 
 // Dokumen (dengan data kategori)
 Route::get('/dokumen', function () {
-    $kategoris = DB::table('kategori_kerjasama')->get()->map(function ($k) {
-        $file = $k->file_template ?? '';
-        $filename = basename($file);
-        $pdfname = preg_replace('/\.(docx|doc|xlsx|pptx)$/i', '.pdf', $filename);
-        $pdfPath = storage_path('app/public/docs/'.$pdfname);
-        $preview = null;
-        if ($filename && file_exists($pdfPath)) {
-            $preview = '/storage/docs/'.$pdfname;
-        }
+    $shortLabel = function (?string $name): string {
+        $name = $name ?? '';
 
-        return (array) array_merge((array) $k, ['preview' => $preview]);
-    })->all();
+        return match (true) {
+            str_contains($name, 'KSDD') => 'KSDD',
+            str_contains($name, 'KSDPK') => 'KSDPK',
+            str_contains($name, 'NK/RK') || str_contains($name, 'Sinergi') => 'Sinergi',
+            str_contains($name, 'PERTEK') => 'PERTEK',
+            str_contains($name, 'KSDPL') => 'KSDPL',
+            str_contains($name, 'KSDLL') => 'KSDLL',
+            default => $name,
+        };
+    };
 
-    return Inertia::render('Dokumen', ['kategoris' => $kategoris]);
+    $templates = TemplateDokumen::query()
+        ->with('kategori:id_kategori,nama_kategori,deskripsi')
+        ->where('is_active', true)
+        ->orderBy('id_kategori')
+        ->orderByDesc('created_at')
+        ->get();
+
+    $dokumenGroups = $templates
+        ->filter(fn (TemplateDokumen $template) => $template->kategori !== null)
+        ->groupBy(fn (TemplateDokumen $template) => $template->kategori?->nama_kategori)
+        ->map(function ($items, $groupName) use ($shortLabel) {
+            $first = $items->first();
+
+            return [
+                'nama_kategori' => $groupName,
+                'label' => $shortLabel($groupName),
+                'deskripsi' => $first?->kategori?->deskripsi ?? '',
+                'items' => $items->values()->map(function (TemplateDokumen $template) {
+                    $fileExtension = strtolower(pathinfo($template->nama_file ?? '', PATHINFO_EXTENSION) ?: 'pdf');
+
+                    return [
+                        'id' => $template->id_template_dokumen,
+                        'title' => $template->judul ?: $template->jenis_dokumen ?: $template->nama_file,
+                        'description' => $template->deskripsi ?: ($template->kategori?->deskripsi ?? ''),
+                        'badge' => strtoupper($fileExtension),
+                        'href' => route('template-dokumen.download', $template->id_template_dokumen),
+                        'preview' => route('template-dokumen.preview', $template->id_template_dokumen),
+                    ];
+                })->values(),
+            ];
+        })
+        ->values();
+
+    return Inertia::render('Dokumen', ['dokumenGroups' => $dokumenGroups]);
 })->name('dokumen');
 
 // Template Dokumen
@@ -143,6 +178,8 @@ Route::get('/template-dokumen/{id}/preview', [TemplateDokumenController::class, 
 // ========================================
 // AUTHENTICATION ROUTES
 // ========================================
+
+$loginThrottleAttempts = max(1, (int) env('RATE_LIMITER_LOGIN_ATTEMPTS', 5));
 
 // Portal redirect
 Route::middleware('auth')->get('/portal-mitra', function (Request $request) {
@@ -160,25 +197,26 @@ Route::get('/login/{role}', fn () => redirect()->route('login'))
     ->whereIn('role', ['admin', 'mitra'])
     ->name('login.role');
 Route::post('/login', [LoginController::class, 'login'])
-    ->middleware('throttle:5,1')
+    ->middleware('throttle:'.$loginThrottleAttempts.',1')
     ->name('login.attempt');
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
 // Registration (Mitra only)
 Route::get('/register', [RegisterController::class, 'showRegistrationForm'])->name('register');
 Route::post('/register', [RegisterController::class, 'register'])
-    ->middleware('throttle:5,1')
+    ->middleware('throttle:'.$loginThrottleAttempts.',1')
     ->name('register.attempt');
 
 // Password Reset
 Route::get('/forgot-password', [ForgotPasswordController::class, 'showLinkRequestForm'])
     ->name('password.request');
 Route::post('/forgot-password', [ForgotPasswordController::class, 'sendResetLinkEmail'])
-    ->middleware('throttle:5,1')
+    ->middleware('throttle:'.$loginThrottleAttempts.',1')
     ->name('password.email');
 Route::get('/reset-password/{token}', [ResetPasswordController::class, 'showResetForm'])
     ->name('password.reset');
 Route::post('/reset-password', [ResetPasswordController::class, 'reset'])
+    ->middleware('throttle:'.$loginThrottleAttempts.',1')
     ->name('password.update');
 
 // Email Verification
@@ -194,9 +232,11 @@ Route::middleware('auth')->group(function () {
 });
 
 // Dev: Verify Email Page
-Route::get('/dev/verify-email', function () {
-    return Inertia::render('Auth/VerifyEmail');
-});
+if (app()->environment(['local', 'testing'])) {
+    Route::get('/dev/verify-email', function () {
+        return Inertia::render('Auth/VerifyEmail');
+    });
+}
 
 // ========================================
 // AUTHENTICATED USER PROFILE
@@ -215,7 +255,7 @@ Route::middleware('auth')->get('/profile', function (Request $request) {
 // MITRA ROUTES
 // ========================================
 
-Route::middleware(['auth', 'role:mitra'])->prefix('mitra')->name('mitra.')->group(function () {
+Route::middleware(['auth', 'role:mitra', 'throttle:240,1'])->prefix('mitra')->name('mitra.')->group(function () {
     // Dashboard
     Route::get('/dashboard', [MitraDashboardController::class, 'index'])
         ->name('dashboard');
@@ -240,7 +280,7 @@ Route::middleware(['auth', 'role:mitra'])->prefix('mitra')->name('mitra.')->grou
         ->name('profile.update');
     Route::put('/profile/password', [MitraProfileController::class, 'updatePassword'])
         ->name('profile.password');
-    
+
     // 🔔 Notifikasi
     Route::get('/notifications', [MitraProfileController::class, 'notifications'])
         ->name('notifications');
@@ -264,7 +304,7 @@ Route::middleware(['auth', 'role:mitra'])->prefix('mitra')->name('mitra.')->grou
 // ADMIN ROUTES
 // ========================================
 
-Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', 'role:admin', 'throttle:240,1'])->prefix('admin')->name('admin.')->group(function () {
 
     // 🔹 Dashboard
     Route::get('/dashboard', [AdminDashboardController::class, 'index'])
@@ -335,6 +375,9 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('/riwayat-kerjasama/gabungan', [RiwayatKerjasamaController::class, 'index'])
         ->middleware('throttle:120,1')
         ->name('riwayat-kerjasama.gabungan');
+    Route::get('/riwayat-kerjasama/gabungan/export', [RiwayatKerjasamaController::class, 'exportGabungan'])
+        ->middleware('throttle:30,1')
+        ->name('riwayat-kerjasama.gabungan.export');
     Route::post('/riwayat-kerjasama/gabungan', [RiwayatKerjasamaController::class, 'storeGabungan'])
         ->name('riwayat-kerjasama.gabungan.store');
     Route::put('/riwayat-kerjasama/gabungan/{id}', [RiwayatKerjasamaController::class, 'updateGabungan'])
@@ -342,11 +385,17 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('/riwayat-kerjasama/mitra', [RiwayatKerjasamaController::class, 'mitra'])
         ->middleware('throttle:120,1')
         ->name('riwayat-kerjasama.mitra');
+    Route::get('/riwayat-kerjasama/mitra/export', [RiwayatKerjasamaController::class, 'exportMitra'])
+        ->middleware('throttle:30,1')
+        ->name('riwayat-kerjasama.mitra.export');
     Route::post('/riwayat-kerjasama/mitra', [RiwayatKerjasamaController::class, 'storeMitra'])
         ->name('riwayat-kerjasama.mitra.store');
     Route::get('/riwayat-kerjasama/pemerintah', [RiwayatKerjasamaController::class, 'pemerintah'])
         ->middleware('throttle:120,1')
         ->name('riwayat-kerjasama.pemerintah');
+    Route::get('/riwayat-kerjasama/pemerintah/export', [RiwayatKerjasamaController::class, 'exportPemerintah'])
+        ->middleware('throttle:30,1')
+        ->name('riwayat-kerjasama.pemerintah.export');
     Route::post('/riwayat-kerjasama/pemerintah', [RiwayatKerjasamaController::class, 'storePemerintah'])
         ->name('riwayat-kerjasama.pemerintah.store');
     Route::put('/riwayat-kerjasama/pemerintah/{id}', [RiwayatKerjasamaController::class, 'updatePemerintah'])

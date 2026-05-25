@@ -135,6 +135,21 @@
 
       <!-- Content -->
       <div class="p-6">
+        <!-- Search -->
+        <div class="bg-white rounded-lg shadow-sm px-4 py-3 mb-4">
+          <div class="relative">
+            <input
+              v-model="searchQuery"
+              type="text"
+              placeholder="Cari notifikasi berdasarkan judul, nomor, atau isi pesan..."
+              class="w-full rounded-lg border border-gray-200 bg-gray-50 px-4 py-2 pl-10 text-sm text-gray-700 placeholder:text-gray-400 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-100"
+            />
+            <svg xmlns="http://www.w3.org/2000/svg" class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35m1.85-5.4a7.2 7.2 0 11-14.4 0 7.2 7.2 0 0114.4 0z" />
+            </svg>
+          </div>
+        </div>
+
         <!-- Filter Tabs -->
         <div class="bg-white rounded-lg shadow-sm px-4 py-3 mb-6">
           <div class="flex gap-2 overflow-x-auto">
@@ -168,11 +183,13 @@
               <div class="flex-shrink-0">
                 <span 
                   class="px-3 py-1 text-xs font-bold rounded-full"
-                  :class="notif.type === 'MITRA' 
-                    ? 'bg-blue-100 text-blue-700' 
-                    : 'bg-green-100 text-green-700'"
+                  :class="notif.kind === 'pengajuan_kerjasama' 
+                    ? 'bg-emerald-100 text-emerald-700' 
+                    : notif.kind === 'revisi_mitra'
+                      ? 'bg-amber-100 text-amber-700'
+                      : 'bg-sky-100 text-sky-700'"
                 >
-                  {{ notif.type }}
+                  {{ getKindLabel(notif.kind) }}
                 </span>
               </div>
 
@@ -282,34 +299,72 @@ const props = defineProps({
 })
 
 const activeTab = ref('semua')
+const searchQuery = ref('')
 
 const notifications = computed(() => props.notifications ?? [])
 
 const tabs = [
   { label: 'Semua', value: 'semua' },
-  { label: 'Mitra', value: 'mitra' },
-  { label: 'SETDA', value: 'setda' },
+  { label: 'Pengajuan Kerjasama', value: 'pengajuan_kerjasama' },
+  { label: 'Revisi Mitra', value: 'revisi_mitra' },
   { label: 'Akan Berakhir', value: 'akan_berakhir' },
   { label: 'Sudah Berakhir', value: 'sudah_berakhir' },
 ]
 
+const getKindLabel = (kind) => {
+  switch (kind) {
+    case 'pengajuan_kerjasama': return 'Pengajuan'
+    case 'revisi_mitra': return 'Revisi Mitra'
+    case 'status_admin': return 'Pengingat'
+    default: return 'Notifikasi'
+  }
+}
+
+const matchesSearch = (notif, query) => {
+  if (!query) return true
+
+  const haystack = [
+    notif.title,
+    notif.description,
+    notif.message,
+    notif.nomor,
+    notif.nomor_kerjasama,
+    notif.kerjasama_judul,
+    notif.proses_judul,
+    getKindLabel(notif.kind),
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase()
+
+  return haystack.includes(query.toLowerCase())
+}
+
 const getCount = (type) => {
   if (type === 'semua') return notifications.value.length
-  if (type === 'mitra') return notifications.value.filter(n => n.type === 'MITRA').length
-  if (type === 'setda') return notifications.value.filter(n => n.type === 'SETDA').length
+  if (type === 'pengajuan_kerjasama') return notifications.value.filter(n => n.kind === 'pengajuan_kerjasama').length
+  if (type === 'revisi_mitra') return notifications.value.filter(n => n.kind === 'revisi_mitra').length
   if (type === 'akan_berakhir') return notifications.value.filter(n => n.status_group === 'akan_berakhir').length
   if (type === 'sudah_berakhir') return notifications.value.filter(n => n.status_group === 'sudah_berakhir').length
   return 0
 }
 
 const filteredNotifications = computed(() => {
-  switch (activeTab.value) {
-    case 'mitra': return notifications.value.filter(n => n.type === 'MITRA')
-    case 'setda': return notifications.value.filter(n => n.type === 'SETDA')
-    case 'akan_berakhir': return notifications.value.filter(n => n.status_group === 'akan_berakhir')
-    case 'sudah_berakhir': return notifications.value.filter(n => n.status_group === 'sudah_berakhir')
-    default: return notifications.value
-  }
+  const query = searchQuery.value.trim().toLowerCase()
+
+  return notifications.value.filter((notif) => {
+    const tabMatch = (() => {
+      switch (activeTab.value) {
+        case 'pengajuan_kerjasama': return notif.kind === 'pengajuan_kerjasama'
+        case 'revisi_mitra': return notif.kind === 'revisi_mitra'
+        case 'akan_berakhir': return notif.status_group === 'akan_berakhir'
+        case 'sudah_berakhir': return notif.status_group === 'sudah_berakhir'
+        default: return true
+      }
+    })()
+
+    return tabMatch && matchesSearch(notif, query)
+  })
 })
 
 const formatDate = (dateString) => {
