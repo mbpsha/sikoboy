@@ -18,13 +18,14 @@ const props = defineProps({
 const page          = usePage()
 const currentUserId = computed(() => page.props.auth?.user?.id ?? null)
 
-const users   = props.users
-const filters = props.filters
+const users = computed(() => props.users ?? { data: [], per_page: 15, prev_page_url: null, next_page_url: null, current_page: 1 })
+const filters = computed(() => props.filters ?? {})
 
 const verifyingUserId = ref(null)
 const showCreateModal = ref(false)
 const createType      = ref(null)
 const togglingUserId  = ref(null)
+const isFiltering     = ref(false)
 
 const mitraForm = useForm({
   role: 'mitra', email: '', password: '',
@@ -95,13 +96,13 @@ async function toggleActive(id, isActive) {
   if (!confirmed) return
 
   // optimistic update: apply change locally, rollback on error
-  const idx = users.data.findIndex(u => u.id === id)
-  const prev = idx !== -1 ? users.data[idx].is_active : null
+  const idx = users.value.data.findIndex(u => u.id === id)
+  const prev = idx !== -1 ? users.value.data[idx].is_active : null
   const newIsActive = !isActive
 
   if (idx !== -1) {
-    users.data[idx].is_active = newIsActive
-    users.data[idx].status = newIsActive ? 'aktif' : 'ditolak'
+    users.value.data[idx].is_active = newIsActive
+    users.value.data[idx].status = newIsActive ? 'aktif' : 'ditolak'
   }
   if (selectedUser.value && selectedUser.value.id === id) {
     selectedUser.value.is_active = newIsActive
@@ -127,8 +128,8 @@ async function toggleActive(id, isActive) {
       onError: () => {
         // rollback
         if (idx !== -1 && prev !== null) {
-          users.data[idx].is_active = prev
-          users.data[idx].status = prev ? 'aktif' : 'ditolak'
+          users.value.data[idx].is_active = prev
+          users.value.data[idx].status = prev ? 'aktif' : 'ditolak'
         }
         if (selectedUser.value && selectedUser.value.id === id && prev !== null) {
           selectedUser.value.is_active = prev
@@ -159,6 +160,7 @@ function submitCreateMitra() {
   if (!mitraForm.pic)             missing.push('PIC')
   if (!mitraForm.no_handphone)    missing.push('No. HP')
   if (!mitraForm.alamat)          missing.push('Alamat')
+  if (!mitraForm.password)        missing.push('Password')
 
   if (missing.length) {
     Swal.fire({ icon: 'warning', title: 'Form belum lengkap', html: `Silakan lengkapi: <strong>${missing.join(', ')}</strong>` })
@@ -184,6 +186,7 @@ function submitCreateAdmin() {
   if (!adminForm.email)    missing.push('Email')
   if (!adminForm.username) missing.push('Nama')
   if (!adminForm.instansi) missing.push('Divisi')
+  if (!adminForm.password) missing.push('Password')
 
   if (missing.length) {
     Swal.fire({ icon: 'warning', title: 'Form belum lengkap', html: `Silakan lengkapi: <strong>${missing.join(', ')}</strong>` })
@@ -204,37 +207,15 @@ function submitCreateAdmin() {
   })
 }
 
-const indexOffset = computed(() => (users?.current_page ? (users.current_page - 1) * users.per_page : 0))
+const indexOffset = computed(() => (users.value?.current_page ? (users.value.current_page - 1) * users.value.per_page : 0))
 
-const local = ref({ search: filters.search || '', role: filters.role || '' })
+const local = ref({ search: filters.value.search || '', role: filters.value.role || '' })
 
-// Client-side filtered users for immediate search across all visible columns
-const filteredUsers = computed(() => {
-  const q = String(local.value.search || '').trim().toLowerCase();
-  const list = users?.data || [];
-  if (!q) return list;
-
-  return list.filter((u) => {
-    const candidates = [
-      u.admin?.nama,
-      u.mitra?.nama_perusahaan,
-      u.mitra?.pic,
-      u.mitra?.no_handphone,
-      u.email,
-      u.display_name,
-      u.username,
-      u.role,
-      u.instansi,
-      u.status,
-      u.tanggal_daftar,
-    ];
-
-    return candidates.some((c) => String(c || '').toLowerCase().includes(q));
-  });
-});
+const displayedUsers = computed(() => users.value?.data || [])
 
 let debounceTimer = null
 function scheduleApplyFilters() {
+  isFiltering.value = true
   clearTimeout(debounceTimer)
   debounceTimer = setTimeout(() => applyFilters(), 400)
 }
@@ -246,19 +227,41 @@ function applyFilters() {
   router.get(
     route('admin.pengguna.index'),
     params,
-    { preserveState: true }
+    {
+      preserveState: true,
+      preserveScroll: true,
+      onFinish: () => {
+        isFiltering.value = false
+      },
+    }
   )
 }
 
 function resetFilters() {
   local.value.search = ''
   local.value.role   = ''
-  router.visit(route('admin.pengguna.index'), { method: 'get', data: {}, preserveState: false })
+  isFiltering.value = true
+  router.visit(route('admin.pengguna.index'), {
+    method: 'get',
+    data: {},
+    preserveState: true,
+    preserveScroll: true,
+    onFinish: () => {
+      isFiltering.value = false
+    },
+  })
 }
 
 function goTo(url) {
   if (!url) return
-  router.visit(url, { preserveState: false })
+  isFiltering.value = true
+  router.visit(url, {
+    preserveState: true,
+    preserveScroll: true,
+    onFinish: () => {
+      isFiltering.value = false
+    },
+  })
 }
 
 const goToPage = (page) => {
@@ -266,7 +269,16 @@ const goToPage = (page) => {
   const params = {}
   if (local.value.search) params.search = local.value.search
   if (local.value.role) params.role = local.value.role
-  router.visit(route('admin.pengguna.index'), { method: 'get', data: { ...params, page }, preserveState: true })
+  isFiltering.value = true
+  router.visit(route('admin.pengguna.index'), {
+    method: 'get',
+    data: { ...params, page },
+    preserveState: true,
+    preserveScroll: true,
+    onFinish: () => {
+      isFiltering.value = false
+    },
+  })
 }
 
 function verifyMitra(id) {
@@ -401,8 +413,11 @@ function verifyMitra(id) {
 
         <!-- Table -->
         <div class="p-6">
-          <div class="overflow-x-auto rounded-xl border border-gray-100">
-            <table class="min-w-[1100px] w-full table-auto table-lines">
+          <div v-if="isFiltering" class="mb-4 rounded-lg border border-teal-100 bg-teal-50 px-4 py-3 text-sm text-teal-700">
+            Memproses pencarian...
+          </div>
+          <div class="overflow-x-auto">
+            <table class="min-w-full table-auto table-lines">
               <thead>
                 <tr class="bg-teal-700 text-white text-sm">
                   <th class="py-3 px-4 text-left">No</th>
@@ -414,10 +429,11 @@ function verifyMitra(id) {
                   <th class="py-3 px-4 text-left">Status</th>
                   <th class="py-3 px-4 text-left">Tanggal Daftar</th>
                   <th class="py-3 px-4 text-left">Aksi</th>
+                  <th class="py-3 px-4 text-left">Aksi</th>
                 </tr>
               </thead>
-              <tbody class="bg-white text-xs md:text-sm">
-                <tr v-for="(user, idx) in filteredUsers" :key="user.id" class="border-b" :class="{ 'opacity-60 bg-gray-50': !user.is_active }">
+              <tbody class="bg-white text-sm">
+                <tr v-for="(user, idx) in displayedUsers" :key="user.id" class="border-b" :class="{ 'opacity-60 bg-gray-50': !user.is_active }">
                   <td class="py-4 px-4 text-gray-700">{{ indexOffset + idx + 1 }}</td>
                   <td class="py-4 px-4 text-gray-700">
                     <div class="font-medium">{{ user.admin?.nama ?? user.mitra?.pic ?? user.display_name ?? '-' }}</div>
@@ -428,6 +444,7 @@ function verifyMitra(id) {
                     <span v-if="user.role === 'admin'" class="px-3 py-1 rounded-full bg-purple-200 text-purple-800 text-xs">Admin</span>
                     <span v-else class="px-3 py-1 rounded-full bg-sky-100 text-sky-800 text-xs">Mitra</span>
                   </td>
+                  <td class="py-4 px-4 text-gray-700">{{ user.id ?? '-' }}</td>
                   <td class="py-4 px-4 text-gray-700">{{ user.id ?? '-' }}</td>
                   <td class="py-4 px-4 text-gray-700">{{ user.mitra?.nama_perusahaan ?? user.instansi ?? '-' }}</td>
                   <td class="py-4 px-4">
@@ -477,7 +494,7 @@ function verifyMitra(id) {
                     </div>
                   </td>
                 </tr>
-                <tr v-if="!filteredUsers?.length">
+                <tr v-if="!isFiltering && !displayedUsers?.length">
                   <td colspan="8" class="py-6 px-4 text-center text-gray-500">Belum ada data pengguna.</td>
                 </tr>
               </tbody>
@@ -588,7 +605,7 @@ function verifyMitra(id) {
                 <p v-if="mitraForm.errors.alamat" class="text-red-500 text-xs mt-1">{{ mitraForm.errors.alamat }}</p>
               </div>
               <div>
-                <label class="text-sm font-medium">Password <span class="text-gray-400 text-xs font-normal">(opsional)</span></label>
+                <label class="text-sm font-medium">Password <span class="text-red-600">*</span></label>
                 <div class="relative mt-1">
                   <input :type="showPasswordMitra ? 'text' : 'password'" v-model="mitraForm.password" class="w-full border rounded px-3 py-2 pr-10" />
                   <button type="button" @click="showPasswordMitra = !showPasswordMitra" class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500">
@@ -630,7 +647,7 @@ function verifyMitra(id) {
                 <p v-if="adminForm.errors.instansi" class="text-red-500 text-xs mt-1">{{ adminForm.errors.instansi }}</p>
               </div>
               <div>
-                <label class="text-sm font-medium">Password <span class="text-gray-400 text-xs font-normal">(opsional)</span></label>
+                <label class="text-sm font-medium">Password <span class="text-red-600">*</span></label>
                 <div class="relative mt-1">
                   <input :type="showPasswordAdmin ? 'text' : 'password'" v-model="adminForm.password" class="w-full border rounded px-3 py-2 pr-10" />
                   <button type="button" @click="showPasswordAdmin = !showPasswordAdmin" class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500">

@@ -21,7 +21,6 @@ class DataKerjasamaController extends Controller
 {
     public function index(Request $request)
     {
-        \Log::debug('DataKerjasama index called', ['query' => $request->query()]);
         $query = Kerjasama::with(['mitra', 'admin', 'latestPeriode', 'kategori', 'riwayatStatus']);
 
         if ($request->filled('search')) {
@@ -164,14 +163,22 @@ class DataKerjasamaController extends Controller
             }
         }
 
+        $perPage = min(max((int) $request->input('per_page', 15), 1), 10000);
+
         $kerjasama = $query->orderBy($sortBy, $sortDir)
-            ->paginate(15)
+            ->paginate($perPage)
             ->withQueryString();
 
         $kerjasama->getCollection()->transform(function (Kerjasama $k) {
             $periode       = $k->latestPeriode;
             $jangkaWaktu   = $this->formatJangkaWaktu($periode?->tanggal_mulai, $periode?->tanggal_berakhir);
             $statusKontrak = $this->computeStatusKontrak($k, $periode?->tanggal_berakhir);
+            $latestMitraRevision = DB::table('dokumen as d')
+                ->join('users as u', 'u.id_user', '=', 'd.created_by')
+                ->where('d.id_kerjasama', $k->id_kerjasama)
+                ->where('u.role', 'mitra')
+                ->orderByDesc('d.created_at')
+                ->first(['d.id_dokumen', 'd.nama_file', 'd.lokasi_file', 'd.versi_dokumen', 'd.created_at']);
 
             $prosesList = $k->riwayatStatus->map(function ($r) {
                 // Prefer stored title (`judul`) if present, otherwise fall back to catatan or status name
@@ -226,6 +233,20 @@ class DataKerjasamaController extends Controller
                 }
             }
 
+            // Determine stored file path/name (either final dokumen or periode.keterangan)
+            $storedFilePath = $k->finalDokumen?->lokasi_file ?? null;
+            $storedFileName = $k->finalDokumen?->nama_file ?? null;
+
+            if (! $storedFilePath && is_string($periode?->keterangan) && $periode->keterangan !== '') {
+                $storedFilePath = $periode->keterangan;
+                $storedFileName = basename($storedFilePath);
+            }
+
+            if ($latestMitraRevision) {
+                $storedFilePath = $latestMitraRevision->lokasi_file ?? $storedFilePath;
+                $storedFileName = $latestMitraRevision->nama_file ?? $storedFileName;
+            }
+
             return [
                 'id_kerjasama'       => $k->id_kerjasama,
                 'tahun'              => $periode ? Carbon::parse($periode->tanggal_mulai)->year : null,
@@ -254,29 +275,26 @@ class DataKerjasamaController extends Controller
                 'status_aktif'       => $statusKontrak,
                 'created_at'         => $k->created_at?->format('d/m/Y'),
                 'proses'             => $prosesList,
-                'latest_mitra_revision' => (function () use ($k) {
-                    $row = DB::table('dokumen as d')
-                        ->join('users as u', 'u.id_user', '=', 'd.created_by')
-                        ->where('d.id_kerjasama', $k->id_kerjasama)
-                        ->where('u.role', 'mitra')
-                        ->orderByDesc('d.created_at')
-                        ->first(['d.id_dokumen', 'd.nama_file', 'd.lokasi_file', 'd.versi_dokumen', 'd.created_at']);
-
-                    if (! $row) return null;
-
-                    return [
-                        'id_dokumen' => $row->id_dokumen,
-                        'nama_file' => $row->nama_file,
-                        'lokasi_file' => $row->lokasi_file,
-                        'versi' => $row->versi_dokumen,
-                        'created_at' => $row->created_at,
-                    ];
-                })(),
+                'latest_mitra_revision' => $latestMitraRevision ? [
+                    'id_dokumen' => $latestMitraRevision->id_dokumen,
+                    'nama_file' => $latestMitraRevision->nama_file,
+                    'lokasi_file' => $latestMitraRevision->lokasi_file,
+                    'versi' => $latestMitraRevision->versi_dokumen,
+                    'created_at' => $latestMitraRevision->created_at,
+                ] : null,
+                'file_name' => $storedFileName ?? null,
+                'file_url' => $this->resolveFileUrl($storedFilePath),
             ];
         });
 
+        $currentYear = (int) date('Y');
+
         return Inertia::render('Admin/DataKerjasama', [
             'kerjasama' => $kerjasama,
+            'years' => array_map(
+                fn (int $offset) => $currentYear - $offset,
+                range(0, 5)
+            ),
             'mitras'    => Mitra::orderBy('nama_perusahaan')
                 ->get(['id_mitra', 'nama_perusahaan'])
                 ->map(fn (Mitra $mitra) => [
@@ -628,5 +646,26 @@ class DataKerjasamaController extends Controller
         $sortDir = $sortDir === 'asc' ? 'asc' : 'desc';
 
         return [$sortBy, $sortDir];
+    }
+
+    private function resolveFileUrl(?string $path): ?string
+    {
+        if (! $path) {
+            return null;
+        }
+
+        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+            return $path;
+        }
+
+        if (str_starts_with($path, '/')) {
+            return url($path);
+        }
+
+        if (str_starts_with($path, 'storage/')) {
+            return asset($path);
+        }
+
+        return asset('storage/'.ltrim($path, '/'));
     }
 }

@@ -87,12 +87,17 @@
                             fill="none"
                             viewBox="0 0 24 24"
                             stroke="currentColor"
+                            stroke-width="2"
                         >
                             <path
                                 stroke-linecap="round"
                                 stroke-linejoin="round"
-                                stroke-width="2"
                                 d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5"
+                            />
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                d="M13.73 21a2 2 0 01-3.46 0"
                             />
                         </svg>
 
@@ -140,7 +145,7 @@
                                 <div
                                     v-for="notif in notifications"
                                     :key="notif.id"
-                                    class="p-4 border-b border-gray-100 hover:bg-gray-50 transition cursor-pointer"
+                                    class="p-4 border-b border-gray-100 hover:bg-yellow-50 transition cursor-pointer"
                                     @click="handleNotificationClick(notif)"
                                 >
                                     <div class="flex gap-3">
@@ -152,20 +157,30 @@
                                                 ? 'bg-blue-100 text-blue-600'
                                                 : 'bg-green-100 text-green-600'"
                                         >
-                                            <svg
-                                                xmlns="http://www.w3.org/2000/svg"
-                                                class="w-5 h-5"
-                                                fill="none"
-                                                viewBox="0 0 24 24"
-                                                stroke="currentColor"
-                                                stroke-width="2"
-                                            >
-                                                <path
-                                                    stroke-linecap="round"
-                                                    stroke-linejoin="round"
-                                                    d="M9 12h6m-6 4h6"
-                                                />
-                                            </svg>
+                                            <template v-if="notif.type === 'MITRA'">
+                                                <!-- Building (filled) -->
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" viewBox="0 0 24 24" fill="white" aria-hidden="true">
+                                                    <rect x="3" y="5" width="6" height="14" rx="1" />
+                                                    <rect x="9" y="8" width="6" height="11" rx="1" />
+                                                    <rect x="15" y="11" width="6" height="8" rx="1" />
+                                                </svg>
+                                            </template>
+
+                                            <template v-else-if="notif.type === 'DOC' || notif.type === 'DOKUMEN'">
+                                                <!-- Document (filled) -->
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" viewBox="0 0 24 24" fill="white" aria-hidden="true">
+                                                    <path d="M6 2h8l4 4v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z" />
+                                                    <rect x="8" y="9" width="8" height="2" rx="1" fill="#fff" />
+                                                </svg>
+                                            </template>
+
+                                            <template v-else>
+                                                <!-- Clock (fallback, stroked white) -->
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" aria-hidden="true">
+                                                    <circle cx="12" cy="12" r="9" />
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 7v6l3 2" />
+                                                </svg>
+                                            </template>
                                         </div>
 
                                         <!-- TEXT -->
@@ -416,6 +431,8 @@ onUnmounted(() => {
 <style scoped>
 .line-clamp-2 {
     display: -webkit-box;
+    /* standard property for broader compatibility */
+    line-clamp: 2;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;

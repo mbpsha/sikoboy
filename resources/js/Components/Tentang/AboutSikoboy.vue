@@ -4,7 +4,7 @@
         <div class="mx-auto max-w-6xl text-center mb-16 py-3">
             <p class="text-3xl sm:text-4xl md:text-2xl text-black mb-4">
                 Ayo Berkenalan Dengan
-                <span class="text-[#31717C] font-medium">SIKOBOY</span>
+                <span class="text-[#31717C] font-medium">SIKARSA</span>
             </p>
             <div class="mx-auto w-80 h-px bg-black/50"></div>
         </div>
@@ -17,7 +17,7 @@
                 <h2
                     class="text-3xl sm:text-4xl md:text-2xl font-bold text-white bg-[#17464E] px-6 md:px-8 py-1.5 md:py-2 rounded-full shadow-md whitespace-nowrap"
                 >
-                    Apa itu SIKOBOY?
+                    Apa itu SIKARSA?
                 </h2>
             </div>
 
@@ -26,8 +26,8 @@
                 class="mt-10 md:mt-12 space-y-4 md:space-y-5 text-gray-700 leading-relaxed text-sm sm:text-base md:text-base"
             >
                 <p class="text-center max-w-4xl mx-auto">
-                    <strong class="text-[#17464E]">SIKOBOY</strong> (Sistem
-                    Kolaboratif Boyolali) merupakan sistem informasi berbasis
+                    <strong class="text-[#17464E]">SIKARSA</strong> (Sistem
+                    Kerjasama Boyolali) merupakan sistem informasi berbasis
                     web yang dikembangkan oleh Sekretariat Daerah Kabupaten
                     Boyolali untuk mendukung pengelolaan kerja sama daerah
                     secara lebih terintegrasi dan terstruktur. Sistem ini hadir
@@ -38,7 +38,7 @@
                 </p>
 
                 <p class="text-center max-w-4xl mx-auto">
-                    Pengembangan SIKOBOY dilatarbelakangi oleh kebutuhan akan
+                    Pengembangan SIKARSA dilatarbelakangi oleh kebutuhan akan
                     sistem pengelolaan dokumen kerja sama yang lebih tertib dan
                     terpusat. Sebelumnya, dokumen kerja sama masih tersimpan
                     dalam berbagai media yang belum terintegrasi sehingga proses
@@ -47,7 +47,7 @@
                 </p>
 
                 <p class="text-center max-w-4xl mx-auto">
-                    Melalui SIKOBOY, seluruh data dan dokumen kerja sama dapat
+                    Melalui SIKARSA, seluruh data dan dokumen kerja sama dapat
                     disimpan dalam satu sistem yang terintegrasi. Sistem ini
                     memungkinkan proses pengarsipan dokumen, pencarian data
                     kerja sama, serta monitoring masa berlaku kontrak dilakukan
@@ -55,7 +55,7 @@
                 </p>
 
                 <p class="text-center max-w-4xl mx-auto">
-                    Dengan hadirnya SIKOBOY, diharapkan pengelolaan kerja sama
+                    Dengan hadirnya SIKARSA, diharapkan pengelolaan kerja sama
                     daerah di Kabupaten Boyolali dapat berjalan lebih efektif,
                     transparan, dan tertata dengan baik, sekaligus mendukung
                     transformasi digital dalam tata kelola pemerintahan daerah.

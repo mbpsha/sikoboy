@@ -4,12 +4,12 @@ import { ref, onMounted } from 'vue'
 defineProps({
     heading: {
         type: String,
-        default: 'Ayo Berkenalan dengan SIKOBOY',
+        default: 'Ayo Berkenalan dengan SIKARSA',
     },
     content: {
         type: String,
         default:
-            'SIKOBOY adalah sistem informasi kolaborasi Boyolali untuk mempertemukan potensi daerah dengan mitra strategis.',
+            'SIKARSA adalah sistem informasi kolaborasi Boyolali untuk mempertemukan potensi daerah dengan mitra strategis.',
     },
 })
 
@@ -31,7 +31,7 @@ onMounted(() => {
             <!-- TITLE -->
             <h2 class="text-2xl font-normal text-slate-700">
                 Ayo Berkenalan dengan
-                <span class="text-[#0C505C] font-bold">SIKOBOY</span>
+                <span class="text-[#0C505C] font-bold">SIKARSA</span>
             </h2>
 
             <!-- DIVIDER -->
@@ -45,11 +45,11 @@ onMounted(() => {
                 :class="show ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'"
             >
                 <p>
-                    <span class="font-bold text-slate-700">SIKOBOY</span> (Sistem Kolaboratif Boyolali) adalah sistem informasi berbasis web yang dikembangkan untuk membantu
+                    <span class="font-bold text-slate-700">SIKARSA</span> (Sistem Kerjasama Boyolali) adalah sistem informasi berbasis web yang dikembangkan untuk membantu
                     Sekretariat Daerah Kabupaten Boyolali dalam mengelola arsip serta melakukan monitoring kerja sama secara
                     terpusat. Sistem ini dibangun karena pengelolaan dokumen kerja sama sebelumnya belum terintegrasi dalam satu
                     platform, sehingga proses pencarian arsip dan pemantauan masa berlaku kontrak sering memerlukan waktu lama
-                    serta berisiko menimbulkan keterlambatan administratif. Melalui SIKOBOY, seluruh data kerja sama dapat disimpan
+                    serta berisiko menimbulkan keterlambatan administratif. Melalui SIKARSA, seluruh data kerja sama dapat disimpan
                     secara terstruktur dalam satu sistem, dicari berdasarkan tahun maupun mitra, dipantau masa berlaku kontraknya,
                     serta diajukan dan dimonitor secara daring. Dengan demikian, pengelolaan kerja sama diharapkan menjadi lebih
                     tertib, efisien, transparan, serta mendukung transformasi digital di Kabupaten Boyolali.

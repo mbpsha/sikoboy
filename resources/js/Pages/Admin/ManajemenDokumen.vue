@@ -12,25 +12,9 @@
           Kelola template dokumen yang ditampilkan di halaman publik
         </p>
       </div>
+
       <!-- CARD -->
       <div class="bg-white rounded-xl shadow-md overflow-hidden">
-
-        <!-- TABS -->
-        <div class="flex gap-10 px-6 pt-6 border-b text-gray-400 font-semibold overflow-x-auto whitespace-nowrap">
-          <button
-            v-for="tab in tabs"
-            :key="tab"
-            @click="activeTab = tab"
-            :class="[
-              'pb-2 transition',
-              activeTab === tab
-                ? 'text-teal-600 border-b-2 border-teal-600'
-                : 'hover:text-gray-600'
-            ]"
-          >
-            {{ tab }}
-          </button>
-        </div>
 
         <!-- FORM -->
         <form @submit.prevent="submitForm" class="p-6 grid grid-cols-1 lg:grid-cols-2 gap-10">
@@ -48,7 +32,7 @@
                 <label class="block text-gray-600 mb-1">Nama Dokumen</label>
                 <input
                   type="text"
-                  v-model="form.nama"
+                  v-model="form.judul"
                   placeholder="Perjanjian Kerja Sama"
                   class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-teal-500 outline-none"
                 />
@@ -57,21 +41,18 @@
               <!-- Kategori -->
               <div>
                 <label class="block text-gray-600 mb-1">Kategori Dokumen</label>
-                <select v-model="form.kategori" class="w-full border rounded-lg px-4 py-2">
-                  <option v-for="tab in tabs" :key="tab">
-                    {{ tab }}
+                <select
+                  v-model="form.id_kategori"
+                  class="w-full border rounded-lg px-4 py-2"
+                >
+                  <option value="" disabled>Pilih kategori</option>
+                  <option
+                    v-for="kategori in kategoris"
+                    :key="kategori.id_kategori"
+                    :value="kategori.id_kategori"
+                  >
+                    {{ kategori.nama_kategori }}
                   </option>
-                </select>
-              </div>
-
-              <!-- Sub Kategori -->
-              <div>
-                <label class="block text-gray-600 mb-1">Sub Kategori</label>
-                <select v-model="form.sub_kategori" class="w-full border rounded-lg px-4 py-2">
-                  <option>Kesepakatan Kerja Sama</option>
-                  <option>Nota Kesepakatan</option>
-                  <option>Sinergi</option>
-                  <option>Kerangka Acuan Kerja</option>
                 </select>
               </div>
 
@@ -82,6 +63,7 @@
                   v-model="form.deskripsi"
                   placeholder="Masukkan deskripsi singkat"
                   class="w-full border rounded-lg px-4 py-2"
+                  rows="4"
                 ></textarea>
               </div>
 
@@ -128,12 +110,15 @@
                   PDF (Max. 10MB)
                 </p>
 
+                <div
+                  v-if="fileName"
+                  class="mt-4 inline-flex max-w-full items-center rounded-full bg-teal-50 px-4 py-2 text-sm font-semibold text-teal-700"
+                >
+                  <span class="truncate">{{ fileName }}</span>
+                </div>
+
               </div>
             </label>
-
-            <p v-if="fileName" class="mt-3 text-sm text-teal-600">
-              File dipilih: {{ fileName }}
-            </p>
           </div>
 
         </form>
@@ -141,6 +126,7 @@
         <!-- BUTTON -->
         <div class="flex gap-4 px-6 pb-6 border-t pt-6">
           <button
+            type="button"
             @click="submitForm"
             class="bg-teal-600 hover:bg-teal-700 text-white px-6 py-3 rounded-lg font-semibold"
           >
@@ -148,6 +134,7 @@
           </button>
 
           <button
+            type="button"
             @click="resetForm"
             class="bg-gray-200 px-6 py-3 rounded-lg font-semibold"
           >
@@ -157,6 +144,90 @@
 
       </div>
 
+      <!-- LIST UPLOADED TEMPLATES -->
+      <div class="mt-8 bg-white rounded-xl shadow-md overflow-hidden">
+        <div class="px-6 py-4 border-b flex items-center justify-between gap-4">
+          <div>
+            <h3 class="text-xl font-semibold text-gray-700">
+              Daftar Dokumen yang Tampil di Halaman Publik
+            </h3>
+            <p class="text-sm text-gray-500 mt-1">
+              Hanya template aktif yang berkategori dan memang muncul di halaman Dokumen
+            </p>
+          </div>
+
+          <div class="text-sm text-gray-500">
+            Total: <span class="font-semibold text-gray-700">{{ publicTemplateCount }}</span>
+          </div>
+        </div>
+
+        <div v-if="publicDokumenGroups.length" class="grid grid-cols-1 md:grid-cols-2 gap-6 p-6">
+          <section
+            v-for="group in publicDokumenGroups"
+            :key="group.nama_kategori"
+            class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm"
+          >
+            <h4 class="text-lg font-semibold text-[#0C505C] text-center">
+              {{ group.label }}
+            </h4>
+
+            <p v-if="group.deskripsi" class="mt-2 text-sm text-gray-500 text-center">
+              {{ group.deskripsi }}
+            </p>
+
+            <div class="mt-5 space-y-3">
+              <div
+                v-for="item in group.items"
+                :key="item.id"
+                class="rounded-xl border border-gray-200 bg-[#D4E4E8] p-4"
+              >
+                <div class="flex items-start justify-between gap-3">
+                  <div class="min-w-0">
+                    <p class="font-semibold text-[#0C505C] truncate">
+                      {{ item.title }}
+                    </p>
+                    <p v-if="item.description" class="mt-1 text-xs text-slate-600 line-clamp-2">
+                      {{ item.description }}
+                    </p>
+                  </div>
+
+                  <span class="inline-flex shrink-0 rounded-full bg-white px-2 py-1 text-[10px] font-bold text-[#0C8BA3]">
+                    {{ item.badge }}
+                  </span>
+                </div>
+
+                <div class="mt-4 flex flex-wrap gap-2">
+                  <a
+                    :href="item.preview"
+                    target="_blank"
+                    class="inline-flex items-center rounded-lg bg-white px-3 py-1.5 text-xs font-semibold text-[#0C505C] hover:bg-gray-50"
+                  >
+                    Preview
+                  </a>
+                  <a
+                    :href="item.href"
+                    class="inline-flex items-center rounded-lg border border-white/60 px-3 py-1.5 text-xs font-semibold text-[#0C505C] hover:bg-white"
+                  >
+                    Download
+                  </a>
+                  <button
+                    type="button"
+                    @click="deleteTemplate(item)"
+                    class="inline-flex items-center rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50"
+                  >
+                    Hapus
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <div v-else class="px-6 py-10 text-center text-gray-500">
+          Belum ada dokumen yang tampil di halaman publik.
+        </div>
+      </div>
+
     </div>
 
   </AdminLayout>
@@ -164,55 +235,41 @@
 
 <script setup>
 import AdminLayout from '@/Layouts/AdminLayout.vue'
-import { ref, watch } from 'vue'
+import { computed, ref } from 'vue'
 import { router } from '@inertiajs/vue3'
 
-/* =========================
-   TABS
-========================= */
-const tabs = [
-  'KSDD (Kerja Sama Daerah Dengan Daerah Lain)',
-  'KSDPK (Kerja Sama Daerah Dengan Pihak Ketiga)',
-  'Sinergi',
-  'Kerangka Acuan Kerja'
-]
+const props = defineProps({
+  templates: { type: Array, default: () => [] },
+  publicDokumenGroups: { type: Array, default: () => [] },
+  kategoris: { type: Array, default: () => [] },
+})
 
-const activeTab = ref(tabs[0])
+const publicTemplateCount = computed(() =>
+  props.publicDokumenGroups.reduce(
+    (count, group) => count + (group.items?.length ?? 0),
+    0
+  )
+)
 
-/* =========================
-   FORM
-========================= */
 const form = ref({
-  nama: '',
-  kategori: tabs[0],
-  sub_kategori: '',
+  judul: '',
+  id_kategori: '',
   deskripsi: '',
-  template_file: null
+  template_file: null,
 })
 
 const fileName = ref(null)
 
-/* =========================
-   HANDLE FILE
-========================= */
 const handleFile = (e) => {
   const file = e.target.files[0]
+
   if (file) {
     form.value.template_file = file
+    form.value.judul = file.name.replace(/\.[^.]+$/, '')
     fileName.value = file.name
   }
 }
 
-/* =========================
-   SYNC TAB → FORM
-========================= */
-watch(activeTab, (val) => {
-  form.value.kategori = val
-})
-
-/* =========================
-   SUBMIT
-========================= */
 const submitForm = () => {
   if (!form.value.template_file) {
     alert('File wajib diupload!')
@@ -220,22 +277,48 @@ const submitForm = () => {
   }
 
   const data = new FormData()
+  data.append('judul', form.value.judul)
+  data.append('id_kategori', form.value.id_kategori)
+  data.append('deskripsi', form.value.deskripsi)
   data.append('template_file', form.value.template_file)
 
-  router.post(route('admin.manajemen-dokumen.store'), data)
+  router.post(route('admin.manajemen-dokumen.store'), data, {
+    preserveScroll: true,
+    onSuccess: () => {
+      alert('Template dokumen berhasil diupload.')
+      resetForm()
+    },
+    onError: (errors) => {
+      const firstMessage = Object.values(errors)[0]
+      alert(firstMessage?.[0] || 'Gagal mengupload template dokumen.')
+    },
+  })
 }
 
-/* =========================
-   RESET
-========================= */
 const resetForm = () => {
   form.value = {
-    nama: '',
-    kategori: tabs[0],
-    sub_kategori: '',
+    judul: '',
+    id_kategori: '',
     deskripsi: '',
-    template_file: null
+    template_file: null,
   }
   fileName.value = null
+}
+
+const deleteTemplate = (item) => {
+  if (!confirm(`Hapus dokumen "${item.title}"?`)) {
+    return
+  }
+
+  router.delete(route('admin.manajemen-dokumen.destroy', item.id), {
+    preserveScroll: true,
+    onSuccess: () => {
+      alert('Template dokumen berhasil dihapus.')
+      router.reload({ preserveScroll: true })
+    },
+    onError: () => {
+      alert('Gagal menghapus template dokumen.')
+    },
+  })
 }
 </script>

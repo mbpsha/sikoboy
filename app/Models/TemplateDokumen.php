@@ -18,6 +18,8 @@ class TemplateDokumen extends Model
     protected $fillable = [
         'id_admin',
         'id_kategori',
+        'judul',
+        'deskripsi',
         'nama_file',
         'jenis_dokumen',
         'lokasi_file',

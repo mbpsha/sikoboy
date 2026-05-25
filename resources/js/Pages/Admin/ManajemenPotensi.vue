@@ -30,73 +30,6 @@
         </button>
       </div>
 
-      <!-- TABEL POTENSI -->
-      <div class="bg-white rounded-xl shadow mb-8">
-        
-        <!-- HEADER -->
-        <div class="flex justify-between items-center p-6">
-          <div>
-            <h3 class="text-lg font-bold text-gray-800">
-              Potensi {{ activeKategori }}
-            </h3>
-          </div>
-          <button
-            @click="editModal = false"
-            class="bg-teal-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-teal-700 transition-all flex items-center gap-2"
-          >
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-            </svg>
-            Edit Deskripsi
-          </button>
-        </div>
-
-        <!-- TABLE -->
-        <div class="overflow-x-auto">
-          <table class="w-full">
-            <thead>
-              <tr class="border-b-2 border-gray-200">
-                <th class="px-6 py-4 text-left font-semibold text-gray-700">Nama Potensi</th>
-                <th class="px-6 py-4 text-left font-semibold text-gray-700">Status</th>
-                <th class="px-6 py-4 text-center font-semibold text-gray-700">Aksi</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-if="potensiList.length === 0" class="hover:bg-gray-50">
-                <td colspan="4" class="px-6 py-8 text-center text-gray-500">
-                  Belum ada potensi untuk kategori ini
-                </td>
-              </tr>
-              <tr v-for="item in potensiList" :key="item.id_potensi" class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                <td class="px-6 py-4 font-medium text-gray-800">{{ item.judul }}</td>
-                <td class="px-6 py-4">
-                  <span v-if="item.status_tampil" class="px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
-                    Aktif
-                  </span>
-                  <span v-else class="px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-800">
-                    Nonaktif
-                  </span>
-                </td>
-                <td class="px-6 py-4 text-center space-x-2 flex justify-center">
-                  <button
-                    @click="editPotensi(item)"
-                    class="bg-teal-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-teal-700 transition-all"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    @click="deletePotensi(item.id_potensi)"
-                    class="bg-red-500 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-red-600 transition-all"
-                  >
-                    Hapus
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
       <!-- FORM TAMBAH POTENSI BARU -->
       <div class="bg-white rounded-xl shadow p-6">
         
@@ -187,9 +120,74 @@
         </form>
 
       </div>
+        </div>
 
-    </div>
+        <!-- TABEL POTENSI -->
+        <div class="bg-white rounded-xl shadow mb-8 mt-6">
+        
+          <!-- HEADER -->
+          <div class="flex justify-between items-center p-6">
+            <div>
+              <h3 class="text-lg font-bold text-gray-800">
+                Potensi {{ activeKategori }}
+              </h3>
+            </div>
+            <button
+              @click="editModal = false"
+              class="bg-teal-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-teal-700 transition-all flex items-center gap-2"
+            >
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+              </svg>
+              Edit Deskripsi
+            </button>
+          </div>
 
+          <!-- TABLE -->
+          <div class="overflow-x-auto">
+            <table class="w-full">
+              <thead>
+                <tr class="border-b-2 border-gray-200">
+                  <th class="px-6 py-4 text-left font-semibold text-gray-700">Nama Potensi</th>
+                  <th class="px-6 py-4 text-left font-semibold text-gray-700">Status</th>
+                  <th class="px-6 py-4 text-center font-semibold text-gray-700">Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-if="potensiList.length === 0" class="hover:bg-gray-50">
+                  <td colspan="4" class="px-6 py-8 text-center text-gray-500">
+                    Belum ada potensi untuk kategori ini
+                  </td>
+                </tr>
+                <tr v-for="item in potensiList" :key="item.id_potensi" class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                  <td class="px-6 py-4 font-medium text-gray-800">{{ item.judul }}</td>
+                  <td class="px-6 py-4">
+                    <span v-if="item.status_tampil" class="px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
+                      Aktif
+                    </span>
+                    <span v-else class="px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-800">
+                      Nonaktif
+                    </span>
+                  </td>
+                  <td class="px-6 py-4 text-center space-x-2 flex justify-center">
+                    <button
+                      @click="editPotensi(item)"
+                      class="bg-teal-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-teal-700 transition-all"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      @click="deletePotensi(item.id_potensi)"
+                      class="bg-red-500 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-red-600 transition-all"
+                    >
+                      Hapus
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
     <!-- MODAL DETAIL POTENSI -->
     <div v-if="editModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" @click.self="closeEditModal">
       <div class="bg-white rounded-xl shadow-lg w-full max-w-lg p-6">

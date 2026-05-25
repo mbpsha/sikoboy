@@ -15,9 +15,9 @@ const progressItems = ref([])
 watch(() => props.items, (v) => { progressItems.value = v || [] }, { immediate: true })
 
 // File input & state per item index
-const selectedFiles  = ref({})
-const isUploading    = ref({})
-const fileInputRefs  = ref({})
+const selectedFiles = ref({})
+const isUploading   = ref({})
+const fileInputRefs = ref({})
 
 const setFileRef = (el, idx) => { if (el) fileInputRefs.value[idx] = el }
 
@@ -55,7 +55,7 @@ const getIcon = (item) => {
     return { bg: 'bg-green-500', symbol: '✓' }
   if (t.includes('ditolak'))  return { bg: 'bg-red-500',    symbol: '✕' }
   if (t.includes('revisi'))   return { bg: 'bg-orange-400', symbol: '!' }
-  return { bg: 'bg-green-500', symbol: '✓' } // default hijau + ceklis
+  return { bg: 'bg-green-500', symbol: '✓' }
 }
 </script>
 
@@ -104,7 +104,7 @@ const getIcon = (item) => {
               @change="(e) => handleFileSelect(e, idx)"
             />
 
-            <!-- Dot — selalu ceklis hijau kecuali ada kondisi khusus -->
+            <!-- Dot -->
             <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0 z-10 shadow-sm"
               :class="getIcon(item).bg">
               {{ getIcon(item).symbol }}
@@ -133,9 +133,9 @@ const getIcon = (item) => {
                   </p>
                 </div>
 
-                <!-- File dari admin — selalu tampil jika ada, tidak bisa hilang -->
+                <!-- File dari admin — selalu tampil jika ada -->
                 <div v-if="item.file">
-                  <p class="text-[10px] font-semibold text-gray-400 uppercase mb-1">File Revisi</p>
+                  <p class="text-[10px] font-semibold text-gray-400 uppercase mb-1">Lampiran Dokumen</p>
                   <a :href="'/storage/' + item.file" target="_blank"
                     class="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-50 border border-blue-100 rounded-lg text-xs text-blue-700 font-medium hover:bg-blue-100 transition">
                     <svg class="w-3.5 h-3.5 shrink-0" fill="currentColor" viewBox="0 0 24 24">
@@ -146,7 +146,7 @@ const getIcon = (item) => {
                   </a>
                 </div>
 
-                <!-- Upload dokumen mitra — HANYA muncul jika admin sudah upload file di item ini -->
+                <!-- Upload revisi mitra — HANYA muncul jika admin sudah upload file -->
                 <div v-if="item.file" class="pt-2 border-t border-gray-100">
                   <p class="text-[10px] font-semibold text-gray-500 uppercase mb-1">
                     Upload Dokumen Revisi dari Mitra
@@ -155,7 +155,7 @@ const getIcon = (item) => {
                     Selesai pada {{ item.file_mitra ? item.tanggal : '-' }}
                   </p>
 
-                  <!-- Sudah upload — tampil nama file, tidak bisa upload lagi -->
+                  <!-- Sudah upload — tidak bisa upload lagi -->
                   <div v-if="item.file_mitra"
                     class="flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-100 rounded-lg">
                     <svg class="w-4 h-4 text-green-600 shrink-0" fill="currentColor" viewBox="0 0 24 24">
