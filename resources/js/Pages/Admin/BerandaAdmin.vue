@@ -10,76 +10,119 @@
             >
 
                 <!-- CARD -->
-                <div
-                    class="bg-teal-500 text-white p-5 md:p-6 rounded-2xl shadow-sm"
-                >
-                    <p class="text-sm md:text-base opacity-90">
-                        Total Kerjasama
-                    </p>
+                <div class="p-5 md:p-6 rounded-2xl shadow-sm text-white bg-gradient-to-r from-teal-500 to-emerald-400">
+                    <div class="flex items-center justify-between">
+                        <div class="flex flex-col justify-center">
+                            <p class="text-sm md:text-base opacity-90">Total Kerjasama</p>
+                            <h2 class="text-3xl md:text-4xl font-bold mt-1 leading-tight">{{ metrics.total_kerjasama ?? 0 }}</h2>
+                        </div>
 
-                    <h2 class="text-3xl md:text-4xl font-bold mt-3">
-                        {{ metrics.total_kerjasama ?? 0 }}
-                    </h2>
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 rounded-full bg-white/12 flex items-center justify-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white/90" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6M9 16h6M7 8h10M5 5h14v14H5z" />
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                <div
-                    class="bg-green-500 text-white p-5 md:p-6 rounded-2xl shadow-sm"
-                >
-                    <p class="text-sm md:text-base opacity-90">
-                        Kerjasama Aktif
-                    </p>
+                <div class="p-5 md:p-6 rounded-2xl shadow-sm text-white bg-gradient-to-r from-emerald-400 to-green-400">
+                    <div class="flex items-center justify-between">
+                        <div class="flex flex-col justify-center">
+                            <p class="text-sm md:text-base opacity-90">Kerjasama Aktif</p>
+                            <h2 class="text-3xl md:text-4xl font-bold mt-1 leading-tight">{{ metrics.aktif ?? 0 }}</h2>
+                        </div>
 
-                    <h2 class="text-3xl md:text-4xl font-bold mt-3">
-                        {{ metrics.aktif ?? 0 }}
-                    </h2>
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 rounded-full bg-white/12 flex items-center justify-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white/90" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                <div
-                    class="bg-yellow-500 text-white p-5 md:p-6 rounded-2xl shadow-sm"
-                >
-                    <p class="text-sm md:text-base opacity-90">
-                        Akan Berakhir
-                    </p>
+                <div class="p-5 md:p-6 rounded-2xl shadow-sm text-white bg-gradient-to-r from-yellow-500 to-orange-400 min-h-[92px]">
+                    <div class="flex items-center justify-between">
+                        <div class="flex flex-col justify-center">
+                            <p class="text-sm md:text-base opacity-90 mb-1">Akan Berakhir</p>
+                            <h2 class="text-3xl md:text-4xl font-bold mt-0 leading-none">{{ metrics.akan_berakhir ?? 0 }}</h2>
+                        </div>
 
-                    <h2 class="text-3xl md:text-4xl font-bold mt-3">
-                        {{ metrics.akan_berakhir ?? 0 }}
-                    </h2>
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 rounded-full bg-white/12 flex items-center justify-center">
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="w-5 h-5 shrink-0"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            stroke-width="2"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                            />
+                        </svg>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                <div
-                    class="bg-red-500 text-white p-5 md:p-6 rounded-2xl shadow-sm"
-                >
-                    <p class="text-sm md:text-base opacity-90">
-                        Berakhir
-                    </p>
+                <div class="p-5 md:p-6 rounded-2xl shadow-sm text-white bg-gradient-to-r from-red-500 to-rose-500">
+                    <div class="flex items-center justify-between">
+                        <div class="flex flex-col justify-center">
+                            <p class="text-sm md:text-base opacity-90">Berakhir</p>
+                            <h2 class="text-3xl md:text-4xl font-bold mt-1 leading-tight">{{ metrics.berakhir ?? 0 }}</h2>
+                        </div>
 
-                    <h2 class="text-3xl md:text-4xl font-bold mt-3">
-                        {{ metrics.berakhir ?? 0 }}
-                    </h2>
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 rounded-full bg-white/12 flex items-center justify-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white/90" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                <div
-                    class="bg-blue-500 text-white p-5 md:p-6 rounded-2xl shadow-sm"
-                >
-                    <p class="text-sm md:text-base opacity-90">
-                        Total Mitra
-                    </p>
+                <div class="p-5 md:p-6 rounded-2xl shadow-sm text-white bg-gradient-to-r from-blue-500 to-indigo-500">
+                    <div class="flex items-center justify-between">
+                        <div class="flex flex-col justify-center">
+                            <p class="text-sm md:text-base opacity-90">Total Mitra</p>
+                            <h2 class="text-3xl md:text-4xl font-bold mt-1 leading-tight">{{ metrics.total_mitra ?? 0 }}</h2>
+                        </div>
 
-                    <h2 class="text-3xl md:text-4xl font-bold mt-3">
-                        {{ metrics.total_mitra ?? 0 }}
-                    </h2>
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 rounded-full bg-white/12 flex items-center justify-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white/90" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a4 4 0 00-4-4h-1M9 20H4v-2a4 4 0 014-4h1M12 12a4 4 0 100-8 4 4 0 000 8z" />
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                <div
-                    class="bg-purple-500 text-white p-5 md:p-6 rounded-2xl shadow-sm"
-                >
-                    <p class="text-sm md:text-base opacity-90">
-                        Total Dokumen
-                    </p>
+                <div class="p-5 md:p-6 rounded-2xl shadow-sm text-white bg-gradient-to-r from-violet-500 to-fuchsia-500">
+                    <div class="flex items-center justify-between">
+                        <div class="flex flex-col justify-center">
+                            <p class="text-sm md:text-base opacity-90">Total Dokumen</p>
+                            <h2 class="text-3xl md:text-4xl font-bold mt-1 leading-tight">{{ metrics.total_dokumen ?? 0 }}</h2>
+                        </div>
 
-                    <h2 class="text-3xl md:text-4xl font-bold mt-3">
-                        {{ metrics.total_dokumen ?? 0 }}
-                    </h2>
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 rounded-full bg-white/12 flex items-center justify-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white/90" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M7 7h10v10H7z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 7V5a2 2 0 012-2h2a2 2 0 012 2v2" />
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 

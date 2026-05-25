@@ -272,25 +272,53 @@
               @click.prevent="goToPage(kerjasama.current_page - 1)"
             >Sebelumnya</button>
 
+              <button
+                v-for="page in kerjasama.last_page"
+                :key="page"
+                @click.prevent="goToPage(page)"
+                class="px-3 py-2 text-sm rounded-lg border"
+                :class="page === kerjasama.current_page ? 'bg-teal-600 text-white border-teal-600' : 'bg-white text-gray-700'"
+              >
+                {{ page }}
+              </button>
+
+              <button
+                class="px-3 py-2 text-sm rounded-lg border bg-white disabled:opacity-50"
+                :disabled="!kerjasama.next_page_url"
+                @click.prevent="goToPage(kerjasama.current_page + 1)"
+              >Selanjutnya</button>
+            </div>
+          </div>
+
+          <div class="flex md:hidden items-center justify-center gap-2">
             <button
-              v-for="page in kerjasama.last_page"
-              :key="page"
+              class="px-3 py-2 text-sm rounded-lg border bg-white disabled:opacity-50"
+              :disabled="!kerjasama.prev_page_url"
+              @click.prevent="goToPage(kerjasama.current_page - 1)"
+            >&lt;</button>
+
+            <span v-if="hasLeftEllipsis" class="px-1 text-sm text-gray-600">...</span>
+
+            <button
+              v-for="page in visiblePages"
+              :key="`mobile-${page}`"
               @click.prevent="goToPage(page)"
               class="px-3 py-2 text-sm rounded-lg border"
-              :class="page === kerjasama.current_page ? 'bg-teal-600 text-white' : 'bg-white'"
+              :class="page === kerjasama.current_page ? 'bg-teal-600 text-white border-teal-600' : 'bg-white text-gray-700'"
             >
               {{ page }}
             </button>
+
+            <span v-if="hasRightEllipsis" class="px-1 text-sm text-gray-600">...</span>
 
             <button
               class="px-3 py-2 text-sm rounded-lg border bg-white disabled:opacity-50"
               :disabled="!kerjasama.next_page_url"
               @click.prevent="goToPage(kerjasama.current_page + 1)"
-            >Berikutnya</button>
+            >&gt;</button>
           </div>
         </div>
       </div>
-    </div>
 
     <!-- Process Modal -->
     <Teleport to="body">
