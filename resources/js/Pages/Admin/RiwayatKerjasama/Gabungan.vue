@@ -38,7 +38,8 @@ const openStatusDropdown = ref(null);
 const openFilterColumn = ref(null);
 const mitraIdSearch = ref("");
 const showMitraSuggestions = ref(false);
-const MITRA_SUGGESTION_HIDE_DELAY = 120;
+const mitraSuggestionHideDelay = 120;
+let hideMitraSuggestionsTimer = null;
 
 // Computed untuk detect apakah ada filter aktif (cek dari props yang terupdate)
 const hasActiveFilter = computed(() => {
@@ -264,9 +265,14 @@ const applySelectedMitra = (mitraOption) => {
 };
 
 const hideMitraSuggestions = () => {
-    setTimeout(() => {
+    if (hideMitraSuggestionsTimer) {
+        clearTimeout(hideMitraSuggestionsTimer);
+    }
+
+    hideMitraSuggestionsTimer = setTimeout(() => {
         showMitraSuggestions.value = false;
-    }, MITRA_SUGGESTION_HIDE_DELAY);
+        hideMitraSuggestionsTimer = null;
+    }, mitraSuggestionHideDelay);
 };
 
 const parseJangkaToYears = (value) => {
@@ -741,6 +747,7 @@ const statusBadgeClasses = (status) => {
 
 onBeforeUnmount(() => {
     if (debounceTimer) clearTimeout(debounceTimer);
+    if (hideMitraSuggestionsTimer) clearTimeout(hideMitraSuggestionsTimer);
 });
 
 // =========================
