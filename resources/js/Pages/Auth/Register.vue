@@ -274,6 +274,7 @@
 <script setup>
 import { useForm, router, Head } from "@inertiajs/vue3";
 import { ref } from "vue";
+import Swal from "sweetalert2";
 
 const showPassword = ref(false);
 const showPasswordConfirmation = ref(false);
@@ -304,8 +305,15 @@ const form = useForm({
 const submit = () => {
     form.post("/register", {
         onSuccess: () => {
-            // after successful registration, go to the email verification notice
-            router.visit('/email/verify');
+            Swal.fire({
+                icon: "success",
+                title: "Registrasi berhasil",
+                text: "Akun mitra sudah dibuat. Silakan tunggu admin memverifikasi terlebih dahulu sebelum login kembali.",
+                confirmButtonText: "Ke Login",
+                confirmButtonColor: "#0C505C",
+            }).then(() => {
+                router.visit(route('login.role', 'mitra'));
+            });
         },
     });
 };
