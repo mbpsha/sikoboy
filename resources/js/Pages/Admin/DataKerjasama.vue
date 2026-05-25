@@ -279,7 +279,7 @@
           class="px-5 py-3.5 border-t border-gray-100"
         >
           <div class="hidden md:flex items-center justify-between">
-            <span class="text-xs text-gray-500 mr-6">Tampilkan 10 data / halaman</span>
+            <span class="text-xs text-gray-500 mr-6">Tampilkan {{ kerjasama.per_page }} data / halaman</span>
             <div class="flex items-center justify-end gap-2">
               <button
                 class="px-3 py-2 text-sm rounded-lg border bg-white disabled:opacity-50"
