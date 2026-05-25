@@ -111,94 +111,28 @@ Route::get('/peraturan', function () {
     ]);
 })->name('peraturan');
 
-// Potensi (public JSON)
-Route::get('/potensi', [PotensiController::class, 'index'])
-    ->name('potensi.index');
-
-// Dokumen (dengan data kategori)
-Route::get('/dokumen', function () {
-    $shortLabel = function (?string $name): string {
-        $name = $name ?? '';
-
-        return match (true) {
-            str_contains($name, 'KSDD') => 'KSDD',
-            str_contains($name, 'KSDPK') => 'KSDPK',
-            str_contains($name, 'NK/RK') || str_contains($name, 'Sinergi') => 'Sinergi',
-            str_contains($name, 'PERTEK') => 'PERTEK',
-            str_contains($name, 'KSDPL') => 'KSDPL',
-            str_contains($name, 'KSDLL') => 'KSDLL',
-            default => $name,
-        };
-    };
-
-    $templates = TemplateDokumen::query()
-        ->with('kategori:id_kategori,nama_kategori,deskripsi')
-        ->where('is_active', true)
-        ->orderBy('id_kategori')
-        ->orderByDesc('created_at')
-        ->get();
-
-    $dokumenGroups = $templates
-        ->filter(fn (TemplateDokumen $template) => $template->kategori !== null)
-        ->groupBy(fn (TemplateDokumen $template) => $template->kategori?->nama_kategori)
-        ->map(function ($items, $groupName) use ($shortLabel) {
-            $first = $items->first();
-
-            return [
-                'nama_kategori' => $groupName,
-                'label' => $shortLabel($groupName),
-                'deskripsi' => $first?->kategori?->deskripsi ?? '',
-                'items' => $items->values()->map(function (TemplateDokumen $template) {
-                    $fileExtension = strtolower(pathinfo($template->nama_file ?? '', PATHINFO_EXTENSION) ?: 'pdf');
-
-                    return [
-                        'id' => $template->id_template_dokumen,
-                        'title' => $template->judul ?: $template->jenis_dokumen ?: $template->nama_file,
-                        'description' => $template->deskripsi ?: ($template->kategori?->deskripsi ?? ''),
-                        'badge' => strtoupper($fileExtension),
-                        'href' => route('template-dokumen.download', $template->id_template_dokumen),
-                        'preview' => route('template-dokumen.preview', $template->id_template_dokumen),
-                    ];
-                })->values(),
-            ];
-        })
-        ->values();
-
-    return Inertia::render('Dokumen', ['dokumenGroups' => $dokumenGroups]);
-})->name('dokumen');
-
-// Template Dokumen
-Route::get('/template-dokumen', [TemplateDokumenController::class, 'index'])
+// Public template dokumen routes (website)
+Route::get('/dokumen', fn () => redirect()->route('template-dokumen.index'))
+    ->name('dokumen.index');
+Route::get('/template-dokumen', [ManajemenDokumenController::class, 'listPublic'])
     ->name('template-dokumen.index');
 Route::get('/template-dokumen/{id}/download', [TemplateDokumenController::class, 'download'])
     ->name('template-dokumen.download');
 Route::get('/template-dokumen/{id}/preview', [TemplateDokumenController::class, 'preview'])
     ->name('template-dokumen.preview');
 
-// ========================================
-// AUTHENTICATION ROUTES
-// ========================================
-
-$loginThrottleAttempts = max(1, (int) env('RATE_LIMITER_LOGIN_ATTEMPTS', 5));
-
-// Portal redirect
-Route::middleware('auth')->get('/portal-mitra', function (Request $request) {
+Route::middleware('auth')->get('/portal-mitra', function (\Illuminate\Http\Request $request) {
     return match ($request->user()?->role) {
         'admin' => redirect()->route('admin.dashboard'),
-        'mitra' => redirect()->route('mitra.profile.index'),
+        'mitra' => redirect()->route('mitra.profile.edit'),
         default => redirect()->route('home'),
     };
 })->name('portal-mitra');
 
-// Login
-Route::get('/role-selection', fn () => redirect()->route('login'))->name('login.select');
-Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
-Route::get('/login/{role}', fn () => redirect()->route('login'))
-    ->whereIn('role', ['admin', 'mitra'])
-    ->name('login.role');
-Route::post('/login', [LoginController::class, 'login'])
-    ->middleware('throttle:'.$loginThrottleAttempts.',1')
-    ->name('login.attempt');
+// Role Selection & Authentication
+Route::get('/role-selection', [LoginController::class, 'showLoginForm'])->name('login.select');
+Route::get('/login/{role?}', [LoginController::class, 'showLoginForm'])->name('login');
+Route::post('/login', [LoginController::class, 'login'])->name('login.attempt');
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
 // Registration (Mitra only)
@@ -260,14 +194,6 @@ Route::middleware(['auth', 'role:mitra', 'throttle:240,1'])->prefix('mitra')->na
     Route::get('/dashboard', [MitraDashboardController::class, 'index'])
         ->name('dashboard');
 
-    // Kerjasama
-    Route::get('/kerjasama', [MitraKerjasamaController::class, 'index'])
-        ->middleware('throttle:120,1')
-        ->name('kerjasama.index');
-    Route::post('/kerjasama', [MitraKerjasamaController::class, 'store'])
-        ->name('kerjasama.store');
-
-    // Profile
     Route::get('/profile/complete', [MitraProfileController::class, 'completeProfile'])
         ->name('profile.complete');
     Route::post('/profile/complete', [MitraProfileController::class, 'storeProfile'])
