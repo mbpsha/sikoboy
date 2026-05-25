@@ -32,7 +32,7 @@
 
       <!-- FORM TAMBAH POTENSI BARU -->
       <div class="bg-white rounded-xl shadow p-6">
-        
+
         <!-- HEADER -->
         <div class="flex items-center gap-3 mb-6 pb-4 border-b">
           <svg class="w-6 h-6 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -123,8 +123,8 @@
         </div>
 
         <!-- TABEL POTENSI -->
-        <div class="bg-white rounded-xl shadow mb-8 mt-6">
-        
+        <div class="bg-white rounded-xl shadow mb-8 mt-6 ml-6 mr-6">
+
           <!-- HEADER -->
           <div class="flex justify-between items-center p-6">
             <div>

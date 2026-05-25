@@ -44,7 +44,7 @@ class RiwayatKerjasamaController extends Controller
         
         // Jika per_page besar (mode show all), gunakan get() untuk menampilkan semua
         if ($perPage >= 5000) {
-            $collection = $query->orderBy('id_kerjasama', 'asc')->get();
+            $collection = $query->orderBy('id_kerjasama', 'desc')->get();
             $items = [];
             foreach ($collection as $i => $k) {
                 $items[] = $this->formatRow($k, $i);
@@ -64,7 +64,7 @@ class RiwayatKerjasamaController extends Controller
                 ]
             );
         } else {
-            $kerjasama = $query->orderBy('id_kerjasama', 'asc')
+            $kerjasama = $query->orderBy('id_kerjasama', 'desc')
                 ->paginate($perPage)
                 ->withQueryString();
             
@@ -106,7 +106,7 @@ class RiwayatKerjasamaController extends Controller
         
         // Jika per_page besar (mode show all), gunakan get() untuk menampilkan semua
         if ($perPage >= 5000) {
-            $collection = $query->orderBy('id_kerjasama', 'asc')->get();
+            $collection = $query->orderBy('id_kerjasama', 'desc')->get();
             $items = [];
             foreach ($collection as $i => $k) {
                 $items[] = $this->formatRow($k, $i);
@@ -126,7 +126,7 @@ class RiwayatKerjasamaController extends Controller
                 ]
             );
         } else {
-            $kerjasama = $query->orderBy('id_kerjasama', 'asc')
+            $kerjasama = $query->orderBy('id_kerjasama', 'desc')
                 ->paginate($perPage)
                 ->withQueryString();
             
@@ -175,7 +175,7 @@ class RiwayatKerjasamaController extends Controller
         
         // Jika per_page besar (mode show all), gunakan get() untuk menampilkan semua
         if ($perPage >= 5000) {
-            $collection = $query->orderBy('id_kerjasama', 'asc')->get();
+            $collection = $query->orderBy('id_kerjasama', 'desc')->get();
             $items = [];
             foreach ($collection as $i => $k) {
                 $items[] = $this->formatRow($k, $i);
@@ -195,7 +195,7 @@ class RiwayatKerjasamaController extends Controller
                 ]
             );
         } else {
-            $kerjasama = $query->orderBy('id_kerjasama', 'asc')
+            $kerjasama = $query->orderBy('id_kerjasama', 'desc')
                 ->paginate($perPage)
                 ->withQueryString();
             
@@ -348,10 +348,8 @@ class RiwayatKerjasamaController extends Controller
             );
         });
 
-        $lastPage = (int) ceil(max(1, Kerjasama::pemerintahTipe()->count()) / 10);
-
         return redirect()
-            ->route('admin.riwayat-kerjasama.pemerintah', ['page' => $lastPage])
+            ->route('admin.riwayat-kerjasama.pemerintah', ['page' => 1])
             ->with('success', 'Data kerjasama pemerintah berhasil ditambahkan.');
     }
 
@@ -499,10 +497,8 @@ class RiwayatKerjasamaController extends Controller
             );
         });
 
-        $lastPage = (int) ceil(max(1, Kerjasama::mitraTipe()->count()) / 10);
-
         return redirect()
-            ->route('admin.riwayat-kerjasama.mitra', ['page' => $lastPage])
+            ->route('admin.riwayat-kerjasama.mitra', ['page' => 1])
             ->with('success', 'Data kerjasama mitra berhasil ditambahkan.');
     }
 
@@ -665,10 +661,8 @@ class RiwayatKerjasamaController extends Controller
             });
         }
 
-        $lastPage = (int) ceil(max(1, Kerjasama::finalized()->count()) / 10);
-
         return redirect()
-            ->route('admin.riwayat-kerjasama.gabungan', ['page' => $lastPage])
+            ->route('admin.riwayat-kerjasama.gabungan', ['page' => 1])
             ->with('success', 'Data kerjasama berhasil ditambahkan.');
     }
 
@@ -987,7 +981,7 @@ class RiwayatKerjasamaController extends Controller
         $this->applyFilters($query, $request);
         $this->applyExportColumnFilters($query, $request);
 
-        $rows = $query->orderBy('id_kerjasama', 'asc')
+        $rows = $query->orderBy('id_kerjasama', 'desc')
             ->get()
             ->values()
             ->map(fn (Kerjasama $k, int $i) => $this->formatRow($k, $i));

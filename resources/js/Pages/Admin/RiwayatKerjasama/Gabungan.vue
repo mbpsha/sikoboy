@@ -37,6 +37,10 @@ const selectedKerjasama = ref(null);
 const openStatusDropdown = ref(null);
 const openFilterColumn = ref(null);
 const mitraIdSearch = ref("");
+const showMitraSuggestions = ref(false);
+// Delay penutupan dropdown agar klik pilihan (mousedown) sempat diproses sebelum blur.
+const dropdownCloseDelayMs = 120;
+const hideMitraSuggestionsTimer = ref(null);
 
 // Computed untuk detect apakah ada filter aktif (cek dari props yang terupdate)
 const hasActiveFilter = computed(() => {
@@ -67,7 +71,7 @@ const applyFilters = () => {
             page: 1,
             per_page: perPage,
         },
-        { preserveState: false },
+        { preserveState: true, preserveScroll: true },
     );
 };
 
@@ -248,13 +252,28 @@ const selectedMitra = computed(() => {
     ) || null;
 });
 
-const applySelectedMitra = (idMitra) => {
-    const selected = (props.mitras || []).find(
-        (mitraOption) => String(mitraOption.id_mitra) === String(idMitra),
-    );
+const handleMitraInput = () => {
+    form.value.id_mitra = "";
+    form.value.mitra = mitraIdSearch.value;
+    showMitraSuggestions.value = true;
+};
 
-    form.value.id_mitra = selected ? String(selected.id_mitra) : "";
-    form.value.mitra = selected?.nama_perusahaan || "";
+const applySelectedMitra = (mitraOption) => {
+    form.value.id_mitra = String(mitraOption.id_mitra);
+    form.value.mitra = mitraOption.nama_perusahaan || "";
+    mitraIdSearch.value = `${mitraOption.id_mitra} - ${mitraOption.nama_perusahaan}`;
+    showMitraSuggestions.value = false;
+};
+
+const hideMitraSuggestions = () => {
+    if (hideMitraSuggestionsTimer.value) {
+        clearTimeout(hideMitraSuggestionsTimer.value);
+    }
+
+    hideMitraSuggestionsTimer.value = setTimeout(() => {
+        showMitraSuggestions.value = false;
+        hideMitraSuggestionsTimer.value = null;
+    }, dropdownCloseDelayMs);
 };
 
 const parseJangkaToYears = (value) => {
@@ -496,10 +515,8 @@ const submit = () => {
                 }).then(() => {
                     closeModal();
 
-                    // Redirect to last page to see the newly created kerjasama
-                    const lastPage = props.data?.last_page || 1;
                     router.visit(
-                        route("admin.riwayat-kerjasama.gabungan", { page: lastPage }),
+                        route("admin.riwayat-kerjasama.gabungan", { page: 1 }),
                         {
                             preserveState: false,
                         }
@@ -731,6 +748,7 @@ const statusBadgeClasses = (status) => {
 
 onBeforeUnmount(() => {
     if (debounceTimer) clearTimeout(debounceTimer);
+    if (hideMitraSuggestionsTimer.value) clearTimeout(hideMitraSuggestionsTimer.value);
 });
 
 // =========================
@@ -1211,7 +1229,7 @@ const clearColumnFilter = (filterKey) => {
                                     <td
                                         class="px-4 py-3 whitespace-nowrap border-r border-gray-200"
                                     >
-                                        {{ item.id_kerjasama }}
+                                        {{ item.no }}
                                     </td>
                                     <td
                                         class="px-4 py-3 whitespace-nowrap border-r border-gray-200"
@@ -1504,23 +1522,27 @@ const clearColumnFilter = (filterKey) => {
                             </label>
                             <input
                                 v-model="mitraIdSearch"
+                                @input="handleMitraInput"
+                                @focus="showMitraSuggestions = true"
+                                @blur="hideMitraSuggestions"
                                 class="w-full border rounded-lg px-3 py-2 mt-1"
                                 placeholder="Ketik ID mitra atau nama perusahaan"
                             />
-                            <select
-                                v-model="form.id_mitra"
-                                @change="applySelectedMitra(form.id_mitra)"
-                                class="w-full border rounded-lg px-3 py-2 mt-1 bg-white"
+                            <div
+                                v-if="showMitraSuggestions && mitraIdSearch"
+                                class="mt-1 max-h-48 overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-sm"
                             >
-                                <option value="">Pilih ID mitra</option>
-                                <option
+                                <!-- gunakan mousedown agar pilihan tetap terproses saat input blur -->
+                                <button
                                     v-for="mitraOption in filteredMitraOptions"
                                     :key="mitraOption.id_mitra"
-                                    :value="String(mitraOption.id_mitra)"
+                                    type="button"
+                                    class="w-full px-3 py-2 text-left text-sm hover:bg-gray-50"
+                                    @mousedown.prevent="applySelectedMitra(mitraOption)"
                                 >
                                     {{ mitraOption.id_mitra }} - {{ mitraOption.nama_perusahaan }}
-                                </option>
-                            </select>
+                                </button>
+                            </div>
                             <p
                                 v-if="mitraIdSearch && filteredMitraOptions.length === 0"
                                 class="text-xs text-gray-500 mt-1"
@@ -1533,11 +1555,6 @@ const clearColumnFilter = (filterKey) => {
                             >
                                 {{ errors.id_mitra }}
                             </p>
-                            <input
-                                v-model="form.mitra"
-                                class="w-full border rounded-lg px-3 py-2 mt-2"
-                                placeholder="Nama mitra akan terisi setelah memilih ID"
-                            />
                             <p
                                 v-if="errors.mitra"
                                 class="text-red-500 text-xs mt-1"
