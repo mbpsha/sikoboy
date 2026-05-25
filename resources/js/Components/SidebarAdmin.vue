@@ -57,7 +57,7 @@
                 >
                     <div v-if="!props.isCollapsed || isMobile">
                         <div class="text-3xl font-extrabold tracking-widest">
-                            SIKERSA
+                            SIKARSA
                         </div>
 
                         <p class="text-xs text-teal-100 mt-1">

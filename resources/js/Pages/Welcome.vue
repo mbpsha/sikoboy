@@ -28,7 +28,7 @@ defineProps({
 <template>
     <LandingLayout>
         <HeroSection
-            title="S I K E R S A"
+            title="S I K A R S A"
             subtitle="Mewujudkan pengelolaan kerja sama daerah yang efisien, transparan, dan berdampak untuk Kabupaten Boyolali."
         />
 

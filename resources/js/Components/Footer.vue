@@ -21,7 +21,7 @@ const user = computed(() => page.props.value?.auth?.user ?? null);
       <img :src="logo" class="w-16 sm:w-20 h-16 sm:h-20 object-contain" />
 
       <p class="font-fahkwang text-lg sm:text-2xl font-semibold tracking-widest text-white mb-0">
-        S I K E R S A
+        S I K A R S A
       </p>
 
       <p class="text-xs sm:text-sm text-white/80 leading-relaxed max-w-xs">
