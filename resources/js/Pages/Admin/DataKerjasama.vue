@@ -2,39 +2,28 @@
   <AdminLayout title="Ajuan Kerjasama" @click="closeAllFilters">
     <div class="max-w-7xl mx-auto px-4 py-6 space-y-6">
 
-      <!-- Search & Filter Bar -->
-      <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-        <div class="flex flex-wrap items-center gap-3">
-          <input
-            v-model="local.search"
-            placeholder="Cari berdasarkan mitra atau nama kerjasama..."
-            class="flex-1 min-w-[220px] rounded-full px-4 py-2.5 text-sm border border-gray-200 bg-gray-50 focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition"
-          />
-          <select v-model="local.tahun" @change="applyFilters" class="rounded-full px-4 py-2.5 text-sm border border-gray-200 bg-gray-50 focus:outline-none focus:border-teal-600">
+      <!-- SEARCH & FILTER -->
+      <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+        <div class="flex gap-3 items-center overflow-x-auto">
+          <div
+            class="flex items-center gap-2 flex-1 min-w-[220px] rounded-full px-4 py-2.5 border border-gray-200 bg-gray-50 focus-within:border-teal-600 focus-within:ring-1 focus-within:ring-teal-600 transition"
+          >
+            <MagnifyingGlassIcon class="w-5 h-5 text-gray-400 shrink-0" />
+            <input
+              v-model="search"
+              placeholder="Cari berdasarkan tahun, nama mitra, atau judul kerjasama..."
+              class="w-full bg-transparent outline-none text-sm text-gray-700 placeholder-gray-400"
+            />
+          </div>
+          <select v-model="tahun" class="rounded-full px-4 py-2.5 text-sm border border-gray-200 bg-gray-50 focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition min-w-[180px]">
             <option value="">Semua Tahun</option>
             <option v-for="y in years" :key="y" :value="y">{{ y }}</option>
           </select>
-          <button @click="applyFilters" class="bg-teal-700 hover:bg-teal-800 text-white text-sm px-5 py-2.5 rounded-full font-medium transition">
+          <button @click="applyFilters" class="bg-teal-700 hover:bg-teal-800 text-white text-sm px-5 py-2.5 rounded-full font-medium transition shrink-0">
             Filter
           </button>
-          <button v-if="local.search || local.tahun || local.status" @click="resetAllFilters" class="bg-gray-300 hover:bg-gray-400 text-gray-700 text-sm px-5 py-2.5 rounded-full font-medium transition">
+          <button v-if="search || tahun" @click="resetAllFilters" class="bg-gray-300 hover:bg-gray-400 text-gray-700 text-sm px-5 py-2.5 rounded-full font-medium transition shrink-0">
             Reset
-          </button>
-        </div>
-      </div>
-
-      <!-- Header with Add Button -->
-      <div class="flex items-center justify-between">
-
-        <div class="relative ml-0 md:ml-auto w-full md:w-auto">
-          <button
-            @click="showAddMenu = !showAddMenu"
-            class="w-full md:w-auto bg-teal-600 hover:bg-teal-700 text-white px-5 py-2.5 rounded-lg font-medium flex justify-center items-center gap-2 transition"
-          >
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-            </svg>
-            Tambah Kerjasama
           </button>
         </div>
       </div>
@@ -284,8 +273,8 @@
             >Sebelumnya</button>
 
               <button
-                v-for="page in visiblePages"
-                :key="`page-${page}`"
+                v-for="page in kerjasama.last_page"
+                :key="page"
                 @click.prevent="goToPage(page)"
                 class="px-3 py-2 text-sm rounded-lg border"
                 :class="page === kerjasama.current_page ? 'bg-teal-600 text-white border-teal-600' : 'bg-white text-gray-700'"
@@ -293,13 +282,11 @@
                 {{ page }}
               </button>
 
-              <span v-if="hasRightEllipsis" class="px-1 text-sm text-gray-600">...</span>
-
               <button
                 class="px-3 py-2 text-sm rounded-lg border bg-white disabled:opacity-50"
                 :disabled="!kerjasama.next_page_url"
                 @click.prevent="goToPage(kerjasama.current_page + 1)"
-              >&gt;</button>
+              >Selanjutnya</button>
             </div>
           </div>
 
@@ -442,13 +429,6 @@ const search = ref(props.filters?.search ?? '')
 const tahun = ref(props.filters?.tahun ?? '')
 const isFiltering = ref(false)
 
-// Reactive object untuk form filter
-const local = reactive({
-  search: props.filters?.search ?? '',
-  tahun: props.filters?.tahun ?? '',
-  status: '',
-})
-
 let debounceTimer = null
 
 const columnFilters = ref({
@@ -512,14 +492,14 @@ const years = computed(() => {
 })
 
 function buildFilterParams(page = 1) {
-  const hasFormFilter = local.search.trim() !== '' || local.tahun !== ''
+  const hasFormFilter = search.value.trim() !== '' || tahun.value !== ''
   const hasColumnFilter = Object.values(columnFilters.value).some(arr => arr.length > 0)
   const perPage = (hasFormFilter || hasColumnFilter) ? 10000 : 15
 
   const params = { page, per_page: perPage }
-  const q = local.search.trim()
+  const q = search.value.trim()
   if (q) params.search = q
-  if (local.tahun) params.tahun = local.tahun
+  if (tahun.value) params.tahun = tahun.value
   return params
 }
 
@@ -595,12 +575,12 @@ function formatJangkaWaktu(startStr, endStr) {
   return parts.length ? parts.join(' ') : '0 hari'
 }
 
-watch(() => local.search, () => {
+watch(search, () => {
   clearTimeout(debounceTimer)
   debounceTimer = setTimeout(() => applyFilters(), 500)
 })
 
-watch(() => local.tahun, () => {
+watch(tahun, () => {
   applyFilters()
 })
 
@@ -616,8 +596,8 @@ function applyFilters() {
 }
 
 function resetAllFilters() {
-  local.search = ''
-  local.tahun = ''
+  search.value = ''
+  tahun.value = ''
   columnFilters.value = { tahun: [], mitra: [], jenis_kerjasama: [], jenis_dokumen: [], urusan: [] }
   isFiltering.value = true
   router.get(route('admin.data-kerjasama.index'), { page: 1, per_page: 15 }, {
