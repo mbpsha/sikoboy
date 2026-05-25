@@ -274,14 +274,20 @@
         </div>
 
         <!-- Pagination Footer -->
-        <div v-if="(kerjasama?.last_page || 1) > 1 && !hasActiveFilter" class="px-5 py-3.5 flex items-center justify-between border-t border-gray-100">
-          <span class="text-xs text-gray-500">Tampilkan {{ kerjasama.per_page }} data / halaman</span>
-          <div class="flex items-center justify-end gap-2">
-            <button
-              class="px-3 py-2 text-sm rounded-lg border bg-white disabled:opacity-50"
-              :disabled="!kerjasama.prev_page_url"
-              @click.prevent="goToPage(kerjasama.current_page - 1)"
-            >Sebelumnya</button>
+        <div
+          v-if="(kerjasama?.last_page || 1) > 1 && !hasActiveFilter"
+          class="px-5 py-3.5 border-t border-gray-100"
+        >
+          <div class="hidden md:flex items-center justify-between">
+            <span class="text-xs text-gray-500 mr-6">Tampilkan {{ kerjasama.per_page }} data / halaman</span>
+            <div class="flex items-center justify-end gap-2">
+              <button
+                class="px-3 py-2 text-sm rounded-lg border bg-white disabled:opacity-50"
+                :disabled="!kerjasama.prev_page_url"
+                @click.prevent="goToPage(kerjasama.current_page - 1)"
+              >
+                Sebelumnya
+              </button>
 
               <button
                 v-for="page in visiblePages"
@@ -293,22 +299,24 @@
                 {{ page }}
               </button>
 
-              <span v-if="hasRightEllipsis" class="px-1 text-sm text-gray-600">...</span>
-
               <button
                 class="px-3 py-2 text-sm rounded-lg border bg-white disabled:opacity-50"
                 :disabled="!kerjasama.next_page_url"
                 @click.prevent="goToPage(kerjasama.current_page + 1)"
-              >&gt;</button>
+              >
+                Selanjutnya
+              </button>
             </div>
           </div>
 
-          <div class="flex md:hidden items-center justify-center gap-2">
+          <div class="flex md:hidden items-center justify-center gap-2 mt-3">
             <button
               class="px-3 py-2 text-sm rounded-lg border bg-white disabled:opacity-50"
               :disabled="!kerjasama.prev_page_url"
               @click.prevent="goToPage(kerjasama.current_page - 1)"
-            >&lt;</button>
+            >
+              &lt;
+            </button>
 
             <span v-if="hasLeftEllipsis" class="px-1 text-sm text-gray-600">...</span>
 
@@ -328,10 +336,13 @@
               class="px-3 py-2 text-sm rounded-lg border bg-white disabled:opacity-50"
               :disabled="!kerjasama.next_page_url"
               @click.prevent="goToPage(kerjasama.current_page + 1)"
-            >&gt;</button>
+            >
+              &gt;
+            </button>
           </div>
         </div>
       </div>
+    </div>
 
     <!-- Process Modal -->
     <Teleport to="body">
@@ -430,7 +441,7 @@ const currentUsername    = computed(() => page.props.auth?.user?.username ?? '')
 const currentUserDivisi = computed(() => page.props.auth?.user?.divisi ?? currentUsername.value)
 
 const kerjasama = computed(() => props.kerjasama ?? {
-  data: [], per_page: 15, prev_page_url: null, next_page_url: null, current_page: 1,
+  data: [], per_page: 10, prev_page_url: null, next_page_url: null, current_page: 1,
 })
 
 const filters = computed(() => props.filters ?? {})
@@ -514,7 +525,7 @@ const years = computed(() => {
 function buildFilterParams(page = 1) {
   const hasFormFilter = local.search.trim() !== '' || local.tahun !== ''
   const hasColumnFilter = Object.values(columnFilters.value).some(arr => arr.length > 0)
-  const perPage = (hasFormFilter || hasColumnFilter) ? 10000 : 15
+  const perPage = (hasFormFilter || hasColumnFilter) ? 10000 : 10
 
   const params = { page, per_page: perPage }
   const q = local.search.trim()
@@ -620,7 +631,7 @@ function resetAllFilters() {
   local.tahun = ''
   columnFilters.value = { tahun: [], mitra: [], jenis_kerjasama: [], jenis_dokumen: [], urusan: [] }
   isFiltering.value = true
-  router.get(route('admin.data-kerjasama.index'), { page: 1, per_page: 15 }, {
+  router.get(route('admin.data-kerjasama.index'), { page: 1, per_page: 10 }, {
     preserveState: true,
     preserveScroll: true,
     onFinish: () => {
