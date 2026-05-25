@@ -12,6 +12,7 @@ use App\Models\Kerjasama;
 use App\Models\PeriodeKerjasama;
 use App\Models\RiwayatStatus;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
@@ -212,11 +213,12 @@ class KerjasamaController extends Controller
             ]);
 
             $file = $validated['dokumen_file'];
-            $path = $file->store('dokumen-kerjasama', 'public');
+            $randomName = Str::uuid() . '.' . $file->getClientOriginalExtension();
+            $path = $file->storeAs('dokumen-kerjasama', $randomName, 'public');
 
             Dokumen::create([
                 'id_kerjasama' => $kerjasama->id_kerjasama,
-                'nama_file' => $file->getClientOriginalName(),
+                'nama_file' => $randomName,
                 'lokasi_file' => $path,
                 'versi_dokumen' => 1,
                 'created_by' => $request->user()->id_user,
@@ -254,12 +256,13 @@ class KerjasamaController extends Controller
         ]);
 
         $file        = $request->file('file');
-        $path        = $file->store('dokumen-kerjasama', 'public');
+        $randomName  = Str::uuid() . '.' . $file->getClientOriginalExtension();
+        $path        = $file->storeAs('dokumen-kerjasama', $randomName, 'public');
         $nextVersion = ((int) $kerjasama->dokumen()->max('versi_dokumen')) + 1;
 
         $dok = Dokumen::create([
             'id_kerjasama'  => $kerjasama->id_kerjasama,
-            'nama_file'     => $file->getClientOriginalName(),
+            'nama_file'     => $randomName,
             'lokasi_file'   => $path,
             'versi_dokumen' => $nextVersion,
             'created_by'    => $request->user()->id_user,
