@@ -81,6 +81,7 @@ const currentTabItems = computed(() => {
 
 const carouselItems = computed(() => {
   return currentTabItems.value.map((item, idx) => ({
+    ...buildDescriptionMeta(item.deskripsi),
     key: `${activeTab.value}-${idx}`,
     title: item.judul,
     desc: item.deskripsi,
@@ -150,22 +151,26 @@ const getCarouselCardStyle = (item) => {
 const hasCarouselItems = computed(() => carouselItems.value.length > 0)
 const detailModalItem = ref(null)
 
-const splitWords = (text = '') => {
+function splitWords(text = '') {
   return text
     .trim()
     .split(/\s+/)
     .filter(Boolean)
 }
 
-const hasLongDescription = (text = '') => splitWords(text).length > 12
-
-const truncateDescription = (text = '') => {
+function buildDescriptionMeta(text = '') {
   const words = splitWords(text)
   if (words.length <= 12) {
-    return text
+    return {
+      descPreview: text,
+      descIsLong: false,
+    }
   }
 
-  return `${words.slice(0, 12).join(' ')}...`
+  return {
+    descPreview: `${words.slice(0, 12).join(' ')}...`,
+    descIsLong: true,
+  }
 }
 
 const openDetailModal = (item) => {
@@ -293,9 +298,9 @@ onBeforeUnmount(() => {
                   {{ item.title }}
                 </h3>
                 <p class="text-sm md:text-base text-slate-600 leading-relaxed line-clamp-3">
-                  <span>{{ truncateDescription(item.desc) }}</span>
+                  <span>{{ item.descPreview }}</span>
                   <button
-                    v-if="hasLongDescription(item.desc)"
+                    v-if="item.descIsLong"
                     type="button"
                     class="ml-1 font-semibold text-teal-600 hover:text-teal-700"
                     @click.stop="openDetailModal(item)"

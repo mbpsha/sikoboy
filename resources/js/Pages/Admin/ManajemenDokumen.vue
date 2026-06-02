@@ -478,8 +478,10 @@ const submitEditForm = () => {
   const data = new FormData()
   data.append('_method', 'put')
   data.append('judul', editForm.value.judul ?? '')
-  data.append('id_kategori', editForm.value.id_kategori ?? '')
   data.append('deskripsi', editForm.value.deskripsi ?? '')
+  if (editForm.value.id_kategori) {
+    data.append('id_kategori', editForm.value.id_kategori)
+  }
 
   if (editForm.value.template_file) {
     data.append('template_file', editForm.value.template_file)
