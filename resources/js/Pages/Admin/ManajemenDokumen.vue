@@ -291,7 +291,9 @@ const submitForm = () => {
     },
     onError: (errors) => {
       const firstMessage = Object.values(errors)[0]
-      const errorMessage = Array.isArray(firstMessage) ? firstMessage[0] : firstMessage
+      const errorMessage = firstMessage
+        ? (Array.isArray(firstMessage) ? firstMessage[0] : firstMessage)
+        : null
       Swal.fire(
         'Gagal!',
         errorMessage || 'Gagal mengupload template dokumen.',
