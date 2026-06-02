@@ -101,10 +101,10 @@ const portalHref = computed(() => {
 
                     <!-- Kontak -->
                     <Link
-                        href="/#contact"
+                        href="/kontak"
                         :class="[
                             'mx-2 px-4 py-1 text-sm rounded-full transition',
-                            isActive('/#contact')
+                            isActive('/kontak')
                                 ? 'bg-white text-[#17464E] font-semibold'
                                 : 'text-white/90 hover:bg-white/20',
                         ]"

@@ -123,8 +123,8 @@ class ManajemenDokumenController extends Controller
 
     public function listPublic()
     {
-        return response()->json([
-            'data' => $this->templateList(),
+        return Inertia::render('Dokumen', [
+            'dokumenGroups' => $this->publicDokumenGroups(),
         ]);
     }
 

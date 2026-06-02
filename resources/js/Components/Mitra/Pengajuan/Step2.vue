@@ -72,9 +72,14 @@ const submit = () => {
         icon: 'success',
         title: 'Pengajuan Terkirim',
         text: 'Pengajuan kerjasama berhasil dikirim ke admin.',
-        timer: 2000,
-        showConfirmButton: false,
-      }).then(() => router.visit(route('portal-mitra')))
+        confirmButtonText: 'Oke',
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+      }).then((result) => {
+        if (result.isConfirmed) {
+          router.visit(route('portal-mitra'))
+        }
+      })
     },
     onError: () => {
       Swal.fire({ icon: 'error', title: 'Gagal', text: 'Terjadi kesalahan. Periksa input.' })
@@ -110,14 +115,14 @@ const submit = () => {
           <div class="relative -mt-20 sm:-mt-24 mb-16 sm:mb-20">
 
             <div class="relative flex items-center justify-center max-w-xs mx-auto mb-8 sm:mb-10">
-              <div class="absolute left-0 right-0 h-[2px] bg-gray-400/50 z-0"></div>
+              <div class="absolute left-0 right-0 h-0.5 bg-gray-400/50 z-0"></div>
               <div class="flex justify-between w-full relative z-10">
                 <div class="flex items-center justify-center w-9 sm:w-11 h-9 sm:h-11 rounded-full bg-[#17464E] text-white font-bold shadow-md border-4 border-[#8AB4BB] text-sm sm:text-base">1</div>
                 <div class="flex items-center justify-center w-9 sm:w-11 h-9 sm:h-11 rounded-full bg-[#17464E] text-white font-bold shadow-md border-4 border-[#8AB4BB] text-sm sm:text-base">2</div>
               </div>
             </div>
 
-            <div class="bg-white rounded-[20px] sm:rounded-[24px] p-5 sm:p-8 md:p-14 shadow-[0_15px_50px_rgba(0,0,0,0.15)]">
+            <div class="bg-white rounded-[20px] sm:rounded-3xl p-5 sm:p-8 md:p-14 shadow-[0_15px_50px_rgba(0,0,0,0.15)]">
               <h3 class="text-lg sm:text-xl font-bold text-[#17464E] mb-6 sm:mb-10">Form Input Kerjasama</h3>
 
               <form @submit.prevent="submit" class="space-y-6 sm:space-y-8">
