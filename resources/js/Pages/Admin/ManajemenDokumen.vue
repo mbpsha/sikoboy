@@ -237,6 +237,7 @@
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import { computed, ref } from 'vue'
 import { router } from '@inertiajs/vue3'
+import Swal from 'sweetalert2'
 
 const props = defineProps({
   templates: { type: Array, default: () => [] },
@@ -272,7 +273,7 @@ const handleFile = (e) => {
 
 const submitForm = () => {
   if (!form.value.template_file) {
-    alert('File wajib diupload!')
+    Swal.fire('Oops...', 'File wajib diupload!', 'warning')
     return
   }
 
@@ -285,12 +286,17 @@ const submitForm = () => {
   router.post(route('admin.manajemen-dokumen.store'), data, {
     preserveScroll: true,
     onSuccess: () => {
-      alert('Template dokumen berhasil diupload.')
+      Swal.fire('Berhasil!', 'Template dokumen berhasil diupload.', 'success')
       resetForm()
     },
     onError: (errors) => {
       const firstMessage = Object.values(errors)[0]
-      alert(firstMessage?.[0] || 'Gagal mengupload template dokumen.')
+      const errorMessage = Array.isArray(firstMessage) ? firstMessage[0] : firstMessage
+      Swal.fire(
+        'Gagal!',
+        errorMessage || 'Gagal mengupload template dokumen.',
+        'error'
+      )
     },
   })
 }
@@ -306,19 +312,30 @@ const resetForm = () => {
 }
 
 const deleteTemplate = (item) => {
-  if (!confirm(`Hapus dokumen "${item.title}"?`)) {
-    return
-  }
+  Swal.fire({
+    title: 'Hapus dokumen?',
+    text: `Dokumen "${item.title}" akan dihapus permanen.`,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#dc2626',
+    cancelButtonColor: '#6b7280',
+    confirmButtonText: 'Ya, Hapus',
+    cancelButtonText: 'Batal',
+  }).then((result) => {
+    if (!result.isConfirmed) {
+      return
+    }
 
-  router.delete(route('admin.manajemen-dokumen.destroy', item.id), {
-    preserveScroll: true,
-    onSuccess: () => {
-      alert('Template dokumen berhasil dihapus.')
-      router.reload({ preserveScroll: true })
-    },
-    onError: () => {
-      alert('Gagal menghapus template dokumen.')
-    },
+    router.delete(route('admin.manajemen-dokumen.destroy', item.id), {
+      preserveScroll: true,
+      onSuccess: () => {
+        Swal.fire('Terhapus!', 'Template dokumen berhasil dihapus.', 'success')
+        router.reload({ preserveScroll: true })
+      },
+      onError: () => {
+        Swal.fire('Gagal!', 'Gagal menghapus template dokumen.', 'error')
+      },
+    })
   })
 }
 </script>
