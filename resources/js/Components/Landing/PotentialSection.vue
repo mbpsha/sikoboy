@@ -81,6 +81,7 @@ const currentTabItems = computed(() => {
 
 const carouselItems = computed(() => {
   return currentTabItems.value.map((item, idx) => ({
+    ...buildDescriptionMeta(item.deskripsi),
     key: `${activeTab.value}-${idx}`,
     title: item.judul,
     desc: item.deskripsi,
@@ -148,6 +149,38 @@ const getCarouselCardStyle = (item) => {
 }
 
 const hasCarouselItems = computed(() => carouselItems.value.length > 0)
+const detailModalItem = ref(null)
+const MAX_PREVIEW_WORDS = 12
+
+function splitWords(text = '') {
+  return text
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+}
+
+function buildDescriptionMeta(text = '') {
+  const words = splitWords(text)
+  if (words.length <= MAX_PREVIEW_WORDS) {
+    return {
+      descPreview: text,
+      descIsLong: false,
+    }
+  }
+
+  return {
+    descPreview: `${words.slice(0, MAX_PREVIEW_WORDS).join(' ')}...`,
+    descIsLong: true,
+  }
+}
+
+const openDetailModal = (item) => {
+  detailModalItem.value = item
+}
+
+const closeDetailModal = () => {
+  detailModalItem.value = null
+}
 
 function prevSlide() {
   if (!carouselItems.value.length) return
@@ -266,7 +299,15 @@ onBeforeUnmount(() => {
                   {{ item.title }}
                 </h3>
                 <p class="text-sm md:text-base text-slate-600 leading-relaxed line-clamp-3">
-                  {{ item.desc }}
+                  <span>{{ item.descPreview }}</span>
+                  <button
+                    v-if="item.descIsLong"
+                    type="button"
+                    class="ml-1 font-semibold text-teal-600 hover:text-teal-700"
+                    @click.stop="openDetailModal(item)"
+                  >
+                    selengkapnya
+                  </button>
                 </p>
               </div>
 
@@ -291,6 +332,51 @@ onBeforeUnmount(() => {
         ></button>
       </div>
 
+    </div>
+
+    <div
+      v-if="detailModalItem"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      @click.self="closeDetailModal"
+    >
+      <div class="w-full max-w-2xl overflow-hidden rounded-2xl bg-white shadow-xl max-h-[90vh] overflow-y-auto">
+        <div class="flex items-center justify-between border-b px-5 py-4">
+          <h3 class="text-lg font-bold text-slate-800">Detail Potensi</h3>
+          <button
+            type="button"
+            class="rounded-md p-1 text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+            @click="closeDetailModal"
+          >
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <div class="p-5 md:p-6">
+          <div class="overflow-hidden rounded-xl bg-slate-100">
+            <img
+              v-if="detailModalItem.image"
+              :src="detailModalItem.image"
+              :alt="detailModalItem.title"
+              class="h-56 w-full object-cover md:h-72"
+            />
+            <div
+              v-else
+              class="flex h-56 w-full items-center justify-center bg-gradient-to-br from-teal-100 to-blue-100 md:h-72"
+            >
+              <svg class="h-20 w-20 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </div>
+          </div>
+
+          <h4 class="mt-5 text-xl font-bold text-slate-800 md:text-2xl">{{ detailModalItem.title }}</h4>
+          <p class="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-slate-600 md:text-base">
+            {{ detailModalItem.desc }}
+          </p>
+        </div>
+      </div>
     </div>
 
   </div>
