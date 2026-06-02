@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers\Mitra;
 
+use App\Enums\StatusPersetujuan;
 use App\Http\Controllers\Controller;
+use App\Models\Kerjasama;
 use App\Support\NotificationFeed;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Carbon;
 use Inertia\Inertia;
 
 class ProfileController extends Controller
@@ -16,16 +19,87 @@ class ProfileController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
+        $mitra = $user?->mitra;
+
+        $kerjasamaItems = $mitra
+            ? $mitra->kerjasama()
+                ->with([
+                    'latestPeriode',
+                    'kategori',
+                    'riwayatStatus.status',
+                    'riwayatStatus.admin',
+                ])
+                ->orderByDesc('created_at')
+                ->get()
+            : collect();
+
+        $kerjasamaList = $kerjasamaItems->map(function (Kerjasama $kerjasama) {
+            $latestPeriode = $kerjasama->latestPeriode;
+            $latestRiwayat = $kerjasama->riwayatStatus->sortByDesc('tanggal')->first();
+            $latestStatus = $latestRiwayat?->status?->jenis_status;
+            $statusPersetujuan = $kerjasama->status_persetujuan?->value;
+
+            $status = 'pending';
+
+            if ($statusPersetujuan === StatusPersetujuan::Disetujui->value) {
+                $status = 'disetujui';
+            } elseif (in_array($latestStatus, ['ditolak', 'dibatalkan'], true) || in_array($statusPersetujuan, ['ditolak', 'dibatalkan'], true)) {
+                $status = 'ditolak';
+            } elseif (in_array($latestStatus, ['revisi', 'diajukan', 'diproses'], true) || in_array($statusPersetujuan, ['revisi', 'diajukan', 'diproses'], true)) {
+                $status = 'dalam_proses';
+            }
+
+            $proses = $kerjasama->riwayatStatus
+                ->sortBy('tanggal')
+                ->values()
+                ->map(function ($riwayat) {
+                    $statusName = $riwayat->status?->jenis_status ?: 'proses';
+
+                    return [
+                        'id' => $riwayat->id_riwayat,
+                        'title' => ucfirst(str_replace('_', ' ', $statusName)),
+                        'tanggal' => $riwayat->tanggal ? Carbon::parse($riwayat->tanggal)->format('d/m/Y H:i') : '-',
+                        'catatan' => $riwayat->catatan,
+                        'file' => $riwayat->file,
+                        'file_mitra' => null,
+                        'penanggung' => $riwayat->penanggung_jawab,
+                        'pegawai' => $riwayat->penanggung_jawab,
+                    ];
+                })
+                ->values();
+
+            return [
+                'id_kerjasama' => $kerjasama->id_kerjasama,
+                'judul' => $kerjasama->judul,
+                'kategori' => $kerjasama->kategori?->nama_kategori ?: $kerjasama->jenis_kerjasama,
+                'urusan' => $kerjasama->urusan,
+                'status' => $status,
+                'tanggal_daftar' => $kerjasama->created_at ? Carbon::parse($kerjasama->created_at)->format('d/m/Y') : '-',
+                'periode' => $latestPeriode
+                    ? Carbon::parse($latestPeriode->tanggal_mulai)->format('d/m/Y').' - '.Carbon::parse($latestPeriode->tanggal_berakhir)->format('d/m/Y')
+                    : '-',
+                'proses' => $proses,
+            ];
+        })->values();
+
+        $totalPengajuan = $kerjasamaItems->count();
+        $disetujui = $kerjasamaItems->filter(fn (Kerjasama $kerjasama) => $kerjasama->status_persetujuan?->value === StatusPersetujuan::Disetujui->value)->count();
+        $pending = $kerjasamaItems->filter(function (Kerjasama $kerjasama) {
+            $status = $kerjasama->status_persetujuan?->value;
+
+            return $status === null || in_array($status, ['diajukan', 'diproses', 'pending'], true);
+        })->count();
+        $dalamProses = max($totalPengajuan - $disetujui - $pending, 0);
 
         return Inertia::render('Mitra/Profile/Profile', [
-            'mitra' => $user?->mitra,
+            'mitra' => $mitra,
             'stats' => [
-                'total_pengajuan' => 0,
-                'disetujui' => 0,
-                'dalam_proses' => 0,
-                'pending' => 0,
+                'total_pengajuan' => $totalPengajuan,
+                'disetujui' => $disetujui,
+                'dalam_proses' => $dalamProses,
+                'pending' => $pending,
             ],
-            'kerjasama_list' => [],
+            'kerjasama_list' => $kerjasamaList,
             'notifications' => NotificationFeed::forMitra($user, 50),
         ]);
     }
