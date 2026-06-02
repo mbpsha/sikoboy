@@ -204,12 +204,13 @@
                   >
                     Preview
                   </a>
-                  <a
-                    :href="item.href"
+                  <button
+                    type="button"
+                    @click="openEditTemplate(item)"
                     class="inline-flex items-center rounded-lg border border-white/60 px-3 py-1.5 text-xs font-semibold text-[#0C505C] hover:bg-white"
                   >
-                    Download
-                  </a>
+                    Edit
+                  </button>
                   <button
                     type="button"
                     @click="deleteTemplate(item)"
@@ -225,6 +226,119 @@
 
         <div v-else class="px-6 py-10 text-center text-gray-500">
           Belum ada dokumen yang tampil di halaman publik.
+        </div>
+      </div>
+
+      <div
+        v-if="isEditModalOpen"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+        @click.self="closeEditModal"
+      >
+        <div class="w-full max-w-3xl rounded-xl bg-white shadow-xl max-h-[90vh] overflow-y-auto">
+          <div class="flex items-center justify-between border-b px-6 py-4">
+            <h3 class="text-lg font-semibold text-gray-800">Edit Template Dokumen</h3>
+            <button
+              type="button"
+              @click="closeEditModal"
+              class="rounded-md p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          <form @submit.prevent="submitEditForm" class="grid grid-cols-1 gap-6 p-6 lg:grid-cols-2">
+            <div class="space-y-5">
+              <div>
+                <label class="mb-1 block text-gray-600">Nama Dokumen</label>
+                <input
+                  v-model="editForm.judul"
+                  type="text"
+                  class="w-full rounded-lg border px-4 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                />
+              </div>
+
+              <div>
+                <label class="mb-1 block text-gray-600">Kategori Dokumen</label>
+                <select
+                  v-model="editForm.id_kategori"
+                  class="w-full rounded-lg border px-4 py-2"
+                >
+                  <option value="" disabled>Pilih kategori</option>
+                  <option
+                    v-for="kategori in kategoris"
+                    :key="kategori.id_kategori"
+                    :value="kategori.id_kategori"
+                  >
+                    {{ kategori.nama_kategori }}
+                  </option>
+                </select>
+              </div>
+
+              <div>
+                <label class="mb-1 block text-gray-600">Deskripsi Singkat</label>
+                <textarea
+                  v-model="editForm.deskripsi"
+                  rows="4"
+                  class="w-full rounded-lg border px-4 py-2"
+                ></textarea>
+              </div>
+            </div>
+
+            <div>
+              <h4 class="mb-4 text-lg font-semibold text-gray-700">Upload File Template</h4>
+              <label
+                class="flex h-72 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-300 transition hover:border-teal-400 hover:bg-gray-50"
+              >
+                <input
+                  type="file"
+                  class="hidden"
+                  @change="handleEditFile"
+                  accept=".pdf"
+                />
+                <div class="text-center">
+                  <div class="mb-4">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      class="mx-auto h-14 w-14 text-gray-400"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                    >
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 16V4m0 0l-4 4m4-4l4 4" />
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M4 20h16" />
+                    </svg>
+                  </div>
+                  <p class="font-semibold text-gray-600">Drag & drop atau klik untuk upload</p>
+                  <p class="text-sm text-gray-400">PDF (Max. 10MB)</p>
+                  <div
+                    v-if="editFileLabel"
+                    class="mt-4 inline-flex max-w-full items-center rounded-full bg-teal-50 px-4 py-2 text-sm font-semibold text-teal-700"
+                  >
+                    <span class="truncate">{{ editFileLabel }}</span>
+                  </div>
+                </div>
+              </label>
+            </div>
+
+            <div class="col-span-1 flex justify-end gap-3 border-t pt-5 lg:col-span-2">
+              <button
+                type="button"
+                @click="closeEditModal"
+                class="rounded-lg bg-gray-200 px-5 py-2.5 font-semibold text-gray-700 hover:bg-gray-300"
+              >
+                Batal
+              </button>
+              <button
+                type="submit"
+                class="rounded-lg bg-teal-600 px-5 py-2.5 font-semibold text-white hover:bg-teal-700"
+              >
+                Simpan Perubahan
+              </button>
+            </div>
+          </form>
         </div>
       </div>
 
@@ -260,6 +374,15 @@ const form = ref({
 })
 
 const fileName = ref(null)
+const isEditModalOpen = ref(false)
+const selectedTemplateId = ref(null)
+const editFileLabel = ref(null)
+const editForm = ref({
+  judul: '',
+  id_kategori: '',
+  deskripsi: '',
+  template_file: null,
+})
 
 const handleFile = (e) => {
   const file = e.target.files[0]
@@ -311,6 +434,76 @@ const resetForm = () => {
     template_file: null,
   }
   fileName.value = null
+}
+
+const openEditTemplate = (item) => {
+  selectedTemplateId.value = item.id
+  editForm.value = {
+    judul: item.judul ?? item.title ?? '',
+    id_kategori: item.id_kategori ?? '',
+    deskripsi: item.deskripsi ?? item.description ?? '',
+    template_file: null,
+  }
+  editFileLabel.value = item.nama_file ?? null
+  isEditModalOpen.value = true
+}
+
+const closeEditModal = () => {
+  isEditModalOpen.value = false
+  selectedTemplateId.value = null
+  editForm.value = {
+    judul: '',
+    id_kategori: '',
+    deskripsi: '',
+    template_file: null,
+  }
+  editFileLabel.value = null
+}
+
+const handleEditFile = (e) => {
+  const file = e.target.files?.[0]
+  if (!file) {
+    return
+  }
+
+  editForm.value.template_file = file
+  editFileLabel.value = file.name
+}
+
+const submitEditForm = () => {
+  if (!selectedTemplateId.value) {
+    return
+  }
+
+  const data = new FormData()
+  data.append('_method', 'put')
+  data.append('judul', editForm.value.judul ?? '')
+  data.append('id_kategori', editForm.value.id_kategori ?? '')
+  data.append('deskripsi', editForm.value.deskripsi ?? '')
+
+  if (editForm.value.template_file) {
+    data.append('template_file', editForm.value.template_file)
+  }
+
+  router.post(route('admin.manajemen-dokumen.update', selectedTemplateId.value), data, {
+    preserveScroll: true,
+    onSuccess: () => {
+      Swal.fire('Berhasil!', 'Template dokumen berhasil diperbarui.', 'success')
+      closeEditModal()
+      router.reload({ preserveScroll: true })
+    },
+    onError: (errors) => {
+      const firstMessage = Object.values(errors)[0]
+      const errorMessage = firstMessage
+        ? (Array.isArray(firstMessage) ? firstMessage[0] : firstMessage)
+        : null
+      Swal.fire(
+        'Gagal!',
+        errorMessage || 'Gagal memperbarui template dokumen.',
+        'error'
+      )
+    },
+  })
 }
 
 const deleteTemplate = (item) => {

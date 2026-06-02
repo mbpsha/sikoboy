@@ -316,7 +316,7 @@
                 />
                 <button
                   type="button"
-                  @click="selectedPotensi.editImagePreview = null; selectedPotensi.editGambar = null"
+                  @click="removeExistingEditImage"
                   class="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-all"
                 >
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -410,7 +410,9 @@ const selectedPotensi = ref({
   editGambar: null,
   editImagePreview: null,
   status_tampil: true,
-  poin: []
+  poin: [],
+  kategori: '',
+  removeGambar: false
 })
 
 // Potensi yang sudah ada
@@ -445,6 +447,7 @@ const handleEditImage = (e) => {
   if (file) {
     selectedPotensi.value.editGambar = file
     selectedPotensi.value.editImagePreview = URL.createObjectURL(file)
+    selectedPotensi.value.removeGambar = false
   }
 }
 
@@ -457,7 +460,9 @@ const editPotensi = (item) => {
     editGambar: null,
     editImagePreview: null,
     status_tampil: item.status_tampil,
-    poin: item.poin || []
+    poin: item.poin || [],
+    kategori: item.kategori || activeKategori.value,
+    removeGambar: false
   }
   editModal.value = true
   editingPotensi.value = false
@@ -482,8 +487,17 @@ const closeEditModal = () => {
     editGambar: null,
     editImagePreview: null,
     status_tampil: true,
-    poin: []
+    poin: [],
+    kategori: '',
+    removeGambar: false
   }
+}
+
+const removeExistingEditImage = () => {
+  selectedPotensi.value.gambar_url = null
+  selectedPotensi.value.editGambar = null
+  selectedPotensi.value.editImagePreview = null
+  selectedPotensi.value.removeGambar = true
 }
 
 const submitEditForm = () => {
@@ -498,6 +512,8 @@ const submitEditForm = () => {
   }
 
   const data = new FormData()
+  data.append('_method', 'put')
+  data.append('kategori', selectedPotensi.value.kategori || activeKategori.value)
   data.append('judul', selectedPotensi.value.judul)
   data.append('deskripsi', selectedPotensi.value.deskripsi)
   data.append('status_tampil', selectedPotensi.value.status_tampil ? 1 : 0)
@@ -505,8 +521,11 @@ const submitEditForm = () => {
   if (selectedPotensi.value.editGambar) {
     data.append('gambar', selectedPotensi.value.editGambar)
   }
+  if (selectedPotensi.value.removeGambar) {
+    data.append('remove_gambar', '1')
+  }
 
-  router.put(route('admin.manajemen-potensi.update', selectedPotensi.value.id_potensi), data, {
+  router.post(route('admin.manajemen-potensi.update', selectedPotensi.value.id_potensi), data, {
     onSuccess: () => {
       closeEditModal()
       Swal.fire('Berhasil!', 'Potensi berhasil diupdate', 'success').then(() => {

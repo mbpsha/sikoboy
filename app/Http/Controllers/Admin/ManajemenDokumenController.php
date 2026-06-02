@@ -249,6 +249,10 @@ class ManajemenDokumenController extends Controller
 
                         return [
                             'id' => $template->id_template_dokumen,
+                            'id_kategori' => $template->id_kategori,
+                            'judul' => $template->judul,
+                            'deskripsi' => $template->deskripsi,
+                            'nama_file' => $template->nama_file,
                             'title' => $template->judul ?: $template->jenis_dokumen ?: $template->nama_file,
                             'description' => $template->deskripsi ?: ($template->kategori?->deskripsi ?? ''),
                             'badge' => strtoupper($fileExtension),
