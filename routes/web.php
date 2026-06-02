@@ -23,6 +23,7 @@ use App\Models\Kerjasama;
 use App\Models\Peraturan;
 use App\Models\Potensi;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -59,35 +60,49 @@ Route::get('/', function () {
 
     // STATISTIK DINAMIS (mengikuti logika sisa waktu Riwayat Kerjasama)
     $today = now()->startOfDay();
+    $daysInSixMonths = 180;
+    $daysInThreeMonths = 90;
     $kerjasamaList = Kerjasama::query()
         ->with(['latestPeriode:id_kerjasama,tanggal_berakhir'])
         ->get(['id_kerjasama', 'status_aktif']);
 
     $totalKerjasama = $kerjasamaList->count();
 
-    $daysRemainingList = $kerjasamaList
-        ->map(function (Kerjasama $kerjasama) use ($today) {
+    $daysRemainingByKerjasama = $kerjasamaList
+        ->mapWithKeys(function (Kerjasama $kerjasama) use ($today) {
             $endDate = $kerjasama->latestPeriode?->tanggal_berakhir;
 
             if (! $endDate) {
-                return null;
+                return [$kerjasama->id_kerjasama => null];
             }
 
-            return $today->diffInDays(\Illuminate\Support\Carbon::parse($endDate)->startOfDay(), false);
-        })
-        ->filter(fn ($daysRemaining) => is_int($daysRemaining))
+            return [
+                $kerjasama->id_kerjasama => $today->diffInDays(
+                    Carbon::parse($endDate)->startOfDay(),
+                    false
+                ),
+            ];
+        });
+
+    $daysRemainingList = $daysRemainingByKerjasama
+        ->filter(fn ($daysRemaining) => $daysRemaining !== null)
         ->values();
 
     $lessThanSixMonths = $daysRemainingList
-        ->filter(fn (int $daysRemaining) => $daysRemaining >= 0 && $daysRemaining < 180)
+        ->filter(fn (int $daysRemaining) => $daysRemaining >= 0 && $daysRemaining < $daysInSixMonths)
         ->count();
 
     $lessThanThreeMonths = $daysRemainingList
-        ->filter(fn (int $daysRemaining) => $daysRemaining >= 0 && $daysRemaining < 90)
+        ->filter(fn (int $daysRemaining) => $daysRemaining >= 0 && $daysRemaining < $daysInThreeMonths)
         ->count();
 
     $expired = $kerjasamaList
-        ->filter(fn (Kerjasama $kerjasama) => str($kerjasama->status_aktif)->lower()->trim()->value() === 'berakhir')
+        ->filter(function (Kerjasama $kerjasama) use ($daysRemainingByKerjasama) {
+            $statusIsExpired = strtolower(trim((string) $kerjasama->status_aktif)) === 'berakhir';
+            $daysRemaining = $daysRemainingByKerjasama->get($kerjasama->id_kerjasama);
+
+            return $statusIsExpired || (is_int($daysRemaining) && $daysRemaining < 0);
+        })
         ->count();
 
     $stats = [
