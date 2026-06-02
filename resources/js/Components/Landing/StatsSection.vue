@@ -44,13 +44,13 @@ onMounted(() => {
             <div class="-mt-24">
                 <div class="rounded-2xl bg-[#0C505C] p-4 animate-stats">
 
-                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 text-white 
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 text-white
                                 divide-y sm:divide-y-0 sm:divide-x divide-white/20">
-                        
-                        <article 
-                            v-for="(item, idx) in animatedStats" 
+
+                        <article
+                            v-for="(item, idx) in animatedStats"
                             :key="item.label"
-                            class="px-4 py-5 text-center transition-all duration-300 
+                            class="px-4 py-5 text-center transition-all duration-300
                                    hover:scale-105 hover:bg-white/5"
                         >
                             <!-- angka -->
