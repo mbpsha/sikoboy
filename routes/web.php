@@ -19,10 +19,10 @@ use App\Http\Controllers\Mitra\DashboardController as MitraDashboardController;
 use App\Http\Controllers\Mitra\KerjasamaController as MitraKerjasamaController;
 use App\Http\Controllers\Mitra\ProfileController as MitraProfileController;
 use App\Http\Controllers\TemplateDokumenController;
+use App\Models\Kerjasama;
 use App\Models\Peraturan;
 use App\Models\Potensi;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -57,33 +57,38 @@ Route::get('/', function () {
             })->values();
         });
 
-    // STATISTIK DINAMIS
-    $today = now();
-    $sixMonthsLater = now()->addMonths(6);
-    $threeMonthsLater = now()->addMonths(3);
+    // STATISTIK DINAMIS (mengikuti logika sisa waktu Riwayat Kerjasama)
+    $today = now()->startOfDay();
+    $kerjasamaList = Kerjasama::query()
+        ->with(['latestPeriode:id_kerjasama,tanggal_berakhir'])
+        ->get(['id_kerjasama', 'status_aktif']);
 
-    $totalKerjasama = DB::table('kerjasama')->count();
+    $totalKerjasama = $kerjasamaList->count();
 
-    $lessThanSixMonths = DB::table('kerjasama')
-        ->join('periode_kerjasama', 'kerjasama.id_kerjasama', '=', 'periode_kerjasama.id_kerjasama')
-        ->whereBetween('periode_kerjasama.tanggal_berakhir', [$today, $sixMonthsLater])
-        ->where('kerjasama.status_aktif', true)
-        ->distinct('kerjasama.id_kerjasama')
-        ->count('kerjasama.id_kerjasama');
+    $daysRemainingList = $kerjasamaList
+        ->map(function (Kerjasama $kerjasama) use ($today) {
+            $endDate = $kerjasama->latestPeriode?->tanggal_berakhir;
 
-    $lessThanThreeMonths = DB::table('kerjasama')
-        ->join('periode_kerjasama', 'kerjasama.id_kerjasama', '=', 'periode_kerjasama.id_kerjasama')
-        ->whereBetween('periode_kerjasama.tanggal_berakhir', [$today, $threeMonthsLater])
-        ->where('kerjasama.status_aktif', true)
-        ->distinct('kerjasama.id_kerjasama')
-        ->count('kerjasama.id_kerjasama');
+            if (! $endDate) {
+                return null;
+            }
 
-    $expired = DB::table('kerjasama')
-        ->join('periode_kerjasama', 'kerjasama.id_kerjasama', '=', 'periode_kerjasama.id_kerjasama')
-        ->where('periode_kerjasama.tanggal_berakhir', '<', $today)
-        ->where('kerjasama.status_aktif', true)
-        ->distinct('kerjasama.id_kerjasama')
-        ->count('kerjasama.id_kerjasama');
+            return $today->diffInDays(\Illuminate\Support\Carbon::parse($endDate)->startOfDay(), false);
+        })
+        ->filter(fn ($daysRemaining) => is_int($daysRemaining))
+        ->values();
+
+    $lessThanSixMonths = $daysRemainingList
+        ->filter(fn (int $daysRemaining) => $daysRemaining >= 0 && $daysRemaining < 180)
+        ->count();
+
+    $lessThanThreeMonths = $daysRemainingList
+        ->filter(fn (int $daysRemaining) => $daysRemaining >= 0 && $daysRemaining < 90)
+        ->count();
+
+    $expired = $kerjasamaList
+        ->filter(fn (Kerjasama $kerjasama) => str($kerjasama->status_aktif)->lower()->trim()->value() === 'berakhir')
+        ->count();
 
     $stats = [
         ['label' => 'Jumlah Kerja Sama', 'value' => $totalKerjasama],

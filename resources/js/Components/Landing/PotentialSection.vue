@@ -266,7 +266,14 @@ onBeforeUnmount(() => {
             :style="getCarouselCardStyle(item)"
           >
             <!-- ✅ CARD - Lebih Readable -->
-            <div class="bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-200">
+            <div
+              class="bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-teal-500"
+              role="button"
+              tabindex="0"
+              @click="openDetailModal(item)"
+              @keydown.enter.prevent="openDetailModal(item)"
+              @keydown.space.prevent="openDetailModal(item)"
+            >
               
               <!-- Image -->
               <div class="relative aspect-[4/3] overflow-hidden bg-gray-100">
