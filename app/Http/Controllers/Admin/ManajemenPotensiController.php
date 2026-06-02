@@ -134,10 +134,7 @@ class ManajemenPotensiController extends Controller
                 $this->replaceGambar($potensi, $request->file('gambar'));
             } elseif (($validated['remove_gambar'] ?? false) && $potensi->gambar_path) {
                 Storage::disk('public')->delete($potensi->gambar_path);
-                $potensi->update([
-                    'gambar_path' => null,
-                    'updated_at' => now(),
-                ]);
+                $potensi->update(['gambar_path' => null]);
             }
 
             if (array_key_exists('poin', $validated)) {

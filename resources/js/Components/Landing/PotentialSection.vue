@@ -150,6 +150,7 @@ const getCarouselCardStyle = (item) => {
 
 const hasCarouselItems = computed(() => carouselItems.value.length > 0)
 const detailModalItem = ref(null)
+const MAX_PREVIEW_WORDS = 12
 
 function splitWords(text = '') {
   return text
@@ -160,7 +161,7 @@ function splitWords(text = '') {
 
 function buildDescriptionMeta(text = '') {
   const words = splitWords(text)
-  if (words.length <= 12) {
+  if (words.length <= MAX_PREVIEW_WORDS) {
     return {
       descPreview: text,
       descIsLong: false,
@@ -168,7 +169,7 @@ function buildDescriptionMeta(text = '') {
   }
 
   return {
-    descPreview: `${words.slice(0, 12).join(' ')}...`,
+    descPreview: `${words.slice(0, MAX_PREVIEW_WORDS).join(' ')}...`,
     descIsLong: true,
   }
 }
