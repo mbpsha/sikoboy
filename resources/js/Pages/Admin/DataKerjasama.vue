@@ -189,7 +189,11 @@
                 <td class="py-3 px-4 text-gray-600 whitespace-nowrap">{{ formatJangkaWaktu(k.tanggal_mulai, k.tanggal_berakhir) }}</td>
                 <td class="py-3 px-4">
                   <div class="flex flex-col gap-1">
-                    <a v-if="k.file_url" :href="k.file_url" target="_blank" class="inline-flex items-start gap-2 text-teal-700 hover:text-teal-900 font-medium text-xs leading-snug hover:underline">
+                    <button
+                      v-if="(k.dokumen_versions || []).length"
+                      @click.prevent="openDokumenModal(k)"
+                      class="inline-flex items-start gap-2 text-teal-700 hover:text-teal-900 font-medium text-xs leading-snug hover:underline text-left"
+                    >
                       <DocumentTextIcon class="w-4 h-4 mt-0.5 shrink-0" />
                       <span class="flex flex-col">
                         <span>Lihat Dokumen</span>
@@ -197,7 +201,8 @@
                           {{ k.file_name }}
                         </span>
                       </span>
-                    </a>
+                    </button>
+                    <span v-else class="text-gray-400 text-xs">Tidak ada file</span>
                   </div>
                 </td>
                 <td class="py-3 px-4 text-gray-600 whitespace-normal break-words min-w-[180px]">{{ k.pembiayaan ?? '—' }}</td>
@@ -402,6 +407,59 @@
           <div class="flex justify-end gap-2 pt-2">
             <button @click="closeProcessModal" class="px-4 py-2 text-sm rounded-lg border border-gray-200 hover:bg-gray-50 transition">Tutup</button>
             <button v-if="!isProcessReadOnly" @click.prevent="saveProcessUpdate" class="px-4 py-2 text-sm rounded-lg bg-teal-600 hover:bg-teal-700 text-white font-medium transition">Simpan</button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- Dokumen Versions Modal -->
+    <Teleport to="body">
+      <div v-if="showDokumenModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <h3 class="text-base font-semibold text-gray-900">Versi Dokumen</h3>
+              <p class="text-xs text-gray-500 mt-0.5">{{ activeDokumenKerjasama?.judul }}</p>
+            </div>
+            <button @click="closeDokumenModal" class="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 flex items-center justify-center">×</button>
+          </div>
+
+          <div v-if="!(activeDokumenKerjasama?.dokumen_versions || []).length" class="text-sm text-gray-500 bg-gray-50 border border-gray-200 rounded-xl p-4">
+            Belum ada versi dokumen yang tersimpan.
+          </div>
+
+          <div v-else class="space-y-3">
+            <div
+              v-for="doc in activeDokumenKerjasama.dokumen_versions"
+              :key="doc.id_dokumen"
+              class="border border-gray-200 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
+            >
+              <div>
+                <p class="text-sm font-semibold text-gray-900">Versi {{ doc.versi_dokumen }}</p>
+                <p class="text-xs text-gray-500 mt-0.5">{{ doc.nama_file }}</p>
+                <p v-if="doc.created_at" class="text-[11px] text-gray-400 mt-0.5">Diunggah {{ doc.created_at }}</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <a
+                  :href="doc.file_url"
+                  target="_blank"
+                  class="px-3 py-2 rounded-lg bg-teal-600 text-white text-xs font-medium hover:bg-teal-700 transition"
+                >
+                  Preview
+                </a>
+                <a
+                  :href="doc.file_url"
+                  download
+                  class="px-3 py-2 rounded-lg border border-gray-200 text-gray-700 text-xs font-medium hover:bg-gray-50 transition"
+                >
+                  Download
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex justify-end pt-2">
+            <button @click="closeDokumenModal" class="px-4 py-2 text-sm rounded-lg border border-gray-200 hover:bg-gray-50 transition">Tutup</button>
           </div>
         </div>
       </div>
@@ -744,6 +802,9 @@ const fileToUpload     = ref(null)
 const fileName         = ref('')
 const processFileInput = ref(null)
 
+const showDokumenModal = ref(false)
+const activeDokumenKerjasama = ref(null)
+
 const isProcessReadOnly = computed(() => {
   if (!activeProcess.value) return false
   // Proses temp (baru ditambah, belum disimpan) → selalu bisa diedit
@@ -769,6 +830,16 @@ function closeProcessModal() {
   activeKerjasama.value  = null
   fileToUpload.value     = null
   fileName.value         = ''
+}
+
+function openDokumenModal(k) {
+  activeDokumenKerjasama.value = k
+  showDokumenModal.value = true
+}
+
+function closeDokumenModal() {
+  showDokumenModal.value = false
+  activeDokumenKerjasama.value = null
 }
 
 function onFileSelect(e) {

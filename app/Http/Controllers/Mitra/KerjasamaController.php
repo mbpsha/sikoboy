@@ -238,7 +238,7 @@ class KerjasamaController extends Controller
         });
 
         return redirect()
-            ->route('portal-mitra')
+            ->route('mitra.profile.index')
             ->with('success', 'Pengajuan kerjasama berhasil dikirim.');
     }
 
