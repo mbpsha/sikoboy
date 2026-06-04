@@ -12,6 +12,7 @@ use App\Models\Kerjasama;
 use App\Models\PeriodeKerjasama;
 use App\Models\RiwayatStatus;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
@@ -78,6 +79,9 @@ class KerjasamaController extends Controller
             'mitra' => $mitra ? [
                 'id_mitra' => $mitra->id_mitra,
                 'nama_perusahaan' => $mitra->nama_perusahaan,
+                'no_handphone' => $mitra->no_handphone,
+                'alamat' => $mitra->alamat,
+                'pic' => $mitra->pic,
             ] : null,
         ]);
     }
@@ -95,6 +99,8 @@ class KerjasamaController extends Controller
                 'nama_kategori' => $k->nama_kategori,
             ];
         })->values();
+
+        $urusanOptions = UrusanEnum::cases();
 
         $jenisDokumen = [
             'KSB',
@@ -122,7 +128,7 @@ class KerjasamaController extends Controller
             ] : null,
             'kategoris' => $kategoris,
             'jenisDokumen' => $jenisDokumen,
-            'urusanOptions' => UrusanEnum::cases(),
+            'urusanOptions' => $urusanOptions,
         ]);
     }
 
@@ -168,7 +174,7 @@ class KerjasamaController extends Controller
         $defaultAdminEmail = (string) config('services.default_admin_email');
 
         $admin = Admin::query()
-        
+
             ->whereHas('user', fn ($query) => $query->where('email', $defaultAdminEmail))
             ->first();
         $admin ??= Admin::query()->orderBy('id_admin')->first();
@@ -210,11 +216,12 @@ class KerjasamaController extends Controller
             ]);
 
             $file = $validated['dokumen_file'];
-            $path = $file->store('dokumen-kerjasama', 'public');
+            $randomName = Str::uuid() . '.' . $file->getClientOriginalExtension();
+            $path = $file->storeAs('dokumen-kerjasama', $randomName, 'public');
 
             Dokumen::create([
                 'id_kerjasama' => $kerjasama->id_kerjasama,
-                'nama_file' => $file->getClientOriginalName(),
+                'nama_file' => $randomName,
                 'lokasi_file' => $path,
                 'versi_dokumen' => 1,
                 'created_by' => $request->user()->id_user,
@@ -231,7 +238,7 @@ class KerjasamaController extends Controller
         });
 
         return redirect()
-            ->route('mitra.kerjasama.index')
+            ->route('mitra.profile.index')
             ->with('success', 'Pengajuan kerjasama berhasil dikirim.');
     }
 
@@ -252,12 +259,13 @@ class KerjasamaController extends Controller
         ]);
 
         $file        = $request->file('file');
-        $path        = $file->store('dokumen-kerjasama', 'public');
+        $randomName  = Str::uuid() . '.' . $file->getClientOriginalExtension();
+        $path        = $file->storeAs('dokumen-kerjasama', $randomName, 'public');
         $nextVersion = ((int) $kerjasama->dokumen()->max('versi_dokumen')) + 1;
 
         $dok = Dokumen::create([
             'id_kerjasama'  => $kerjasama->id_kerjasama,
-            'nama_file'     => $file->getClientOriginalName(),
+            'nama_file'     => $randomName,
             'lokasi_file'   => $path,
             'versi_dokumen' => $nextVersion,
             'created_by'    => $request->user()->id_user,

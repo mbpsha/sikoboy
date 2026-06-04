@@ -314,7 +314,7 @@
                     :class="navClass('/admin/manajemen-potensi')"
                     @click="handleMobileClose"
                 >
-                    <svg 
+                    <svg
                         xmlns="http://www.w3.org/2000/svg"
                         class="w-5 h-5 shrink-0"
                         fill="none"
@@ -343,7 +343,7 @@
                     :class="navClass('/admin/manajemen-dokumen')"
                     @click="handleMobileClose"
                 >
-                    <svg 
+                    <svg
                         xmlns="http://www.w3.org/2000/svg"
                         class="w-5 h-5 shrink-0"
                         fill="none"
@@ -372,7 +372,7 @@
                     :class="navClass('/admin/manajemen-peraturan')"
                     @click="handleMobileClose"
                 >
-                    <svg 
+                    <svg
                         xmlns="http://www.w3.org/2000/svg"
                         class="w-5 h-5 shrink-0"
                         fill="none"
@@ -470,10 +470,10 @@
             class="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4"
         >
             <div class="bg-white rounded-2xl p-6 w-full max-w-sm text-center shadow-2xl">
-                
+
                 <!-- Icon Warning -->
                 <div class="mx-auto w-14 h-14 rounded-full bg-red-100 flex items-center justify-center mb-4">
-                    <svg 
+                    <svg
                         xmlns="http://www.w3.org/2000/svg"
                         class="w-7 h-7 text-red-600"
                         fill="none"

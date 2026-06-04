@@ -1,17 +1,32 @@
 <script setup>
 import { ref } from 'vue';
-import { useForm, Link, usePage, router } from '@inertiajs/vue3';
+import { useForm, Link, router } from '@inertiajs/vue3';
 import Swal from 'sweetalert2'
 import Header from '@/Components/Header.vue';
 import Footer from '@/Components/Footer.vue';
 
-const page = usePage();
 const props = defineProps({
   step1Data: Object,
   kategoris: Array,
   jenisDokumen: Array,
   urusanOptions: Array,
 });
+
+const DEFAULT_URUSAN_OPTIONS = [
+  'SEMUA URUSAN',
+  'PENDIDIKAN',
+  'KESEHATAN',
+  'PEKERJAAN UMUM DAN PENATAAN RUANG',
+  'PERUMAHAN RAKYAT DAN KAWASAN PERMUKIMAN',
+  'KETENTRAMAN, KETERTIBAN UMUM DAN PERLINDUNGAN MASYARAKAT',
+  'SOSIAL',
+  'TENAGA KERJA',
+  'PEMBERDAYAAN PEREMPUAN DAN PERLINDUNGAN ANAK',
+  'PANGAN',
+  'PERTANAHAN',
+];
+
+const urusanOptions = props.urusanOptions?.length ? props.urusanOptions : DEFAULT_URUSAN_OPTIONS;
 
 const form = useForm({
   jenis_kerjasama: '',
@@ -57,9 +72,14 @@ const submit = () => {
         icon: 'success',
         title: 'Pengajuan Terkirim',
         text: 'Pengajuan kerjasama berhasil dikirim ke admin.',
-        timer: 2000,
-        showConfirmButton: false,
-      }).then(() => router.visit(route('portal-mitra')))
+        confirmButtonText: 'Oke',
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+      }).then((result) => {
+        if (result.isConfirmed) {
+          router.visit(route('portal-mitra'))
+        }
+      })
     },
     onError: () => {
       Swal.fire({ icon: 'error', title: 'Gagal', text: 'Terjadi kesalahan. Periksa input.' })
@@ -73,7 +93,7 @@ const submit = () => {
     <Header />
 
     <main class="flex-1 flex flex-col">
-      
+
       <div class="max-w-5xl mx-auto w-full px-4 sm:px-6 md:px-10 pt-28 sm:pt-32 pb-8">
         <h1 class="text-2xl sm:text-3xl md:text-4xl font-bold text-[#17464E]">Profil Mitra</h1>
         <p class="text-xs sm:text-sm text-[#17464E]/80 mt-2">Kelola informasi dan pantau status pengajuan kerjasama Anda</p>
@@ -91,18 +111,18 @@ const submit = () => {
 
       <div class="flex-1 bg-[#8AB4BB] relative">
         <div class="max-w-5xl mx-auto px-4 sm:px-6">
-          
+
           <div class="relative -mt-20 sm:-mt-24 mb-16 sm:mb-20">
-            
+
             <div class="relative flex items-center justify-center max-w-xs mx-auto mb-8 sm:mb-10">
-              <div class="absolute left-0 right-0 h-[2px] bg-gray-400/50 z-0"></div>
+              <div class="absolute left-0 right-0 h-0.5 bg-gray-400/50 z-0"></div>
               <div class="flex justify-between w-full relative z-10">
                 <div class="flex items-center justify-center w-9 sm:w-11 h-9 sm:h-11 rounded-full bg-[#17464E] text-white font-bold shadow-md border-4 border-[#8AB4BB] text-sm sm:text-base">1</div>
                 <div class="flex items-center justify-center w-9 sm:w-11 h-9 sm:h-11 rounded-full bg-[#17464E] text-white font-bold shadow-md border-4 border-[#8AB4BB] text-sm sm:text-base">2</div>
               </div>
             </div>
 
-            <div class="bg-white rounded-[20px] sm:rounded-[24px] p-5 sm:p-8 md:p-14 shadow-[0_15px_50px_rgba(0,0,0,0.15)]">
+            <div class="bg-white rounded-[20px] sm:rounded-3xl p-5 sm:p-8 md:p-14 shadow-[0_15px_50px_rgba(0,0,0,0.15)]">
               <h3 class="text-lg sm:text-xl font-bold text-[#17464E] mb-6 sm:mb-10">Form Input Kerjasama</h3>
 
               <form @submit.prevent="submit" class="space-y-6 sm:space-y-8">
@@ -205,11 +225,7 @@ const submit = () => {
                       class="w-full px-4 sm:px-5 py-2 sm:py-3 bg-gray-50 border border-gray-200 rounded-lg sm:rounded-xl text-xs sm:text-sm focus:ring-2 focus:ring-[#17464E]/20 outline-none transition-all"
                     >
                       <option value="">Pilih urusan</option>
-                      <option
-                        v-for="urusan in props.urusanOptions"
-                        :key="urusan"
-                        :value="urusan"
-                      >
+                      <option v-for="urusan in urusanOptions" :key="urusan" :value="urusan">
                         {{ urusan }}
                       </option>
                     </select>
