@@ -176,6 +176,15 @@ const hasRightEllipsis = computed(() => {
     return visiblePages.value[visiblePages.value.length - 1] < Number(props.data?.last_page || 1);
 });
 
+// Years available in the current data (prefer this over props.years)
+const uniqueYears = computed(() => {
+    const vals = [...new Set((props.data?.data || []).map(i => i.tahun).filter(Boolean))].map(String)
+    if (vals.length) return vals.sort((a, b) => Number(b) - Number(a))
+    if (props.years?.length) return props.years
+    const now = new Date().getFullYear()
+    return Array.from({ length: 6 }).map((_, i) => String(now - i))
+})
+
 const form = ref({
     id_mitra: "",
     mitra: "",
@@ -911,7 +920,7 @@ const clearColumnFilter = (filterKey) => {
                             class="rounded-full px-4 py-2.5 text-sm border border-gray-200 bg-gray-50 focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition min-w-[180px]"
                         >
                             <option value="">Semua Tahun</option>
-                            <option v-for="y in years" :key="y" :value="y">
+                            <option v-for="y in uniqueYears" :key="y" :value="y">
                                 {{ y }}
                             </option>
                         </select>
@@ -1361,10 +1370,10 @@ const clearColumnFilter = (filterKey) => {
                                     >
                                         <div class="flex flex-wrap items-center gap-2">
                                             <span class="text-sm text-gray-600">
-                                                {{ item.adendum_count ? `${item.adendum_count} adendum` : 'Belum ada adendum' }}
+                                                {{ item.has_adendum ? `${item.adendum_count} adendum` : 'Belum ada adendum' }}
                                             </span>
                                             <button
-                                                v-if="item.adendum_count"
+                                                v-if="item.has_adendum"
                                                 @click="openAdendumDetailModal(item)"
                                                 class="px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 whitespace-nowrap"
                                             >
@@ -2111,13 +2120,13 @@ const clearColumnFilter = (filterKey) => {
                                 <p class="text-xs text-gray-500 mt-2">
                                     Format: PDF
                                 </p>
+                                <p
+                                    v-if="adendumForm.file"
+                                    class="mt-3 text-xs sm:text-sm font-medium text-emerald-600 break-words"
+                                >
+                                    ✓ {{ adendumForm.file.name }}
+                                </p>
                             </div>
-                            <p
-                                v-if="adendumForm.file"
-                                class="text-green-600 text-xs mt-2"
-                            >
-                                ✓ {{ adendumForm.file.name }}
-                            </p>
                             <p
                                 v-if="adendumErrors.file"
                                 class="text-red-500 text-xs mt-2"

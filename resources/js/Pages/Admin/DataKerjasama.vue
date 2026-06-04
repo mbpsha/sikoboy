@@ -235,11 +235,16 @@
                         <span class="text-base leading-none">+</span> Tambah Proses
                       </button>
                       <div v-if="showAddFormFor[k.id_kerjasama]" class="mt-2 p-3 bg-gray-50 border border-gray-200 rounded-lg space-y-2">
-                        <input
-                          v-model="newProcessForm[k.id_kerjasama].title"
-                          placeholder="Contoh: Proses 1 - Revisi"
-                          class="w-full text-xs border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-teal-500"
-                        />
+                        <div class="flex items-center gap-2">
+                          <span class="inline-flex items-center px-3 py-2 text-xs rounded-lg bg-gray-100 text-gray-700 whitespace-nowrap">
+                            Proses {{ (k.proses || []).length + 1 }} -
+                          </span>
+                          <input
+                            v-model="newProcessForm[k.id_kerjasama].title"
+                            placeholder="Contoh: Revisi (akan menjadi 'Proses N - Revisi')"
+                            class="flex-1 text-xs border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-teal-500"
+                          />
+                        </div>
                         <div class="flex gap-2">
                           <button @click.prevent="addProcess(k)" class="flex-1 bg-teal-600 hover:bg-teal-700 text-white text-xs px-3 py-1.5 rounded-lg transition">Tambah</button>
                           <button @click.prevent="cancelAdd(k.id_kerjasama)" class="flex-1 bg-white border border-gray-200 text-gray-600 text-xs px-3 py-1.5 rounded-lg transition">Batal</button>
@@ -557,9 +562,12 @@ const filteredKerjasama = computed(() => {
 })
 
 const years = computed(() => {
+  // Prefer years present in the data; fall back to props or recent years
+  const fromData = [...new Set((kerjasama.value.data || []).map(item => String(item.tahun)).filter(Boolean))]
+  if (fromData.length) return fromData.sort((a, b) => Number(b) - Number(a))
   if (props.years?.length) return props.years
   const now = new Date().getFullYear()
-  return Array.from({ length: 6 }).map((_, i) => now - i)
+  return Array.from({ length: 6 }).map((_, i) => String(now - i))
 })
 
 function buildFilterParams(page = 1) {
@@ -741,8 +749,11 @@ function addProcess(k) {
   const title = (newProcessForm[id]?.title || '').trim()
   if (!title) return
 
+  const idx = (k.proses || []).length + 1
+  const fullTitle = `Proses ${idx} - ${title}`
+
   if (!k.proses) k.proses = []
-  k.proses.push({ id: null, label: title, title, catatan: '', penanggung: currentUserDivisi.value, __temp: true })
+  k.proses.push({ id: null, label: fullTitle, title: fullTitle, catatan: '', penanggung: currentUserDivisi.value, __temp: true })
 
   newProcessForm[id].title = ''
   showAddFormFor[id] = false
@@ -762,7 +773,9 @@ async function finishAddProcess(k) {
   if (!confirmed) return
 
   const id    = k.id_kerjasama
-  const title = (newProcessForm[id]?.title || '').trim() || 'Proses Selesai'
+  const raw = (newProcessForm[id]?.title || '').trim()
+  const idx = (k.proses || []).length + 1
+  const title = raw ? `Proses ${idx} - ${raw}` : 'Proses Selesai'
 
   const fd = new FormData()
   fd.append('title',       title)
