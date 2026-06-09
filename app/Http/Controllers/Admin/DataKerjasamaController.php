@@ -14,6 +14,7 @@ use Illuminate\Http\UploadedFile;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Inertia\Inertia;
 
@@ -21,7 +22,7 @@ class DataKerjasamaController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Kerjasama::with(['mitra', 'admin', 'latestPeriode', 'kategori', 'riwayatStatus']);
+        $query = Kerjasama::with(['mitra', 'admin', 'latestPeriode', 'kategori', 'riwayatStatus', 'dokumen', 'finalDokumen']);
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -154,12 +155,12 @@ class DataKerjasamaController extends Controller
         // Debug: when a search is present, log the generated SQL and bindings to inspect why unexpected rows are returned
         if ($request->filled('search')) {
             try {
-                \Log::debug('DataKerjasama SQL', [
+                Log::debug('DataKerjasama SQL', [
                     'sql' => $query->toSql(),
                     'bindings' => $query->getBindings(),
                 ]);
             } catch (\Throwable $e) {
-                \Log::warning('Failed to dump query SQL for DataKerjasama', ['err' => $e->getMessage()]);
+                Log::warning('Failed to dump query SQL for DataKerjasama', ['err' => $e->getMessage()]);
             }
         }
 
@@ -237,6 +238,36 @@ class DataKerjasamaController extends Controller
             $storedFilePath = $k->finalDokumen?->lokasi_file ?? null;
             $storedFileName = $k->finalDokumen?->nama_file ?? null;
 
+            $dokumenVersions = collect($k->relationLoaded('dokumen') ? $k->dokumen : [])
+                ->sortBy(fn ($dokumen) => (int) $dokumen->versi_dokumen)
+                ->values()
+                ->map(function ($dokumen) {
+                    return [
+                        'id_dokumen' => $dokumen->id_dokumen,
+                        'versi_dokumen' => (int) $dokumen->versi_dokumen,
+                        'nama_file' => $dokumen->nama_file,
+                        'file_url' => $this->resolveFileUrl($dokumen->lokasi_file),
+                        'lokasi_file' => $dokumen->lokasi_file,
+                        'created_at' => $dokumen->created_at ? Carbon::parse($dokumen->created_at)->translatedFormat('d F Y H:i') : null,
+                        'tipe_dokumen' => $dokumen->tipe_dokumen,
+                    ];
+                })
+                ->all();
+
+            if (empty($dokumenVersions) && $latestMitraRevision) {
+                $dokumenVersions = [[
+                    'id_dokumen' => $latestMitraRevision->id_dokumen,
+                    'versi_dokumen' => (int) $latestMitraRevision->versi_dokumen,
+                    'nama_file' => $latestMitraRevision->nama_file,
+                    'file_url' => $this->resolveFileUrl($latestMitraRevision->lokasi_file),
+                    'lokasi_file' => $latestMitraRevision->lokasi_file,
+                    'created_at' => $latestMitraRevision->created_at
+                        ? Carbon::parse($latestMitraRevision->created_at)->translatedFormat('d F Y H:i')
+                        : null,
+                    'tipe_dokumen' => 'mitra',
+                ]];
+            }
+
             if (! $storedFilePath && is_string($periode?->keterangan) && $periode->keterangan !== '') {
                 $storedFilePath = $periode->keterangan;
                 $storedFileName = basename($storedFilePath);
@@ -284,6 +315,7 @@ class DataKerjasamaController extends Controller
                 ] : null,
                 'file_name' => $storedFileName ?? null,
                 'file_url' => $this->resolveFileUrl($storedFilePath),
+                'dokumen_versions' => $dokumenVersions,
             ];
         });
 
@@ -403,7 +435,7 @@ class DataKerjasamaController extends Controller
                 file:            $createdDokumen ? $createdDokumen->lokasi_file : null,
             );
 
-            \Log::info('RiwayatStatus created', [
+            Log::info('RiwayatStatus created', [
                 'id_riwayat' => $createdRiwayat->id_riwayat ?? null,
                 'id_kerjasama' => $kerjasama->id_kerjasama,
                 'jenis_status' => $jenisStatus,
@@ -493,7 +525,7 @@ class DataKerjasamaController extends Controller
                 file:            $createdDokumen ? $createdDokumen->lokasi_file : null,
             );
 
-            \Log::info('RiwayatStatus updated/created', [
+            Log::info('RiwayatStatus updated/created', [
                 'id_riwayat' => $createdRiwayat->id_riwayat ?? null,
                 'id_kerjasama' => $kerjasama->id_kerjasama,
                 'jenis_status' => $jenisStatus,

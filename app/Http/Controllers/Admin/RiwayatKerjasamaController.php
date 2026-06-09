@@ -16,6 +16,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -36,7 +37,7 @@ class RiwayatKerjasamaController extends Controller
     public function index(Request $request)
     {
         $query = Kerjasama::finalized()
-            ->with(['mitra', 'latestPeriode', 'finalDokumen', 'kategori', 'adendum']);
+            ->with(['mitra', 'latestPeriode', 'finalDokumen', 'dokumen', 'kategori', 'adendum']);
 
         $this->applyFilters($query, $request);
 
@@ -98,7 +99,7 @@ class RiwayatKerjasamaController extends Controller
     {
         $query = Kerjasama::finalized()
             ->mitraTipe()
-            ->with(['mitra', 'latestPeriode', 'finalDokumen', 'kategori', 'adendum']);
+            ->with(['mitra', 'latestPeriode', 'finalDokumen', 'dokumen', 'kategori', 'adendum']);
 
         $this->applyFilters($query, $request);
 
@@ -158,20 +159,20 @@ class RiwayatKerjasamaController extends Controller
      */
     public function pemerintah(Request $request)
     {
-        \Log::info("🔍 PEMERINTAH REQUEST", [
+        Log::info("🔍 PEMERINTAH REQUEST", [
             'per_page' => $request->input('per_page'),
             'search' => $request->input('search'),
             'tahun' => $request->input('tahun'),
         ]);
         
         $query = Kerjasama::pemerintahTipe()
-            ->with(['admin', 'latestPeriode', 'finalDokumen', 'kategori', 'adendum']);
+            ->with(['admin', 'latestPeriode', 'finalDokumen', 'dokumen', 'kategori', 'adendum']);
 
         $this->applyFilters($query, $request);
 
         $perPage = $request->input('per_page', 10);
         
-        \Log::info("📊 After applyFilters, perPage:", ['perPage' => $perPage]);
+        Log::info("📊 After applyFilters, perPage:", ['perPage' => $perPage]);
         
         // Jika per_page besar (mode show all), gunakan get() untuk menampilkan semua
         if ($perPage >= 5000) {
@@ -977,11 +978,11 @@ class RiwayatKerjasamaController extends Controller
         $query = match ($type) {
             'mitra' => Kerjasama::finalized()
                 ->mitraTipe()
-                ->with(['mitra', 'latestPeriode', 'finalDokumen', 'kategori', 'adendum']),
+                ->with(['mitra', 'latestPeriode', 'finalDokumen', 'dokumen', 'kategori', 'adendum']),
             'pemerintah' => Kerjasama::pemerintahTipe()
-                ->with(['admin', 'latestPeriode', 'finalDokumen', 'kategori', 'adendum']),
+                ->with(['admin', 'latestPeriode', 'finalDokumen', 'dokumen', 'kategori', 'adendum']),
             default => Kerjasama::finalized()
-                ->with(['mitra', 'latestPeriode', 'finalDokumen', 'kategori', 'adendum']),
+                ->with(['mitra', 'latestPeriode', 'finalDokumen', 'dokumen', 'kategori', 'adendum']),
         };
 
         $this->applyFilters($query, $request);
@@ -1157,6 +1158,24 @@ class RiwayatKerjasamaController extends Controller
         $storedFilePath = $k->finalDokumen?->lokasi_file;
         $storedFileName = $k->finalDokumen?->nama_file;
 
+        $dokumenVersions = collect($k->relationLoaded('dokumen') ? $k->dokumen : [])
+            ->sortBy(fn ($dokumen) => (int) $dokumen->versi_dokumen)
+            ->values()
+            ->map(function ($dokumen) {
+                return [
+                    'id_dokumen' => $dokumen->id_dokumen,
+                    'versi_dokumen' => (int) $dokumen->versi_dokumen,
+                    'nama_file' => $dokumen->nama_file,
+                    'file_url' => $this->resolveFileUrl($dokumen->lokasi_file),
+                    'lokasi_file' => $dokumen->lokasi_file,
+                    'created_at' => $dokumen->created_at
+                        ? Carbon::parse($dokumen->created_at)->translatedFormat('d F Y H:i')
+                        : null,
+                    'tipe_dokumen' => $dokumen->tipe_dokumen,
+                ];
+            })
+            ->all();
+
         if (! $storedFilePath && is_string($periode?->keterangan) && $periode->keterangan !== '') {
             $storedFilePath = $periode->keterangan;
             $storedFileName = basename($storedFilePath);
@@ -1217,6 +1236,7 @@ class RiwayatKerjasamaController extends Controller
             'jangka_waktu' => $jangkaWaktu,
             'file_name' => $storedFileName,
             'file_url' => $this->resolveFileUrl($storedFilePath),
+            'dokumen_versions' => $dokumenVersions,
             'status' => $status,
             'days_remaining' => $daysRemaining,
             'jenis_kerjasama' => $k->jenis_kerjasama,
