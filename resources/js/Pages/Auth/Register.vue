@@ -289,7 +289,7 @@ const togglePasswordConfirmation = () => {
 
 const goLogin = () => {
     // Use named route for role-specific login (redirects to login page)
-    router.visit(route('login.role', 'mitra'));
+    router.visit(typeof route !== 'undefined' ? route('login') : '/login')
 };
 
 const form = useForm({
