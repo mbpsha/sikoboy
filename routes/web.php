@@ -48,8 +48,8 @@ Route::get('/', function () {
                     'kategori' => $p->kategori,
                     'judul' => $p->judul,
                     'deskripsi' => $p->deskripsi,
-                    'gambar_url' => $p->gambar_path ? asset('storage/'.$p->gambar_path) : null,
-                    'poin' => $p->poin->map(fn ($pt) => [
+                    'gambar_url' => $p->gambar_path ? asset('storage/' . $p->gambar_path) : null,
+                    'poin' => $p->poin->map(fn($pt) => [
                         'id' => $pt->id_potensi_poin,
                         'isi' => $pt->isi,
                     ])->values(),
@@ -99,10 +99,10 @@ Route::get('/', function () {
 })->name('home');
 
 // About
-Route::get('/about', fn () => Inertia::render('About'))->name('about');
+Route::get('/about', fn() => Inertia::render('About'))->name('about');
 
 // Kontak
-Route::get('/kontak', fn () => Inertia::render('Kontak'))->name('kontak');
+Route::get('/kontak', fn() => Inertia::render('Kontak'))->name('kontak');
 
 // Peraturan
 Route::get('/peraturan', function () {
@@ -112,7 +112,7 @@ Route::get('/peraturan', function () {
 })->name('peraturan');
 
 // Public template dokumen routes (website)
-Route::get('/dokumen', fn () => redirect()->route('template-dokumen.index'))
+Route::get('/dokumen', fn() => redirect()->route('template-dokumen.index'))
     ->name('dokumen.index');
 Route::get('/template-dokumen', [ManajemenDokumenController::class, 'listPublic'])
     ->name('template-dokumen.index');
@@ -124,7 +124,7 @@ Route::get('/template-dokumen/{id}/preview', [TemplateDokumenController::class, 
 Route::middleware('auth')->get('/portal-mitra', function (\Illuminate\Http\Request $request) {
     return match ($request->user()?->role) {
         'admin' => redirect()->route('admin.dashboard'),
-        'mitra' => redirect()->route('mitra.profile.edit'),
+        'mitra' => redirect()->route('mitra.profile.index'),
         default => redirect()->route('home'),
     };
 })->name('portal-mitra');
@@ -138,19 +138,19 @@ Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 // Registration (Mitra only)
 Route::get('/register', [RegisterController::class, 'showRegistrationForm'])->name('register');
 Route::post('/register', [RegisterController::class, 'register'])
-    ->middleware('throttle:'.$loginThrottleAttempts.',1')
+    ->middleware('throttle:' . $loginThrottleAttempts . ',1')
     ->name('register.attempt');
 
 // Password Reset
 Route::get('/forgot-password', [ForgotPasswordController::class, 'showLinkRequestForm'])
     ->name('password.request');
 Route::post('/forgot-password', [ForgotPasswordController::class, 'sendResetLinkEmail'])
-    ->middleware('throttle:'.$loginThrottleAttempts.',1')
+    ->middleware('throttle:' . $loginThrottleAttempts . ',1')
     ->name('password.email');
 Route::get('/reset-password/{token}', [ResetPasswordController::class, 'showResetForm'])
     ->name('password.reset');
 Route::post('/reset-password', [ResetPasswordController::class, 'reset'])
-    ->middleware('throttle:'.$loginThrottleAttempts.',1')
+    ->middleware('throttle:' . $loginThrottleAttempts . ',1')
     ->name('password.update');
 
 // Email Verification
@@ -348,11 +348,15 @@ Route::middleware(['auth', 'role:admin', 'throttle:240,1'])->prefix('admin')->na
     Route::put('/data-kerjasama/{id}/nomor-surat', [DataKerjasamaController::class, 'updateNomorSurat'])
         ->name('data-kerjasama.nomor-surat');
     // Proses Kerjasama — gunakan POST untuk semua karena ada file upload
-    Route::post('/data-kerjasama/{id}/proses',
-        [DataKerjasamaController::class, 'storeProcess'])
+    Route::post(
+        '/data-kerjasama/{id}/proses',
+        [DataKerjasamaController::class, 'storeProcess']
+    )
         ->name('data-kerjasama.proses.store');
-    Route::put('/data-kerjasama/{id}/proses/{prosesId}',
-        [DataKerjasamaController::class, 'updateProcess'])
+    Route::put(
+        '/data-kerjasama/{id}/proses/{prosesId}',
+        [DataKerjasamaController::class, 'updateProcess']
+    )
         ->name('data-kerjasama.proses.update');
 
     // 🔹 Manajemen Potensi
@@ -403,9 +407,8 @@ Route::middleware(['auth', 'role:admin', 'throttle:240,1'])->prefix('admin')->na
     Route::get('/partners/{id}', [AdminDashboardController::class, 'showPartner'])
         ->name('partners.show');
 
-        // Detail Notifikasi
-Route::get('/notifikasi/{id}', function ($id) {
-    return Inertia::render('Admin/DetailNotifAdmin', ['id' => $id]);
-})->name('notifications.show');
-
+    // Detail Notifikasi
+    Route::get('/notifikasi/{id}', function ($id) {
+        return Inertia::render('Admin/DetailNotifAdmin', ['id' => $id]);
+    })->name('notifications.show');
 });
