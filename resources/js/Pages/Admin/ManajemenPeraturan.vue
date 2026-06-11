@@ -350,7 +350,7 @@ const destroy = (item) => {
               @change="(e) => (form.file = e.target.files?.[0] ?? null)"
               class="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm"
             />
-            <p class="mt-1 text-xs text-slate-500">Format: PDF, DOC, DOCX, XLSX, PPT, TXT, dll (Max 10MB)</p>
+            <p class="mt-1 text-xs text-slate-500">Format: PDF, DOC, DOCX, XLSX, PPT, TXT, dll (Max 50MB)</p>
 
             <p v-if="isEditing && editingPeraturan?.file" class="mt-2 text-xs text-slate-500">
               File saat ini: {{ fileNameFromPath(editingPeraturan.file) }}

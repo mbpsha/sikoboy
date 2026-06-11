@@ -1,6 +1,6 @@
 <template>
     <aside
-        class="fixed top-0 left-0 z-50 min-h-screen h-full overflow-y-auto flex flex-col text-white transition-all duration-300"
+        class="fixed top-0 left-0 z-50 h-screen flex flex-col text-white transition-all duration-300"
         :class="[
             isMobile
                 ? (
@@ -16,13 +16,10 @@
         ]"
         style="background-color: #0c505c"
     >
-        <!-- TOP -->
-        <div class="flex flex-col min-h-screen h-full">
+        <div class="flex flex-col h-full overflow-hidden">
 
-            <!-- HEADER -->
             <div class="px-4 pt-4 pb-4 border-b border-teal-700 shrink-0">
 
-                <!-- MOBILE HEADER -->
                 <div class="flex items-center justify-between mb-3 lg:hidden">
                     <h2 class="font-semibold text-lg">
                         Menu
@@ -32,7 +29,6 @@
                         @click="emit('close')"
                         class="w-10 h-10 rounded-xl hover:bg-white/10 flex items-center justify-center transition"
                     >
-                        <!-- ✅ Close Icon -->
                         <svg
                             xmlns="http://www.w3.org/2000/svg"
                             class="w-5 h-5"
@@ -50,7 +46,6 @@
                     </button>
                 </div>
 
-                <!-- LOGO -->
                 <div
                     class="transition-all duration-300"
                     :class="isCollapsedDesktop ? 'flex justify-center' : ''"
@@ -74,10 +69,8 @@
                 </div>
             </div>
 
-            <!-- MENU -->
-            <div class="flex-1 px-3 py-4 space-y-2">
+            <div class="flex-1 px-3 py-4 space-y-2 overflow-y-auto custom-scrollbar">
 
-                <!-- ✅ BERANDA / DASHBOARD -->
                 <Link
                     :href="route('admin.dashboard')"
                     :class="navClass('/admin/dashboard')"
@@ -106,7 +99,6 @@
                     </span>
                 </Link>
 
-                <!-- ✅ PENGGUNA / USERS -->
                 <Link
                     :href="route('admin.pengguna.index')"
                     :class="navClass('/admin/pengguna')"
@@ -135,7 +127,6 @@
                     </span>
                 </Link>
 
-                <!-- ✅ AJUAN KERJASAMA -->
                 <Link
                     :href="route('admin.data-kerjasama.index')"
                     :class="navClass('/admin/data-kerjasama')"
@@ -164,10 +155,8 @@
                     </span>
                 </Link>
 
-                <!-- ✅ RIWAYAT KERJASAMA -->
                 <div>
 
-                    <!-- EXPANDED -->
                     <button
                         v-if="!props.isCollapsed || isMobile"
                         type="button"
@@ -212,7 +201,6 @@
                         </svg>
                     </button>
 
-                    <!-- COLLAPSED -->
                     <Link
                         v-else-if="!isMobile"
                         :href="route('admin.riwayat-kerjasama.gabungan')"
@@ -235,7 +223,6 @@
                         </svg>
                     </Link>
 
-                    <!-- SUBMENU -->
                     <div
                         v-if="showRiwayatMenu && (!props.isCollapsed || isMobile)"
                         class="mt-2 ml-5 space-y-1 border-l border-teal-700/50 pl-3"
@@ -308,7 +295,6 @@
                     </div>
                 </div>
 
-                <!-- ✅ MANAJEMEN POTENSI -->
                 <Link
                     :href="route('admin.manajemen-potensi.index')"
                     :class="navClass('/admin/manajemen-potensi')"
@@ -337,7 +323,6 @@
                     </span>
                 </Link>
 
-                <!-- ✅ MANAJEMEN DOKUMEN -->
                 <Link
                     :href="route('admin.manajemen-dokumen.index')"
                     :class="navClass('/admin/manajemen-dokumen')"
@@ -366,7 +351,6 @@
                     </span>
                 </Link>
 
-                <!-- ✅ MANAJEMEN PERATURAN -->
                 <Link
                     :href="route('admin.manajemen-peraturan.index')"
                     :class="navClass('/admin/manajemen-peraturan')"
@@ -401,10 +385,8 @@
                 </Link>
             </div>
 
-            <!-- BOTTOM -->
             <div class="p-3 border-t border-teal-700 shrink-0 space-y-2 mt-auto">
 
-                <!-- ✅ PROFILE -->
                 <Link
                     :href="route('admin.profile.show')"
                     @click="handleMobileClose"
@@ -434,7 +416,6 @@
                     </div>
                 </Link>
 
-                <!-- ✅ LOGOUT -->
                 <button
                     @click="showConfirm = true"
                     class="bg-red-600 hover:bg-red-700 transition rounded-2xl font-semibold text-sm"
@@ -464,14 +445,12 @@
             </div>
         </div>
 
-        <!-- ✅ MODAL CONFIRM LOGOUT -->
         <div
             v-if="showConfirm"
             class="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4"
         >
             <div class="bg-white rounded-2xl p-6 w-full max-w-sm text-center shadow-2xl">
 
-                <!-- Icon Warning -->
                 <div class="mx-auto w-14 h-14 rounded-full bg-red-100 flex items-center justify-center mb-4">
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
