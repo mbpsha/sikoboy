@@ -26,29 +26,7 @@ const handleFileSelect = (e, idx) => {
   if (file) selectedFiles.value = { ...selectedFiles.value, [idx]: file }
 }
 
-const doUpload = async (idx) => {
-  const file = selectedFiles.value[idx]
-  if (!file || !props.kerjasamaId) return
-
-  isUploading.value = { ...isUploading.value, [idx]: true }
-  try {
-    const fd    = new FormData()
-    fd.append('file', file)
-    const token = document.querySelector('meta[name="csrf-token"]')?.content ?? ''
-    const res   = await fetch(`/mitra/kerjasama/${props.kerjasamaId}/revisi`, {
-      method: 'POST', body: fd, credentials: 'same-origin',
-      headers: token ? { 'X-CSRF-TOKEN': token } : {},
-    })
-    if (!res.ok) throw new Error()
-    await Swal.fire({ icon: 'success', title: 'Berhasil!', text: 'Dokumen revisi berhasil diupload.', timer: 2000, showConfirmButton: false })
-    window.location.reload()
-  } catch {
-    Swal.fire({ icon: 'error', title: 'Gagal', text: 'Gagal upload. Coba lagi.' })
-  } finally {
-    isUploading.value = { ...isUploading.value, [idx]: false }
-  }
-}
-
+// ✅ TAMBAH FUNGSI INI!
 const getIcon = (item) => {
   const t = (item.title || '').toLowerCase()
   if (t.includes('diterima') || t.includes('selesai') || t.includes('ditandatangani'))
@@ -56,6 +34,44 @@ const getIcon = (item) => {
   if (t.includes('ditolak'))  return { bg: 'bg-red-500',    symbol: '✕' }
   if (t.includes('revisi'))   return { bg: 'bg-orange-400', symbol: '!' }
   return { bg: 'bg-green-500', symbol: '✓' }
+}
+
+const doUpload = async (idx) => {
+  const file = selectedFiles.value[idx]
+  const item = progressItems.value[idx]
+  
+  if (!file || !props.kerjasamaId || !item) return
+
+  isUploading.value = { ...isUploading.value, [idx]: true }
+  try {
+    const fd    = new FormData()
+    fd.append('file', file)
+    fd.append('id_riwayat', item.id)
+    
+    const token = document.querySelector('meta[name="csrf-token"]')?.content ?? ''
+    const res   = await fetch(`/mitra/kerjasama/${props.kerjasamaId}/revisi`, {
+      method: 'POST', 
+      body: fd, 
+      credentials: 'same-origin',
+      headers: token ? { 'X-CSRF-TOKEN': token } : {},
+    })
+    
+    if (!res.ok) throw new Error(`Upload failed: ${res.status}`)
+    
+    await Swal.fire({ 
+      icon: 'success', 
+      title: 'Berhasil!', 
+      text: 'Dokumen revisi berhasil diupload.', 
+      timer: 2000, 
+      showConfirmButton: false 
+    })
+    window.location.reload()
+  } catch (err) {
+    console.error('Upload error:', err)
+    Swal.fire({ icon: 'error', title: 'Gagal', text: 'Gagal upload. Coba lagi.' })
+  } finally {
+    isUploading.value = { ...isUploading.value, [idx]: false }
+  }
 }
 </script>
 
@@ -135,7 +151,7 @@ const getIcon = (item) => {
 
                 <!-- File dari admin — selalu tampil jika ada -->
                 <div v-if="item.file">
-                  <p class="text-[10px] font-semibold text-gray-400 uppercase mb-1">Lampiran Dokumen</p>
+                  <p class="text-[10px] font-semibold text-gray-400 uppercase mb-1">Lampiran Dokumen dari Admin</p>
                   <a :href="'/storage/' + item.file" target="_blank"
                     class="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-50 border border-blue-100 rounded-lg text-xs text-blue-700 font-medium hover:bg-blue-100 transition">
                     <svg class="w-3.5 h-3.5 shrink-0" fill="currentColor" viewBox="0 0 24 24">
@@ -151,11 +167,8 @@ const getIcon = (item) => {
                   <p class="text-[10px] font-semibold text-gray-500 uppercase mb-1">
                     Upload Dokumen Revisi dari Mitra
                   </p>
-                  <p class="text-[10px] text-gray-400 mb-2">
-                    Selesai pada {{ item.file_mitra ? item.tanggal : '-' }}
-                  </p>
 
-                  <!-- Sudah upload — tidak bisa upload lagi -->
+                  <!-- Sudah upload -->
                   <div v-if="item.file_mitra"
                     class="flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-100 rounded-lg">
                     <svg class="w-4 h-4 text-green-600 shrink-0" fill="currentColor" viewBox="0 0 24 24">

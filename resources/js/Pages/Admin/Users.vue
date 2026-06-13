@@ -425,7 +425,6 @@ function verifyMitra(id) {
                   <th class="py-3 px-4 text-left">Email</th>
                   <th class="py-3 px-4 text-left">Role</th>
                   <th class="py-3 px-4 text-left">ID User</th>
-                  <th class="py-3 px-4 text-left">ID Mitra</th>
                   <th class="py-3 px-4 text-left">Perusahaan</th>
                   <th class="py-3 px-4 text-left">Status</th>
                   <th class="py-3 px-4 text-left">Tanggal Daftar</th>
@@ -444,7 +443,6 @@ function verifyMitra(id) {
                     <span v-if="user.role === 'admin'" class="px-3 py-1 rounded-full bg-purple-200 text-purple-800 text-xs">Admin</span>
                     <span v-else class="px-3 py-1 rounded-full bg-sky-100 text-sky-800 text-xs">Mitra</span>
                   </td>
-                  <td class="py-4 px-4 text-gray-700">{{ user.id ?? '-' }}</td>
                   <td class="py-4 px-4 text-gray-700">{{ user.id ?? '-' }}</td>
                   <td class="py-4 px-4 text-gray-700">{{ user.mitra?.nama_perusahaan ?? user.instansi ?? '-' }}</td>
                   <td class="py-4 px-4">

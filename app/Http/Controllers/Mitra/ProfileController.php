@@ -26,6 +26,7 @@ class ProfileController extends Controller
                 ->with([
                     'latestPeriode',
                     'kategori',
+                    'dokumen',
                     'riwayatStatus.status',
                     'riwayatStatus.admin',
                 ])
@@ -38,6 +39,11 @@ class ProfileController extends Controller
             $latestRiwayat = $kerjasama->riwayatStatus->sortByDesc('tanggal')->first();
             $latestStatus = $latestRiwayat?->status?->jenis_status;
             $statusPersetujuan = $kerjasama->status_persetujuan?->value;
+            $latestMitraRevision = collect($kerjasama->dokumen ?? [])
+                ->where('tipe_dokumen', 'mitra')
+                ->sortByDesc('versi_dokumen')
+                ->sortByDesc('created_at')
+                ->first();
 
             $status = 'pending';
 
@@ -52,7 +58,7 @@ class ProfileController extends Controller
             $proses = $kerjasama->riwayatStatus
                 ->sortBy('tanggal')
                 ->values()
-                ->map(function ($riwayat) {
+                ->map(function ($riwayat) use ($latestMitraRevision) {
                     $statusName = $riwayat->status?->jenis_status ?: 'proses';
 
                     return [
@@ -61,7 +67,11 @@ class ProfileController extends Controller
                         'tanggal' => $riwayat->tanggal ? Carbon::parse($riwayat->tanggal)->format('d/m/Y H:i') : '-',
                         'catatan' => $riwayat->catatan,
                         'file' => $riwayat->file,
-                        'file_mitra' => null,
+                        'file_mitra' => $latestMitraRevision?->lokasi_file,
+                        'file_mitra_name' => $latestMitraRevision?->nama_file,
+                        'file_mitra_created_at' => $latestMitraRevision?->created_at
+                            ? Carbon::parse($latestMitraRevision->created_at)->format('d/m/Y H:i')
+                            : null,
                         'penanggung' => $riwayat->penanggung_jawab,
                         'pegawai' => $riwayat->penanggung_jawab,
                     ];

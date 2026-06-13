@@ -235,11 +235,16 @@
                         <span class="text-base leading-none">+</span> Tambah Proses
                       </button>
                       <div v-if="showAddFormFor[k.id_kerjasama]" class="mt-2 p-3 bg-gray-50 border border-gray-200 rounded-lg space-y-2">
-                        <input
-                          v-model="newProcessForm[k.id_kerjasama].title"
-                          placeholder="Contoh: Proses 1 - Revisi"
-                          class="w-full text-xs border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-teal-500"
-                        />
+                        <div class="flex items-center gap-2">
+                          <span class="inline-flex items-center px-3 py-2 text-xs rounded-lg bg-gray-100 text-gray-700 whitespace-nowrap">
+                            Proses {{ (k.proses || []).length + 1 }} -
+                          </span>
+                          <input
+                            v-model="newProcessForm[k.id_kerjasama].title"
+                            placeholder="Contoh: Revisi (akan menjadi 'Proses N - Revisi')"
+                            class="flex-1 text-xs border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-teal-500"
+                          />
+                        </div>
                         <div class="flex gap-2">
                           <button @click.prevent="addProcess(k)" class="flex-1 bg-teal-600 hover:bg-teal-700 text-white text-xs px-3 py-1.5 rounded-lg transition">Tambah</button>
                           <button @click.prevent="cancelAdd(k.id_kerjasama)" class="flex-1 bg-white border border-gray-200 text-gray-600 text-xs px-3 py-1.5 rounded-lg transition">Batal</button>
@@ -397,7 +402,7 @@
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
                 </svg>
                 <p class="font-semibold text-[#17464E] mb-1">Drag & Drop Dokumen Kerjasama (PDF)</p>
-                <p class="text-xs text-gray-600 mb-3">{{ isProcessReadOnly ? 'Proses sudah diisi — tidak bisa diubah.' : 'atau klik untuk memilih file' }}</p>
+                <p class="text-xs text-gray-600 mb-3">{{ isProcessReadOnly ? 'Proses sudah diisi — tidak bisa diubah.' : 'atau klik untuk memilih file *Max 10 MB' }}</p>
                 <button v-if="!isProcessReadOnly" type="button" class="px-4 py-2 bg-teal-600 text-white rounded-md text-sm">Pilih File</button>
                 <p v-if="fileName" class="text-sm text-gray-600 mt-3">✓ {{ fileName }}</p>
               </div>
@@ -557,9 +562,12 @@ const filteredKerjasama = computed(() => {
 })
 
 const years = computed(() => {
+  // Prefer years present in the data; fall back to props or recent years
+  const fromData = [...new Set((kerjasama.value.data || []).map(item => String(item.tahun)).filter(Boolean))]
+  if (fromData.length) return fromData.sort((a, b) => Number(b) - Number(a))
   if (props.years?.length) return props.years
   const now = new Date().getFullYear()
-  return Array.from({ length: 6 }).map((_, i) => now - i)
+  return Array.from({ length: 6 }).map((_, i) => String(now - i))
 })
 
 function buildFilterParams(page = 1) {
@@ -741,14 +749,17 @@ function addProcess(k) {
   const title = (newProcessForm[id]?.title || '').trim()
   if (!title) return
 
+  const idx = (k.proses || []).length + 1
+  const fullTitle = `Proses ${idx} - ${title}`
+
   if (!k.proses) k.proses = []
-  k.proses.push({ id: null, label: title, title, catatan: '', penanggung: currentUserDivisi.value, __temp: true })
+  k.proses.push({ id: null, label: fullTitle, title: fullTitle, catatan: '', penanggung: currentUserDivisi.value, __temp: true })
 
   newProcessForm[id].title = ''
   showAddFormFor[id] = false
 }
 
-// ✅ Selesaikan proses → simpan ke riwayat mitra
+//  Selesaikan proses → simpan ke riwayat mitra
 async function finishAddProcess(k) {
   const confirmed = await Swal.fire({
     title: 'Selesaikan Proses?',
@@ -762,7 +773,9 @@ async function finishAddProcess(k) {
   if (!confirmed) return
 
   const id    = k.id_kerjasama
-  const title = (newProcessForm[id]?.title || '').trim() || 'Proses Selesai'
+  const raw = (newProcessForm[id]?.title || '').trim()
+  const idx = (k.proses || []).length + 1
+  const title = raw ? `Proses ${idx} - ${raw}` : 'Proses Selesai'
 
   const fd = new FormData()
   fd.append('title',       title)
@@ -855,32 +868,82 @@ function handleProcessDrop(e) {
   if (file?.type === 'application/pdf') { fileToUpload.value = file; fileName.value = file.name }
 }
 
-// ✅ Simpan proses (tanpa selesai)
+//  Simpan proses (tanpa selesai)
 function saveProcessUpdate() {
   const k = activeKerjasama.value
   const p = activeProcess.value
   if (!k || !p) return
 
-  const fd = new FormData()
-  fd.append('title',      p.title      ?? '')
-  fd.append('penanggung', p.penanggung ?? currentUserDivisi.value)
-  fd.append('catatan',    p.catatan    ?? '')
-  if (fileToUpload.value) fd.append('file', fileToUpload.value)
+  // Antisipasi jika backend menggunakan 'id_proses' alih-alih 'id'
+  const processId = p.id ?? p.id_proses
+  const isNew = !processId
 
-  const isNew = !p.id
+  // Bungkus data ke objek regular, Inertia otomatis mengubah ke FormData jika ada file
+  const payload = {
+    title: p.title ?? '',
+    penanggung: p.penanggung ?? currentUserDivisi.value,
+    catatan: p.catatan ?? '',
+  }
+
+  if (fileToUpload.value) {
+    payload.file = fileToUpload.value
+  }
 
   if (isNew) {
-    router.post(route('admin.data-kerjasama.proses.store', k.id_kerjasama), fd, {
+    // ------------------------------------
+    // PROSES TAMBAH BARU (STORE)
+    // ------------------------------------
+    router.post(route('admin.data-kerjasama.proses.store', k.id_kerjasama), payload, {
       preserveScroll: true,
-      onSuccess: () => { fileToUpload.value = null; closeProcessModal() },
-      onError: (e) => console.error('Gagal simpan proses baru:', e),
+      forceFormData: true,
+      onSuccess: () => { 
+        fileToUpload.value = null 
+        closeProcessModal()
+        Swal.fire({ icon: 'success', title: 'Berhasil', text: 'Proses baru berhasil disimpan!', timer: 1500, showConfirmButton: false })
+      },
+      // ⚠️ WARNING JIKA GAGAL:
+      onError: (errors) => {
+        console.error('Gagal simpan proses baru:', errors)
+        
+        // Menggabungkan semua pesan error dari backend menjadi satu teks kalimat
+        const pesanError = Object.values(errors).join('\n') || 'Terjadi kesalahan sistem.'
+        
+        Swal.fire({
+          icon: 'warning',
+          title: 'Gagal Menyimpan Proses',
+          text: pesanError,
+          confirmButtonColor: '#0f766e', // Warna teal-700 sesuai tema aplikasi
+        })
+      },
     })
   } else {
-    fd.append('_method', 'PUT')
-    router.post(route('admin.data-kerjasama.proses.update', [k.id_kerjasama, p.id]), fd, {
+    // ------------------------------------
+    // PROSES UPDATE DATA (PUT via POST Spoofing)
+    // ------------------------------------
+    payload._method = 'PUT'
+
+    router.post(route('admin.data-kerjasama.proses.update', [k.id_kerjasama, processId]), payload, {
       preserveScroll: true,
-      onSuccess: () => { fileToUpload.value = null; closeProcessModal() },
-      onError: (e) => console.error('Gagal simpan proses:', e),
+      forceFormData: true,
+      onSuccess: () => { 
+        fileToUpload.value = null 
+        closeProcessModal()
+        Swal.fire({ icon: 'success', title: 'Berhasil', text: 'Proses berhasil diperbarui!', timer: 1500, showConfirmButton: false })
+      },
+      // ⚠️ WARNING JIKA GAGAL:
+      onError: (errors) => {
+        console.error('Gagal update proses:', errors)
+        
+        // Menggabungkan semua pesan error dari backend menjadi satu teks kalimat
+        const pesanError = Object.values(errors).join('\n') || 'Terjadi kesalahan saat memperbarui data.'
+        
+        Swal.fire({
+          icon: 'warning',
+          title: 'Gagal Memperbarui Proses',
+          text: pesanError,
+          confirmButtonColor: '#0f766e',
+        })
+      },
     })
   }
 }

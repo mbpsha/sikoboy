@@ -41,8 +41,6 @@ const submit = () => {
     <main class="flex-1 flex flex-col">
 
       <div class="max-w-5xl mx-auto w-full px-4 sm:px-6 md:px-10 pt-28 sm:pt-32 pb-10 sm:pb-16">
-        <h1 class="text-2xl sm:text-3xl md:text-4xl font-bold text-[#17464E]">Profil Mitra</h1>
-        <p class="text-xs sm:text-sm text-[#17464E]/80 mt-2">Kelola informasi dan pantau status pengajuan kerjasama Anda</p>
       </div>
 
       <div class="bg-[#17464E] rounded-t-[30px] sm:rounded-t-[40px] pt-16 sm:pt-24 pb-20 sm:pb-32 text-center shadow-inner">

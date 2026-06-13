@@ -49,7 +49,7 @@ class PeraturanController extends Controller
         try {
             $request->validate([
                 'judul' => 'required|string|max:255',
-                'file' => 'required|file|max:20240',
+                'file' => 'required|file|max:51200',
                 'thumbnail' => 'nullable|image|mimes:png,jpg,jpeg,gif|max:2048'
             ]);
 
@@ -101,7 +101,7 @@ class PeraturanController extends Controller
         try {
             $request->validate([
                 'judul' => 'required|string|max:255',
-                'file' => 'nullable|file|max:20240',
+                'file' => 'nullable|file|max:51200',
                 'thumbnail' => 'nullable|image|mimes:png,jpg,jpeg,gif|max:2048'
             ]);
 
