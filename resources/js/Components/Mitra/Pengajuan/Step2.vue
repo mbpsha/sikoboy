@@ -99,7 +99,7 @@ const submit = () => {
         <p class="text-xs sm:text-sm text-[#17464E]/80 mt-2">Kelola informasi dan pantau status pengajuan kerjasama Anda</p>
       </div>
 
-      <div class="bg-[#17464E] rounded-t-[30px] sm:rounded-t-[40px] pt-12 sm:pt-16 pb-20 sm:pb-32 text-center shadow-inner">
+      <div class="bg-[#17464E] rounded-t-[30px] sm:rounded-t-[40px] pt-16 sm:pt-24 pb-20 sm:pb-32 text-center shadow-inner">
         <div class="max-w-5xl mx-auto px-4 sm:px-6">
           <h2 class="text-2xl sm:text-3xl font-bold text-white mb-3">Form Pengajuan Kerjasama</h2>
           <p class="text-xs sm:text-[15px] text-gray-200 leading-relaxed max-w-2xl mx-auto px-2">
