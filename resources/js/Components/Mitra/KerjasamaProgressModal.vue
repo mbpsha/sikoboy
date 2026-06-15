@@ -15,9 +15,10 @@ const progressItems = ref([])
 watch(() => props.items, (v) => { progressItems.value = v || [] }, { immediate: true })
 
 // File input & state per item index
-const selectedFiles = ref({})
-const isUploading   = ref({})
-const fileInputRefs = ref({})
+const selectedFiles  = ref({})
+const isUploading    = ref({})
+const fileInputRefs  = ref({})
+const uploadedFiles  = ref({}) // lokasi_file returned after successful upload
 
 const setFileRef = (el, idx) => { if (el) fileInputRefs.value[idx] = el }
 
@@ -40,8 +41,14 @@ const doUpload = async (idx) => {
       headers: token ? { 'X-CSRF-TOKEN': token } : {},
     })
     if (!res.ok) throw new Error()
+    const data = await res.json()
+    // Store uploaded file path so the UI updates without a full reload
+    uploadedFiles.value = { ...uploadedFiles.value, [idx]: {
+      name: file.name,
+      lokasi_file: data.lokasi_file ?? null,
+    }}
+    delete selectedFiles.value[idx]
     await Swal.fire({ icon: 'success', title: 'Berhasil!', text: 'Dokumen revisi berhasil diupload.', timer: 2000, showConfirmButton: false })
-    window.location.reload()
   } catch {
     Swal.fire({ icon: 'error', title: 'Gagal', text: 'Gagal upload. Coba lagi.' })
   } finally {
@@ -136,14 +143,20 @@ const getIcon = (item) => {
                 <!-- File dari admin — selalu tampil jika ada -->
                 <div v-if="item.file">
                   <p class="text-[10px] font-semibold text-gray-400 uppercase mb-1">Lampiran Dokumen</p>
-                  <a :href="'/storage/' + item.file" target="_blank"
-                    class="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-50 border border-blue-100 rounded-lg text-xs text-blue-700 font-medium hover:bg-blue-100 transition">
-                    <svg class="w-3.5 h-3.5 shrink-0" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/>
-                    </svg>
-                    <span class="truncate max-w-[180px]">{{ item.file.split('/').pop() }}</span>
-                    <span class="text-blue-400 text-[10px] font-bold shrink-0">Download</span>
-                  </a>
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 text-blue-700 text-[10px] font-bold rounded-full">
+                      <svg class="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/></svg>
+                      Dari Admin
+                    </span>
+                    <a :href="'/storage/' + item.file" target="_blank"
+                      class="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-50 border border-blue-100 rounded-lg text-xs text-blue-700 font-medium hover:bg-blue-100 transition">
+                      <svg class="w-3.5 h-3.5 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/>
+                      </svg>
+                      <span class="truncate max-w-[180px]">{{ item.file.split('/').pop() }}</span>
+                      <span class="text-blue-400 text-[10px] font-bold shrink-0">Download</span>
+                    </a>
+                  </div>
                 </div>
 
                 <!-- Upload revisi mitra — HANYA muncul jika admin sudah upload file -->
@@ -151,13 +164,14 @@ const getIcon = (item) => {
                   <p class="text-[10px] font-semibold text-gray-500 uppercase mb-1">
                     Upload Dokumen Revisi dari Mitra
                   </p>
-                  <p class="text-[10px] text-gray-400 mb-2">
-                    Selesai pada {{ item.file_mitra ? item.tanggal : '-' }}
-                  </p>
 
-                  <!-- Sudah upload — tidak bisa upload lagi -->
+                  <!-- Sudah upload sebelumnya (dari server) -->
                   <div v-if="item.file_mitra"
                     class="flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-100 rounded-lg">
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-700 text-[10px] font-bold rounded-full shrink-0">
+                      <svg class="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.7 0 4-1.3 4-4s-1.3-4-4-4-4 1.3-4 4 1.3 4 4 4zm0 2c-2.7 0-8 1.3-8 4v1h16v-1c0-2.7-5.3-4-8-4z"/></svg>
+                      Dari Mitra
+                    </span>
                     <svg class="w-4 h-4 text-green-600 shrink-0" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
                     </svg>
@@ -168,8 +182,26 @@ const getIcon = (item) => {
                       class="text-green-600 text-[10px] font-bold hover:underline shrink-0">Lihat</a>
                   </div>
 
+                  <!-- Baru saja diupload di sesi ini (sebelum reload) -->
+                  <div v-else-if="uploadedFiles[idx]"
+                    class="flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-100 rounded-lg">
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-700 text-[10px] font-bold rounded-full shrink-0">
+                      <svg class="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.7 0 4-1.3 4-4s-1.3-4-4-4-4 1.3-4 4 1.3 4 4 4zm0 2c-2.7 0-8 1.3-8 4v1h16v-1c0-2.7-5.3-4-8-4z"/></svg>
+                      Dari Mitra
+                    </span>
+                    <svg class="w-4 h-4 text-green-600 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+                    </svg>
+                    <span class="text-xs text-green-700 font-medium flex-1 truncate">
+                      {{ uploadedFiles[idx].name }}
+                    </span>
+                    <a v-if="uploadedFiles[idx].lokasi_file" :href="'/storage/' + uploadedFiles[idx].lokasi_file" target="_blank"
+                      class="text-green-600 text-[10px] font-bold hover:underline shrink-0">Lihat</a>
+                  </div>
+
                   <!-- Belum upload -->
                   <div v-else>
+                    <p class="text-[10px] text-gray-400 mb-2">Selesai pada -</p>
                     <!-- File sudah dipilih -->
                     <div v-if="selectedFiles[idx]"
                       class="flex items-center gap-2 mb-2 px-3 py-1.5 bg-green-50 border border-green-100 rounded-lg">
