@@ -42,7 +42,7 @@ class RiwayatKerjasamaController extends Controller
         $this->applyFilters($query, $request);
 
         $perPage = $request->input('per_page', 10);
-        
+
         // Jika per_page besar (mode show all), gunakan get() untuk menampilkan semua
         if ($perPage >= 5000) {
             $collection = $query->orderBy('id_kerjasama', 'desc')->get();
@@ -51,7 +51,7 @@ class RiwayatKerjasamaController extends Controller
                 $items[] = $this->formatRow($k, $i);
             }
             $total = count($items);
-            
+
             // Format sebagai pagination object dengan last_page = 1
             $kerjasama = new \Illuminate\Pagination\LengthAwarePaginator(
                 $items,
@@ -68,9 +68,9 @@ class RiwayatKerjasamaController extends Controller
             $kerjasama = $query->orderBy('id_kerjasama', 'desc')
                 ->paginate($perPage)
                 ->withQueryString();
-            
+
             $offset = ($kerjasama->currentPage() - 1) * $kerjasama->perPage();
-            $kerjasama->getCollection()->transform(fn ($k, $i) => $this->formatRow($k, $offset + $i));
+            $kerjasama->getCollection()->transform(fn($k, $i) => $this->formatRow($k, $offset + $i));
         }
 
         return Inertia::render('Admin/RiwayatKerjasama/Gabungan', [
@@ -104,7 +104,7 @@ class RiwayatKerjasamaController extends Controller
         $this->applyFilters($query, $request);
 
         $perPage = $request->input('per_page', 10);
-        
+
         // Jika per_page besar (mode show all), gunakan get() untuk menampilkan semua
         if ($perPage >= 5000) {
             $collection = $query->orderBy('id_kerjasama', 'desc')->get();
@@ -113,7 +113,7 @@ class RiwayatKerjasamaController extends Controller
                 $items[] = $this->formatRow($k, $i);
             }
             $total = count($items);
-            
+
             // Format sebagai pagination object dengan last_page = 1
             $kerjasama = new \Illuminate\Pagination\LengthAwarePaginator(
                 $items,
@@ -130,9 +130,9 @@ class RiwayatKerjasamaController extends Controller
             $kerjasama = $query->orderBy('id_kerjasama', 'desc')
                 ->paginate($perPage)
                 ->withQueryString();
-            
+
             $offset = ($kerjasama->currentPage() - 1) * $kerjasama->perPage();
-            $kerjasama->getCollection()->transform(fn ($k, $i) => $this->formatRow($k, $offset + $i));
+            $kerjasama->getCollection()->transform(fn($k, $i) => $this->formatRow($k, $offset + $i));
         }
 
         return Inertia::render('Admin/RiwayatKerjasama/Mitra', [
@@ -164,16 +164,16 @@ class RiwayatKerjasamaController extends Controller
             'search' => $request->input('search'),
             'tahun' => $request->input('tahun'),
         ]);
-        
+
         $query = Kerjasama::pemerintahTipe()
             ->with(['admin', 'latestPeriode', 'finalDokumen', 'dokumen', 'kategori', 'adendum']);
 
         $this->applyFilters($query, $request);
 
         $perPage = $request->input('per_page', 10);
-        
+
         Log::info("📊 After applyFilters, perPage:", ['perPage' => $perPage]);
-        
+
         // Jika per_page besar (mode show all), gunakan get() untuk menampilkan semua
         if ($perPage >= 5000) {
             $collection = $query->orderBy('id_kerjasama', 'desc')->get();
@@ -182,7 +182,7 @@ class RiwayatKerjasamaController extends Controller
                 $items[] = $this->formatRow($k, $i);
             }
             $total = count($items);
-            
+
             // Format sebagai pagination object dengan last_page = 1
             $kerjasama = new \Illuminate\Pagination\LengthAwarePaginator(
                 $items,
@@ -199,9 +199,9 @@ class RiwayatKerjasamaController extends Controller
             $kerjasama = $query->orderBy('id_kerjasama', 'desc')
                 ->paginate($perPage)
                 ->withQueryString();
-            
+
             $offset = ($kerjasama->currentPage() - 1) * $kerjasama->perPage();
-            $kerjasama->getCollection()->transform(fn ($k, $i) => $this->formatRow($k, $offset + $i));
+            $kerjasama->getCollection()->transform(fn($k, $i) => $this->formatRow($k, $offset + $i));
         }
 
         return Inertia::render('Admin/RiwayatKerjasama/Pemerintah', [
@@ -270,7 +270,7 @@ class RiwayatKerjasamaController extends Controller
         return Mitra::query()
             ->orderBy('nama_perusahaan')
             ->get()
-            ->map(fn (Mitra $mitra) => [
+            ->map(fn(Mitra $mitra) => [
                 'id_mitra' => $mitra->id_mitra,
                 'nama_perusahaan' => $mitra->nama_perusahaan,
                 'npwp' => $mitra->getAttribute('npwp'),
@@ -411,7 +411,7 @@ class RiwayatKerjasamaController extends Controller
             'jangka' => ['required', 'string'],
             'nomor_suratM' => ['required', 'string'],
             'nomor_suratP' => ['required', 'string'],
-            'pembiayaan' => ['required','in:APBN,APBD,PIHAK KETIGA,PARA PIHAK,SESUAI DENGAN PERATURAN PERUNDANG-UNDANGAN'],
+            'pembiayaan' => ['required', 'in:APBN,APBD,PIHAK KETIGA,PARA PIHAK,SESUAI DENGAN PERATURAN PERUNDANG-UNDANGAN'],
             'urusan' => ['required', 'string'],
             'daerah' => ['required', 'string'],
             'jenis_kerjasama' => ['required', 'string', Rule::in(array_column($this->jenisKerjasamaOptions(), 'value'))],
@@ -515,7 +515,7 @@ class RiwayatKerjasamaController extends Controller
             'jangka' => ['required', 'string'],
             'nomor_suratM' => ['required', 'string'],
             'nomor_suratP' => ['required', 'string'],
-            'pembiayaan' => ['required','in:APBN,APBD,PIHAK KETIGA,PARA PIHAK,SESUAI DENGAN PERATURAN PERUNDANG-UNDANGAN'],
+            'pembiayaan' => ['required', 'in:APBN,APBD,PIHAK KETIGA,PARA PIHAK,SESUAI DENGAN PERATURAN PERUNDANG-UNDANGAN'],
             'urusan' => ['required', 'string'],
             'daerah' => ['required', 'string'],
             'jenis_kerjasama' => [
@@ -948,13 +948,13 @@ class RiwayatKerjasamaController extends Controller
 
             $query->where(function ($q) use ($search) {
                 $q->where('judul', 'like', "%{$search}%")
-                  ->orWhere('nomor_suratM', 'like', "%{$search}%")
-                  ->orWhere('nomor_suratP', 'like', "%{$search}%")
-                  ->orWhere('urusan', 'like', "%{$search}%")
-                  ->orWhere('daerah', 'like', "%{$search}%")
-                  ->orWhere('nama_pihak_luar', 'like', "%{$search}%")
-                  ->orWhere('jenis_kerjasama', 'like', "%{$search}%")
-                  ->orWhere('jenis_dokumen', 'like', "%{$search}%");
+                    ->orWhere('nomor_suratM', 'like', "%{$search}%")
+                    ->orWhere('nomor_suratP', 'like', "%{$search}%")
+                    ->orWhere('urusan', 'like', "%{$search}%")
+                    ->orWhere('daerah', 'like', "%{$search}%")
+                    ->orWhere('nama_pihak_luar', 'like', "%{$search}%")
+                    ->orWhere('jenis_kerjasama', 'like', "%{$search}%")
+                    ->orWhere('jenis_dokumen', 'like', "%{$search}%");
 
                 $q->orWhereHas('mitra', function ($mitra) use ($search) {
                     $mitra->where('nama_perusahaan', 'like', "%{$search}%");
@@ -993,16 +993,16 @@ class RiwayatKerjasamaController extends Controller
         $rows = $query->orderBy('id_kerjasama', 'desc')
             ->get()
             ->values()
-            ->map(fn (Kerjasama $k, int $i) => $this->formatRow($k, $i));
+            ->map(fn(Kerjasama $k, int $i) => $this->formatRow($k, $i));
 
         $format = strtolower((string) $request->query('format', 'csv'));
-        $baseFilename = 'riwayat-kerjasama-'.$type.'-'.now()->format('Ymd_His');
+        $baseFilename = 'riwayat-kerjasama-' . $type . '-' . now()->format('Ymd_His');
 
         if ($format === 'xlsx') {
-            return Excel::download(new RiwayatKerjasamaExport($rows), $baseFilename.'.xlsx');
+            return Excel::download(new RiwayatKerjasamaExport($rows), $baseFilename . '.xlsx');
         }
 
-        $filename = $baseFilename.'.csv';
+        $filename = $baseFilename . '.csv';
 
         return response()->streamDownload(function () use ($rows) {
             $handle = fopen('php://output', 'w');
@@ -1057,8 +1057,8 @@ class RiwayatKerjasamaController extends Controller
     private function applyExportColumnFilters($query, Request $request): void
     {
         $tahunColumns = collect($request->input('tahun_column', []))
-            ->filter(fn ($value) => is_numeric($value))
-            ->map(fn ($value) => (int) $value)
+            ->filter(fn($value) => is_numeric($value))
+            ->map(fn($value) => (int) $value)
             ->unique()
             ->values();
 
@@ -1069,7 +1069,7 @@ class RiwayatKerjasamaController extends Controller
         }
 
         $tipe = collect($request->input('tipe', []))
-            ->map(fn ($value) => trim((string) $value))
+            ->map(fn($value) => trim((string) $value))
             ->filter()
             ->unique()
             ->values();
@@ -1079,7 +1079,7 @@ class RiwayatKerjasamaController extends Controller
         }
 
         $mitra = collect($request->input('mitra', []))
-            ->map(fn ($value) => trim((string) $value))
+            ->map(fn($value) => trim((string) $value))
             ->filter()
             ->unique()
             ->values();
@@ -1093,7 +1093,7 @@ class RiwayatKerjasamaController extends Controller
         }
 
         $jenisKerjasama = collect($request->input('jenis_kerjasama', []))
-            ->map(fn ($value) => trim((string) $value))
+            ->map(fn($value) => trim((string) $value))
             ->filter()
             ->unique()
             ->values();
@@ -1103,7 +1103,7 @@ class RiwayatKerjasamaController extends Controller
         }
 
         $status = collect($request->input('status', []))
-            ->map(fn ($value) => trim((string) $value))
+            ->map(fn($value) => trim((string) $value))
             ->filter()
             ->unique()
             ->values();
@@ -1142,7 +1142,6 @@ class RiwayatKerjasamaController extends Controller
                 $years = max($years, 1);
 
                 $jangkaWaktu = $years . ' Tahun';
-
             } else {
 
                 // Minimal 1 bulan
@@ -1160,8 +1159,23 @@ class RiwayatKerjasamaController extends Controller
         $storedFilePath = $k->finalDokumen?->lokasi_file;
         $storedFileName = $k->finalDokumen?->nama_file;
 
+        // For mitra-originated kerjasama: show the last document uploaded by mitra
+        // (tipe_dokumen = 'mitra') as the reference file in riwayat, because that
+        // is the agreed-upon final version submitted by the partner.
+        // For admin-originated kerjasama: use the highest-version dokumen directly.
+        if ($k->pemrakarsa === 'M') {
+            $mitraDok = collect($k->relationLoaded('dokumen') ? $k->dokumen : [])
+                ->where('tipe_dokumen', 'mitra')
+                ->sortByDesc('versi_dokumen')
+                ->first();
+            if ($mitraDok) {
+                $storedFilePath = $mitraDok->lokasi_file;
+                $storedFileName = $mitraDok->nama_file;
+            }
+        }
+
         $dokumenVersions = collect($k->relationLoaded('dokumen') ? $k->dokumen : [])
-            ->sortBy(fn ($dokumen) => (int) $dokumen->versi_dokumen)
+            ->sortBy(fn($dokumen) => (int) $dokumen->versi_dokumen)
             ->values()
             ->map(function ($dokumen) {
                 return [
@@ -1228,8 +1242,8 @@ class RiwayatKerjasamaController extends Controller
             'tipe' => $k->tipe,
             'pemrakarsa' => $k->pemrakarsa,
             'mitra' => $k->tipe === 'mitra'
-                    ? ($namaMitra ?? $k->nama_pihak_luar ?? '-')
-                    : ($k->nama_pihak_luar ?? '-'),
+                ? ($namaMitra ?? $k->nama_pihak_luar ?? '-')
+                : ($k->nama_pihak_luar ?? '-'),
             'judul' => $k->judul,
             'mulai' => $mulai ? Carbon::parse($mulai)->translatedFormat('d F Y') : '-',
             'berakhir' => $berakhir ? Carbon::parse($berakhir)->translatedFormat('d F Y') : '-',
@@ -1271,6 +1285,6 @@ class RiwayatKerjasamaController extends Controller
             return asset($path);
         }
 
-        return asset('storage/'.ltrim($path, '/'));
+        return asset('storage/' . ltrim($path, '/'));
     }
 }

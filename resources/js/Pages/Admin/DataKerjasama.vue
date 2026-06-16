@@ -440,7 +440,19 @@
               class="border border-gray-200 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
             >
               <div>
-                <p class="text-sm font-semibold text-gray-900">Versi {{ doc.versi_dokumen }}</p>
+                <div class="flex items-center gap-2 mb-1">
+                  <p class="text-sm font-semibold text-gray-900">Versi {{ doc.versi_dokumen }}</p>
+                  <span v-if="doc.tipe_dokumen === 'mitra'"
+                    class="inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-700 text-[10px] font-bold rounded-full">
+                    <svg class="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.7 0 4-1.3 4-4s-1.3-4-4-4-4 1.3-4 4 1.3 4 4 4zm0 2c-2.7 0-8 1.3-8 4v1h16v-1c0-2.7-5.3-4-8-4z"/></svg>
+                    Mitra
+                  </span>
+                  <span v-else
+                    class="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 text-blue-700 text-[10px] font-bold rounded-full">
+                    <svg class="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/></svg>
+                    Admin
+                  </span>
+                </div>
                 <p class="text-xs text-gray-500 mt-0.5">{{ doc.nama_file }}</p>
                 <p v-if="doc.created_at" class="text-[11px] text-gray-400 mt-0.5">Diunggah {{ doc.created_at }}</p>
               </div>
