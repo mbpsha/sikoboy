@@ -27,33 +27,17 @@ const handleFileSelect = (e, idx) => {
   if (file) selectedFiles.value = { ...selectedFiles.value, [idx]: file }
 }
 
-// ✅ TAMBAH FUNGSI INI!
-const getIcon = (item) => {
-  const t = (item.title || '').toLowerCase()
-  if (t.includes('diterima') || t.includes('selesai') || t.includes('ditandatangani'))
-    return { bg: 'bg-green-500', symbol: '✓' }
-  if (t.includes('ditolak'))  return { bg: 'bg-red-500',    symbol: '✕' }
-  if (t.includes('revisi'))   return { bg: 'bg-orange-400', symbol: '!' }
-  return { bg: 'bg-green-500', symbol: '✓' }
-}
-
 const doUpload = async (idx) => {
   const file = selectedFiles.value[idx]
-  const item = progressItems.value[idx]
-  
-  if (!file || !props.kerjasamaId || !item) return
+  if (!file || !props.kerjasamaId) return
 
   isUploading.value = { ...isUploading.value, [idx]: true }
   try {
     const fd    = new FormData()
     fd.append('file', file)
-    fd.append('id_riwayat', item.id)
-    
     const token = document.querySelector('meta[name="csrf-token"]')?.content ?? ''
     const res   = await fetch(`/mitra/kerjasama/${props.kerjasamaId}/revisi`, {
-      method: 'POST', 
-      body: fd, 
-      credentials: 'same-origin',
+      method: 'POST', body: fd, credentials: 'same-origin',
       headers: token ? { 'X-CSRF-TOKEN': token } : {},
     })
     if (!res.ok) throw new Error()
@@ -70,6 +54,15 @@ const doUpload = async (idx) => {
   } finally {
     isUploading.value = { ...isUploading.value, [idx]: false }
   }
+}
+
+const getIcon = (item) => {
+  const t = (item.title || '').toLowerCase()
+  if (t.includes('diterima') || t.includes('selesai') || t.includes('ditandatangani'))
+    return { bg: 'bg-green-500', symbol: '✓' }
+  if (t.includes('ditolak'))  return { bg: 'bg-red-500',    symbol: '✕' }
+  if (t.includes('revisi'))   return { bg: 'bg-orange-400', symbol: '!' }
+  return { bg: 'bg-green-500', symbol: '✓' }
 }
 </script>
 

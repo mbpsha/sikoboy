@@ -18,13 +18,12 @@ class Dokumen extends Model
      */
     protected $fillable = [
         'id_kerjasama',
-        'id_riwayat',
         'jenis_dokumen',
         'nama_file',
         'lokasi_file',
         'versi_dokumen',
-        'tipe_dokumen',
         'created_by',
+        'tipe_dokumen',
     ];
 
     public function kerjasama()

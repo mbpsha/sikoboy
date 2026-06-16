@@ -850,8 +850,6 @@ class RiwayatKerjasamaController extends Controller
             'created_by' => $admin->id_user,
         ]);
 
-        $kerjasama->forceFill(['has_adendum_badge' => true])->save();
-
         return back()->with('success', 'Adendum berhasil ditambahkan.');
     }
 
@@ -1113,7 +1111,7 @@ class RiwayatKerjasamaController extends Controller
         }
     }
 
-    private function formatRow(object $k, int $index = 0): array
+    private function formatRow(Kerjasama $k, int $index = 0): array
     {
         $periode = $k->latestPeriode;
 
@@ -1225,7 +1223,7 @@ class RiwayatKerjasamaController extends Controller
                         : null,
                 ];
             });
-        $hasAdendum = (bool) ($k->has_adendum_badge ?? false);
+        $hasAdendum = $adendumItems->isNotEmpty();
 
         // 🔥 HITUNG SISA HARI
         $daysRemaining = null;
@@ -1258,8 +1256,8 @@ class RiwayatKerjasamaController extends Controller
             'jenis_kerjasama' => $k->jenis_kerjasama,
             'jenis_dokumen' => $k->jenis_dokumen,
             'has_adendum' => $hasAdendum,
-            'adendum_count' => $hasAdendum ? $adendumItems->count() : 0,
-            'adendum_items' => $hasAdendum ? $adendumItems->all() : [],
+            'adendum_count' => $adendumItems->count(),
+            'adendum_items' => $adendumItems->all(),
             'nomor_suratM' => $k->nomor_suratM,
             'nomor_suratP' => $k->nomor_suratP,
             'urusan' => $k->urusan,

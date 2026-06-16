@@ -174,11 +174,11 @@ class KerjasamaController extends Controller
         $defaultAdminEmail = (string) config('services.default_admin_email');
 
         $admin = Admin::query()
+
             ->whereHas('user', fn ($query) => $query->where('email', $defaultAdminEmail))
             ->first();
         $admin ??= Admin::query()->orderBy('id_admin')->first();
         abort_if($admin === null, 422, 'Belum ada admin yang dapat memproses pengajuan.');
-
         $kategori = KategoriKerjasama::query()
             ->firstOrCreate(
                 ['nama_kategori' => $validated['jenis_kerjasama']],
@@ -215,25 +215,25 @@ class KerjasamaController extends Controller
                 'keterangan' => $validated['pembiayaan'],
             ]);
 
-            //  PENTING: Upload file dari pengajuan awal JANGAN simpan ke dokumen
-            // File ini hanya untuk referensi awal, bukan dokumen resmi yang perlu tracking
-            $file = $request->file('file');
-            if ($file) {
-                $randomName = Str::uuid() . '.' . $file->getClientOriginalExtension();
-                $path = $file->storeAs('dokumen-kerjasama', $randomName, 'public');
-                
-                // Simpan info file di periode_kerjasama.keterangan sementara
-                // atau buat field baru untuk file pengajuan awal
-                // JANGAN simpan di tabel dokumen tanpa id_riwayat!
-            }
+            $file = $validated['dokumen_file'];
+            $randomName = Str::uuid() . '.' . $file->getClientOriginalExtension();
+            $path = $file->storeAs('dokumen-kerjasama', $randomName, 'public');
 
-            // Create riwayat pertama (hanya untuk tracking, tanpa file)
+            Dokumen::create([
+                'id_kerjasama' => $kerjasama->id_kerjasama,
+                'nama_file' => $randomName,
+                'lokasi_file' => $path,
+                'versi_dokumen' => 1,
+                'created_by' => $request->user()->id_user,
+                'tipe_dokumen' => 'mitra',
+            ]);
+
             RiwayatStatus::recordStatus(
                 idKerjasama: (int) $kerjasama->id_kerjasama,
                 jenisStatus: 'diajukan',
                 idAdmin: (int) $admin->id_admin,
                 catatan: 'Pengajuan baru dari mitra',
-                file: null, //  Tidak ada file di riwayat awal
+                file: null,
             );
         });
 
@@ -255,8 +255,7 @@ class KerjasamaController extends Controller
         }
 
         $request->validate([
-            'file'       => ['required', 'file', 'mimes:pdf', 'max:10240'],
-            'id_riwayat' => ['required', 'integer'],
+            'file' => ['required', 'file', 'mimes:pdf', 'max:10240'],
         ]);
 
         $file        = $request->file('file');
@@ -266,17 +265,17 @@ class KerjasamaController extends Controller
 
         $dok = Dokumen::create([
             'id_kerjasama'  => $kerjasama->id_kerjasama,
-            'id_riwayat'    => $request->id_riwayat, // INI PENTING
             'nama_file'     => $randomName,
             'lokasi_file'   => $path,
             'versi_dokumen' => $nextVersion,
             'created_by'    => $request->user()->id_user,
-            'tipe_dokumen'  => 'mitra',
+            'tipe_dokumen'  => 'mitra',  // ✅ pastikan migration sudah dijalankan
         ]);
 
+        // ✅ Return JSON bukan redirect
         return response()->json([
-            'success' => true,
-            'message' => 'File revisi berhasil diunggah.',
+            'success'    => true,
+            'message'    => 'File revisi berhasil diunggah.',
             'lokasi_file' => $dok->lokasi_file,
         ]);
     }
