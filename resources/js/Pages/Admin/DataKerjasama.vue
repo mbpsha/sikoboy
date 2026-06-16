@@ -229,17 +229,22 @@
                     <!-- Tambah Proses — sembunyikan jika sudah selesai -->
                     <template v-if="!k.is_finalized">
                       <button
-                        @click.prevent="toggleAddForm(k.id_kerjasama)"
+                        @click.prevent="toggleAddForm(k.id_kerjasama, k)"
                         class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-teal-700 hover:bg-teal-50 text-xs font-medium transition mt-1"
                       >
                         <span class="text-base leading-none">+</span> Tambah Proses
                       </button>
                       <div v-if="showAddFormFor[k.id_kerjasama]" class="mt-2 p-3 bg-gray-50 border border-gray-200 rounded-lg space-y-2">
-                        <input
-                          v-model="newProcessForm[k.id_kerjasama].title"
-                          placeholder="Contoh: Proses 1 - Revisi"
-                          class="w-full text-xs border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-teal-500"
-                        />
+                        <div class="flex items-center border border-gray-200 rounded-lg overflow-hidden bg-white text-xs">
+                          <span class="px-3 py-2 bg-gray-100 text-gray-500 border-r border-gray-200 whitespace-nowrap select-none font-medium">
+                            {{ newProcessForm[k.id_kerjasama]?.prefix ?? '' }}
+                          </span>
+                          <input
+                            v-model="newProcessForm[k.id_kerjasama].suffix"
+                            placeholder="Revisi, Review, dll."
+                            class="flex-1 px-3 py-2 outline-none focus:ring-0 bg-white"
+                          />
+                        </div>
                         <div class="flex gap-2">
                           <button @click.prevent="addProcess(k)" class="flex-1 bg-teal-600 hover:bg-teal-700 text-white text-xs px-3 py-1.5 rounded-lg transition">Tambah</button>
                           <button @click.prevent="cancelAdd(k.id_kerjasama)" class="flex-1 bg-white border border-gray-200 text-gray-600 text-xs px-3 py-1.5 rounded-lg transition">Batal</button>
@@ -738,25 +743,30 @@ onBeforeUnmount(() => {
 const showAddFormFor = reactive({})
 const newProcessForm = reactive({})
 
-function toggleAddForm(id) {
+function toggleAddForm(id, k) {
   showAddFormFor[id] = !showAddFormFor[id]
-  if (!newProcessForm[id]) newProcessForm[id] = { title: '' }
+  if (showAddFormFor[id]) {
+    const nextNum = (k?.proses?.length ?? 0) + 1
+    newProcessForm[id] = { prefix: `Proses ${nextNum} - `, suffix: '' }
+  }
 }
 
 function cancelAdd(id) {
   showAddFormFor[id] = false
-  if (newProcessForm[id]) newProcessForm[id].title = ''
+  delete newProcessForm[id]
 }
 
 function addProcess(k) {
-  const id    = k.id_kerjasama
-  const title = (newProcessForm[id]?.title || '').trim()
-  if (!title) return
+  const id     = k.id_kerjasama
+  const prefix = newProcessForm[id]?.prefix ?? ''
+  const suffix = (newProcessForm[id]?.suffix || '').trim()
+  if (!suffix) return
+  const title  = prefix + suffix
 
   if (!k.proses) k.proses = []
   k.proses.push({ id: null, label: title, title, catatan: '', penanggung: currentUserDivisi.value, __temp: true })
 
-  newProcessForm[id].title = ''
+  delete newProcessForm[id]
   showAddFormFor[id] = false
 }
 
@@ -773,8 +783,10 @@ async function finishAddProcess(k) {
 
   if (!confirmed) return
 
-  const id    = k.id_kerjasama
-  const title = (newProcessForm[id]?.title || '').trim() || 'Proses Selesai'
+  const id     = k.id_kerjasama
+  const prefix  = newProcessForm[id]?.prefix ?? ''
+  const suffix  = (newProcessForm[id]?.suffix || '').trim()
+  const title   = suffix ? (prefix + suffix) : 'Proses Selesai'
 
   const fd = new FormData()
   fd.append('title',       title)
@@ -788,7 +800,7 @@ async function finishAddProcess(k) {
     {
       preserveScroll: true,
       onSuccess: () => {
-        newProcessForm[id].title = ''
+        delete newProcessForm[id]
         showAddFormFor[id] = false
         Swal.fire({
           icon: 'success',
