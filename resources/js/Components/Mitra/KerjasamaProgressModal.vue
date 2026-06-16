@@ -27,16 +27,6 @@ const handleFileSelect = (e, idx) => {
   if (file) selectedFiles.value = { ...selectedFiles.value, [idx]: file }
 }
 
-// ✅ TAMBAH FUNGSI INI!
-const getIcon = (item) => {
-  const t = (item.title || '').toLowerCase()
-  if (t.includes('diterima') || t.includes('selesai') || t.includes('ditandatangani'))
-    return { bg: 'bg-green-500', symbol: '✓' }
-  if (t.includes('ditolak'))  return { bg: 'bg-red-500',    symbol: '✕' }
-  if (t.includes('revisi'))   return { bg: 'bg-orange-400', symbol: '!' }
-  return { bg: 'bg-green-500', symbol: '✓' }
-}
-
 const doUpload = async (idx) => {
   const file = selectedFiles.value[idx]
   if (!file || !props.kerjasamaId) return
@@ -64,6 +54,15 @@ const doUpload = async (idx) => {
   } finally {
     isUploading.value = { ...isUploading.value, [idx]: false }
   }
+}
+
+const getIcon = (item) => {
+  const t = (item.title || '').toLowerCase()
+  if (t.includes('diterima') || t.includes('selesai') || t.includes('ditandatangani'))
+    return { bg: 'bg-green-500', symbol: '✓' }
+  if (t.includes('ditolak'))  return { bg: 'bg-red-500',    symbol: '✕' }
+  if (t.includes('revisi'))   return { bg: 'bg-orange-400', symbol: '!' }
+  return { bg: 'bg-green-500', symbol: '✓' }
 }
 </script>
 
@@ -166,25 +165,8 @@ const doUpload = async (idx) => {
                     Upload Dokumen Revisi dari Mitra
                   </p>
 
-                  <!-- Sudah upload sebelumnya (dari server) -->
-                  <div v-if="item.file_mitra"
-                    class="flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-100 rounded-lg">
-                    <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-700 text-[10px] font-bold rounded-full shrink-0">
-                      <svg class="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.7 0 4-1.3 4-4s-1.3-4-4-4-4 1.3-4 4 1.3 4 4 4zm0 2c-2.7 0-8 1.3-8 4v1h16v-1c0-2.7-5.3-4-8-4z"/></svg>
-                      Dari Mitra
-                    </span>
-                    <svg class="w-4 h-4 text-green-600 shrink-0" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
-                    </svg>
-                    <span class="text-xs text-green-700 font-medium flex-1 truncate">
-                      {{ item.file_mitra.split('/').pop() }}
-                    </span>
-                    <a :href="'/storage/' + item.file_mitra" target="_blank"
-                      class="text-green-600 text-[10px] font-bold hover:underline shrink-0">Lihat</a>
-                  </div>
-
                   <!-- Baru saja diupload di sesi ini (sebelum reload) -->
-                  <div v-else-if="uploadedFiles[idx]"
+                  <div v-if="uploadedFiles[idx]"
                     class="flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-100 rounded-lg">
                     <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-700 text-[10px] font-bold rounded-full shrink-0">
                       <svg class="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.7 0 4-1.3 4-4s-1.3-4-4-4-4 1.3-4 4 1.3 4 4 4zm0 2c-2.7 0-8 1.3-8 4v1h16v-1c0-2.7-5.3-4-8-4z"/></svg>
