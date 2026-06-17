@@ -255,7 +255,8 @@ class KerjasamaController extends Controller
         }
 
         $request->validate([
-            'file' => ['required', 'file', 'mimes:pdf', 'max:10240'],
+            'file'        => ['required', 'file', 'mimes:pdf', 'max:10240'],
+            'id_riwayat'  => ['nullable', 'integer'],
         ]);
 
         $file        = $request->file('file');
@@ -269,7 +270,8 @@ class KerjasamaController extends Controller
             'lokasi_file'   => $path,
             'versi_dokumen' => $nextVersion,
             'created_by'    => $request->user()->id_user,
-            'tipe_dokumen'  => 'mitra',  // ✅ pastikan migration sudah dijalankan
+            'tipe_dokumen'  => 'mitra',
+            'id_riwayat'    => $request->input('id_riwayat') ?? null,
         ]);
 
         // ✅ Return JSON bukan redirect

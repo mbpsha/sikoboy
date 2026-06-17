@@ -501,8 +501,7 @@ const props = defineProps({
 })
 
 const page = usePage()
-const currentUsername    = computed(() => page.props.auth?.user?.username ?? '')
-const currentUserDivisi = computed(() => page.props.auth?.user?.divisi ?? currentUsername.value)
+const currentUserDivisi = computed(() => page.props.auth?.user?.divisi ?? '')
 
 const kerjasama = computed(() => props.kerjasama ?? {
   data: [], per_page: 10, prev_page_url: null, next_page_url: null, current_page: 1,
@@ -843,7 +842,8 @@ const isProcessReadOnly = computed(() => {
 
 function openProcessModal(k, p) {
   activeKerjasama.value  = k
-  activeProcess.value    = { ...p, penanggung: p.penanggung || currentUserDivisi.value, catatan: p.id ? (p.catatan || '') : '' }
+  // Always use current user's divisi for penanggung jawab
+  activeProcess.value    = { ...p, penanggung: currentUserDivisi.value, catatan: p.id ? (p.catatan || '') : '' }
   showProcessModal.value = true
   fileToUpload.value     = null
   fileName.value         = ''
