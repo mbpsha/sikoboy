@@ -220,4 +220,27 @@ class ProfileController extends Controller
             'allNotifications' => NotificationFeed::forMitra($request->user(), 50),
         ]);
     }
+
+    /**
+     * Mark a notification as read (store in session).
+     */
+    public function markNotificationAsRead(Request $request, string $id)
+    {
+        $user = $request->user();
+        $key = 'read_notifications_'.$user->id_user;
+        
+        // Get current read notifications from session
+        $readNotifications = session($key, []);
+        
+        // Add this notification ID if not already present
+        if (!in_array($id, $readNotifications)) {
+            $readNotifications[] = $id;
+            session([$key => $readNotifications]);
+        }
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Notifikasi ditandai sebagai dibaca',
+        ]);
+    }
 }

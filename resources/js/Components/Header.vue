@@ -2,6 +2,7 @@
 import { computed, onMounted, onUnmounted, ref } from "vue";
 import { usePage, Link, router } from "@inertiajs/vue3";
 import logo from "@/images/logo_byl.png";
+import axios from "axios";
 
 const page = usePage();
 const isAuthenticated = computed(() => !!page.props?.auth?.user);
@@ -58,6 +59,29 @@ const handleNotificationClick = (notification) => {
     router.get(route('mitra.notifications'));
   } catch (e) {
     router.get('/mitra/notifications');
+  }
+};
+
+// ✅ Mark notification as read
+const markAsRead = async (event, notification) => {
+  event.stopPropagation(); // Prevent dropdown close
+  
+  try {
+    // Call backend to mark as read
+    const response = await axios.post(route('mitra.notifications.mark-read', notification.id));
+    
+    if (response.data.success) {
+      // Remove notification from local list
+      notifications.value = notifications.value.filter(n => n.id !== notification.id);
+      
+      if (isDev) {
+        console.log('[Header] Notification marked as read:', notification.id);
+      }
+    }
+  } catch (error) {
+    console.error('[Header] Failed to mark notification as read:', error);
+    // Still remove from UI even if backend fails (for better UX)
+    notifications.value = notifications.value.filter(n => n.id !== notification.id);
   }
 };
 
@@ -324,7 +348,7 @@ const portalLabel = computed(() => {
                 <div 
                   v-for="(notif, index) in notifications" 
                   :key="index"
-                  class="p-4 border-b border-gray-100 hover:bg-yellow-50 transition-colors cursor-pointer"
+                  class="p-4 border-b border-gray-100 hover:bg-yellow-50 transition-colors cursor-pointer relative group"
                   @click="handleNotificationClick(notif)"
                 >
                   <div class="flex gap-3">
@@ -346,13 +370,35 @@ const portalLabel = computed(() => {
                         </svg>
                       </div>
                     </div>
-                    <div class="flex-1 min-w-0">
+                    <div class="flex-1 min-w-0 pr-8">
                       <p class="text-sm font-semibold text-gray-800 truncate">{{ notif.title }}</p>
                       <p class="text-xs text-gray-600 mt-1 line-clamp-2">{{ notif.message }}</p>
                       <p class="text-xs text-yellow-600 mt-2 font-medium">
-                        {{ notif.days_left }} hari lagi
+                        {{ notif.days_left ? notif.days_left + ' hari lagi' : 'Baru saja' }}
                       </p>
                     </div>
+                    <!-- ✅ Mark as Read Button -->
+                    <button 
+                      @click="markAsRead($event, notif)"
+                      class="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-full hover:bg-green-100 text-gray-400 hover:text-green-600"
+                      title="Tandai dibaca"
+                      aria-label="Tandai dibaca"
+                    >
+                      <svg 
+                        xmlns="http://www.w3.org/2000/svg" 
+                        class="w-4 h-4" 
+                        fill="none" 
+                        viewBox="0 0 24 24" 
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <path 
+                          stroke-linecap="round" 
+                          stroke-linejoin="round" 
+                          d="M5 13l4 4L19 7" 
+                        />
+                      </svg>
+                    </button>
                   </div>
                 </div>
               </div>

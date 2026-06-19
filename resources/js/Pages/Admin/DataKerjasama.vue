@@ -166,8 +166,8 @@
                   </div>
                 </th>
                 <th class="py-3 px-4 text-left font-medium border-r border-white/10">No. Surat Mitra</th>
-                <th class="py-3 px-4 text-left font-medium border-r border-white/10">Proses</th>
-                <th class="py-3 px-4 text-left font-medium">Status</th>
+                <th class="py-3 px-20 text-left font-medium border-r border-white/10">Proses</th>
+                <th class="py-3 px-8 text-left font-medium">Status</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-100">
@@ -187,75 +187,35 @@
                 <td class="py-3 px-4 text-gray-600 whitespace-nowrap">{{ k.tanggal_mulai ?? '—' }}</td>
                 <td class="py-3 px-4 text-gray-600 whitespace-nowrap">{{ k.tanggal_berakhir ?? '—' }}</td>
                 <td class="py-3 px-4 text-gray-600 whitespace-nowrap">{{ formatJangkaWaktu(k.tanggal_mulai, k.tanggal_berakhir) }}</td>
+
+                <!-- File column -->
                 <td class="py-3 px-4">
-                  <div class="flex flex-col gap-1">
-                    <button
-                      v-if="(k.dokumen_versions || []).length"
-                      @click.prevent="openDokumenModal(k)"
-                      class="inline-flex items-start gap-2 text-teal-700 hover:text-teal-900 font-medium text-xs leading-snug hover:underline text-left"
-                    >
-                      <DocumentTextIcon class="w-4 h-4 mt-0.5 shrink-0" />
-                      <span class="flex flex-col">
-                        <span>Lihat Dokumen</span>
-                        <span v-if="k.file_name" class="text-[11px] font-normal text-teal-600 break-words max-w-[170px]">
-                          {{ k.file_name }}
-                        </span>
-                      </span>
-                    </button>
-                    <span v-else class="text-gray-400 text-xs">Tidak ada file</span>
-                  </div>
+                  <button
+                    v-if="(k.dokumen_versions || []).length"
+                    @click.prevent="openDokumenModal(k)"
+                    class="inline-flex items-center gap-1.5 text-teal-700 hover:text-teal-900 font-medium text-xs hover:underline"
+                  >
+                    <DocumentTextIcon class="w-4 h-4 shrink-0" />
+                    Lihat Dokumen
+                  </button>
+                  <span v-else class="text-gray-400 text-xs">Tidak ada file</span>
                 </td>
+
                 <td class="py-3 px-4 text-gray-600 whitespace-normal break-words min-w-[180px]">{{ k.pembiayaan ?? '—' }}</td>
                 <td class="py-3 px-4 text-gray-600 whitespace-nowrap">{{ k.nomor_suratM ?? k.nomor_surat ?? k.nomor_suratP ?? '—' }}</td>
 
                 <!-- Proses column -->
-                <td class="py-3 px-4 align-top">
-                  <div class="space-y-1.5 min-w-[180px]">
-                    <button
-                      v-for="(p, pi) in (k.proses || [])" :key="pi"
-                      @click.prevent="openProcessModal(k, p)"
-                      class="w-full text-left px-3 py-2 rounded-lg text-xs transition cursor-pointer"
-                      :class="k.is_finalized
-                        ? 'bg-orange-100 text-orange-700 border border-orange-200'
-                        : 'bg-gray-100 hover:bg-gray-200 text-gray-700'"
-                    >
-                      <span v-if="k.is_finalized" class="inline-flex items-center gap-1">
-                        <span class="w-2 h-2 rounded-full bg-orange-400 inline-block"></span>
-                        {{ p.label || p.title }} — <span class="font-semibold">Selesai</span>
-                      </span>
-                      <span v-else>{{ p.label || p.title }}</span>
-                    </button>
-                    <p v-if="!(k.proses || []).length" class="text-xs text-gray-400 italic">Belum ada proses.</p>
-                    <!-- Tambah Proses — sembunyikan jika sudah selesai -->
-                    <template v-if="!k.is_finalized">
-                      <button
-                        @click.prevent="toggleAddForm(k.id_kerjasama)"
-                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-teal-700 hover:bg-teal-50 text-xs font-medium transition mt-1"
-                      >
-                        <span class="text-base leading-none">+</span> Tambah Proses
-                      </button>
-                      <div v-if="showAddFormFor[k.id_kerjasama]" class="mt-2 p-3 bg-gray-50 border border-gray-200 rounded-lg space-y-2">
-                        <div class="flex items-center gap-2">
-                          <span class="inline-flex items-center px-3 py-2 text-xs rounded-lg bg-gray-100 text-gray-700 whitespace-nowrap">
-                            Proses {{ (k.proses || []).length + 1 }} -
-                          </span>
-                          <input
-                            v-model="newProcessForm[k.id_kerjasama].title"
-                            placeholder="Contoh: Revisi (akan menjadi 'Proses N - Revisi')"
-                            class="flex-1 text-xs border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-teal-500"
-                          />
-                        </div>
-                        <div class="flex gap-2">
-                          <button @click.prevent="addProcess(k)" class="flex-1 bg-teal-600 hover:bg-teal-700 text-white text-xs px-3 py-1.5 rounded-lg transition">Tambah</button>
-                          <button @click.prevent="cancelAdd(k.id_kerjasama)" class="flex-1 bg-white border border-gray-200 text-gray-600 text-xs px-3 py-1.5 rounded-lg transition">Batal</button>
-                          <button @click.prevent="finishAddProcess(k)" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1.5 rounded-lg transition">Selesai Proses</button>
-                        </div>
-                      </div>
-                    </template>
-
-                    <!-- Label history jika sudah finalized -->
-                    <p v-else class="text-xs text-orange-500 font-medium mt-1 italic">✓ Proses selesai</p>
-                  </div>
+                <td class="py-3 px-4">
+                  <button
+                    @click.prevent="openProsesListModal(k)"
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition"
+                    :class="k.is_finalized
+                      ? 'bg-orange-100 text-orange-700 border border-orange-200 hover:bg-orange-200'
+                      : 'bg-gray-100 hover:bg-gray-200 text-gray-700'"
+                  >
+                    <span v-if="k.is_finalized" class="w-1.5 h-1.5 rounded-full bg-orange-400 inline-block"></span>
+                    {{ (k.proses || []).length }} Proses{{ k.is_finalized ? ' — Selesai' : '' }}
+                  </button>
                 </td>
 
                 <!-- Status column -->
@@ -346,7 +306,7 @@
     <!-- Process Modal -->
     <Teleport to="body">
       <div v-if="showProcessModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
-        <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6 space-y-4">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6 space-y-4 max-h-[85vh] overflow-y-auto">
           <div>
             <h3 class="text-base font-semibold text-gray-900">Update Proses Kerjasama</h3>
             <p class="text-xs text-gray-500 mt-0.5">{{ activeKerjasama?.judul }}</p>
@@ -362,7 +322,7 @@
           <div>
             <label class="block text-xs font-medium text-gray-600 mb-1">Penanggung Jawab</label>
             <input
-              :value="activeProcess.penanggung"
+              :value="activeProcess?.penanggung"
               readonly
               class="w-full border border-gray-100 rounded-lg px-3 py-2.5 text-sm bg-gray-50 text-gray-500 cursor-not-allowed"
             />
@@ -374,8 +334,8 @@
               :readonly="isProcessReadOnly"
               :class="isProcessReadOnly ? 'bg-gray-50 text-gray-500 cursor-not-allowed' : 'focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500'"
               class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm transition resize-none" />
-            <p v-if="isProcessReadOnly" class="text-xs text-orange-600 mt-1">
-              ℹ️ Proses ini sudah diisi — tidak bisa diubah atau upload file.
+            <p v-if="isProcessReadOnly" class="text-xs text-red-600 mt-1">
+              Proses ini sudah diisi — tidak bisa diubah atau upload file.
             </p>
           </div>
 
@@ -390,28 +350,113 @@
               </a>
             </div>
 
-            <input ref="processFileInput" type="file" accept="application/pdf" class="hidden" @change="onFileSelect" :disabled="isProcessReadOnly" />
-            <div
-              @click.prevent.stop="!isProcessReadOnly && triggerProcessFileInput()"
-              @dragover.prevent
-              @drop.prevent="!isProcessReadOnly && handleProcessDrop($event)"
-              :class="['border-2 border-dashed rounded-xl p-6 text-center transition', isProcessReadOnly ? 'border-gray-200 bg-gray-50 cursor-not-allowed' : 'border-gray-300 hover:border-teal-600 cursor-pointer']"
-            >
-              <div class="flex flex-col items-center">
-                <svg class="w-10 h-10 text-teal-700 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
-                </svg>
-                <p class="font-semibold text-[#17464E] mb-1">Drag & Drop Dokumen Kerjasama (PDF)</p>
-                <p class="text-xs text-gray-600 mb-3">{{ isProcessReadOnly ? 'Proses sudah diisi — tidak bisa diubah.' : 'atau klik untuk memilih file *Max 10 MB' }}</p>
-                <button v-if="!isProcessReadOnly" type="button" class="px-4 py-2 bg-teal-600 text-white rounded-md text-sm">Pilih File</button>
-                <p v-if="fileName" class="text-sm text-gray-600 mt-3">✓ {{ fileName }}</p>
+            <!-- hanya render area upload kalau BUKAN read-only -->
+            <template v-if="!isProcessReadOnly">
+              <input ref="processFileInput" type="file" accept="application/pdf" class="hidden" @change="onFileSelect" />
+              <div
+                @click.prevent.stop="triggerProcessFileInput()"
+                @dragover.prevent
+                @drop.prevent="handleProcessDrop($event)"
+                class="border-2 border-dashed rounded-xl p-6 text-center transition border-gray-300 hover:border-teal-600 cursor-pointer"
+              >
+                <div class="flex flex-col items-center">
+                  <svg class="w-10 h-10 text-teal-700 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+                  </svg>
+                  <p class="font-semibold text-[#17464E] mb-1">Drag & Drop Dokumen Kerjasama (PDF)</p>
+                  <p class="text-xs text-gray-600 mb-3">atau klik untuk memilih file *Max 10 MB</p>
+                  <button type="button" class="px-4 py-2 bg-teal-600 text-white rounded-md text-sm">Pilih File</button>
+                  <p v-if="fileName" class="text-sm text-gray-600 mt-3">✓ {{ fileName }}</p>
+                </div>
               </div>
-            </div>
+            </template>
           </div>
 
           <div class="flex justify-end gap-2 pt-2">
             <button @click="closeProcessModal" class="px-4 py-2 text-sm rounded-lg border border-gray-200 hover:bg-gray-50 transition">Tutup</button>
             <button v-if="!isProcessReadOnly" @click.prevent="saveProcessUpdate" class="px-4 py-2 text-sm rounded-lg bg-teal-600 hover:bg-teal-700 text-white font-medium transition">Simpan</button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- List Proses Modal -->
+    <Teleport to="body">
+      <div v-if="showProsesListModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6 space-y-4 max-h-[85vh] overflow-y-auto">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <h3 class="text-base font-semibold text-gray-900">Daftar Proses</h3>
+              <p class="text-xs text-gray-500 mt-0.5">{{ activeProsesKerjasama?.judul }}</p>
+            </div>
+            <button @click="closeProsesListModal" class="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 flex items-center justify-center shrink-0">×</button>
+          </div>
+
+          <div v-if="!(activeProsesKerjasama?.proses || []).length" class="text-sm text-gray-500 bg-gray-50 border border-gray-200 rounded-xl p-4 text-center">
+            Belum ada proses.
+          </div>
+
+          <div v-else class="space-y-2">
+            <button
+              v-for="(p, pi) in (activeProsesKerjasama.proses || [])" :key="pi"
+              @click.prevent="openProcessModal(activeProsesKerjasama, p)"
+              class="w-full text-left px-4 py-3 rounded-xl text-sm transition cursor-pointer border flex items-center justify-between gap-3"
+              :class="activeProsesKerjasama.is_finalized
+                ? 'bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-100'
+                : isProsesBaru(p)
+                  ? 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100'
+                  : 'bg-gray-50 hover:bg-gray-100 text-gray-700 border-gray-200'"
+            >
+              <span v-if="activeProsesKerjasama.is_finalized" class="inline-flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-orange-400 inline-block"></span>
+                {{ p.label || p.title }} — <span class="font-semibold">Selesai</span>
+              </span>
+              <span v-else>{{ p.label || p.title }}</span>
+
+              <span v-if="!activeProsesKerjasama.is_finalized"
+                class="text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 inline-flex items-center justify-center"
+                :class="isProsesBaru(p) ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'">
+                <svg v-if="isProsesBaru(p)" class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                <svg v-else class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              </span>
+            </button>
+          </div>
+
+          <!-- Tambah Proses — sembunyikan jika sudah selesai -->
+          <template v-if="!activeProsesKerjasama?.is_finalized">
+            <button
+              v-if="!showAddFormFor[activeProsesKerjasama?.id_kerjasama]"
+              @click.prevent="toggleAddForm(activeProsesKerjasama.id_kerjasama)"
+              class="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-teal-700 hover:bg-teal-50 text-sm font-medium transition"
+            >
+              <span class="text-base leading-none">+</span> Tambah Proses
+            </button>
+
+            <div v-if="showAddFormFor[activeProsesKerjasama?.id_kerjasama]" class="p-3 bg-gray-50 border border-gray-200 rounded-xl space-y-2">
+              <div class="flex items-center gap-2">
+                <span class="inline-flex items-center px-3 py-2 text-xs rounded-lg bg-gray-100 text-gray-700 whitespace-nowrap">
+                  Proses {{ (activeProsesKerjasama.proses || []).length + 1 }} -
+                </span>
+                <input
+                  v-model="newProcessForm[activeProsesKerjasama.id_kerjasama].title"
+                  placeholder="Contoh: Revisi"
+                  class="flex-1 text-xs border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-teal-500"
+                />
+              </div>
+              <div class="flex gap-2">
+                <button @click.prevent="addProcess(activeProsesKerjasama)" class="flex-1 bg-teal-600 hover:bg-teal-700 text-white text-xs px-3 py-1.5 rounded-lg transition">Tambah</button>
+                <button @click.prevent="cancelAdd(activeProsesKerjasama.id_kerjasama)" class="flex-1 bg-white border border-gray-200 text-gray-600 text-xs px-3 py-1.5 rounded-lg transition">Batal</button>
+                <button @click.prevent="finishAddProcess(activeProsesKerjasama)" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1.5 rounded-lg transition">Selesai Proses</button>
+              </div>
+            </div>
+          </template>
+
+          <div class="flex justify-end pt-1">
+            <button @click="closeProsesListModal" class="px-4 py-2 text-sm rounded-lg border border-gray-200 hover:bg-gray-50 transition">Tutup</button>
           </div>
         </div>
       </div>
@@ -449,7 +494,9 @@
                   </span>
                   <span v-else
                     class="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 text-blue-700 text-[10px] font-bold rounded-full">
-                    <svg class="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/></svg>
+                    <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                    </svg>
                     Admin
                   </span>
                 </div>
@@ -457,15 +504,13 @@
                 <p v-if="doc.created_at" class="text-[11px] text-gray-400 mt-0.5">Diunggah {{ doc.created_at }}</p>
               </div>
               <div class="flex items-center gap-2">
-                <a
-                  :href="doc.file_url"
+                <a :href="doc.file_url"
                   target="_blank"
                   class="px-3 py-2 rounded-lg bg-teal-600 text-white text-xs font-medium hover:bg-teal-700 transition"
                 >
                   Preview
                 </a>
-                <a
-                  :href="doc.file_url"
+                <a :href="doc.file_url"
                   download
                   class="px-3 py-2 rounded-lg border border-gray-200 text-gray-700 text-xs font-medium hover:bg-gray-50 transition"
                 >
@@ -688,7 +733,7 @@ function applyFilters() {
 function resetAllFilters() {
   search.value = ''
   tahun.value = ''
-  columnFilters.value = { tahun: [], mitra: [], jenis_kerjasama: [], jenis_dokumen: [], urusan: [] }
+  columnFilters.value = { tahun: [], mitra: [], jenis_kerjasama: [], jenis_dokumen: [], urusan: [], pembiayaan: [] }
   isFiltering.value = true
   router.get(route('admin.data-kerjasama.index'), { page: 1, per_page: 10 }, {
     preserveState: true,
@@ -799,9 +844,11 @@ async function finishAddProcess(k) {
     fd,
     {
       preserveScroll: true,
+      preserveState: true,
       onSuccess: () => {
         newProcessForm[id].title = ''
         showAddFormFor[id] = false
+        closeProsesListModal()
         Swal.fire({
           icon: 'success',
           title: 'Proses Selesai!',
@@ -829,6 +876,20 @@ const processFileInput = ref(null)
 const showDokumenModal = ref(false)
 const activeDokumenKerjasama = ref(null)
 
+// ─── Proses List Modal ────────────────────────────────────────────────────────
+const showProsesListModal   = ref(false)
+const activeProsesKerjasama = ref(null)
+
+function openProsesListModal(k) {
+  activeProsesKerjasama.value = k
+  showProsesListModal.value   = true
+}
+
+function closeProsesListModal() {
+  showProsesListModal.value   = false
+  activeProsesKerjasama.value = null
+}
+
 const isProcessReadOnly = computed(() => {
   if (!activeProcess.value) return false
   // Proses temp (baru ditambah, belum disimpan) → selalu bisa diedit
@@ -840,7 +901,12 @@ const isProcessReadOnly = computed(() => {
   return false
 })
 
+function isProsesBaru(p) {
+  return p.__temp || !p.catatan?.trim()
+}
+
 function openProcessModal(k, p) {
+  showProsesListModal.value = false
   activeKerjasama.value  = k
   // Always use current user's divisi for penanggung jawab
   activeProcess.value    = { ...p, penanggung: currentUserDivisi.value, catatan: p.id ? (p.catatan || '') : '' }
@@ -855,6 +921,10 @@ function closeProcessModal() {
   activeKerjasama.value  = null
   fileToUpload.value     = null
   fileName.value         = ''
+
+  if (activeProsesKerjasama.value) {
+    showProsesListModal.value = true
+  }
 }
 
 function openDokumenModal(k) {
@@ -907,19 +977,20 @@ function saveProcessUpdate() {
     // ------------------------------------
     router.post(route('admin.data-kerjasama.proses.store', k.id_kerjasama), payload, {
       preserveScroll: true,
+      preserveState: true,
       forceFormData: true,
-      onSuccess: () => { 
-        fileToUpload.value = null 
+      onSuccess: () => {
+        fileToUpload.value = null
         closeProcessModal()
         Swal.fire({ icon: 'success', title: 'Berhasil', text: 'Proses baru berhasil disimpan!', timer: 1500, showConfirmButton: false })
       },
       // ⚠️ WARNING JIKA GAGAL:
       onError: (errors) => {
         console.error('Gagal simpan proses baru:', errors)
-        
+
         // Menggabungkan semua pesan error dari backend menjadi satu teks kalimat
         const pesanError = Object.values(errors).join('\n') || 'Terjadi kesalahan sistem.'
-        
+
         Swal.fire({
           icon: 'warning',
           title: 'Gagal Menyimpan Proses',
@@ -936,19 +1007,20 @@ function saveProcessUpdate() {
 
     router.post(route('admin.data-kerjasama.proses.update', [k.id_kerjasama, processId]), payload, {
       preserveScroll: true,
+      preserveState: true,
       forceFormData: true,
-      onSuccess: () => { 
-        fileToUpload.value = null 
+      onSuccess: () => {
+        fileToUpload.value = null
         closeProcessModal()
         Swal.fire({ icon: 'success', title: 'Berhasil', text: 'Proses berhasil diperbarui!', timer: 1500, showConfirmButton: false })
       },
       // ⚠️ WARNING JIKA GAGAL:
       onError: (errors) => {
         console.error('Gagal update proses:', errors)
-        
+
         // Menggabungkan semua pesan error dari backend menjadi satu teks kalimat
         const pesanError = Object.values(errors).join('\n') || 'Terjadi kesalahan saat memperbarui data.'
-        
+
         Swal.fire({
           icon: 'warning',
           title: 'Gagal Memperbarui Proses',

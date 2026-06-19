@@ -210,6 +210,8 @@ Route::middleware(['auth', 'role:mitra', 'throttle:240,1'])->prefix('mitra')->na
     // 🔔 Notifikasi
     Route::get('/notifications', [MitraProfileController::class, 'notifications'])
         ->name('notifications');
+    Route::post('/notifications/mark-read/{id}', [MitraProfileController::class, 'markNotificationAsRead'])
+        ->name('notifications.mark-read');
 
     // Pengajuan Kerjasama
     Route::get('/pengajuan/step1', [MitraKerjasamaController::class, 'createStep1'])
