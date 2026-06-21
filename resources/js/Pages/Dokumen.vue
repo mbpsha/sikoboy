@@ -28,8 +28,8 @@ const props = defineProps({
           <CardDokumen
             title="BUKU PANDUAN PENGGUNA"
             badge="PDF"
-            :href="'storage/docs/Manual Book MItra SIKARSA.pdf'"
-            :preview="'storage/docs/Manual Book MItra SIKARSA.pdf'"
+            :href="'storage/docs/Manual Book MItra- SIKARSA.pdf'"
+            :preview="'storage/docs/Manual Book MItra- SIKARSA.pdf'"
             buttonText="Lihat Buku Panduan"
             description="Panduan lengkap penggunaan sistem SIKARSA untuk mitra kerjasama."
           />
