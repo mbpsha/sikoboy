@@ -201,7 +201,7 @@ const destroy = (item) => {
 
 <template>
   <AdminLayout title="Manajemen Peraturan">
-    <div class="mx-auto max-w-6xl space-y-5">
+    <div class="mx-auto max-w-5xl space-y-5">
       <div class="mb-6">
         <h2 class="text-2xl sm:text-3xl font-semibold text-teal-700">
           Peraturan-Peraturan Terkait Kerja Sama
@@ -217,7 +217,7 @@ const destroy = (item) => {
             Daftar Dokumen Peraturan
           </h3>
           <p class="text-xs sm:text-sm text-gray-500 mt-1">
-            Tambahkan, perbarui, atau hapus dokumen peraturan yang tampil di landing page.
+            Tambahkan, perbarui, atau hapus dokumen yang tampil di landing page.
           </p>
         </div>
 
@@ -350,7 +350,7 @@ const destroy = (item) => {
               @change="(e) => (form.file = e.target.files?.[0] ?? null)"
               class="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm"
             />
-            <p class="mt-1 text-xs text-slate-500">Format: PDF, DOC, DOCX, XLSX, PPT, TXT, dll (Max 10MB)</p>
+            <p class="mt-1 text-xs text-slate-500">Format: PDF, DOC, DOCX, XLSX, PPT, TXT, dll (Max 50MB)</p>
 
             <p v-if="isEditing && editingPeraturan?.file" class="mt-2 text-xs text-slate-500">
               File saat ini: {{ fileNameFromPath(editingPeraturan.file) }}

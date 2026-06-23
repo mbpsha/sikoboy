@@ -1,28 +1,29 @@
 <script setup>
 import { defineProps } from 'vue'
-import LandingLayout from '@/Layouts/LandingLayout.vue';
-import HeroSection from '@/Components/Landing/HeroSection.vue';
-import StatsSection from '@/Components/Landing/StatsSection.vue';
-import AboutSection from '@/Components/Landing/AboutSection.vue';
-import PotentialSection from '@/Components/Landing/PotentialSection.vue';
-import landingImages from '@/images';
+import LandingLayout from '@/Layouts/LandingLayout.vue'
+import HeroSection from '@/Components/Landing/HeroSection.vue'
+import StatsSection from '@/Components/Landing/StatsSection.vue'
+import AboutSection from '@/Components/Landing/AboutSection.vue'
+import PotentialSection from '@/Components/Landing/PotentialSection.vue'
 
 defineProps({
-    potensiData: {
-        type: Object,
-        default: () => ({})
-    },
+    // ✅ Stats dari controller
     stats: {
         type: Array,
+        required: true,
         default: () => [
             { label: 'Jumlah Kerja Sama', value: '0' },
             { label: 'Masa Berlaku <6 Bulan', value: '0' },
             { label: 'Masa Berlaku <3 Bulan', value: '0' },
             { label: 'Masa Berlaku Habis', value: '0' },
         ]
-    }
-});
-
+    },
+    // ✅ Potensi dari controller
+    potensiData: {
+        type: Object,
+        default: () => ({})
+    },
+})
 </script>
 
 <template>
@@ -32,11 +33,12 @@ defineProps({
             subtitle="Mewujudkan pengelolaan kerja sama daerah yang efisien, transparan, dan berdampak untuk Kabupaten Boyolali."
         />
 
+        <!-- ✅ Stats dari controller -->
         <StatsSection :stats="stats" />
+        
         <AboutSection />
+        
+        <!-- ✅ Potensi dari controller -->
         <PotentialSection :potensiData="potensiData" />
-
-        <!-- Image gallery: place your image files into public/images/ -->
-        <ImageGallery :images="landingImages" />
     </LandingLayout>
 </template>

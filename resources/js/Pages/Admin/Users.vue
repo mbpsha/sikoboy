@@ -424,8 +424,8 @@ function verifyMitra(id) {
                   <th class="py-3 px-4 text-left">Username</th>
                   <th class="py-3 px-4 text-left">Email</th>
                   <th class="py-3 px-4 text-left">Role</th>
-                  <th class="py-3 px-4 text-left">ID Mitra</th>
-                  <th class="py-3 px-4 text-left">Perusahaan / Divisi</th>
+                  <th class="py-3 px-4 text-left">ID User</th>
+                  <th class="py-3 px-4 text-left">Perusahaan</th>
                   <th class="py-3 px-4 text-left">Status</th>
                   <th class="py-3 px-4 text-left">Tanggal Daftar</th>
                   <th class="py-3 px-4 text-left">Aksi</th>

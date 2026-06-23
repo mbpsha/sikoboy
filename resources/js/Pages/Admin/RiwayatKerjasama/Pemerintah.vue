@@ -38,6 +38,10 @@ const selectedKerjasama = ref(null);
 const selectedAdendumKerjasama = ref(null);
 const openStatusDropdown = ref(null);
 const openFilterColumn = ref(null);
+const mitraIdSearch = ref("");
+const showMitraSuggestions = ref(false);
+const dropdownCloseDelayMs = 120;
+const hideMitraSuggestionsTimer = ref(null);
 
 // Computed untuk detect apakah ada filter aktif (cek dari props yang terupdate)
 const hasActiveFilter = computed(() => {
@@ -228,6 +232,14 @@ onBeforeUnmount(() => {
     if (debounceTimer) clearTimeout(debounceTimer);
 });
 
+const uniqueYears = computed(() => {
+    const vals = [...new Set((props.data?.data || []).map(i => i.tahun).filter(Boolean))].map(String)
+    if (vals.length) return vals.sort((a, b) => Number(b) - Number(a))
+    if (props.years?.length) return props.years
+    const now = new Date().getFullYear()
+    return Array.from({ length: 6 }).map((_, i) => String(now - i))
+})
+
 // Normalize status text and return badge classes
 const statusBadgeClasses = (status) => {
     const s = String(status ?? '').trim().toLowerCase();
@@ -296,31 +308,51 @@ const form = ref({
     file: null,
 });
 
-const mitraIdSearch = ref("");
-
 const filteredMitraOptions = computed(() => {
-    const query = String(mitraIdSearch.value || "").trim();
+    const query = String(mitraIdSearch.value || "").trim().toLowerCase();
     const mitras = props.mitras || [];
 
     if (!query) return mitras;
 
-    return mitras.filter((mitra) => String(mitra.id_mitra).includes(query));
+    return mitras.filter((mitra) => {
+        const idMitra = String(mitra.id_mitra ?? "").toLowerCase();
+        const namaPerusahaan = String(mitra.nama_perusahaan ?? "").toLowerCase();
+
+        return idMitra.includes(query) || namaPerusahaan.includes(query);
+    }).slice(0, 10);
 });
 
-const applySelectedMitra = (idMitra) => {
-    const selected = (props.mitras || []).find(
-        (mitra) => String(mitra.id_mitra) === String(idMitra),
-    );
+const selectedMitra = computed(() => {
+    if (!form.value.id_mitra) return null;
 
-    form.value.id_mitra = selected ? String(selected.id_mitra) : "";
-    form.value.mitra = selected?.nama_perusahaan || "";
+    return (props.mitras || []).find(
+        (mitra) => String(mitra.id_mitra) === String(form.value.id_mitra),
+    ) || null;
+});
+
+const handleMitraInput = () => {
+    form.value.id_mitra = "";
+    form.value.mitra = mitraIdSearch.value;
+    showMitraSuggestions.value = true;
 };
 
-const adendumForm = ref({
-    judul_adendum: "",
-    keterangan_adendum: "",
-    file: null,
-});
+const applySelectedMitra = (mitraOption) => {
+    form.value.id_mitra = String(mitraOption.id_mitra);
+    form.value.mitra = mitraOption.nama_perusahaan || "";
+    mitraIdSearch.value = `${mitraOption.id_mitra} - ${mitraOption.nama_perusahaan}`;
+    showMitraSuggestions.value = false;
+};
+
+const hideMitraSuggestions = () => {
+    if (hideMitraSuggestionsTimer.value) {
+        clearTimeout(hideMitraSuggestionsTimer.value);
+    }
+
+    hideMitraSuggestionsTimer.value = setTimeout(() => {
+        showMitraSuggestions.value = false;
+        hideMitraSuggestionsTimer.value = null;
+    }, dropdownCloseDelayMs);
+};
 
 const errors = ref({});
 const adendumErrors = ref({});
@@ -559,6 +591,7 @@ const submitAdendum = () => {
 // CLOSE MODAL
 const closeModal = () => {
     showModal.value = false;
+    showMitraSuggestions.value = false;
     mitraIdSearch.value = "";
     form.value = {
         id_mitra: "",
@@ -579,6 +612,10 @@ const closeModal = () => {
     };
     errors.value = {};
     if (fileInput.value) fileInput.value.value = "";
+    if (hideMitraSuggestionsTimer.value) {
+        clearTimeout(hideMitraSuggestionsTimer.value);
+        hideMitraSuggestionsTimer.value = null;
+    }
 };
 // CLOSE ADENDUM MODAL
 const closeAdendumModal = () => {
@@ -674,6 +711,7 @@ const handleStatusUpdate = (idKerjasama, newStatus) => {
 
 onBeforeUnmount(() => {
     if (debounceTimer) clearTimeout(debounceTimer);
+    if (hideMitraSuggestionsTimer.value) clearTimeout(hideMitraSuggestionsTimer.value);
 });
 </script>
 
@@ -702,7 +740,7 @@ onBeforeUnmount(() => {
                             class="rounded-full px-4 py-2.5 text-sm border border-gray-200 bg-gray-50 focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition min-w-[180px]"
                         >
                             <option value="">Semua Tahun</option>
-                            <option v-for="y in years" :key="y" :value="y">
+                            <option v-for="y in uniqueYears" :key="y" :value="y">
                                 {{ y }}
                             </option>
                         </select>
@@ -1149,10 +1187,10 @@ onBeforeUnmount(() => {
                                     >
                                         <div class="flex flex-wrap items-center gap-2">
                                             <span class="text-sm text-gray-600">
-                                                {{ item.adendum_count ? `${item.adendum_count} adendum` : 'Belum ada adendum' }}
+                                                {{ item.has_adendum ? `${item.adendum_count} adendum` : 'Belum ada adendum' }}
                                             </span>
                                             <button
-                                                v-if="item.adendum_count"
+                                                v-if="item.has_adendum"
                                                 @click="openAdendumDetailModal(item)"
                                                 class="px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 whitespace-nowrap"
                                             >
@@ -1322,40 +1360,54 @@ onBeforeUnmount(() => {
                             </label>
                             <input
                                 v-model="mitraIdSearch"
+                                @input="handleMitraInput"
+                                @focus="showMitraSuggestions = true"
+                                @blur="hideMitraSuggestions"
                                 class="w-full border rounded-lg px-3 py-2 mt-1"
-                                placeholder="Ketik ID mitra (contoh: 21)"
+                                placeholder="Ketik ID mitra atau nama perusahaan"
                             />
-                            <select
-                                v-model="form.id_mitra"
-                                @change="applySelectedMitra(form.id_mitra)"
-                                class="w-full border rounded-lg px-3 py-2 mt-1 bg-white"
+                            <div
+                                v-if="showMitraSuggestions && mitraIdSearch"
+                                class="mt-1 max-h-48 overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-sm"
                             >
-                                <option value="">Pilih ID mitra</option>
-                                <option
+                                <button
                                     v-for="mitraOption in filteredMitraOptions"
                                     :key="mitraOption.id_mitra"
-                                    :value="String(mitraOption.id_mitra)"
+                                    type="button"
+                                    class="w-full px-3 py-2 text-left text-sm hover:bg-gray-50"
+                                    @mousedown.prevent="applySelectedMitra(mitraOption)"
                                 >
                                     {{ mitraOption.id_mitra }} - {{ mitraOption.nama_perusahaan }}
-                                </option>
-                            </select>
+                                </button>
+                            </div>
                             <p
                                 v-if="mitraIdSearch && filteredMitraOptions.length === 0"
                                 class="text-xs text-gray-500 mt-1"
                             >
-                                Data mitra tidak ditemukan untuk ID tersebut.
+                                Data mitra tidak ditemukan untuk kata kunci tersebut.
                             </p>
-                            <input
-                                v-model="form.mitra"
-                                class="w-full border rounded-lg px-3 py-2 mt-1"
-                                placeholder="Masukkan nama mitra"
-                            />
+                            <p
+                                v-if="errors.id_mitra"
+                                class="text-red-500 text-xs mt-1"
+                            >
+                                {{ errors.id_mitra }}
+                            </p>
                             <p
                                 v-if="errors.mitra"
                                 class="text-red-500 text-xs mt-1"
                             >
                                 {{ errors.mitra }}
                             </p>
+                            <div
+                                v-if="selectedMitra"
+                                class="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700 space-y-1"
+                            >
+                                <p><span class="font-semibold">Nama Perusahaan:</span> {{ selectedMitra.nama_perusahaan || '-' }}</p>
+                                <p><span class="font-semibold">NPWP:</span> {{ selectedMitra.npwp || '-' }}</p>
+                                <p><span class="font-semibold">PIC:</span> {{ selectedMitra.pic || '-' }}</p>
+                                <p><span class="font-semibold">No. HP:</span> {{ selectedMitra.no_handphone || '-' }}</p>
+                                <p><span class="font-semibold">Alamat:</span> {{ selectedMitra.alamat || '-' }}</p>
+                            </div>
                         </div>
 
                         <div>
@@ -1740,13 +1792,13 @@ onBeforeUnmount(() => {
                                 <p class="text-xs text-gray-500 mt-2">
                                     Format: PDF
                                 </p>
+                                <p
+                                    v-if="adendumForm.file"
+                                    class="mt-3 text-xs sm:text-sm font-medium text-emerald-600 break-words"
+                                >
+                                    ✓ {{ adendumForm.file.name }}
+                                </p>
                             </div>
-                            <p
-                                v-if="adendumForm.file"
-                                class="text-green-600 text-xs mt-2"
-                            >
-                                ✓ {{ adendumForm.file.name }}
-                            </p>
                             <p
                                 v-if="adendumErrors.file"
                                 class="text-red-500 text-xs mt-2"

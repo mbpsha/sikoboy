@@ -17,19 +17,22 @@ onMounted(() => {
         displayValue: 0
     }))
 
-    animatedStats.value.forEach((item) => {
+    animatedStats.value.forEach((item, idx) => {
+        const end = parseInt(item.value) || 0
+        if (end === 0) return
+
         let start = 0
-        const end = parseInt(item.value)
-        const duration = 1000
-        const increment = end / (duration / 16)
+        const duration = 1500
+        const steps = duration / 16
+        const increment = end / steps
 
         const counter = setInterval(() => {
             start += increment
             if (start >= end) {
-                item.displayValue = end
+                animatedStats.value[idx].displayValue = end  // ✅ update via index
                 clearInterval(counter)
             } else {
-                item.displayValue = Math.floor(start)
+                animatedStats.value[idx].displayValue = Math.floor(start)  // ✅ sama
             }
         }, 16)
     })

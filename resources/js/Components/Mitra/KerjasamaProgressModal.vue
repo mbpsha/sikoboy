@@ -29,12 +29,14 @@ const handleFileSelect = (e, idx) => {
 
 const doUpload = async (idx) => {
   const file = selectedFiles.value[idx]
+  const item = progressItems.value[idx]
   if (!file || !props.kerjasamaId) return
 
   isUploading.value = { ...isUploading.value, [idx]: true }
   try {
     const fd    = new FormData()
     fd.append('file', file)
+    if (item?.id) fd.append('id_riwayat', item.id)
     const token = document.querySelector('meta[name="csrf-token"]')?.content ?? ''
     const res   = await fetch(`/mitra/kerjasama/${props.kerjasamaId}/revisi`, {
       method: 'POST', body: fd, credentials: 'same-origin',

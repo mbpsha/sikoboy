@@ -349,14 +349,7 @@ const getStatusLabel = (status) => {
                   <div class="space-y-4 sm:space-y-5">
                     <!-- Pesan jika tidak ada kerjasama -->
                     <div v-if="kerjasamaList.length === 0" class="text-center py-8 sm:py-12">
-                      <p class="text-[#40676f] text-xs sm:text-sm mb-3">Anda belum memiliki kerjasama yang selesai diajukan</p>
-                      <Link
-                        :href="route('mitra.pengajuan.step1')"
-                        class="inline-flex items-center gap-2 px-4 sm:px-6 py-2 bg-[#2f6f73] text-white rounded-full text-xs sm:text-sm font-semibold hover:bg-[#1e565a] transition"
-                      >
-                        <span>+</span>
-                        Ajukan Baru
-                      </Link>
+                      <p class="text-[#40676f] text-xs sm:text-sm mb-3">Anda belum memiliki kerjasama yang sedang diajukan</p>
                     </div>
 
                     <!-- Kartu Kerjasama -->

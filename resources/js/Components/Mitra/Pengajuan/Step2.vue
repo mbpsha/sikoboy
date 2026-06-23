@@ -28,6 +28,10 @@ const DEFAULT_URUSAN_OPTIONS = [
 
 const urusanOptions = props.urusanOptions?.length ? props.urusanOptions : DEFAULT_URUSAN_OPTIONS;
 
+// Batas maksimal ukuran file dokumen yang dapat diupload
+const MAX_FILE_SIZE_MB = 10;
+const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
+
 const form = useForm({
   jenis_kerjasama: '',
   jenis_dokumen: '',
@@ -43,13 +47,35 @@ const form = useForm({
 
 const fileInput = ref(null);
 const fileName = ref('');
+const fileError = ref('');
+
+// Validasi tipe & ukuran file, mengembalikan pesan error (string) atau null jika valid
+const validateFile = (file) => {
+  if (file.type !== 'application/pdf') {
+    return 'Hanya file berformat PDF yang diperbolehkan.';
+  }
+  if (file.size > MAX_FILE_SIZE_BYTES) {
+    return `Ukuran file terlalu besar (${(file.size / (1024 * 1024)).toFixed(2)} MB). Maksimal ${MAX_FILE_SIZE_MB} MB.`;
+  }
+  return null;
+};
 
 const handleFileSelect = (event) => {
   const file = event.target.files?.[0];
-  if (file) {
-    form.dokumen_file = file;
-    fileName.value = file.name;
+  if (!file) return;
+
+  const errorMsg = validateFile(file);
+  if (errorMsg) {
+    fileError.value = errorMsg;
+    form.dokumen_file = null;
+    fileName.value = '';
+    event.target.value = ''; // reset input agar bisa pilih ulang file yang sama
+    return;
   }
+
+  fileError.value = '';
+  form.dokumen_file = file;
+  fileName.value = file.name;
 };
 
 const triggerFileInput = () => {
@@ -58,13 +84,26 @@ const triggerFileInput = () => {
 
 const handleDrop = (e) => {
   const file = e.dataTransfer?.files?.[0];
-  if (file && file.type === 'application/pdf') {
-    form.dokumen_file = file;
-    fileName.value = file.name;
+  if (!file) return;
+
+  const errorMsg = validateFile(file);
+  if (errorMsg) {
+    fileError.value = errorMsg;
+    return;
   }
+
+  fileError.value = '';
+  form.dokumen_file = file;
+  fileName.value = file.name;
 };
 
 const submit = () => {
+  // Cegah submit jika masih ada error file yang belum diperbaiki
+  if (fileError.value) {
+    Swal.fire({ icon: 'warning', title: 'Periksa kembali file', text: fileError.value });
+    return;
+  }
+
   form.post(route('mitra.pengajuan.store'), {
     preserveScroll: false,
     onSuccess: () => {
@@ -95,8 +134,6 @@ const submit = () => {
     <main class="flex-1 flex flex-col">
 
       <div class="max-w-5xl mx-auto w-full px-4 sm:px-6 md:px-10 pt-28 sm:pt-32 pb-8">
-        <h1 class="text-2xl sm:text-3xl md:text-4xl font-bold text-[#17464E]">Profil Mitra</h1>
-        <p class="text-xs sm:text-sm text-[#17464E]/80 mt-2">Kelola informasi dan pantau status pengajuan kerjasama Anda</p>
       </div>
 
       <div class="bg-[#17464E] rounded-t-[30px] sm:rounded-t-[40px] pt-12 sm:pt-16 pb-20 sm:pb-32 text-center shadow-inner">
@@ -274,23 +311,27 @@ const submit = () => {
                     @click="triggerFileInput"
                     @dragover.prevent
                     @drop.prevent="handleDrop"
-                    class="border-2 border-dashed border-gray-300 rounded-lg sm:rounded-xl p-6 sm:p-10 text-center hover:border-[#17464E] transition cursor-pointer"
+                    :class="[
+                      'border-2 border-dashed rounded-lg sm:rounded-xl p-6 sm:p-10 text-center transition cursor-pointer',
+                      fileError ? 'border-red-400 hover:border-red-500' : 'border-gray-300 hover:border-[#17464E]'
+                    ]"
                   >
                     <div class="flex flex-col items-center">
                       <svg class="w-10 sm:w-14 h-10 sm:h-14 text-[#17464E] mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
                       </svg>
                       <p class="font-semibold text-[#17464E] mb-1 text-xs sm:text-base">Drag & Drop Dokumen Kerjasama (PDF)</p>
-                      <p class="text-xs text-gray-600 mb-4">atau klik untuk memilih file</p>
+                      <p class="text-xs text-gray-600 mb-4">atau klik untuk memilih file &middot; Maks. {{ MAX_FILE_SIZE_MB }} MB, format PDF</p>
                       <button
                         type="button"
                         class="px-4 sm:px-6 py-2 bg-[#17464E] text-white rounded-lg text-xs sm:text-sm font-semibold hover:bg-[#0f3238] transition"
                       >
                         Pilih File
                       </button>
-                      <p v-if="fileName" class="text-xs sm:text-sm text-gray-600 mt-4">✓ {{ fileName }}</p>
+                      <p v-if="fileName && !fileError" class="text-xs sm:text-sm text-green-700 mt-4">✓ {{ fileName }}</p>
                     </div>
                   </div>
+                  <p v-if="fileError" class="text-red-500 text-xs mt-1">{{ fileError }}</p>
                   <p v-if="form.errors.dokumen_file" class="text-red-500 text-xs mt-1">{{ form.errors.dokumen_file }}</p>
                 </div>
 
