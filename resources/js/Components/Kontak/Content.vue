@@ -22,13 +22,19 @@ const instagramHtml = `
 
         <InfoCard
           title="Alamat"
-          description="Biro Kerja Sama Daerah<br/>Jl. merdeka Barat, Kemiri, Boyolali"
+          :description="[
+            'Bagian Tata Pemerintahan',
+            'Sekretariat Daerah Kabupaten Boyolali',
+            'Komplek Perkantoran Terpadu Kabupaten Boyolali',
+            'Jl. Merdeka Barat, Siswodipuran, Boyolali 57311',
+            'Provinsi Jawa Tengah',
+          ]"
           variant="location"
         />
 
         <InfoCard
           title="Email"
-          description="setda@boyolali.go.id"
+          description="tapem.setda.byl@gmail.com"
           variant="email"
         />
       </div>

@@ -203,8 +203,14 @@ class NotificationFeed
                 $nomor = $row->nomor_suratM ?: $row->nomor_suratP;
                 $judul = $row->judul ?: $row->kerjasama_judul;
 
-                // Ambil nama status dari tabel status (fallback ke 'proses')
-                $statusName = strtolower((string) ($row->nama_status ?: 'proses'));
+                // Map id_status ke nama
+                $statusName = match($row->id_status) {
+                    2 => 'revisi',
+                    3 => 'disetujui',
+                    4 => 'ditolak',
+                    5 => 'dibatalkan',
+                    default => 'proses',
+                };
 
                 // Format status untuk display
                 $statusLabel = match($statusName) {

@@ -16,11 +16,11 @@ const props = defineProps({
         v-if="dokumenGroups.length"
         class="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8"
       >
-        <section
-          v-for="group in dokumenGroups"
-          :key="group.nama_kategori"
-          class="bg-white/80 backdrop-blur rounded-3xl p-8 shadow-xl border border-white/50"
-        >
+          <section
+            v-for="group in dokumenGroups"
+            :key="group.nama_kategori"
+            class="bg-white/80 backdrop-blur rounded-3xl p-8 shadow-xl border border-white/50 min-w-0 overflow-hidden"
+          >
           <h3 class="text-2xl font-bold text-[#0C505C] text-center">
             {{ group.label }}
           </h3>

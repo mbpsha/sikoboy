@@ -75,8 +75,8 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="bg-[#D4E4E8] rounded-2xl p-4 sm:p-6 md:p-8 shadow-lg w-full">
-    <h4 class="font-bold text-center text-[#0C505C] text-base md:text-lg">{{ title }}</h4>
+  <div class="bg-[#D4E4E8] rounded-2xl p-4 sm:p-6 md:p-8 shadow-lg w-full min-w-0 overflow-hidden">
+    <h4 class="font-bold text-center text-[#0C505C] text-base md:text-lg break-words px-2">{{ title }}</h4>
 
     <div class="flex justify-center mt-2">
       <span class="text-xs inline-flex items-center gap-1 text-[#0C8BA3] font-semibold">
