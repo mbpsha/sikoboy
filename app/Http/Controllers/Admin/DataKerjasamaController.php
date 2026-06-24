@@ -174,19 +174,21 @@ class DataKerjasamaController extends Controller
             $periode       = $k->latestPeriode;
             $jangkaWaktu   = $this->formatJangkaWaktu($periode?->tanggal_mulai, $periode?->tanggal_berakhir);
             $statusKontrak = $this->computeStatusKontrak($k, $periode?->tanggal_berakhir);
+            $latestMitraRevision = DB::table('dokumen as d')
+                ->join('users as u', 'u.id_user', '=', 'd.created_by')
+                ->where('d.id_kerjasama', $k->id_kerjasama)
+                ->where('u.role', 'mitra')
+                ->orderByDesc('d.created_at')
+                ->first(['d.id_dokumen', 'd.nama_file', 'd.lokasi_file', 'd.versi_dokumen', 'd.created_at']);
 
-            //  PERBAIKI: Cari dokumen mitra dari tabel dokumen (bukan user role)
-            $latestMitraRevision = Dokumen::where('id_kerjasama', $k->id_kerjasama)
-                ->where('tipe_dokumen', 'mitra')  //  Gunakan tipe_dokumen, bukan role
-                ->orderByDesc('created_at')
-                ->first(['id_dokumen', 'nama_file', 'lokasi_file', 'versi_dokumen', 'created_at']);
-
-            //  Proses dengan file ADMIN dari riwayat_status
-            $prosesList = $k->riwayatStatus->map(function ($r) use ($k) {
+            $prosesList = $k->riwayatStatus->map(function ($r) {
+                // Prefer stored title (`judul`) if present, otherwise fall back to catatan or status name
                 $label = $r->judul ?: ($r->catatan ?: ($r->status?->jenis_status ?? null));
                 
+                // Prefer divisi from Eloquent relation if available
                 $divisi = $r->admin?->divisi ?? null;
 
+                // Fallback: attempt to resolve penanggung_jawab string to an Admin
                 if (! $divisi && $r->penanggung_jawab) {
                     $adminUser = Admin::whereHas('user', function ($q) use ($r) {
                         $q->where('email', $r->penanggung_jawab);
@@ -206,31 +208,22 @@ class DataKerjasamaController extends Controller
 
                     $divisi = $adminUser?->divisi ?? $r->penanggung_jawab;
                 }
-
-                //  PENTING: Filter dengan id_riwayat IS NOT NULL
-                // Ini memastikan hanya dokumen revisi dari mitra yang tampil
-                // Bukan dokumen pengajuan awal yang id_riwayat-nya NULL
-                $dokumenMitra = Dokumen::where('id_kerjasama', $k->id_kerjasama)
-                    ->where('id_riwayat', $r->id_riwayat)
-                    ->where('tipe_dokumen', 'mitra')
-                    ->whereNotNull('id_riwayat') //  TAMBAH FILTER INI
-                    ->latest('created_at')
-                    ->first();
                 
                 return [
                     'id' => $r->id_riwayat,
+                    // show the stored catatan (which will be the entered title when created)
                     'title' => $label,
                     'label' => $label,
                     'catatan' => $r->catatan,
                     'penanggung' => $divisi,
                     'tanggal' => $r->tanggal,
                     'file' => $r->file,
-                    'file_mitra' => $dokumenMitra?->lokasi_file,
                 ];
             })->toArray();
 
             $riwayatCount = $k->riwayatStatus->count();
 
+            // If finalized, clearly mark as Selesai so frontend can display orange badge
             if ($k->is_finalized) {
                 $statusDisplay = 'Selesai';
             } else {
@@ -241,12 +234,11 @@ class DataKerjasamaController extends Controller
                 }
             }
 
+            // Determine stored file path/name (either final dokumen or periode.keterangan)
             $storedFilePath = $k->finalDokumen?->lokasi_file ?? null;
             $storedFileName = $k->finalDokumen?->nama_file ?? null;
 
-            //  Hanya tampilkan dokumen MITRA di tabel
             $dokumenVersions = collect($k->relationLoaded('dokumen') ? $k->dokumen : [])
-                ->filter(fn ($d) => $d->tipe_dokumen === 'mitra') //  HANYA MITRA
                 ->sortBy(fn ($dokumen) => (int) $dokumen->versi_dokumen)
                 ->values()
                 ->map(function ($dokumen) {
@@ -310,13 +302,20 @@ class DataKerjasamaController extends Controller
                 'is_finalized'       => $k->is_finalized,
                 'status_negosiasi'   => $k->status_negosiasi,
                 'status_persetujuan' => $k->status_persetujuan?->value,
-                'status_display'     => $statusDisplay,
+                'status_display' => $statusDisplay,
                 'status_aktif'       => $statusKontrak,
                 'created_at'         => $k->created_at?->format('d/m/Y'),
                 'proses'             => $prosesList,
-                'file_name'          => $storedFileName ?? null,
-                'file_url'           => $this->resolveFileUrl($storedFilePath),
-                'dokumen_versions'   => $dokumenVersions,
+                'latest_mitra_revision' => $latestMitraRevision ? [
+                    'id_dokumen' => $latestMitraRevision->id_dokumen,
+                    'nama_file' => $latestMitraRevision->nama_file,
+                    'lokasi_file' => $latestMitraRevision->lokasi_file,
+                    'versi' => $latestMitraRevision->versi_dokumen,
+                    'created_at' => $latestMitraRevision->created_at,
+                ] : null,
+                'file_name' => $storedFileName ?? null,
+                'file_url' => $this->resolveFileUrl($storedFilePath),
+                'dokumen_versions' => $dokumenVersions,
             ];
         });
 
@@ -367,6 +366,10 @@ class DataKerjasamaController extends Controller
         return $request->user()?->email ?? 'Admin';
     }
 
+    // -------------------------------------------------------------------------
+    // Proses: store
+    // -------------------------------------------------------------------------
+
     public function storeProcess(Request $request, int $id)
     {
         $kerjasama = Kerjasama::findOrFail($id);
@@ -393,15 +396,28 @@ class DataKerjasamaController extends Controller
         $isFinished  = $request->boolean('is_finished', false);
         $penanggung  = $this->resolvePenanggung($request);
 
-        DB::transaction(function () use ($kerjasama, $file, $request, $admin, $isFinished, $penanggung) {
+        $createdDokumen = null;
+        $createdRiwayat = null;
+
+        DB::transaction(function () use ($kerjasama, $file, $request, $admin, $isFinished, $penanggung, &$createdDokumen, &$createdRiwayat) {
             $title   = (string) $request->input('title');
             $catatan = $request->input('catatan');
 
-            $filePath = null;
+            // Simpan PDF jika ada
             if ($file instanceof UploadedFile) {
-                $filePath = $file->store('dokumen-kerjasama', 'public');
+                $nextVersion = ((int) $kerjasama->dokumen()->max('versi_dokumen')) + 1;
+                $path        = $file->store('dokumen-kerjasama', 'public');
+
+                $createdDokumen = Dokumen::create([
+                    'id_kerjasama'  => $kerjasama->id_kerjasama,
+                    'nama_file'     => $file->getClientOriginalName(),
+                    'lokasi_file'   => $path,
+                    'versi_dokumen' => $nextVersion,
+                    'created_by'    => $admin?->id_user ?? $request->user()->id_user,
+                ]);
             }
 
+            // Tentukan jenis status
             $lower       = mb_strtolower($title);
             $jenisStatus = $isFinished ? 'disetujui'
                 : (str_contains($lower, 'diterima') || str_contains($lower, 'selesai') ? 'disetujui'
@@ -409,35 +425,21 @@ class DataKerjasamaController extends Controller
                 : (str_contains($lower, 'revisi')  ? 'revisi'
                 : 'proses')));
 
-            // 1. Simpan ke riwayat status
-            $riwayat = RiwayatStatus::recordStatus(
+            $createdRiwayat = RiwayatStatus::recordStatus(
                 idKerjasama:     (int) $kerjasama->id_kerjasama,
                 jenisStatus:     $jenisStatus,
                 idAdmin:         (int) $admin->id_admin,
                 catatan:         $catatan,
                 penanggungJawab: $penanggung,
                 judul:           $title,
-                file:            $filePath, 
+                file:            $createdDokumen ? $createdDokumen->lokasi_file : null,
             );
 
-            // 💡 TAMBAHAN SOLUSI: Jika ada file dari mitra/revisi, daftarkan ke tabel Dokumen sebagai versi baru
-            if ($filePath && $file instanceof UploadedFile) {
-                // Hitung versi terakhir dokumen mitra yang sudah ada
-                $latestVersion = Dokumen::where('id_kerjasama', $kerjasama->id_kerjasama)
-                    ->where('tipe_dokumen', 'mitra')
-                    ->max('versi_dokumen') ?? 0;
-
-                Dokumen::create([
-                    'id_kerjasama'  => $kerjasama->id_kerjasama,
-                    'id_riwayat'    => $riwayat->id_riwayat ?? null, // Hubungkan dengan id riwayat jika ada kolomnya
-                    'jenis_dokumen' => $kerjasama->jenis_dokumen ?? 'KSB',
-                    'nama_file'     => $file->getClientOriginalName(),
-                    'lokasi_file'   => $filePath,
-                    'versi_dokumen' => $latestVersion + 1, // Otomatis naik versi (Versi 1, 2, 3...)
-                    'tipe_dokumen'  => 'mitra',            // Kunci utama agar terbaca di filter UI
-                    'created_by'    => $request->user()->id_user,
-                ]);
-            }
+            Log::info('RiwayatStatus created', [
+                'id_riwayat' => $createdRiwayat->id_riwayat ?? null,
+                'id_kerjasama' => $kerjasama->id_kerjasama,
+                'jenis_status' => $jenisStatus,
+            ]);
 
             if ($isFinished) {
                 $kerjasama->update([
@@ -453,6 +455,10 @@ class DataKerjasamaController extends Controller
 
         return redirect()->back()->with('success', 'Proses berhasil disimpan.');
     }
+
+    // -------------------------------------------------------------------------
+    // Proses: update
+    // -------------------------------------------------------------------------
 
     public function updateProcess(Request $request, int $id, int $prosesId)
     {
@@ -480,42 +486,53 @@ class DataKerjasamaController extends Controller
         $isFinished = $request->boolean('is_finished', false);
         $penanggung = $this->resolvePenanggung($request);
 
-        DB::transaction(function () use ($kerjasama, $file, $request, $admin, $isFinished, $penanggung, $prosesId) {
+        $createdDokumen = null;
+        $createdRiwayat = null;
+
+        DB::transaction(function () use ($kerjasama, $file, $request, $admin, $isFinished, $penanggung) {
             $title   = (string) $request->input('title', '');
             $catatan = $request->input('catatan');
 
-            $riwayat = RiwayatStatus::findOrFail($prosesId);
-
+            // Simpan PDF jika ada
             if ($file instanceof UploadedFile) {
-                $filePath = $file->store('dokumen-kerjasama', 'public');
-                $riwayat->update(['file' => $filePath]);
+                $nextVersion = ((int) $kerjasama->dokumen()->max('versi_dokumen')) + 1;
+                $path        = $file->store('dokumen-kerjasama', 'public');
 
-                // 💡 TAMBAHAN SOLUSI: Jika update menambahkan file baru, daftarkan juga ke tabel Dokumen
-                $latestVersion = Dokumen::where('id_kerjasama', $kerjasama->id_kerjasama)
-                    ->where('tipe_dokumen', 'mitra')
-                    ->max('versi_dokumen') ?? 0;
-
-                Dokumen::create([
+                $createdDokumen = Dokumen::create([
                     'id_kerjasama'  => $kerjasama->id_kerjasama,
-                    'id_riwayat'    => $riwayat->id_riwayat,
-                    'jenis_dokumen' => $kerjasama->jenis_dokumen ?? 'KSB',
                     'nama_file'     => $file->getClientOriginalName(),
-                    'lokasi_file'   => $filePath,
-                    'versi_dokumen' => $latestVersion + 1,
-                    'tipe_dokumen'  => 'mitra',
-                    'created_by'    => $request->user()->id_user,
+                    'lokasi_file'   => $path,
+                    'versi_dokumen' => $nextVersion,
+                    'created_by'    => $admin?->id_user ?? $request->user()->id_user,
                 ]);
             }
 
-            if ($title !== '') {
-                $riwayat->update(['judul' => $title]);
-            }
+            // Tentukan jenis status
+            $lower       = mb_strtolower($title);
+            $jenisStatus = $isFinished ? 'disetujui'
+                : (str_contains($lower, 'diterima') || str_contains($lower, 'selesai') ? 'disetujui'
+                : (str_contains($lower, 'ditolak') ? 'ditolak'
+                : (str_contains($lower, 'revisi')  ? 'revisi'
+                : 'proses')));
 
-            if ($catatan !== null) {
-                $riwayat->update(['catatan' => $catatan]);
-            }
+            $createdRiwayat = RiwayatStatus::recordStatus(
+                idKerjasama:     (int) $kerjasama->id_kerjasama,
+                jenisStatus:     $jenisStatus,
+                idAdmin:         (int) $admin->id_admin,
+                catatan:         $catatan,
+                penanggungJawab: $penanggung,
+                judul:           $title,
+                file:            $createdDokumen ? $createdDokumen->lokasi_file : null,
+            );
+
+            Log::info('RiwayatStatus updated/created', [
+                'id_riwayat' => $createdRiwayat->id_riwayat ?? null,
+                'id_kerjasama' => $kerjasama->id_kerjasama,
+                'jenis_status' => $jenisStatus,
+            ]);
 
             if ($isFinished) {
+                // mark negotiation finished and move to riwayat (finalized)
                 $kerjasama->update([
                     'status_negosiasi' => 'Selesai',
                     'is_finalized'     => true,

@@ -210,6 +210,8 @@ Route::middleware(['auth', 'role:mitra', 'throttle:240,1'])->prefix('mitra')->na
     // 🔔 Notifikasi
     Route::get('/notifications', [MitraProfileController::class, 'notifications'])
         ->name('notifications');
+    Route::post('/notifications/mark-read/{id}', [MitraProfileController::class, 'markNotificationAsRead'])
+        ->name('notifications.mark-read');
 
     // Pengajuan Kerjasama
     Route::get('/pengajuan/step1', [MitraKerjasamaController::class, 'createStep1'])
@@ -408,7 +410,6 @@ Route::middleware(['auth', 'role:admin', 'throttle:240,1'])->prefix('admin')->na
         ->name('partners.show');
 
     // Detail Notifikasi
-    Route::get('/notifikasi/{id}', function ($id) {
-        return Inertia::render('Admin/DetailNotifAdmin', ['id' => $id]);
-    })->name('notifications.show');
+    Route::get('/notifikasi/{id}',[AdminNotificationController::class, 'show']
+        )->name('notifications.show');
 });

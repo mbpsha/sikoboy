@@ -39,12 +39,6 @@ class ProfileController extends Controller
             $latestRiwayat = $kerjasama->riwayatStatus->sortByDesc('tanggal')->first();
             $latestStatus = $latestRiwayat?->status?->jenis_status;
             $statusPersetujuan = $kerjasama->status_persetujuan?->value;
-            $latestMitraRevision = collect($kerjasama->dokumen ?? [])
-                ->where('tipe_dokumen', 'mitra')
-                ->sortByDesc('versi_dokumen')
-                ->sortByDesc('created_at')
-                ->first();
-
             $status = 'pending';
 
             if ($statusPersetujuan === StatusPersetujuan::Disetujui->value) {
@@ -58,8 +52,15 @@ class ProfileController extends Controller
             $proses = $kerjasama->riwayatStatus
                 ->sortBy('tanggal')
                 ->values()
-                ->map(function ($riwayat) use ($latestMitraRevision) {
+                ->map(function ($riwayat) use ($kerjasama) {
                     $statusName = $riwayat->status?->jenis_status ?: 'proses';
+
+                    // Find mitra dokumen linked specifically to this riwayat
+                    $mitraDokumen = collect($kerjasama->dokumen ?? [])
+                        ->where('tipe_dokumen', 'mitra')
+                        ->where('id_riwayat', $riwayat->id_riwayat)
+                        ->sortByDesc('versi_dokumen')
+                        ->first();
 
                     return [
                         'id' => $riwayat->id_riwayat,
@@ -67,10 +68,10 @@ class ProfileController extends Controller
                         'tanggal' => $riwayat->tanggal ? Carbon::parse($riwayat->tanggal)->format('d/m/Y H:i') : '-',
                         'catatan' => $riwayat->catatan,
                         'file' => $riwayat->file,
-                        'file_mitra' => $latestMitraRevision?->lokasi_file,
-                        'file_mitra_name' => $latestMitraRevision?->nama_file,
-                        'file_mitra_created_at' => $latestMitraRevision?->created_at
-                            ? Carbon::parse($latestMitraRevision->created_at)->format('d/m/Y H:i')
+                        'file_mitra' => $mitraDokumen?->lokasi_file,
+                        'file_mitra_name' => $mitraDokumen?->nama_file,
+                        'file_mitra_created_at' => $mitraDokumen?->created_at
+                            ? Carbon::parse($mitraDokumen->created_at)->format('d/m/Y H:i')
                             : null,
                         'penanggung' => $riwayat->penanggung_jawab,
                         'pegawai' => $riwayat->penanggung_jawab,
@@ -217,6 +218,29 @@ class ProfileController extends Controller
     {
         return Inertia::render('Mitra/Profile/ListNotif', [
             'allNotifications' => NotificationFeed::forMitra($request->user(), 50),
+        ]);
+    }
+
+    /**
+     * Mark a notification as read (store in session).
+     */
+    public function markNotificationAsRead(Request $request, string $id)
+    {
+        $user = $request->user();
+        $key = 'read_notifications_'.$user->id_user;
+        
+        // Get current read notifications from session
+        $readNotifications = session($key, []);
+        
+        // Add this notification ID if not already present
+        if (!in_array($id, $readNotifications)) {
+            $readNotifications[] = $id;
+            session([$key => $readNotifications]);
+        }
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Notifikasi ditandai sebagai dibaca',
         ]);
     }
 }

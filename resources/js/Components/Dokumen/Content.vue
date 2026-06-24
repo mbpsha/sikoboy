@@ -1,6 +1,7 @@
 <script setup>
 import CardDokumen from './CardDokumen.vue'
 import CTASection from './CTASection.vue'
+import ExtraTemplate from './ExtraTemplate.vue'
 
 const props = defineProps({
   dokumenGroups: { type: Array, default: () => [] }
@@ -10,12 +11,6 @@ const props = defineProps({
 <template>
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
 
-      <!-- INTRO TEXT -->
-      <div class="relative z-10 pb-8 mb-8">
-        <p class="text-4xl sm:text-5xl md:text-3xl text-[#0C505C] font-bold text-center">
-          Template Dokumen Kerja Sama
-        </p>
-      </div>
 
       <div
         v-if="dokumenGroups.length"
@@ -58,7 +53,13 @@ const props = defineProps({
         Belum ada template dokumen yang aktif.
       </div>
 
-      <CTASection />
+      <div class="mt-6 md:mt-8">
+        <ExtraTemplate />
+      </div>
+
+      <div class="mt-6 md:mt-8">
+        <CTASection />
+      </div>
 
     </div>
 </template>

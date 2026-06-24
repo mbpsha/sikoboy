@@ -1,7 +1,8 @@
 <script setup>
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, onUnmounted, ref } from "vue";
 import { usePage, Link, router } from "@inertiajs/vue3";
 import logo from "@/images/logo_byl.png";
+import axios from "axios";
 
 const page = usePage();
 const isAuthenticated = computed(() => !!page.props?.auth?.user);
@@ -23,6 +24,10 @@ const notifications = ref([]);
 
 // 📱 Mobile menu state
 const showMobileMenu = ref(false);
+
+// 🎨 Scroll state for header background
+const isScrolled = ref(false);
+const handleScroll = () => { isScrolled.value = window.scrollY > 10; };
 
 // Compute notification count
 const notificationsCount = computed(() => notifications.value.length);
@@ -57,9 +62,34 @@ const handleNotificationClick = (notification) => {
   }
 };
 
+// ✅ Mark notification as read
+const markAsRead = async (event, notification) => {
+  event.stopPropagation(); // Prevent dropdown close
+  
+  try {
+    // Call backend to mark as read
+    const response = await axios.post(route('mitra.notifications.mark-read', notification.id));
+    
+    if (response.data.success) {
+      // Remove notification from local list
+      notifications.value = notifications.value.filter(n => n.id !== notification.id);
+      
+      if (isDev) {
+        console.log('[Header] Notification marked as read:', notification.id);
+      }
+    }
+  } catch (error) {
+    console.error('[Header] Failed to mark notification as read:', error);
+    // Still remove from UI even if backend fails (for better UX)
+    notifications.value = notifications.value.filter(n => n.id !== notification.id);
+  }
+};
+
+let handleClickOutside;
+
 // Close dropdowns when clicking outside
 onMounted(() => {
-  const handleClickOutside = (event) => {
+  handleClickOutside = (event) => {
     // Close notification dropdown
     if (
       showNotificationDropdown.value && 
@@ -78,6 +108,8 @@ onMounted(() => {
   };
   
   document.addEventListener('click', handleClickOutside);
+  window.addEventListener('scroll', handleScroll);
+  handleScroll();
   
   // Load notifications from props if available
   if (page.props?.notifications) {
@@ -92,11 +124,11 @@ onMounted(() => {
     console.log('[Header] isAuthenticated:', isAuthenticated.value);
     console.log('[Header] notifications:', notifications.value);
   }
-  
-  // Cleanup listener
-  return () => {
-    document.removeEventListener('click', handleClickOutside);
-  };
+});
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside);
+  window.removeEventListener('scroll', handleScroll);
 });
 
 // Get current URL for active nav detection
@@ -110,19 +142,22 @@ const currentUrl = computed(() => {
   return '';
 });
 
-// Check if nav link is active
-const isActive = (path) => {
+// Check if nav link is active (supports exact match or prefix match via second arg)
+const isActive = (path, prefix = false) => {
   if (!path) return false;
-
   try {
     const url = new URL(currentUrl.value, window.location.origin);
-    if (path.startsWith('#')) {
-      return url.hash === path;
+    const pathname = url.pathname;
+    if (path.startsWith('#')) return url.hash === path;
+
+    // special-case: /dokumen redirects to /template-dokumen
+    if (path === '/dokumen') {
+      return pathname === '/dokumen' || pathname.startsWith('/template-dokumen');
     }
-    return url.pathname === path;
+
+    return prefix ? pathname.startsWith(path) : pathname === path;
   } catch (e) {
-    if (path.startsWith('#')) return currentUrl.value.endsWith(path);
-    return currentUrl.value === path;
+    return false;
   }
 };
 
@@ -165,7 +200,10 @@ const portalLabel = computed(() => {
 </script>
 
 <template>
-  <header class="fixed inset-x-0 top-0 z-50">
+  <header 
+    class="fixed inset-x-0 top-0 z-50 transition-all duration-300"
+    :class="isScrolled ? 'bg-[#1f5459] shadow-lg' : ''"
+  >
     <div class="mx-auto flex max-w-6xl items-center justify-between px-4 sm:px-6 py-4">
       <!-- Left: emblem + authority text -->
       <div class="flex items-center gap-1 rounded-full px-3 sm:px-5 py-2" style="background: rgba(49,113,124,0.6);">
@@ -212,7 +250,7 @@ const portalLabel = computed(() => {
           </Link>
           <Link 
             href="/dokumen" 
-            :class="isActive('/dokumen') 
+            :class="isActive('/dokumen', true) 
               ? 'mx-2 rounded-full bg-white text-[#17464E] px-4 py-1 text-sm font-semibold' 
               : 'mx-2 px-4 py-1 text-sm text-white/90 hover:text-white transition-colors'"
           >
@@ -310,7 +348,7 @@ const portalLabel = computed(() => {
                 <div 
                   v-for="(notif, index) in notifications" 
                   :key="index"
-                  class="p-4 border-b border-gray-100 hover:bg-yellow-50 transition-colors cursor-pointer"
+                  class="p-4 border-b border-gray-100 hover:bg-yellow-50 transition-colors cursor-pointer relative group"
                   @click="handleNotificationClick(notif)"
                 >
                   <div class="flex gap-3">
@@ -332,13 +370,35 @@ const portalLabel = computed(() => {
                         </svg>
                       </div>
                     </div>
-                    <div class="flex-1 min-w-0">
+                    <div class="flex-1 min-w-0 pr-8">
                       <p class="text-sm font-semibold text-gray-800 truncate">{{ notif.title }}</p>
                       <p class="text-xs text-gray-600 mt-1 line-clamp-2">{{ notif.message }}</p>
                       <p class="text-xs text-yellow-600 mt-2 font-medium">
-                        {{ notif.days_left }} hari lagi
+                        {{ notif.days_left ? notif.days_left + ' hari lagi' : 'Baru saja' }}
                       </p>
                     </div>
+                    <!-- ✅ Mark as Read Button -->
+                    <button 
+                      @click="markAsRead($event, notif)"
+                      class="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-full hover:bg-green-100 text-gray-400 hover:text-green-600"
+                      title="Tandai dibaca"
+                      aria-label="Tandai dibaca"
+                    >
+                      <svg 
+                        xmlns="http://www.w3.org/2000/svg" 
+                        class="w-4 h-4" 
+                        fill="none" 
+                        viewBox="0 0 24 24" 
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <path 
+                          stroke-linecap="round" 
+                          stroke-linejoin="round" 
+                          d="M5 13l4 4L19 7" 
+                        />
+                      </svg>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -447,7 +507,7 @@ const portalLabel = computed(() => {
         <Link 
           href="/dokumen" 
           @click="closeMobileMenu"
-          :class="isActive('/dokumen') 
+          :class="isActive('/dokumen', true) 
             ? 'block rounded-lg bg-white text-[#17464E] px-4 py-2 text-sm font-semibold' 
             : 'block rounded-lg px-4 py-2 text-sm text-white/90 hover:bg-white/10 transition-colors'"
         >
