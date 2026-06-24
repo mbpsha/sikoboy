@@ -1008,7 +1008,7 @@ onBeforeUnmount(() => {
                                     <th
                                         class="px-4 py-3 text-left border-r border-gray-200"
                                     >
-                                        Adendum
+                                        Pembaharuan
                                     </th>
                                     <th
                                         class="px-4 py-3 text-left whitespace-nowrap relative cursor-pointer"
@@ -1177,7 +1177,7 @@ onBeforeUnmount(() => {
                                     >
                                         <div class="flex flex-wrap items-center gap-2">
                                             <span class="text-sm text-gray-600">
-                                                {{ item.adendum_count ? `${item.adendum_count} adendum` : 'Belum ada adendum' }}
+                                                {{ item.adendum_count ? `${item.adendum_count} adendum` : 'Belum ada pembaharuan' }}
                                             </span>
                                             <button
                                                 v-if="item.adendum_count"
@@ -1720,7 +1720,7 @@ onBeforeUnmount(() => {
                     ✕
                 </button>
 
-                <h2 class="text-lg font-semibold mb-4">Upload Adendum</h2>
+                <h2 class="text-lg font-semibold mb-4">Upload Pembaharuan</h2>
 
                 <!-- FORM - SCROLLABLE -->
                 <div class="overflow-y-auto flex-1 pr-2">
@@ -1728,7 +1728,7 @@ onBeforeUnmount(() => {
                         <!-- JUDUL ADENDUM -->
                         <div>
                             <label class="text-sm font-medium">
-                                Judul Adendum
+                                Judul Pembaharuan
                             </label>
                             <input
                                 v-model="adendumForm.judul_adendum"
@@ -1760,7 +1760,7 @@ onBeforeUnmount(() => {
                         <!-- FILE UPLOAD -->
                         <div>
                             <label class="text-sm font-medium">
-                                File Dokumen Adendum
+                                File Dokumen Pembaharuan
                             </label>
                             <div
                                 @drop.prevent="handleAdendumDrop"

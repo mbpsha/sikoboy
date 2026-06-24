@@ -716,14 +716,14 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-    <AdminLayout title="Riwayat Kerjasama - Boyolali">
+    <AdminLayout title="Riwayat Kerjasama - Mitra">
         <div class="p-4 sm:p-6">
             <div class="max-w-7xl mx-auto">
                 <!-- SEARCH -->
                 <div
                     class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100"
                 >
-                    <div class="flex gap-3 items-center overflow-x-auto mb-3">
+                    <div class="flex flex-col gap-3 lg:flex-row lg:items-center">
                         <div
                             class="flex items-center gap-2 w-full min-w-0 rounded-full px-4 py-2.5 border border-gray-200 bg-gray-50 focus-within:border-teal-600 focus-within:ring-1 focus-within:ring-teal-600 transition lg:flex-1"
                         >
@@ -744,6 +744,10 @@ onBeforeUnmount(() => {
                                 {{ y }}
                             </option>
                         </select>
+
+                            <button @click="applyFilters" class="w-full bg-teal-700 hover:bg-teal-800 text-white text-sm px-5 py-2.5 rounded-full font-medium transition sm:w-auto">
+                                Filter
+                            </button>
 
                         <button v-if="search || tahun" @click="resetAllFilters" class="bg-gray-300 hover:bg-gray-400 text-gray-700 text-sm px-5 py-2.5 rounded-full font-medium transition">
                             Reset
@@ -1018,7 +1022,7 @@ onBeforeUnmount(() => {
                                     <th
                                         class="px-4 py-3 text-left border-r border-gray-200"
                                     >
-                                        Adendum
+                                        Pembaharuan
                                     </th>
                                     <th
                                         class="px-4 py-3 text-left whitespace-nowrap relative cursor-pointer"
@@ -1187,7 +1191,7 @@ onBeforeUnmount(() => {
                                     >
                                         <div class="flex flex-wrap items-center gap-2">
                                             <span class="text-sm text-gray-600">
-                                                {{ item.has_adendum ? `${item.adendum_count} adendum` : 'Belum ada adendum' }}
+                                                {{ item.has_adendum ? `${item.adendum_count} adendum` : 'Belum ada pembaharuan' }}
                                             </span>
                                             <button
                                                 v-if="item.has_adendum"
@@ -1728,7 +1732,7 @@ onBeforeUnmount(() => {
                     ✕
                 </button>
 
-                <h2 class="text-lg font-semibold mb-4">Upload Adendum</h2>
+                <h2 class="text-lg font-semibold mb-4">Upload Pembaharuan</h2>
 
                 <!-- FORM - SCROLLABLE -->
                 <div class="overflow-y-auto flex-1 pr-2">
@@ -1736,13 +1740,13 @@ onBeforeUnmount(() => {
                         <!-- JUDUL ADENDUM -->
                         <div>
                             <label class="text-sm font-medium">
-                                Judul Adendum
+                                Judul Pembaharuan
                             </label>
                             <input
                                 v-model="adendumForm.judul_adendum"
                                 type="text"
                                 class="w-full border rounded-lg px-3 py-2 mt-1"
-                                placeholder="Masukkan judul adendum"
+                                placeholder="Masukkan judul pembaharuan"
                             />
                             <p
                                 v-if="adendumErrors.judul_adendum"
@@ -1768,7 +1772,7 @@ onBeforeUnmount(() => {
                         <!-- FILE UPLOAD -->
                         <div>
                             <label class="text-sm font-medium">
-                                File Dokumen Adendum
+                                File Dokumen Pembaharuan
                             </label>
                             <div
                                 @drop.prevent="handleAdendumDrop"
