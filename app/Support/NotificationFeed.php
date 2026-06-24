@@ -176,10 +176,13 @@ class NotificationFeed
         return DB::table('riwayat_status as rs')
             ->join('kerjasama as k', 'k.id_kerjasama', '=', 'rs.id_kerjasama')
             ->join('admins as a', 'a.id_admin', '=', 'rs.id_admin')
+            ->leftJoin('status as s', 's.id_status', '=', 'rs.id_status')
             ->where('k.id_mitra', $mitraId)
-            ->where('rs.judul', '!=', null)
-            // Hanya tampilkan notifikasi untuk status penting (id_status: 2=revisi, 3=disetujui, 4=ditolak, 5=dibatalkan)
-            ->whereIn('rs.id_status', [2, 3, 4, 5])
+            // judul (title) wajib ada — catatan proses tanpa judul tidak jadi notifikasi
+            ->whereNotNull('rs.judul')
+            // Filter berdasarkan nama status (string), bukan id_status yang bisa berubah urutannya.
+            // Mencakup semua jenis catatan proses yang dibuat admin.
+            ->whereIn('s.jenis_status', ['proses', 'revisi', 'disetujui', 'ditolak', 'dibatalkan'])
             ->orderByDesc('rs.tanggal')
             ->limit(50)
             ->get([
@@ -188,6 +191,7 @@ class NotificationFeed
                 'rs.judul',
                 'rs.id_status',
                 'rs.catatan',
+                's.jenis_status as nama_status',
                 'k.id_kerjasama',
                 'k.judul as kerjasama_judul',
                 'k.nomor_suratM',
@@ -198,21 +202,17 @@ class NotificationFeed
             ->map(function ($row) {
                 $nomor = $row->nomor_suratM ?: $row->nomor_suratP;
                 $judul = $row->judul ?: $row->kerjasama_judul;
-                
-                // Map id_status ke nama
-                $statusName = match($row->id_status) {
-                    2 => 'revisi',
-                    3 => 'disetujui',
-                    4 => 'ditolak',
-                    5 => 'dibatalkan',
-                    default => 'proses',
-                };
-                
+
+                // Ambil nama status dari tabel status (fallback ke 'proses')
+                $statusName = strtolower((string) ($row->nama_status ?: 'proses'));
+
                 // Format status untuk display
                 $statusLabel = match($statusName) {
                     'revisi' => 'meminta revisi',
                     'disetujui' => 'menyetujui',
-                    default => 'telah menambahkan',
+                    'ditolak' => 'menolak',
+                    'dibatalkan' => 'membatalkan',
+                    default => 'menambahkan catatan pada',
                 };
 
                 return [

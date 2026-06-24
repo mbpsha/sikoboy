@@ -413,13 +413,11 @@
               </span>
               <span v-else>{{ p.label || p.title }}</span>
 
-              <span v-if="!activeProsesKerjasama.is_finalized"
-                class="text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 inline-flex items-center justify-center"
-                :class="isProsesBaru(p) ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'">
-                <svg v-if="isProsesBaru(p)" class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-                <svg v-else class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+              <span
+                v-if="!activeProsesKerjasama.is_finalized && !isProsesBaru(p)"
+                class="w-5 h-5 rounded-full shrink-0 inline-flex items-center justify-center bg-green-100"
+              >
+                <svg class="w-3 h-3 text-green-700" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
                 </svg>
               </span>
@@ -971,62 +969,63 @@ function saveProcessUpdate() {
     payload.file = fileToUpload.value
   }
 
+  // ✅ helper untuk update proses di array lokal (k.proses) setelah berhasil disimpan
+  const updateLocalProcess = (responseData) => {
+    if (!k.proses) return
+    const idx = k.proses.findIndex(item =>
+      isNew ? item === p : (item.id === processId || item === p)
+    )
+    if (idx === -1) return
+
+    k.proses[idx] = {
+      ...k.proses[idx],
+      ...p,
+      __temp: false,                          // ✅ bukan lagi temp
+      catatan: p.catatan ?? '',               // ✅ catatan tersimpan
+      id: responseData?.id ?? k.proses[idx].id ?? processId, // pastikan id terisi
+      file: responseData?.file ?? k.proses[idx].file,
+    }
+
+    // sinkron juga ke activeProsesKerjasama biar badge di modal Daftar Proses ikut update
+    if (activeProsesKerjasama.value && activeProsesKerjasama.value.id_kerjasama === k.id_kerjasama) {
+      activeProsesKerjasama.value.proses = [...k.proses]
+    }
+  }
+
   if (isNew) {
-    // ------------------------------------
-    // PROSES TAMBAH BARU (STORE)
-    // ------------------------------------
     router.post(route('admin.data-kerjasama.proses.store', k.id_kerjasama), payload, {
       preserveScroll: true,
       preserveState: true,
       forceFormData: true,
-      onSuccess: () => {
+      onSuccess: (page) => {
+        const created = page?.props?.flash?.proses ?? null // sesuaikan jika backend mengirim data proses
+        updateLocalProcess(created)
         fileToUpload.value = null
         closeProcessModal()
         Swal.fire({ icon: 'success', title: 'Berhasil', text: 'Proses baru berhasil disimpan!', timer: 1500, showConfirmButton: false })
       },
-      // ⚠️ WARNING JIKA GAGAL:
       onError: (errors) => {
         console.error('Gagal simpan proses baru:', errors)
-
-        // Menggabungkan semua pesan error dari backend menjadi satu teks kalimat
         const pesanError = Object.values(errors).join('\n') || 'Terjadi kesalahan sistem.'
-
-        Swal.fire({
-          icon: 'warning',
-          title: 'Gagal Menyimpan Proses',
-          text: pesanError,
-          confirmButtonColor: '#0f766e', // Warna teal-700 sesuai tema aplikasi
-        })
+        Swal.fire({ icon: 'warning', title: 'Gagal Menyimpan Proses', text: pesanError, confirmButtonColor: '#0f766e' })
       },
     })
   } else {
-    // ------------------------------------
-    // PROSES UPDATE DATA (PUT via POST Spoofing)
-    // ------------------------------------
     payload._method = 'PUT'
-
     router.post(route('admin.data-kerjasama.proses.update', [k.id_kerjasama, processId]), payload, {
       preserveScroll: true,
       preserveState: true,
       forceFormData: true,
-      onSuccess: () => {
+      onSuccess: (page) => {
+        updateLocalProcess()
         fileToUpload.value = null
         closeProcessModal()
         Swal.fire({ icon: 'success', title: 'Berhasil', text: 'Proses berhasil diperbarui!', timer: 1500, showConfirmButton: false })
       },
-      // ⚠️ WARNING JIKA GAGAL:
       onError: (errors) => {
         console.error('Gagal update proses:', errors)
-
-        // Menggabungkan semua pesan error dari backend menjadi satu teks kalimat
         const pesanError = Object.values(errors).join('\n') || 'Terjadi kesalahan saat memperbarui data.'
-
-        Swal.fire({
-          icon: 'warning',
-          title: 'Gagal Memperbarui Proses',
-          text: pesanError,
-          confirmButtonColor: '#0f766e',
-        })
+        Swal.fire({ icon: 'warning', title: 'Gagal Memperbarui Proses', text: pesanError, confirmButtonColor: '#0f766e' })
       },
     })
   }

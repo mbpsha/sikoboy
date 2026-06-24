@@ -410,7 +410,6 @@ Route::middleware(['auth', 'role:admin', 'throttle:240,1'])->prefix('admin')->na
         ->name('partners.show');
 
     // Detail Notifikasi
-    Route::get('/notifikasi/{id}', function ($id) {
-        return Inertia::render('Admin/DetailNotifAdmin', ['id' => $id]);
-    })->name('notifications.show');
+    Route::get('/notifikasi/{id}',[AdminNotificationController::class, 'show']
+        )->name('notifications.show');
 });

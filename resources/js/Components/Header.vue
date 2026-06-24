@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, onUnmounted, ref } from "vue";
+import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { usePage, Link, router } from "@inertiajs/vue3";
 import logo from "@/images/logo_byl.png";
 import axios from "axios";
@@ -22,6 +22,30 @@ const isDev =
 const showNotificationDropdown = ref(false);
 const notifications = ref([]);
 
+// 🔔 Notifikasi yang sudah ditutup/dibaca (disimpan di localStorage agar sinkron
+//    dengan halaman Profile Mitra — keduanya membaca & menulis key yang sama)
+const CLOSED_NOTIF_KEY = 'closed_notifications';
+const closedNotifications = ref([]);
+
+// Helper baca/tulis localStorage + broadcast event agar komponen lain ikut update
+const loadClosedNotifications = () => {
+  try {
+    const stored = localStorage.getItem(CLOSED_NOTIF_KEY);
+    closedNotifications.value = stored ? JSON.parse(stored) : [];
+  } catch (e) {
+    console.error('[Header] Error loading closed notifications:', e);
+    closedNotifications.value = [];
+  }
+};
+
+const persistClosedNotifications = () => {
+  try {
+    localStorage.setItem(CLOSED_NOTIF_KEY, JSON.stringify(closedNotifications.value));
+  } catch (e) {
+    console.error('[Header] Error persisting closed notifications:', e);
+  }
+};
+
 // 📱 Mobile menu state
 const showMobileMenu = ref(false);
 
@@ -29,8 +53,11 @@ const showMobileMenu = ref(false);
 const isScrolled = ref(false);
 const handleScroll = () => { isScrolled.value = window.scrollY > 10; };
 
-// Compute notification count
-const notificationsCount = computed(() => notifications.value.length);
+// Compute notification count — hanya yang belum di-close/dibaca
+const visibleNotifications = computed(() =>
+  notifications.value.filter(n => !closedNotifications.value.includes(n.id))
+);
+const notificationsCount = computed(() => visibleNotifications.value.length);
 
 // 🔔 Toggle notification dropdown
 const toggleNotificationDropdown = () => {
@@ -47,41 +74,53 @@ const closeMobileMenu = () => {
   showMobileMenu.value = false;
 };
 
-// 🔔 Handler when notification is clicked → REDIRECT to ListNotif.vue
+// 🔔 Handler when notification is clicked → arahkan ke CARD kerjasama terkait
+//    di halaman Profile (tab Riwayat), lalu di-highlight beberapa detik.
 const handleNotificationClick = (notification) => {
   if (isDev) {
-    console.log('[Header] Notification clicked, redirecting to list:', notification);
+    console.log('[Header] Notification clicked, navigating to kerjasama card:', notification);
   }
   closeNotificationDropdown();
-  
-  // Redirect to notifications list page
-  try {
-    router.get(route('mitra.notifications'));
-  } catch (e) {
-    router.get('/mitra/notifications');
+
+  const kerjasamaId = notification.kerjasama_id;
+  if (kerjasamaId) {
+    // Kunjungi halaman profile dengan query focus_kerjasama + tab riwayat.
+    // Profile.vue akan baca query ini → switch tab + scroll + highlight card.
+    router.visit(route('mitra.profile.index'), {
+      data: { focus_kerjasama: kerjasamaId, tab: 'riwayat' },
+      preserveScroll: false,
+    });
+  } else {
+    // Fallback: tidak ada kerjasama_id (mis. notif kedaluwarsa tanpa kerjasama) → ke list notif
+    try {
+      router.get(route('mitra.notifications'));
+    } catch (e) {
+      router.get('/mitra/notifications');
+    }
   }
 };
 
-// ✅ Mark notification as read
+// ✅ Mark notification as read/dibaca
 const markAsRead = async (event, notification) => {
   event.stopPropagation(); // Prevent dropdown close
-  
+
+  // Tambahkan ke daftar closed (localStorage) supaya hilang juga di halaman Profile
+  if (!closedNotifications.value.includes(notification.id)) {
+    closedNotifications.value.push(notification.id);
+    persistClosedNotifications();
+    // Broadcast ke komponen lain (mis. banner di Profile) supaya ikut menyembunyikan
+    window.dispatchEvent(new CustomEvent('notifications-changed'));
+  }
+
   try {
-    // Call backend to mark as read
-    const response = await axios.post(route('mitra.notifications.mark-read', notification.id));
-    
-    if (response.data.success) {
-      // Remove notification from local list
-      notifications.value = notifications.value.filter(n => n.id !== notification.id);
-      
-      if (isDev) {
-        console.log('[Header] Notification marked as read:', notification.id);
-      }
+    await axios.post(route('mitra.notifications.mark-read', notification.id));
+    if (isDev) {
+      console.log('[Header] Notification marked as read:', notification.id);
     }
   } catch (error) {
     console.error('[Header] Failed to mark notification as read:', error);
-    // Still remove from UI even if backend fails (for better UX)
-    notifications.value = notifications.value.filter(n => n.id !== notification.id);
+    // Notif sudah disembunyikan dari UI lewat closedNotifications di atas,
+    // jadi tidak perlu langkah tambahan walau backend gagal.
   }
 };
 
@@ -109,13 +148,18 @@ onMounted(() => {
   
   document.addEventListener('click', handleClickOutside);
   window.addEventListener('scroll', handleScroll);
+  window.addEventListener('notifications-changed', loadClosedNotifications);
+  window.addEventListener('storage', loadClosedNotifications);
   handleScroll();
-  
+
+  // Load daftar notifikasi yang sudah di-close dari localStorage
+  loadClosedNotifications();
+
   // Load notifications from props if available
   if (page.props?.notifications) {
     notifications.value = page.props.notifications;
   }
-  
+
   // Debug logging
   if (isDev) {
     console.log('[Header] page.props.auth:', page.props?.auth);
@@ -129,7 +173,20 @@ onMounted(() => {
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside);
   window.removeEventListener('scroll', handleScroll);
+  window.removeEventListener('notifications-changed', loadClosedNotifications);
+  window.removeEventListener('storage', loadClosedNotifications);
 });
+
+// Reaktif terhadap perubahan props (navigasi Inertia antar halaman memperbarui props)
+watch(
+  () => page.props?.notifications,
+  (newNotifications) => {
+    if (newNotifications) {
+      notifications.value = newNotifications;
+    }
+  },
+  { deep: true }
+);
 
 // Get current URL for active nav detection
 const currentUrl = computed(() => {
@@ -344,9 +401,9 @@ const portalLabel = computed(() => {
                 <div v-if="notificationsCount === 0" class="p-4 text-center text-gray-500 text-sm">
                   Tidak ada notifikasi
                 </div>
-                
-                <div 
-                  v-for="(notif, index) in notifications" 
+
+                <div
+                  v-for="(notif, index) in visibleNotifications"
                   :key="index"
                   class="p-4 border-b border-gray-100 hover:bg-yellow-50 transition-colors cursor-pointer relative group"
                   @click="handleNotificationClick(notif)"
@@ -373,9 +430,21 @@ const portalLabel = computed(() => {
                     <div class="flex-1 min-w-0 pr-8">
                       <p class="text-sm font-semibold text-gray-800 truncate">{{ notif.title }}</p>
                       <p class="text-xs text-gray-600 mt-1 line-clamp-2">{{ notif.message }}</p>
-                      <p class="text-xs text-yellow-600 mt-2 font-medium">
-                        {{ notif.days_left ? notif.days_left + ' hari lagi' : 'Baru saja' }}
-                      </p>
+                      <div class="flex items-center justify-between mt-2 gap-2">
+                        <span class="text-xs text-yellow-600 font-medium">
+                          {{ notif.days_left ? notif.days_left + ' hari lagi' : 'Baru saja' }}
+                        </span>
+                        <!-- CTA: arahkan user bahwa klik = lihat kerjasama terkait -->
+                        <span
+                          v-if="notif.kerjasama_id"
+                          class="text-xs font-semibold text-[#2f6f73] flex items-center gap-1 group-hover:translate-x-0.5 transition-transform"
+                        >
+                          Lihat Kerjasama
+                          <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                          </svg>
+                        </span>
+                      </div>
                     </div>
                     <!-- ✅ Mark as Read Button -->
                     <button 
