@@ -804,6 +804,54 @@ const uniqueJenisKerjasama = computed(() => {
     return [...new Set(values)].filter(Boolean).sort();
 });
 
+// =========================================================================
+// INLINE EDIT NOMOR SURAT
+// =========================================================================
+const editingNomorSurat = ref({ rowId: null, field: null });
+const editingValue = ref("");
+
+const startEditNomorSurat = (rowId, field, currentValue) => {
+    editingNomorSurat.value = { rowId, field };
+    editingValue.value = currentValue || "";
+};
+
+const cancelEditNomorSurat = () => {
+    editingNomorSurat.value = { rowId: null, field: null };
+    editingValue.value = "";
+};
+
+const saveNomorSurat = (rowId, field) => {
+    const payload = {};
+    payload[field] = editingValue.value;
+
+    router.put(
+        route("admin.riwayat-kerjasama.nomor-surat", rowId),
+        payload,
+        {
+            preserveScroll: true,
+            onSuccess: (page) => {
+                // Update local data reactively
+                const items = props.data?.data || [];
+                const item = items.find(i => i.id_kerjasama === rowId);
+                if (item) {
+                    item[field] = editingValue.value;
+                }
+                cancelEditNomorSurat();
+            },
+            onError: (err) => {
+                console.error("Error updating nomor surat:", err);
+                Swal.fire({
+                    icon: "error",
+                    title: "Gagal",
+                    text: "Gagal memperbarui nomor surat",
+                    confirmButtonText: "OK",
+                    confirmButtonColor: "#0d9488",
+                });
+            },
+        }
+    );
+};
+
 const uniqueStatus = computed(() => {
     const values = (props.data?.data || []).map(item => item.status);
     return [...new Set(values)].filter(Boolean).sort();
@@ -1285,12 +1333,59 @@ const clearColumnFilter = (filterKey) => {
                                     <td
                                         class="px-4 py-3 whitespace-nowrap border-r border-gray-200"
                                     >
-                                        {{ item.nomor_suratM }}
+                                        <template v-if="editingNomorSurat.rowId !== item.id_kerjasama || editingNomorSurat.field !== 'nomor_suratM'">
+                                            <span class="text-xs">{{ item.nomor_suratM || '-' }}</span>
+                                            <button
+                                                @click="startEditNomorSurat(item.id_kerjasama, 'nomor_suratM', item.nomor_suratM)"
+                                                class="ml-1 text-gray-400 hover:text-teal-600 transition-colors"
+                                                title="Edit Nomor Surat Mitra"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 inline" viewBox="0 0 20 20" fill="currentColor">
+                                                    <path d="M2.695 14.763l-1.262 3.154a.5.5 0 00.65.65l3.155-1.262a4 4 0 001.343-.885L17.5 5.5a2.121 2.121 0 00-3-3L3.58 13.42a4 4 0 00-.885 1.343z"/>
+                                                </svg>
+                                            </button>
+                                        </template>
+                                        <template v-else>
+                                            <div class="flex items-center gap-1">
+                                                <input
+                                                    v-model="editingValue"
+                                                    @keyup.enter="saveNomorSurat(item.id_kerjasama, 'nomor_suratM')"
+                                                    @keyup.escape="cancelEditNomorSurat"
+                                                    class="w-36 border border-teal-500 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-teal-500"
+                                                    ref="nomorSuratInput"
+                                                />
+                                                <button @click="saveNomorSurat(item.id_kerjasama, 'nomor_suratM')" class="text-green-600 hover:text-green-800 font-bold text-sm" title="Simpan">✓</button>
+                                                <button @click="cancelEditNomorSurat" class="text-red-500 hover:text-red-700 font-bold text-sm" title="Batal">✕</button>
+                                            </div>
+                                        </template>
                                     </td>
                                     <td
                                         class="px-4 py-3 whitespace-nowrap border-r border-gray-200"
                                     >
-                                        {{ item.nomor_suratP }}
+                                        <template v-if="editingNomorSurat.rowId !== item.id_kerjasama || editingNomorSurat.field !== 'nomor_suratP'">
+                                            <span class="text-xs">{{ item.nomor_suratP || '-' }}</span>
+                                            <button
+                                                @click="startEditNomorSurat(item.id_kerjasama, 'nomor_suratP', item.nomor_suratP)"
+                                                class="ml-1 text-gray-400 hover:text-teal-600 transition-colors"
+                                                title="Edit Nomor Surat Pemerintah"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 inline" viewBox="0 0 20 20" fill="currentColor">
+                                                    <path d="M2.695 14.763l-1.262 3.154a.5.5 0 00.65.65l3.155-1.262a4 4 0 001.343-.885L17.5 5.5a2.121 2.121 0 00-3-3L3.58 13.42a4 4 0 00-.885 1.343z"/>
+                                                </svg>
+                                            </button>
+                                        </template>
+                                        <template v-else>
+                                            <div class="flex items-center gap-1">
+                                                <input
+                                                    v-model="editingValue"
+                                                    @keyup.enter="saveNomorSurat(item.id_kerjasama, 'nomor_suratP')"
+                                                    @keyup.escape="cancelEditNomorSurat"
+                                                    class="w-36 border border-teal-500 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-teal-500"
+                                                />
+                                                <button @click="saveNomorSurat(item.id_kerjasama, 'nomor_suratP')" class="text-green-600 hover:text-green-800 font-bold text-sm" title="Simpan">✓</button>
+                                                <button @click="cancelEditNomorSurat" class="text-red-500 hover:text-red-700 font-bold text-sm" title="Batal">✕</button>
+                                            </div>
+                                        </template>
                                     </td>
                                     <td
                                         class="px-4 py-3 whitespace-nowrap border-r border-gray-200"

@@ -331,6 +331,8 @@ Route::middleware(['auth', 'role:admin', 'throttle:240,1'])->prefix('admin')->na
         ->name('riwayat-kerjasama.pemerintah.update');
     Route::put('/riwayat-kerjasama/{id}/status', [RiwayatKerjasamaController::class, 'updateStatus'])
         ->name('riwayat-kerjasama.update-status');
+    Route::put('/riwayat-kerjasama/{id}/nomor-surat', [RiwayatKerjasamaController::class, 'updateNomorSurat'])
+        ->name('riwayat-kerjasama.nomor-surat');
     Route::post('/riwayat-kerjasama/adendum', [RiwayatKerjasamaController::class, 'storeAdendum'])
         ->name('riwayat-kerjasama.adendum.store');
 

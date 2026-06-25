@@ -901,6 +901,30 @@ class RiwayatKerjasamaController extends Controller
         return back();
     }
 
+    /**
+     * Update nomor surat mitra and/or pemerintah for a kerjasama (inline edit).
+     */
+    public function updateNomorSurat(int $id, Request $request)
+    {
+        $kerjasama = Kerjasama::findOrFail($id);
+
+        $validated = $request->validate([
+            'nomor_suratM' => ['nullable', 'string', 'max:255'],
+            'nomor_suratP' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $kerjasama->update([
+            'nomor_suratM' => $validated['nomor_suratM'] ?? $kerjasama->nomor_suratM,
+            'nomor_suratP' => $validated['nomor_suratP'] ?? $kerjasama->nomor_suratP,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'nomor_suratM' => $kerjasama->nomor_suratM,
+            'nomor_suratP' => $kerjasama->nomor_suratP,
+        ]);
+    }
+
     // =========================================================================
     // Helpers
     // =========================================================================
