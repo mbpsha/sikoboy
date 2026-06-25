@@ -155,7 +155,7 @@ const getIcon = (item) => {
                       <svg class="w-3.5 h-3.5 shrink-0" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/>
                       </svg>
-                      <span class="truncate max-w-[180px]">{{ item.file.split('/').pop() }}</span>
+                      <span class="truncate max-w-[180px]">{{ item.file_name || item.file.split('/').pop() }}</span>
                       <span class="text-blue-400 text-[10px] font-bold shrink-0">Download</span>
                     </a>
                   </div>
@@ -178,7 +178,7 @@ const getIcon = (item) => {
                       <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
                     </svg>
                     <span class="text-xs text-green-700 font-medium flex-1 truncate">
-                      {{ item.file_mitra.split('/').pop() }}
+                      {{ item.file_mitra_name || item.file_mitra.split('/').pop() }}
                     </span>
                     <a :href="'/storage/' + item.file_mitra" target="_blank"
                       class="text-green-600 text-[10px] font-bold hover:underline shrink-0">Lihat</a>

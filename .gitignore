@@ -3,8 +3,11 @@
 .env
 .env.backup
 .env.production
+.env.example
+.env.production.example
 .phpactor.json
 .phpunit.result.cache
+.htaccess
 /.fleet
 /.idea
 /.nova
@@ -22,3 +25,13 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+ERD.dbdiagram
+ERD.dbml
+ERD.mmd
+phpunit.xml
+QUICK_DEPLOY.md
+README.md
+respons.txt
+DEPLOYMENT_CHECKLIST.md
+build-for-production.ps1
+nul

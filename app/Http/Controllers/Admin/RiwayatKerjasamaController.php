@@ -12,6 +12,7 @@ use App\Models\Kerjasama;
 use App\Models\Mitra;
 use App\Models\PeriodeKerjasama;
 use App\Models\RiwayatStatus;
+use App\Support\FileUpload;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -302,8 +303,9 @@ class RiwayatKerjasamaController extends Controller
         }
 
         $file = $validated['dokumen_file'];
-        $originalFileName = $file->getClientOriginalName();
-        $path = $file->store('cooperation_docs', 'public');
+        $uploaded = FileUpload::storeAsOriginal($file, 'cooperation_docs', 'public');
+        $originalFileName = $uploaded['nama_file'];
+        $path = $uploaded['lokasi_file'];
 
         DB::transaction(function () use ($validated, $admin, $path, $idKategori, $originalFileName) {
             $kerjasama = Kerjasama::create([
@@ -445,8 +447,9 @@ class RiwayatKerjasamaController extends Controller
         $originalFileName = null;
 
         if ($request->hasFile('file')) {
-            $originalFileName = $request->file('file')->getClientOriginalName();
-            $path = $request->file('file')->store('cooperation_docs', 'public');
+            $uploaded = FileUpload::storeAsOriginal($request->file('file'), 'cooperation_docs', 'public');
+            $originalFileName = $uploaded['nama_file'];
+            $path = $uploaded['lokasi_file'];
         }
 
         DB::transaction(function () use ($validated, $admin, $mitra, $path, $idKategori, $originalFileName) {
@@ -548,8 +551,9 @@ class RiwayatKerjasamaController extends Controller
         $originalFileName = null;
 
         if ($request->hasFile('file')) {
-            $originalFileName = $request->file('file')->getClientOriginalName();
-            $path = $request->file('file')->store('cooperation_docs', 'public');
+            $uploaded = FileUpload::storeAsOriginal($request->file('file'), 'cooperation_docs', 'public');
+            $originalFileName = $uploaded['nama_file'];
+            $path = $uploaded['lokasi_file'];
         }
 
         $isMitra = $validated['tipe_pengajuan'] === 'mitra';
@@ -697,8 +701,9 @@ class RiwayatKerjasamaController extends Controller
             $originalFileName = null;
 
             if ($request->hasFile('file')) {
-                $originalFileName = $request->file('file')->getClientOriginalName();
-                $path = $request->file('file')->store('cooperation_docs', 'public');
+                $uploaded = FileUpload::storeAsOriginal($request->file('file'), 'cooperation_docs', 'public');
+                $originalFileName = $uploaded['nama_file'];
+                $path = $uploaded['lokasi_file'];
             }
 
             // Update kerjasama
@@ -823,8 +828,9 @@ class RiwayatKerjasamaController extends Controller
         $originalFileName = null;
 
         if ($request->hasFile('file')) {
-            $originalFileName = $request->file('file')->getClientOriginalName();
-            $path = $request->file('file')->store('adendum_docs', 'public');
+            $uploaded = FileUpload::storeAsOriginal($request->file('file'), 'adendum_docs', 'public');
+            $originalFileName = $uploaded['nama_file'];
+            $path = $uploaded['lokasi_file'];
         }
 
         \App\Models\Adendum::create([
@@ -859,7 +865,7 @@ class RiwayatKerjasamaController extends Controller
     public function updateStatus(int $id, Request $request)
     {
         $validated = $request->validate([
-            'status' => ['required', 'string', 'in:Aktif,Segera Berakhir,Berakhir'],
+            'status' => ['required', 'string', 'in:Aktif,Segera Berakhir,Berakhir,Dibatalkan'],
         ]);
 
         $kerjasama = Kerjasama::findOrFail($id);
@@ -896,14 +902,14 @@ class RiwayatKerjasamaController extends Controller
     private function storeDokumenVersion(Kerjasama $kerjasama, UploadedFile $file, int $createdBy): void
     {
         $nextVersion = ((int) $kerjasama->dokumen()->max('versi_dokumen')) + 1;
-        $path = $file->store('dokumen-kerjasama', 'public');
+        $uploaded = FileUpload::storeAsOriginal($file, 'dokumen-kerjasama', 'public');
         $jenisDokumen = $kerjasama->jenis_dokumen ?: ($kerjasama->finalDokumen?->jenis_dokumen ?: 'KSB');
 
         $this->createDokumen([
             'id_kerjasama' => $kerjasama->id_kerjasama,
             'jenis_dokumen' => $jenisDokumen,
-            'nama_file' => $file->getClientOriginalName(),
-            'lokasi_file' => $path,
+            'nama_file' => $uploaded['nama_file'],
+            'lokasi_file' => $uploaded['lokasi_file'],
             'versi_dokumen' => $nextVersion,
             'created_by' => $createdBy,
         ]);
@@ -914,7 +920,7 @@ class RiwayatKerjasamaController extends Controller
             jenisStatus: 'revisi',
             idAdmin: $adminId ? (int) $adminId : null,
             catatan: 'Dokumen versi baru diunggah oleh admin',
-            file: $path,
+            file: $uploaded['lokasi_file'],
         );
     }
 

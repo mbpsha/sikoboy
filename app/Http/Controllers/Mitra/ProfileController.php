@@ -62,12 +62,20 @@ class ProfileController extends Controller
                         ->sortByDesc('versi_dokumen')
                         ->first();
 
+                    // Find admin dokumen that matches this riwayat's file path
+                    $adminDokumen = $riwayat->file
+                        ? collect($kerjasama->dokumen ?? [])
+                            ->where('lokasi_file', $riwayat->file)
+                            ->first()
+                        : null;
+
                     return [
                         'id' => $riwayat->id_riwayat,
                         'title' => ucfirst(str_replace('_', ' ', $statusName)),
                         'tanggal' => $riwayat->tanggal ? Carbon::parse($riwayat->tanggal)->format('d/m/Y H:i') : '-',
                         'catatan' => $riwayat->catatan,
                         'file' => $riwayat->file,
+                        'file_name' => $adminDokumen?->nama_file,
                         'file_mitra' => $mitraDokumen?->lokasi_file,
                         'file_mitra_name' => $mitraDokumen?->nama_file,
                         'file_mitra_created_at' => $mitraDokumen?->created_at

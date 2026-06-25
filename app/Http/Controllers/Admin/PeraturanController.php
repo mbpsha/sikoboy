@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Peraturan;
+use App\Support\FileUpload;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
@@ -63,7 +64,8 @@ class PeraturanController extends Controller
 
             $uploadedFile = $request->file('file');
             $originalFileName = $uploadedFile->getClientOriginalName();
-            $filePath = $uploadedFile->store('peraturan', 'public');
+            $uploaded = FileUpload::storeAsOriginal($uploadedFile, 'peraturan', 'public');
+            $filePath = $uploaded['lokasi_file'];
 
             if (!$filePath) {
                 return back()->withErrors(['file' => 'Gagal menyimpan file ke storage']);
@@ -71,7 +73,8 @@ class PeraturanController extends Controller
 
             $thumbPath = null;
             if ($request->hasFile('thumbnail')) {
-                $thumbPath = $request->file('thumbnail')->store('peraturan', 'public');
+                $thumbUploaded = FileUpload::storeAsOriginal($request->file('thumbnail'), 'peraturan', 'public');
+                $thumbPath = $thumbUploaded['lokasi_file'];
             }
 
             $peraturan = Peraturan::create([
@@ -113,17 +116,19 @@ class PeraturanController extends Controller
                     return back()->withErrors(['file' => 'File tidak valid atau gagal terupload']);
                 }
 
-                $newFile = $request->file('file')->store('peraturan', 'public');
-                if (!$newFile) {
+                $uploadedNew = FileUpload::storeAsOriginal($request->file('file'), 'peraturan', 'public');
+                if (!$uploadedNew['lokasi_file']) {
                     return back()->withErrors(['file' => 'Gagal menyimpan file ke storage']);
                 }
 
+                $newFile = $uploadedNew['lokasi_file'];
                 $peraturan->file = $newFile;
                 $peraturan->nama_file = $request->file('file')->getClientOriginalName();
             }
 
             if ($request->file('thumbnail')) {
-                $newThumb = $request->file('thumbnail')->store('peraturan', 'public');
+                $thumbUploaded = FileUpload::storeAsOriginal($request->file('thumbnail'), 'peraturan', 'public');
+                $newThumb = $thumbUploaded['lokasi_file'];
                 if (!$newThumb) {
                     return back()->withErrors(['thumbnail' => 'Gagal menyimpan thumbnail ke storage']);
                 }

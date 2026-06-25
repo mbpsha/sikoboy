@@ -11,8 +11,8 @@ use App\Models\KategoriKerjasama;
 use App\Models\Kerjasama;
 use App\Models\PeriodeKerjasama;
 use App\Models\RiwayatStatus;
+use App\Support\FileUpload;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
@@ -216,13 +216,12 @@ class KerjasamaController extends Controller
             ]);
 
             $file = $validated['dokumen_file'];
-            $randomName = Str::uuid() . '.' . $file->getClientOriginalExtension();
-            $path = $file->storeAs('dokumen-kerjasama', $randomName, 'public');
+            $uploaded = FileUpload::storeAsOriginal($file, 'dokumen-kerjasama', 'public');
 
             Dokumen::create([
                 'id_kerjasama' => $kerjasama->id_kerjasama,
-                'nama_file' => $randomName,
-                'lokasi_file' => $path,
+                'nama_file' => $uploaded['nama_file'],
+                'lokasi_file' => $uploaded['lokasi_file'],
                 'versi_dokumen' => 1,
                 'created_by' => $request->user()->id_user,
                 'tipe_dokumen' => 'mitra',
@@ -260,14 +259,13 @@ class KerjasamaController extends Controller
         ]);
 
         $file        = $request->file('file');
-        $randomName  = Str::uuid() . '.' . $file->getClientOriginalExtension();
-        $path        = $file->storeAs('dokumen-kerjasama', $randomName, 'public');
+        $uploaded    = FileUpload::storeAsOriginal($file, 'dokumen-kerjasama', 'public');
         $nextVersion = ((int) $kerjasama->dokumen()->max('versi_dokumen')) + 1;
 
         $dok = Dokumen::create([
             'id_kerjasama'  => $kerjasama->id_kerjasama,
-            'nama_file'     => $randomName,
-            'lokasi_file'   => $path,
+            'nama_file'     => $uploaded['nama_file'],
+            'lokasi_file'   => $uploaded['lokasi_file'],
             'versi_dokumen' => $nextVersion,
             'created_by'    => $request->user()->id_user,
             'tipe_dokumen'  => 'mitra',
@@ -279,6 +277,7 @@ class KerjasamaController extends Controller
             'success'    => true,
             'message'    => 'File revisi berhasil diunggah.',
             'lokasi_file' => $dok->lokasi_file,
+            'nama_file'  => $dok->nama_file,
         ]);
     }
 }

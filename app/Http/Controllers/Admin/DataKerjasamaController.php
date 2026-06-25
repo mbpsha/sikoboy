@@ -10,6 +10,7 @@ use App\Models\Mitra;
 use App\Models\Admin;
 use App\Models\PeriodeKerjasama;
 use App\Models\RiwayatStatus;
+use App\Support\FileUpload;
 use Illuminate\Http\UploadedFile;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -406,12 +407,12 @@ class DataKerjasamaController extends Controller
             // Simpan PDF jika ada
             if ($file instanceof UploadedFile) {
                 $nextVersion = ((int) $kerjasama->dokumen()->max('versi_dokumen')) + 1;
-                $path        = $file->store('dokumen-kerjasama', 'public');
+                $uploaded    = FileUpload::storeAsOriginal($file, 'dokumen-kerjasama', 'public');
 
                 $createdDokumen = Dokumen::create([
                     'id_kerjasama'  => $kerjasama->id_kerjasama,
-                    'nama_file'     => $file->getClientOriginalName(),
-                    'lokasi_file'   => $path,
+                    'nama_file'     => $uploaded['nama_file'],
+                    'lokasi_file'   => $uploaded['lokasi_file'],
                     'versi_dokumen' => $nextVersion,
                     'created_by'    => $admin?->id_user ?? $request->user()->id_user,
                 ]);
@@ -496,12 +497,12 @@ class DataKerjasamaController extends Controller
             // Simpan PDF jika ada
             if ($file instanceof UploadedFile) {
                 $nextVersion = ((int) $kerjasama->dokumen()->max('versi_dokumen')) + 1;
-                $path        = $file->store('dokumen-kerjasama', 'public');
+                $uploaded    = FileUpload::storeAsOriginal($file, 'dokumen-kerjasama', 'public');
 
                 $createdDokumen = Dokumen::create([
                     'id_kerjasama'  => $kerjasama->id_kerjasama,
-                    'nama_file'     => $file->getClientOriginalName(),
-                    'lokasi_file'   => $path,
+                    'nama_file'     => $uploaded['nama_file'],
+                    'lokasi_file'   => $uploaded['lokasi_file'],
                     'versi_dokumen' => $nextVersion,
                     'created_by'    => $admin?->id_user ?? $request->user()->id_user,
                 ]);
@@ -584,13 +585,13 @@ class DataKerjasamaController extends Controller
             ]);
 
             $file = $validated['dokumen_file'];
-            $path = $file->store('dokumen-kerjasama', 'public');
+            $uploaded = FileUpload::storeAsOriginal($file, 'dokumen-kerjasama', 'public');
 
             Dokumen::create([
                 'id_kerjasama'  => $kerjasama->id_kerjasama,
                 'jenis_dokumen' => $jenisDokumen,
-                'nama_file'     => $file->getClientOriginalName(),
-                'lokasi_file'   => $path,
+                'nama_file'     => $uploaded['nama_file'],
+                'lokasi_file'   => $uploaded['lokasi_file'],
                 'versi_dokumen' => 1,
                 'created_by'    => $admin->id_user,
             ]);

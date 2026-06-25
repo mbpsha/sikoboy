@@ -12,24 +12,13 @@ axios.defaults.withCredentials = true;
 
 createInertiaApp({
     title: (title) => `${title} - ${appName}`,
-    resolve: (name) => {
-        // Try to resolve from Pages first
-        const pages = import.meta.glob('./Pages/**/*.vue', { eager: true });
-        const components = import.meta.glob('./Components/**/*.vue', { eager: true });
-        const allComponents = { ...pages, ...components };
-        
-        const pageComponentPath = `./Pages/${name}.vue`;
-        const componentComponentPath = `./Components/${name}.vue`;
-        
-        if (pageComponentPath in allComponents) {
-            return allComponents[pageComponentPath];
-        }
-        if (componentComponentPath in allComponents) {
-            return allComponents[componentComponentPath];
-        }
-        
-        throw new Error(`Component not found: ${name}`);
-    },
+    resolve: (name) => resolvePageComponent(
+        [`./Pages/${name}.vue`, `./Components/${name}.vue`],
+        {
+            ...import.meta.glob('./Pages/**/*.vue'),
+            ...import.meta.glob('./Components/**/*.vue'),
+        },
+    ),
     setup({ el, App, props, plugin }) {
         return createApp({ render: () => h(App, props) })
             .use(plugin)

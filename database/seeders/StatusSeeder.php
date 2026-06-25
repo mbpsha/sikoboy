@@ -29,5 +29,10 @@ class StatusSeeder extends Seeder
             ['jenis_status' => 'Berakhir'],
             ['jenis_status' => 'Berakhir']
         );
+
+        Status::updateOrCreate(
+            ['jenis_status' => 'Dibatalkan'],
+            ['jenis_status' => 'Dibatalkan']
+        );
     }
 }

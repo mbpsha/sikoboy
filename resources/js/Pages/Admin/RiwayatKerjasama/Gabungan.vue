@@ -763,6 +763,7 @@ const statusBadgeClasses = (status) => {
     if (!s) return 'bg-gray-100 text-gray-600';
     if (s === 'aktif' || s === 'active') return 'bg-green-100 text-green-700';
     if (s === 'berakhir' || s === 'expired' || s === 'selesai') return 'bg-red-100 text-red-600';
+    if (s === 'dibatalkan' || s === 'canceled' || s === 'cancelled') return 'bg-slate-200 text-slate-700';
     if (s.includes('segera') || s.includes('soon') || s.includes('akan')) return 'bg-yellow-100 text-yellow-700';
     return 'bg-gray-100 text-gray-600';
 };
@@ -1424,9 +1425,16 @@ const clearColumnFilter = (filterKey) => {
                                                     </button>
                                                     <button
                                                         @click.stop="handleStatusUpdate(item.id_kerjasama, 'Berakhir')"
-                                                        class="block w-full text-left px-4 py-2 hover:bg-gray-100 transition last:rounded-b-lg"
+                                                        class="block w-full text-left px-4 py-2 hover:bg-gray-100 transition"
                                                     >
                                                         Berakhir
+                                                    </button>
+                                                    <button
+                                                        @click.stop="handleStatusUpdate(item.id_kerjasama, 'Dibatalkan')"
+                                                        :disabled="item.status === 'Dibatalkan'"
+                                                        class="block w-full text-left px-4 py-2 hover:bg-gray-100 transition last:rounded-b-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                                                    >
+                                                        Dibatalkan
                                                     </button>
                                                 </div>
                                             </div>

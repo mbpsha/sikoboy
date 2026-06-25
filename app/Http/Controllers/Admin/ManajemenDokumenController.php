@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\KategoriKerjasama;
 use App\Models\TemplateDokumen;
+use App\Support\FileUpload;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
@@ -55,14 +56,15 @@ class ManajemenDokumenController extends Controller
         abort_if($admin === null, 403, 'Akses ditolak.');
 
         $file = $validated['template_file'];
-        $path = $file->store(self::STORAGE_DIRECTORY, self::PRIMARY_STORAGE_DISK);
+        $uploaded = FileUpload::storeAsOriginal($file, self::STORAGE_DIRECTORY, self::PRIMARY_STORAGE_DISK);
+        $path = $uploaded['lokasi_file'];
 
         TemplateDokumen::create([
             'id_admin' => $admin->id_admin,
             'id_kategori' => $validated['id_kategori'] ?? null,
             'judul' => $validated['judul'] ?? null,
             'deskripsi' => $validated['deskripsi'] ?? null,
-            'nama_file' => $file->getClientOriginalName(),
+            'nama_file' => $uploaded['nama_file'],
             'jenis_dokumen' => $validated['jenis_dokumen'] ?? null,
             'lokasi_file' => $path,
             'is_active' => (bool) ($validated['is_active'] ?? true),
@@ -104,8 +106,9 @@ class ManajemenDokumenController extends Controller
 
         if (! empty($validated['template_file'])) {
             $file = $validated['template_file'];
-            $payload['lokasi_file'] = $file->store(self::STORAGE_DIRECTORY, self::PRIMARY_STORAGE_DISK);
-            $payload['nama_file'] = $payload['nama_file'] ?? $file->getClientOriginalName();
+            $fileUploaded = FileUpload::storeAsOriginal($file, self::STORAGE_DIRECTORY, self::PRIMARY_STORAGE_DISK);
+            $payload['lokasi_file'] = $fileUploaded['lokasi_file'];
+            $payload['nama_file'] = $payload['nama_file'] ?? $fileUploaded['nama_file'];
         }
 
         $template->update($payload);
