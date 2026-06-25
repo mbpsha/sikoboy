@@ -2168,7 +2168,7 @@ const clearColumnFilter = (filterKey) => {
                 >
                     ✕
                 </button>
-                <h2 class="text-lg font-semibold mb-1">Data Adendum</h2>
+                <h2 class="text-lg font-semibold mb-1">Data Pembaharuan</h2>
                 <p class="text-sm text-gray-500 mb-4">{{ selectedAdendumKerjasama?.judul }}</p>
 
                 <div class="overflow-y-auto flex-1 space-y-3 pr-1">
@@ -2178,11 +2178,11 @@ const clearColumnFilter = (filterKey) => {
                         class="border border-gray-200 rounded-xl p-4 bg-gray-50"
                     >
                         <div class="flex items-center justify-between gap-2 mb-3">
-                            <h3 class="font-semibold text-sm text-gray-800">Adendum {{ adendum.urutan }}</h3>
+                            <h3 class="font-semibold text-sm text-gray-800">Pembaharuan {{ adendum.urutan }}</h3>
                             <span v-if="adendum.created_at" class="text-xs text-gray-500">{{ adendum.created_at }}</span>
                         </div>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-                            <div><p class="text-gray-500 text-xs">Judul Adendum</p><p class="font-medium">{{ adendum.judul_adendum || '-' }}</p></div>
+                            <div><p class="text-gray-500 text-xs">Judul Pembaharuan</p><p class="font-medium">{{ adendum.judul_adendum || '-' }}</p></div>
                             <div><p class="text-gray-500 text-xs">Mitra</p><p class="font-medium">{{ adendum.mitra || '-' }}</p></div>
                             <div><p class="text-gray-500 text-xs">Nomor Surat Mitra Lama</p><p class="font-medium">{{ adendum.nomor_surat_mitra_lama || '-' }}</p></div>
                             <div><p class="text-gray-500 text-xs">Nomor Surat Mitra Baru</p><p class="font-medium">{{ adendum.nomor_surat_mitra_baru || '-' }}</p></div>
