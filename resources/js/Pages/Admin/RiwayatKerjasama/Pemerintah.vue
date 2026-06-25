@@ -1191,10 +1191,10 @@ onBeforeUnmount(() => {
                                     >
                                         <div class="flex flex-wrap items-center gap-2">
                                             <span class="text-sm text-gray-600">
-                                                {{ item.has_adendum ? `${item.adendum_count} adendum` : 'Belum ada pembaharuan' }}
+                                                {{ item.adendum_count ? `${item.adendum_count} adendum` : 'Belum ada pembaharuan' }}
                                             </span>
                                             <button
-                                                v-if="item.has_adendum"
+                                                v-if="item.adendum_count"
                                                 @click="openAdendumDetailModal(item)"
                                                 class="px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 whitespace-nowrap"
                                             >
@@ -1339,6 +1339,7 @@ onBeforeUnmount(() => {
                 </div>
             </div>
         </div>
+
         <!-- MODAL TAMBAH KERJASAMA -->
         <div
             v-if="showModal"
@@ -1716,13 +1717,14 @@ onBeforeUnmount(() => {
                 </div>
             </div>
         </div>
+
         <!-- MODAL UPLOAD ADENDUM -->
         <div
             v-if="showAdendumModal"
             class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4 sm:px-6 py-6"
         >
             <div
-                class="bg-white rounded-2xl p-4 sm:p-6 w-full max-w-[600px] max-h-[90dvh] shadow-lg relative flex flex-col"
+                class="bg-white rounded-2xl p-4 sm:p-6 w-full max-w-[760px] max-h-[90dvh] shadow-lg relative flex flex-col"
             >
                 <!-- CLOSE -->
                 <button
@@ -1746,7 +1748,7 @@ onBeforeUnmount(() => {
                                 v-model="adendumForm.judul_adendum"
                                 type="text"
                                 class="w-full border rounded-lg px-3 py-2 mt-1"
-                                placeholder="Masukkan judul pembaharuan"
+                                placeholder="Masukkan judul adendum"
                             />
                             <p
                                 v-if="adendumErrors.judul_adendum"
@@ -1756,17 +1758,158 @@ onBeforeUnmount(() => {
                             </p>
                         </div>
 
-                        <!-- KETERANGAN ADENDUM -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="text-sm font-medium">
+                                    Nomor Surat Mitra baru <span class="text-red-500">*</span>
+                                </label>
+                                <input
+                                    v-model="adendumForm.nomor_suratM_baru"
+                                    type="text"
+                                    class="w-full border rounded-lg px-3 py-2 mt-1"
+                                    placeholder="Masukkan nomor surat mitra baru"
+                                />
+                                <p v-if="adendumErrors.nomor_suratM_baru" class="text-red-500 text-xs mt-1">
+                                    {{ adendumErrors.nomor_suratM_baru }}
+                                </p>
+                            </div>
+                            <div>
+                                <label class="text-sm font-medium">
+                                    Nomor Surat Pemerintah baru <span class="text-red-500">*</span>
+                                </label>
+                                <input
+                                    v-model="adendumForm.nomor_suratP_baru"
+                                    type="text"
+                                    class="w-full border rounded-lg px-3 py-2 mt-1"
+                                    placeholder="Masukkan nomor surat pemerintah baru"
+                                />
+                                <p v-if="adendumErrors.nomor_suratP_baru" class="text-red-500 text-xs mt-1">
+                                    {{ adendumErrors.nomor_suratP_baru }}
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="text-sm font-medium">
+                                    Nomor Surat Mitra lama
+                                </label>
+                                <input
+                                    v-model="adendumForm.nomor_suratM_lama"
+                                    type="text"
+                                    class="w-full border rounded-lg px-3 py-2 mt-1 bg-gray-100"
+                                    readonly
+                                />
+                            </div>
+                            <div>
+                                <label class="text-sm font-medium">
+                                    Nomor Surat Pemerintah lama
+                                </label>
+                                <input
+                                    v-model="adendumForm.nomor_suratP_lama"
+                                    type="text"
+                                    class="w-full border rounded-lg px-3 py-2 mt-1 bg-gray-100"
+                                    readonly
+                                />
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="text-sm font-medium">
+                                    Urusan <span class="text-red-500">*</span>
+                                </label>
+                                <select
+                                    v-model="adendumForm.urusan"
+                                    class="w-full border rounded-lg px-3 py-2 mt-1"
+                                >
+                                    <option value="">-- Pilih Urusan --</option>
+                                    <option
+                                        v-for="urusan in props.urusanOptions"
+                                        :key="urusan"
+                                        :value="urusan"
+                                    >
+                                        {{ urusan }}
+                                    </option>
+                                </select>
+                                <p v-if="adendumErrors.urusan" class="text-red-500 text-xs mt-1">
+                                    {{ adendumErrors.urusan }}
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="text-sm font-medium">
+                                    Jenis Kerjasama <span class="text-red-500">*</span>
+                                </label>
+                                <select
+                                    v-model="adendumForm.jenis_kerjasama"
+                                    class="w-full border rounded-lg px-3 py-2 mt-1"
+                                >
+                                    <option value="">-- Pilih Jenis Kerjasama --</option>
+                                    <option
+                                        v-for="option in jenisKerjasamaOptions"
+                                        :key="option.value"
+                                        :value="option.value"
+                                    >
+                                        {{ option.label }}
+                                    </option>
+                                </select>
+                                <p v-if="adendumErrors.jenis_kerjasama" class="text-red-500 text-xs mt-1">
+                                    {{ adendumErrors.jenis_kerjasama }}
+                                </p>
+                            </div>
+                            <div>
+                                <label class="text-sm font-medium">
+                                    Tanggal Mulai <span class="text-red-500">*</span>
+                                </label>
+                                <input
+                                    type="date"
+                                    v-model="adendumForm.mulai"
+                                    class="w-full border rounded-lg px-3 py-2 mt-1"
+                                />
+                                <p v-if="adendumErrors.mulai" class="text-red-500 text-xs mt-1">
+                                    {{ adendumErrors.mulai }}
+                                </p>
+                            </div>
+                        </div>
+
                         <div>
                             <label class="text-sm font-medium">
-                                Keterangan (Opsional)
+                                Tanggal Berakhir <span class="text-red-500">*</span>
                             </label>
-                            <textarea
-                                v-model="adendumForm.keterangan_adendum"
+                            <input
+                                type="date"
+                                v-model="adendumForm.selesai"
                                 class="w-full border rounded-lg px-3 py-2 mt-1"
-                                placeholder="Masukkan keterangan adendum"
-                                rows="4"
-                            ></textarea>
+                            />
+                            <p v-if="adendumErrors.selesai" class="text-red-500 text-xs mt-1">
+                                {{ adendumErrors.selesai }}
+                            </p>
+                        </div>
+
+                        <!-- JANGKA WAKTU DISPLAY (Auto-calculated from dates) -->
+                        <div v-if="calculateJangkaWaktuDisplay" class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                            <label class="text-sm font-medium text-blue-900 block mb-2">Jangka Waktu</label>
+                            <p class="text-base font-semibold text-blue-900">{{ calculateJangkaWaktuDisplay }}</p>
+                        </div>
+
+                        <div>
+                            <label class="text-sm font-medium">
+                                Pembiayaan <span class="text-red-500">*</span>
+                            </label>
+                            <select
+                                v-model="adendumForm.pembiayaan"
+                                class="w-full border rounded-lg px-3 py-2 mt-1"
+                            >
+                                <option v-for="option in pembiayaanOptions" :key="option" :value="option">
+                                    {{ option }}
+                                </option>
+                            </select>
+                            <p v-if="adendumErrors.pembiayaan" class="text-red-500 text-xs mt-1">
+                                {{ adendumErrors.pembiayaan }}
+                            </p>
                         </div>
 
                         <!-- FILE UPLOAD -->
@@ -1837,14 +1980,13 @@ onBeforeUnmount(() => {
             v-if="showAdendumDetailModal"
             class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4 sm:px-6 py-6"
         >
-            <div class="bg-white rounded-2xl p-4 sm:p-6 w-full max-w-[680px] max-h-[90dvh] shadow-lg relative flex flex-col">
+            <div class="bg-white rounded-2xl p-4 sm:p-6 w-full max-w-[760px] max-h-[90dvh] shadow-lg relative flex flex-col">
                 <button
                     @click="closeAdendumDetailModal"
                     class="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
                 >
                     ✕
                 </button>
-
                 <h2 class="text-lg font-semibold mb-1">Data Adendum</h2>
                 <p class="text-sm text-gray-500 mb-4">{{ selectedAdendumKerjasama?.judul }}</p>
 
@@ -1858,10 +2000,24 @@ onBeforeUnmount(() => {
                             <h3 class="font-semibold text-sm text-gray-800">Adendum {{ adendum.urutan }}</h3>
                             <span v-if="adendum.created_at" class="text-xs text-gray-500">{{ adendum.created_at }}</span>
                         </div>
-                        <div class="space-y-3 text-sm">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                             <div><p class="text-gray-500 text-xs">Judul Adendum</p><p class="font-medium">{{ adendum.judul_adendum || '-' }}</p></div>
-                            <div v-if="adendum.keterangan_adendum"><p class="text-gray-500 text-xs">Keterangan</p><p class="font-medium whitespace-pre-line">{{ adendum.keterangan_adendum }}</p></div>
-                            <div v-if="adendum.file_url">
+                            <div><p class="text-gray-500 text-xs">Mitra</p><p class="font-medium">{{ adendum.mitra || '-' }}</p></div>
+                            <div><p class="text-gray-500 text-xs">Nomor Surat Mitra Lama</p><p class="font-medium">{{ adendum.nomor_surat_mitra_lama || '-' }}</p></div>
+                            <div><p class="text-gray-500 text-xs">Nomor Surat Mitra Baru</p><p class="font-medium">{{ adendum.nomor_surat_mitra_baru || '-' }}</p></div>
+                            <div><p class="text-gray-500 text-xs">Nomor Surat Pemerintah Lama</p><p class="font-medium">{{ adendum.nomor_surat_pemerintah_lama || '-' }}</p></div>
+                            <div><p class="text-gray-500 text-xs">Nomor Surat Pemerintah Baru</p><p class="font-medium">{{ adendum.nomor_surat_pemerintah_baru || '-' }}</p></div>
+                            <div><p class="text-gray-500 text-xs">Urusan</p><p class="font-medium">{{ adendum.urusan || '-' }}</p></div>
+                            <div><p class="text-gray-500 text-xs">Jenis Kerjasama</p><p class="font-medium">{{ adendum.jenis_kerjasama || '-' }}</p></div>
+                            <div><p class="text-gray-500 text-xs">Tanggal Mulai</p><p class="font-medium">{{ adendum.tanggal_mulai || '-' }}</p></div>
+                            <div><p class="text-gray-500 text-xs">Tanggal Berakhir</p><p class="font-medium">{{ adendum.tanggal_berakhir || '-' }}</p></div>
+                            <div><p class="text-gray-500 text-xs">Jangka Waktu</p><p class="font-medium">{{ adendum.jangka_waktu || '-' }}</p></div>
+                            <div><p class="text-gray-500 text-xs">Pembiayaan</p><p class="font-medium">{{ adendum.pembiayaan || '-' }}</p></div>
+                            <div class="sm:col-span-2" v-if="adendum.keterangan_adendum">
+                                <p class="text-gray-500 text-xs">Keterangan</p>
+                                <p class="font-medium whitespace-pre-line">{{ adendum.keterangan_adendum }}</p>
+                            </div>
+                            <div class="sm:col-span-2" v-if="adendum.file_url">
                                 <a
                                     :href="adendum.file_url"
                                     target="_blank"
