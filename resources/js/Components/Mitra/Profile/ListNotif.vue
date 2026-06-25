@@ -19,6 +19,20 @@ const openDetailNotif = (notification) => {
   isDetailNotifOpen.value = true;
 };
 
+// ➡️ CTA: arahkan ke card kerjasama di halaman Profile (tab Riwayat) + highlight
+const goToKerjasamaCard = (notification, event) => {
+  if (event) event.stopPropagation();
+  const kerjasamaId = notification?.kerjasama_id;
+  if (!kerjasamaId) {
+    openDetailNotif(notification);
+    return;
+  }
+  router.visit(route('mitra.profile.index'), {
+    data: { focus_kerjasama: kerjasamaId, tab: 'riwayat' },
+    preserveScroll: false,
+  });
+};
+
 const goBack = () => {
   try {
     router.back();
@@ -206,6 +220,18 @@ const getNotificationIcon = (notif) => {
                         <div class="text-xs">Hari</div>
                       </div>
                     </div>
+                    <!-- CTA: langsung ke card kerjasama terkait (scroll + highlight) -->
+                    <button
+                      v-if="notif.kerjasama_id"
+                      class="px-3 sm:px-4 py-1 sm:py-2 bg-[#2f6f73] text-white rounded-lg text-xs sm:text-sm font-medium hover:bg-[#1e565a] transition-colors flex-1 sm:flex-initial flex items-center justify-center gap-1"
+                      @click.stop="goToKerjasamaCard(notif, $event)"
+                      title="Lihat kerjasama terkait"
+                    >
+                      Lihat Kerjasama
+                      <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                      </svg>
+                    </button>
                     <button class="px-3 sm:px-4 py-1 sm:py-2 border border-[#2f6f73] text-[#2f6f73] rounded-lg text-xs sm:text-sm font-medium hover:bg-[#2f6f73] hover:text-white transition-colors flex-1 sm:flex-initial" @click.stop="openDetailNotif(notif)">
                       Lihat Detail →
                     </button>

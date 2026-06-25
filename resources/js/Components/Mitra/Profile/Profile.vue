@@ -1,28 +1,64 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { usePage, Link, router } from '@inertiajs/vue3';
 import Header from '@/Components/Header.vue';
 import Footer from '@/Components/Footer.vue';
 import KerjasamaProgressModal from '@/Components/Mitra/KerjasamaProgressModal.vue';
-import DetailNotif from '@/Components/Mitra/Profile/DetailNotif.vue'; 
+import DetailNotif from '@/Components/Mitra/Profile/DetailNotif.vue';
 
 const page = usePage();
 
+const isDev =
+  typeof import.meta !== 'undefined' &&
+  import.meta.env &&
+  import.meta.env.DEV;
+
 const notifications = computed(() => page.props?.notifications || []);
 
-// 🔔 State untuk notifikasi yang sudah ditutup (disimpan di localStorage)
+// 🔔 State untuk notifikasi yang sudah ditutup (disimpan di localStorage).
+//    Key localStorage SAMA dengan yang dipakai Header.vue agar read-state
+//    sinkron dua arah: close di profile → hilang juga di header, begitu juga sebaliknya.
+const CLOSED_NOTIF_KEY = 'closed_notifications';
 const closedNotifications = ref([]);
+
+const loadClosedNotifications = () => {
+  try {
+    const stored = localStorage.getItem(CLOSED_NOTIF_KEY);
+    closedNotifications.value = stored ? JSON.parse(stored) : [];
+  } catch (e) {
+    console.error('Error loading closed notifications:', e);
+    closedNotifications.value = [];
+  }
+};
 
 // 🔔 Load closed notifications dari localStorage saat component mount
 onMounted(() => {
-  try {
-    const stored = localStorage.getItem('closed_notifications');
-    if (stored) {
-      closedNotifications.value = JSON.parse(stored);
-    }
-  } catch (e) {
-    console.error('Error loading closed notifications:', e);
+  loadClosedNotifications();
+  // Dengarkan perubahan dari komponen lain (mis. saat "Tandai dibaca" di Header)
+  window.addEventListener('notifications-changed', loadClosedNotifications);
+  window.addEventListener('storage', loadClosedNotifications);
+
+  // ➡️ Cek apakah datang dari klik notifikasi (query focus_kerjasama / tab)
+  const urlParams = new URLSearchParams(window.location.search);
+  const focusId = urlParams.get('focus_kerjasama');
+  const tabParam = urlParams.get('tab');
+  if (tabParam === 'riwayat' || focusId) {
+    // Tunggu data kerjasama_list ter-render dulu
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (focusId) {
+          focusKerjasamaCard(focusId);
+        } else if (tabParam) {
+          activeTab.value = 'riwayat';
+        }
+      });
+    });
   }
+});
+
+onUnmounted(() => {
+  window.removeEventListener('notifications-changed', loadClosedNotifications);
+  window.removeEventListener('storage', loadClosedNotifications);
 });
 
 // 🔔 Function tutup notifikasi
@@ -30,7 +66,9 @@ const closeNotification = (notifId) => {
   if (!closedNotifications.value.includes(notifId)) {
     closedNotifications.value.push(notifId);
     // Simpan ke localStorage
-    localStorage.setItem('closed_notifications', JSON.stringify(closedNotifications.value));
+    localStorage.setItem(CLOSED_NOTIF_KEY, JSON.stringify(closedNotifications.value));
+    // Broadcast supaya daftar di Header juga ikut menyembunyikan notif ini
+    window.dispatchEvent(new CustomEvent('notifications-changed'));
   }
 };
 
@@ -82,6 +120,39 @@ const selectedKerjasama = ref(null);
 
 // Tab state
 const activeTab = ref('riwayat');
+
+// 🔡 Highlight state: id kerjasama yang sedang di-highlight (efek pulse kuning)
+const highlightKerjasamaId = ref(null);
+
+// ➡️ Scroll + highlight card kerjasama tertentu (dipakai saat datang dari klik notifikasi)
+const focusKerjasamaCard = (kerjasamaId, options = {}) => {
+  if (!kerjasamaId) return;
+
+  // Pastikan tab Riwayat aktif dulu (card kerjasama ada di tab ini)
+  const ensureTabThenFocus = () => {
+    activeTab.value = 'riwayat';
+    // Tunggu render tab selesai sebelum scroll
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const el = document.getElementById(`kerjasama-card-${kerjasamaId}`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          highlightKerjasamaId.value = kerjasamaId;
+          // Hilangkan highlight setelah beberapa detik
+          window.setTimeout(() => {
+            if (highlightKerjasamaId.value === kerjasamaId) {
+              highlightKerjasamaId.value = null;
+            }
+          }, options.duration ?? 3500);
+        } else if (isDev) {
+          console.warn('[Profile] Card kerjasama tidak ditemukan untuk id:', kerjasamaId);
+        }
+      });
+    });
+  };
+
+  ensureTabThenFocus();
+};
 
 // Logout function
 const handleLogout = () => {
@@ -193,8 +264,8 @@ const getStatusLabel = (status) => {
                   {{ notif.message }}
                 </p>
                 <div class="mt-3 flex gap-3 items-center flex-wrap">
-                  <button 
-                    @click="openDetailNotif(notif)"
+                  <button
+                    @click="focusKerjasamaCard(notif.kerjasama_id)"
                     class="text-xs font-semibold text-yellow-800 hover:text-yellow-900 underline cursor-pointer bg-transparent border-none p-0"
                   >
                     Lihat Kerjasama
@@ -353,7 +424,17 @@ const getStatusLabel = (status) => {
                     </div>
 
                     <!-- Kartu Kerjasama -->
-                    <div v-for="kerjasama in kerjasamaList" :key="kerjasama.id_kerjasama" class="bg-[#D4E9ED] rounded-3xl p-4 sm:p-6 md:p-8 shadow-md">
+                    <div
+                      v-for="kerjasama in kerjasamaList"
+                      :key="kerjasama.id_kerjasama"
+                      :id="`kerjasama-card-${kerjasama.id_kerjasama}`"
+                      :class="[
+                        'rounded-3xl p-4 sm:p-6 md:p-8 shadow-md transition-all duration-500 scroll-mt-28',
+                        highlightKerjasamaId === kerjasama.id_kerjasama
+                          ? 'bg-yellow-100 ring-4 ring-yellow-400 scale-[1.01] animate-pulse'
+                          : 'bg-[#D4E9ED] hover:shadow-lg'
+                      ]"
+                    >
                       
                       <!-- Header dengan judul dan status -->
                       <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 mb-4 sm:mb-6">

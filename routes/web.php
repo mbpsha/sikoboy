@@ -57,33 +57,34 @@ Route::get('/', function () {
             })->values();
         });
 
-    // STATISTIK DINAMIS
-    $today = now();
-    $sixMonthsLater = now()->addMonths(6);
-    $threeMonthsLater = now()->addMonths(3);
+// STATISTIK DINAMIS
+    $today = \Carbon\Carbon::today();
+    $sixMonthsLater = $today->clone()->addMonths(6);
+    $threeMonthsLater = $today->clone()->addMonths(3);
 
-    $totalKerjasama = DB::table('kerjasama')->count();
+    $totalKerjasama = DB::table('kerjasama')->where('is_finalized', 1)->count();
 
-    $lessThanSixMonths = DB::table('kerjasama')
-        ->join('periode_kerjasama', 'kerjasama.id_kerjasama', '=', 'periode_kerjasama.id_kerjasama')
-        ->whereBetween('periode_kerjasama.tanggal_berakhir', [$today, $sixMonthsLater])
-        ->where('kerjasama.status_aktif', true)
-        ->distinct('kerjasama.id_kerjasama')
-        ->count('kerjasama.id_kerjasama');
+    $latestPeriode = DB::table('periode_kerjasama as p')
+        ->select('p.id_kerjasama', DB::raw('MAX(p.tanggal_berakhir) as tanggal_berakhir_terbaru'))
+        ->join('kerjasama as k', 'k.id_kerjasama', '=', 'p.id_kerjasama')
+        ->where('k.is_finalized', 1)
+        ->groupBy('p.id_kerjasama')
+        ->get();
 
-    $lessThanThreeMonths = DB::table('kerjasama')
-        ->join('periode_kerjasama', 'kerjasama.id_kerjasama', '=', 'periode_kerjasama.id_kerjasama')
-        ->whereBetween('periode_kerjasama.tanggal_berakhir', [$today, $threeMonthsLater])
-        ->where('kerjasama.status_aktif', true)
-        ->distinct('kerjasama.id_kerjasama')
-        ->count('kerjasama.id_kerjasama');
+    $lessThanSixMonths = $latestPeriode->filter(function ($row) use ($today, $sixMonthsLater) {
+        $tgl = \Carbon\Carbon::parse($row->tanggal_berakhir_terbaru);
+        return $tgl->gte($today) && $tgl->lte($sixMonthsLater);
+    })->count();
 
-    $expired = DB::table('kerjasama')
-        ->join('periode_kerjasama', 'kerjasama.id_kerjasama', '=', 'periode_kerjasama.id_kerjasama')
-        ->where('periode_kerjasama.tanggal_berakhir', '<', $today)
-        ->where('kerjasama.status_aktif', true)
-        ->distinct('kerjasama.id_kerjasama')
-        ->count('kerjasama.id_kerjasama');
+    $lessThanThreeMonths = $latestPeriode->filter(function ($row) use ($today, $threeMonthsLater) {
+        $tgl = \Carbon\Carbon::parse($row->tanggal_berakhir_terbaru);
+        return $tgl->gte($today) && $tgl->lte($threeMonthsLater);
+    })->count();
+
+    $expired = $latestPeriode->filter(function ($row) use ($today) {
+        $tgl = \Carbon\Carbon::parse($row->tanggal_berakhir_terbaru);
+        return $tgl->lt($today);
+    })->count();
 
     $stats = [
         ['label' => 'Jumlah Kerja Sama', 'value' => $totalKerjasama],

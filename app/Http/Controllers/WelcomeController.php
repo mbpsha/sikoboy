@@ -9,9 +9,6 @@ use Inertia\Inertia;
 
 class WelcomeController extends Controller
 {
-    /**
-     * Display the landing/welcome page dengan statistik publik.
-     */
     public function __invoke()
     {
         // =====================================================
@@ -41,64 +38,37 @@ class WelcomeController extends Controller
             });
 
         // =====================================================
-        // HITUNG STATISTIK PUBLIK
+        // HITUNG STATISTIK PUBLIK (tanpa whereRaw subquery)
         // =====================================================
         $today = Carbon::today();
         $today6bulan = $today->clone()->addMonths(6);
         $today3bulan = $today->clone()->addMonths(3);
 
-        // ✅ Total Kerjasama (semua yang finalized)
-        $totalKerjasama = DB::table('kerjasama')
-            ->where('is_finalized', 1)
-            ->count();
-
-        // ✅ Masa Berlaku < 6 Bulan
-        $masaBerlakuKurang6bulan = DB::table('kerjasama as k')
-            ->join('periode_kerjasama as p', 'k.id_kerjasama', '=', 'p.id_kerjasama')
+        // Ambil tanggal_berakhir TERBARU per id_kerjasama, hanya untuk kerjasama yang finalized
+        $latestPeriode = DB::table('periode_kerjasama as p')
+            ->select('p.id_kerjasama', DB::raw('MAX(p.tanggal_berakhir) as tanggal_berakhir_terbaru'))
+            ->join('kerjasama as k', 'k.id_kerjasama', '=', 'p.id_kerjasama')
             ->where('k.is_finalized', 1)
-            // Hanya ambil periode dengan tanggal_berakhir terbesar per kerjasama
-            ->whereRaw('p.id_periode = (
-                SELECT id_periode FROM periode_kerjasama p2
-                WHERE p2.id_kerjasama = k.id_kerjasama
-                ORDER BY p2.tanggal_berakhir DESC
-                LIMIT 1
-            )')
-            // Tanggal berakhir: lebih dari hari ini tapi kurang dari 6 bulan
-            ->whereBetween('p.tanggal_berakhir', [$today->toDateString(), $today6bulan->toDateString()])
-            ->distinct('k.id_kerjasama')
-            ->count();
+            ->groupBy('p.id_kerjasama')
+            ->get();
 
-        // ✅ Masa Berlaku < 3 Bulan
-        $masaBerlakuKurang3bulan = DB::table('kerjasama as k')
-            ->join('periode_kerjasama as p', 'k.id_kerjasama', '=', 'p.id_kerjasama')
-            ->where('k.is_finalized', 1)
-            ->whereRaw('p.id_periode = (
-                SELECT id_periode FROM periode_kerjasama p2
-                WHERE p2.id_kerjasama = k.id_kerjasama
-                ORDER BY p2.tanggal_berakhir DESC
-                LIMIT 1
-            )')
-            // Tanggal berakhir: lebih dari hari ini tapi kurang dari 3 bulan
-            ->whereBetween('p.tanggal_berakhir', [$today->toDateString(), $today3bulan->toDateString()])
-            ->distinct('k.id_kerjasama')
-            ->count();
+        $totalKerjasama = DB::table('kerjasama')->where('is_finalized', 1)->count();
 
-        // ✅ Masa Berlaku Habis
-        $masaBerlakuHabis = DB::table('kerjasama as k')
-            ->join('periode_kerjasama as p', 'k.id_kerjasama', '=', 'p.id_kerjasama')
-            ->where('k.is_finalized', 1)
-            ->whereRaw('p.id_periode = (
-                SELECT id_periode FROM periode_kerjasama p2
-                WHERE p2.id_kerjasama = k.id_kerjasama
-                ORDER BY p2.tanggal_berakhir DESC
-                LIMIT 1
-            )')
-            // Tanggal berakhir sudah lebih kecil dari hari ini
-            ->where('p.tanggal_berakhir', '<', $today->toDateString())
-            ->distinct('k.id_kerjasama')
-            ->count();
+        $masaBerlakuKurang6bulan = $latestPeriode->filter(function ($row) use ($today, $today6bulan) {
+            $tgl = Carbon::parse($row->tanggal_berakhir_terbaru);
+            return $tgl->gte($today) && $tgl->lte($today6bulan);
+        })->count();
 
-        // ✅ Build stats array
+        $masaBerlakuKurang3bulan = $latestPeriode->filter(function ($row) use ($today, $today3bulan) {
+            $tgl = Carbon::parse($row->tanggal_berakhir_terbaru);
+            return $tgl->gte($today) && $tgl->lte($today3bulan);
+        })->count();
+
+        $masaBerlakuHabis = $latestPeriode->filter(function ($row) use ($today) {
+            $tgl = Carbon::parse($row->tanggal_berakhir_terbaru);
+            return $tgl->lt($today);
+        })->count();
+
         $stats = [
             ['label' => 'Jumlah Kerja Sama', 'value' => (string) $totalKerjasama],
             ['label' => 'Masa Berlaku <6 Bulan', 'value' => (string) $masaBerlakuKurang6bulan],
