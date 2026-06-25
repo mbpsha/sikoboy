@@ -292,12 +292,14 @@ class RiwayatKerjasamaController extends Controller
         // Validate admin exists
         abort_if($admin === null, 403, 'User harus memiliki akses admin.');
 
-        $idKategori = $validated['id_kategori']
-            ?? DB::table('kategori_kerjasama')->orderBy('id_kategori')->value('id_kategori');
+        $idKategori = DB::table('kategori_kerjasama')
+            ->where('nama_kategori', $validated['jenis_kerjasama'])
+            ->value('id_kategori');
+
 
         if (! $idKategori) {
             throw ValidationException::withMessages([
-                'id_kategori' => 'Kategori kerjasama belum tersedia. Silakan isi data kategori terlebih dahulu.',
+                'jenis_kerjasama' => 'Kategori kerjasama belum tersedia. Silakan isi data kategori terlebih dahulu.',
             ]);
         }
 
@@ -426,11 +428,13 @@ class RiwayatKerjasamaController extends Controller
         // Validate admin exists
         abort_if($admin === null, 403, 'User harus memiliki akses admin.');
 
-        $idKategori = DB::table('kategori_kerjasama')->orderBy('id_kategori')->value('id_kategori');
+        $idKategori = DB::table('kategori_kerjasama')
+            ->where('nama_kategori', $validated['jenis_kerjasama'])
+            ->value('id_kategori');
 
         if (! $idKategori) {
             throw ValidationException::withMessages([
-                'id_kategori' => 'Kategori kerjasama belum tersedia. Silakan isi data kategori terlebih dahulu.',
+                'jenis_kerjasama' => 'Kategori kerjasama belum tersedia. Silakan isi data kategori terlebih dahulu.',
             ]);
         }
 
@@ -536,11 +540,13 @@ class RiwayatKerjasamaController extends Controller
         // Validate admin exists
         abort_if($admin === null, 403, 'User harus memiliki akses admin.');
 
-        $idKategori = DB::table('kategori_kerjasama')->orderBy('id_kategori')->value('id_kategori');
+        $idKategori = DB::table('kategori_kerjasama')
+            ->where('nama_kategori', $validated['jenis_kerjasama'])
+            ->value('id_kategori');
 
         if (! $idKategori) {
             throw ValidationException::withMessages([
-                'id_kategori' => 'Kategori kerjasama belum tersedia. Silakan isi data kategori terlebih dahulu.',
+                'jenis_kerjasama' => 'Kategori kerjasama belum tersedia. Silakan isi data kategori terlebih dahulu.',
             ]);
         }
 
@@ -959,7 +965,7 @@ class RiwayatKerjasamaController extends Controller
                 });
 
                 if (is_numeric($search)) {
-                    $q->orWhereHas('latestPeriode', function ($periode) use ($search) {
+                    $q->orWhereHas('periodes', function ($periode) use ($search) {
                         $periode->whereYear('tanggal_mulai', $search);
                     });
                 }
@@ -967,7 +973,7 @@ class RiwayatKerjasamaController extends Controller
         }
 
         if ($request->filled('tahun')) {
-            $query->whereHas('latestPeriode', function ($q) use ($request) {
+            $query->whereHas('periodes', function ($q) use ($request) {
                 $q->whereYear('tanggal_mulai', $request->tahun);
             });
         }

@@ -437,7 +437,7 @@ const validateAdendum = () => {
     if (!adendumForm.value.pembiayaan)
         adendumErrors.value.pembiayaan = "Pembiayaan wajib diisi";
     if (!adendumForm.value.file)
-        adendumErrors.value.file = "File adendum wajib diupload";
+        adendumErrors.value.file = "File pembaharuan wajib diupload";
 
     return Object.keys(adendumErrors.value).length === 0;
 };

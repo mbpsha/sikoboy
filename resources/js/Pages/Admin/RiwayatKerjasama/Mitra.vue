@@ -343,6 +343,14 @@ const filteredTableData = computed(() => {
     return data;
 });
 
+const uniqueYears = computed(() => {
+    const vals = [...new Set((props.data?.data || []).map(i => i.tahun).filter(Boolean))].map(String)
+    if (vals.length) return vals.sort((a, b) => Number(b) - Number(a))
+    if (props.years?.length) return props.years
+    const now = new Date().getFullYear()
+    return Array.from({ length: 6 }).map((_, i) => String(now - i))
+})
+
 // Normalize status text and return badge classes
 const statusBadgeClasses = (status) => {
     const s = String(status ?? '').trim().toLowerCase();
