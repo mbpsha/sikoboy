@@ -198,7 +198,7 @@ class NotificationFeed
             ->map(function ($row) {
                 $nomor = $row->nomor_suratM ?: $row->nomor_suratP;
                 $judul = $row->judul ?: $row->kerjasama_judul;
-                
+
                 // Map id_status ke nama
                 $statusName = match($row->id_status) {
                     2 => 'revisi',
@@ -207,7 +207,7 @@ class NotificationFeed
                     5 => 'dibatalkan',
                     default => 'proses',
                 };
-                
+
                 // Format status untuk display
                 $statusLabel = match($statusName) {
                     'revisi' => 'meminta revisi',

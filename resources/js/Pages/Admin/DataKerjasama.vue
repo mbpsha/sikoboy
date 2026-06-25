@@ -790,17 +790,14 @@ onBeforeUnmount(() => {
 const showAddFormFor = reactive({})
 const newProcessForm = reactive({})
 
-function toggleAddForm(id, k) {
+function toggleAddForm(id) {
   showAddFormFor[id] = !showAddFormFor[id]
-  if (showAddFormFor[id]) {
-    const nextNum = (k?.proses?.length ?? 0) + 1
-    newProcessForm[id] = { prefix: `Proses ${nextNum} - `, suffix: '' }
-  }
+  if (!newProcessForm[id]) newProcessForm[id] = { title: '' }
 }
 
 function cancelAdd(id) {
   showAddFormFor[id] = false
-  delete newProcessForm[id]
+  if (newProcessForm[id]) newProcessForm[id].title = ''
 }
 
 function addProcess(k) {
@@ -814,7 +811,7 @@ function addProcess(k) {
   if (!k.proses) k.proses = []
   k.proses.push({ id: null, label: fullTitle, title: fullTitle, catatan: '', penanggung: currentUserDivisi.value, __temp: true })
 
-  delete newProcessForm[id]
+  newProcessForm[id].title = ''
   showAddFormFor[id] = false
 }
 
@@ -849,7 +846,7 @@ async function finishAddProcess(k) {
       preserveScroll: true,
       preserveState: true,
       onSuccess: () => {
-        delete newProcessForm[id]
+        newProcessForm[id].title = ''
         showAddFormFor[id] = false
         closeProsesListModal()
         Swal.fire({

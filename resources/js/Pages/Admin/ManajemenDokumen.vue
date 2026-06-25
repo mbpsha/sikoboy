@@ -114,7 +114,7 @@
                   v-if="fileName"
                   class="mt-4 inline-flex max-w-full items-center rounded-full bg-teal-50 px-4 py-2 text-sm font-semibold text-teal-700"
                 >
-                  <span class="truncate">{{ fileName }}</span>
+                  <span class="block break-words whitespace-normal">{{ fileName }}</span>
                 </div>
 
               </div>

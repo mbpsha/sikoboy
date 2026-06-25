@@ -14,32 +14,32 @@ class KategoriKerjasamaSeeder extends Seeder
     {
         $kategori = [
             [
-                'nama_kategori' => 'Kerjasama Daerah Antar Daerah (KSDD)',
+                'nama_kategori' => 'KSDD',
                 'deskripsi' => 'Kerjasama daerah antar daerah',
                 'file_template' => '-',
             ],
             [
-                'nama_kategori' => 'Kerjasama Dengan Pihak Ketiga (KSDPK)',
+                'nama_kategori' => 'KSDPK',
                 'deskripsi' => 'Kerjasama dengan pihak ketiga',
                 'file_template' => '-',
             ],
             [
-                'nama_kategori' => 'Sinergi Dengan Pemerintah Pusat / Lembaga (NK/RK)',
+                'nama_kategori' => 'NK/RK',
                 'deskripsi' => 'Sinergi dengan pemerintah pusat atau lembaga',
                 'file_template' => '-',
             ],
             [
-                'nama_kategori' => 'Perjanjian Teknis (PERTEK)',
+                'nama_kategori' => 'PERTEK',
                 'deskripsi' => 'Perjanjian teknis',
                 'file_template' => '-',
             ],
             [
-                'nama_kategori' => 'Kerjasama Daerah Dengan Pemerintah Daerah Di Luar Negeri (KSDPL)',
+                'nama_kategori' => 'KSDPL',
                 'deskripsi' => 'Kerjasama daerah dengan pemerintah daerah di luar negeri',
                 'file_template' => '-',
             ],
             [
-                'nama_kategori' => 'Kerjasama Daerah Dengan Lembaga Di Luar Negeri (KSDLL)',
+                'nama_kategori' => 'KSDLL',
                 'deskripsi' => 'Kerjasama daerah dengan lembaga di luar negeri',
                 'file_template' => '-',
             ],

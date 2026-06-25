@@ -11,7 +11,7 @@ use App\Models\KategoriKerjasama;
 use App\Models\Kerjasama;
 use App\Models\PeriodeKerjasama;
 use App\Models\RiwayatStatus;
-use App\Support\FileUpload;
+use App\Support\JenisKerjasama;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -171,6 +171,12 @@ class KerjasamaController extends Controller
     {
         $mitra = $request->user()->mitra;
         $validated = $request->validated();
+        $jenisKerjasama = JenisKerjasama::toCode(
+            $validated['jenis_kerjasama']
+        );
+
+        $jenisSingkatan = $jenisMap[$validated['jenis_kerjasama']]
+        ?? $validated['jenis_kerjasama'];
         $defaultAdminEmail = (string) config('services.default_admin_email');
 
         $admin = Admin::query()
@@ -179,13 +185,12 @@ class KerjasamaController extends Controller
             ->first();
         $admin ??= Admin::query()->orderBy('id_admin')->first();
         abort_if($admin === null, 422, 'Belum ada admin yang dapat memproses pengajuan.');
-        $kategori = KategoriKerjasama::query()
-            ->firstOrCreate(
-                ['nama_kategori' => $validated['jenis_kerjasama']],
-                ['deskripsi' => 'Kategori dari pengajuan mitra', 'file_template' => '-']
-            );
+        $kategori = KategoriKerjasama::where(
+            'nama_kategori',
+            $validated['jenis_kerjasama']
+        )->firstOrFail();
 
-        DB::transaction(function () use ($validated, $request, $mitra, $admin, $kategori) {
+        DB::transaction(function () use ($validated, $request, $mitra, $admin, $kategori, $jenisKerjasama) {
             $kerjasama = Kerjasama::create([
                 'id_mitra' => $mitra->id_mitra,
                 'id_admin' => $admin->id_admin,
@@ -197,7 +202,7 @@ class KerjasamaController extends Controller
                 'daerah' => '-',
                 'status_aktif' => 'aktif',
                 'pemrakarsa' => 'M',
-                'jenis_kerjasama' => $validated['jenis_kerjasama'],
+                'jenis_kerjasama' => $jenisKerjasama,
                 'jenis_dokumen' => $validated['jenis_dokumen'],
                 'pembiayaan' => $validated['pembiayaan'],
                 'tipe' => 'mitra',
