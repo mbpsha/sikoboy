@@ -1585,7 +1585,6 @@ const clearColumnFilter = (filterKey) => {
                                 class="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700 space-y-1"
                             >
                                 <p><span class="font-semibold">Nama Perusahaan:</span> {{ selectedMitra.nama_perusahaan || '-' }}</p>
-                                <p><span class="font-semibold">NPWP:</span> {{ selectedMitra.npwp || '-' }}</p>
                                 <p><span class="font-semibold">PIC:</span> {{ selectedMitra.pic || '-' }}</p>
                                 <p><span class="font-semibold">No. HP:</span> {{ selectedMitra.no_handphone || '-' }}</p>
                                 <p><span class="font-semibold">Alamat:</span> {{ selectedMitra.alamat || '-' }}</p>

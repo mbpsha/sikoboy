@@ -65,15 +65,16 @@ const user = computed(() => page.props.value?.auth?.user ?? null);
 
         <div class="flex gap-2">
           <p class="leading-relaxed">
-            Biro Kerja Sama Daerah<br>
-            Kabupaten Boyolali<br>
-            Jl. Merdeka Barat, Kemiri, Boyolali
+            Bagian Tata Pemerintahan<br>
+            Sekretariat Daerah Kabupaten Boyolali<br>
+            Komplek Perkantoran Terpadu Kabupaten Boyolali<br>
+            Jalan Merdeka Barat, Siswodipuran, Boyolali 57311
           </p>
         </div>
 
         <div class="flex items-center gap-2">
           <span>✉️</span>
-          <a href="mailto:setda@boyolali.go.id" class="underline hover:text-white transition break-all">setda@boyolali.go.id</a>
+          <a href="mailto:tapem.setda.byl@gmail.com" class="underline hover:text-white transition break-all">tapem.setda.byl@gmail.com</a>
         </div>
 
         <div class="flex items-center gap-2">

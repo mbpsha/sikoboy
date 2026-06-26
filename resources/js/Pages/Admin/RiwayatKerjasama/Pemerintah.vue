@@ -354,6 +354,12 @@ const hideMitraSuggestions = () => {
     }, dropdownCloseDelayMs);
 };
 
+const adendumForm = ref({
+    judul_Pembaharuan: "",
+    keterangan_Pembaharuan: "",
+    file: null,
+});
+
 const errors = ref({});
 const adendumErrors = ref({});
 const isSubmitting = ref(false);
@@ -486,6 +492,8 @@ const submit = () => {
     formData.append("mitra", form.value.mitra);
     formData.append("tahun", form.value.tahun);
     formData.append("judul", form.value.judul);
+    formData.append("tanggal_mulai", form.value.mulai);
+    formData.append("tanggal_selesai", form.value.selesai);
     formData.append("jangka", form.value.jangka);
     formData.append("nomor_suratM", form.value.nomor_suratM);
     formData.append("nomor_suratP", form.value.nomor_suratP);
@@ -495,12 +503,18 @@ const submit = () => {
     formData.append("jenis_kerjasama", form.value.jenis_kerjasama);
     formData.append("jenis_dokumen", form.value.jenis_dokumen);
     formData.append("nama_pihak_luar", form.value.mitra);
-    formData.append("tanggal_mulai", form.value.mulai);
-    formData.append("tanggal_berakhir", form.value.selesai);
+
+    if (form.value.mulai && form.value.selesai) {
+    const startDate = new Date(form.value.mulai);
+    const endDate = new Date(form.value.selesai);
+    const monthsDiff = (endDate.getFullYear() - startDate.getFullYear()) * 12 + 
+                      (endDate.getMonth() - startDate.getMonth());
+    formData.append("jangka_waktu_bulan", monthsDiff);
+}
 
     if (form.value.file) {
-        formData.append("file", form.value.file);
-    }
+    formData.append("dokumen_file", form.value.file);  // ✅ BENAR
+}
 
     router.post(
         route("admin.riwayat-kerjasama.pemerintah.store"),
@@ -716,14 +730,14 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-    <AdminLayout title="Riwayat Kerjasama - Boyolali">
+    <AdminLayout title="Riwayat Kerjasama - Mitra">
         <div class="p-4 sm:p-6">
             <div class="max-w-7xl mx-auto">
                 <!-- SEARCH -->
                 <div
                     class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100"
                 >
-                    <div class="flex gap-3 items-center overflow-x-auto mb-3">
+                    <div class="flex flex-col gap-3 lg:flex-row lg:items-center">
                         <div
                             class="flex items-center gap-2 w-full min-w-0 rounded-full px-4 py-2.5 border border-gray-200 bg-gray-50 focus-within:border-teal-600 focus-within:ring-1 focus-within:ring-teal-600 transition lg:flex-1"
                         >
@@ -744,6 +758,10 @@ onBeforeUnmount(() => {
                                 {{ y }}
                             </option>
                         </select>
+
+                            <button @click="applyFilters" class="w-full bg-teal-700 hover:bg-teal-800 text-white text-sm px-5 py-2.5 rounded-full font-medium transition sm:w-auto">
+                                Filter
+                            </button>
 
                         <button v-if="search || tahun" @click="resetAllFilters" class="bg-gray-300 hover:bg-gray-400 text-gray-700 text-sm px-5 py-2.5 rounded-full font-medium transition">
                             Reset
@@ -1018,7 +1036,7 @@ onBeforeUnmount(() => {
                                     <th
                                         class="px-4 py-3 text-left border-r border-gray-200"
                                     >
-                                        Adendum
+                                        Pembaharuan
                                     </th>
                                     <th
                                         class="px-4 py-3 text-left whitespace-nowrap relative cursor-pointer"
@@ -1187,7 +1205,7 @@ onBeforeUnmount(() => {
                                     >
                                         <div class="flex flex-wrap items-center gap-2">
                                             <span class="text-sm text-gray-600">
-                                                {{ item.has_adendum ? `${item.adendum_count} adendum` : 'Belum ada adendum' }}
+                                                {{ item.has_adendum ? `${item.adendum_count} adendum` : 'Belum ada pembaharuan' }}
                                             </span>
                                             <button
                                                 v-if="item.has_adendum"
@@ -1403,7 +1421,6 @@ onBeforeUnmount(() => {
                                 class="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700 space-y-1"
                             >
                                 <p><span class="font-semibold">Nama Perusahaan:</span> {{ selectedMitra.nama_perusahaan || '-' }}</p>
-                                <p><span class="font-semibold">NPWP:</span> {{ selectedMitra.npwp || '-' }}</p>
                                 <p><span class="font-semibold">PIC:</span> {{ selectedMitra.pic || '-' }}</p>
                                 <p><span class="font-semibold">No. HP:</span> {{ selectedMitra.no_handphone || '-' }}</p>
                                 <p><span class="font-semibold">Alamat:</span> {{ selectedMitra.alamat || '-' }}</p>
@@ -1728,7 +1745,7 @@ onBeforeUnmount(() => {
                     ✕
                 </button>
 
-                <h2 class="text-lg font-semibold mb-4">Upload Adendum</h2>
+                <h2 class="text-lg font-semibold mb-4">Upload Pembaharuan</h2>
 
                 <!-- FORM - SCROLLABLE -->
                 <div class="overflow-y-auto flex-1 pr-2">
@@ -1736,13 +1753,13 @@ onBeforeUnmount(() => {
                         <!-- JUDUL ADENDUM -->
                         <div>
                             <label class="text-sm font-medium">
-                                Judul Adendum
+                                Judul Pembaharuan
                             </label>
                             <input
                                 v-model="adendumForm.judul_adendum"
                                 type="text"
                                 class="w-full border rounded-lg px-3 py-2 mt-1"
-                                placeholder="Masukkan judul adendum"
+                                placeholder="Masukkan judul pembaharuan"
                             />
                             <p
                                 v-if="adendumErrors.judul_adendum"
@@ -1758,9 +1775,9 @@ onBeforeUnmount(() => {
                                 Keterangan (Opsional)
                             </label>
                             <textarea
-                                v-model="adendumForm.keterangan_adendum"
+                                v-model="adendumForm.keterangan_pembaharuan"
                                 class="w-full border rounded-lg px-3 py-2 mt-1"
-                                placeholder="Masukkan keterangan adendum"
+                                placeholder="Masukkan keterangan pembaharuan"
                                 rows="4"
                             ></textarea>
                         </div>
@@ -1768,7 +1785,7 @@ onBeforeUnmount(() => {
                         <!-- FILE UPLOAD -->
                         <div>
                             <label class="text-sm font-medium">
-                                File Dokumen Adendum
+                                File Dokumen Pembaharuan
                             </label>
                             <div
                                 @drop.prevent="handleAdendumDrop"
@@ -1841,7 +1858,7 @@ onBeforeUnmount(() => {
                     ✕
                 </button>
 
-                <h2 class="text-lg font-semibold mb-1">Data Adendum</h2>
+                <h2 class="text-lg font-semibold mb-1">Data Pembaharuan</h2>
                 <p class="text-sm text-gray-500 mb-4">{{ selectedAdendumKerjasama?.judul }}</p>
 
                 <div class="overflow-y-auto flex-1 space-y-3 pr-1">
@@ -1851,11 +1868,11 @@ onBeforeUnmount(() => {
                         class="border border-gray-200 rounded-xl p-4 bg-gray-50"
                     >
                         <div class="flex items-center justify-between gap-2 mb-3">
-                            <h3 class="font-semibold text-sm text-gray-800">Adendum {{ adendum.urutan }}</h3>
+                            <h3 class="font-semibold text-sm text-gray-800">Pembaharuan {{ adendum.urutan }}</h3>
                             <span v-if="adendum.created_at" class="text-xs text-gray-500">{{ adendum.created_at }}</span>
                         </div>
                         <div class="space-y-3 text-sm">
-                            <div><p class="text-gray-500 text-xs">Judul Adendum</p><p class="font-medium">{{ adendum.judul_adendum || '-' }}</p></div>
+                            <div><p class="text-gray-500 text-xs">Judul Pembaharuan</p><p class="font-medium">{{ adendum.judul_adendum || '-' }}</p></div>
                             <div v-if="adendum.keterangan_adendum"><p class="text-gray-500 text-xs">Keterangan</p><p class="font-medium whitespace-pre-line">{{ adendum.keterangan_adendum }}</p></div>
                             <div v-if="adendum.file_url">
                                 <a
@@ -1884,3 +1901,5 @@ onBeforeUnmount(() => {
         </div>
     </AdminLayout>
 </template>
+
+
