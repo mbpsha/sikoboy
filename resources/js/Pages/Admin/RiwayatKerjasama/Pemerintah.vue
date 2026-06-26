@@ -823,7 +823,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-    <AdminLayout title="Riwayat Kerjasama - Mitra">
+    <AdminLayout title="Riwayat Kerjasama - Pemerintah Boyolali">
         <div class="p-4 sm:p-6">
             <div class="max-w-7xl mx-auto">
                 <!-- SEARCH -->
