@@ -355,8 +355,19 @@ const hideMitraSuggestions = () => {
 };
 
 const adendumForm = ref({
-    judul_Pembaharuan: "",
-    keterangan_Pembaharuan: "",
+    mitra: "",
+    tahun: "",
+    judul_adendum: "",
+    nomor_suratM_baru: "",
+    nomor_suratP_baru: "",
+    nomor_suratM_lama: "",
+    nomor_suratP_lama: "",
+    urusan: "",
+    jangka: "",
+    mulai: "",
+    selesai: "",
+    jenis_kerjasama: "",
+    pembiayaan: "",
     file: null,
 });
 
@@ -439,9 +450,23 @@ const validateAdendum = () => {
     adendumErrors.value = {};
 
     if (!adendumForm.value.judul_adendum)
-        adendumErrors.value.judul_adendum = "Judul adendum wajib diisi";
+        adendumErrors.value.judul_adendum = "Judul pembaharuan wajib diisi";
+    if (!adendumForm.value.nomor_suratM_baru)
+        adendumErrors.value.nomor_suratM_baru = "Nomor surat mitra baru wajib diisi";
+    if (!adendumForm.value.nomor_suratP_baru)
+        adendumErrors.value.nomor_suratP_baru = "Nomor surat pemerintah baru wajib diisi";
+    if (!adendumForm.value.urusan)
+        adendumErrors.value.urusan = "Urusan wajib diisi";
+    if (!adendumForm.value.jenis_kerjasama)
+        adendumErrors.value.jenis_kerjasama = "Jenis kerjasama wajib diisi";
+    if (!adendumForm.value.mulai)
+        adendumErrors.value.mulai = "Tanggal mulai wajib diisi";
+    if (!adendumForm.value.selesai)
+        adendumErrors.value.selesai = "Tanggal berakhir wajib diisi";
+    if (!adendumForm.value.pembiayaan)
+        adendumErrors.value.pembiayaan = "Pembiayaan wajib diisi";
     if (!adendumForm.value.file)
-        adendumErrors.value.file = "File adendum wajib diupload";
+        adendumErrors.value.file = "File pembaharuan wajib diupload";
 
     return Object.keys(adendumErrors.value).length === 0;
 };
@@ -507,7 +532,7 @@ const submit = () => {
     if (form.value.mulai && form.value.selesai) {
     const startDate = new Date(form.value.mulai);
     const endDate = new Date(form.value.selesai);
-    const monthsDiff = (endDate.getFullYear() - startDate.getFullYear()) * 12 + 
+    const monthsDiff = (endDate.getFullYear() - startDate.getFullYear()) * 12 +
                       (endDate.getMonth() - startDate.getMonth());
     formData.append("jangka_waktu_bulan", monthsDiff);
 }
@@ -585,12 +610,22 @@ const submit = () => {
 const submitAdendum = () => {
     if (!validateAdendum()) return;
 
+    const currentPage = props.data?.current_page || 1;
     const formData = new FormData();
     formData.append("id_kerjasama", selectedKerjasama.value.id_kerjasama);
-    formData.append("mitra", selectedKerjasama.value?.mitra || "");
-    formData.append("tahun", selectedKerjasama.value?.tahun || "");
+    formData.append("mitra", adendumForm.value.mitra);
+    formData.append("tahun", adendumForm.value.tahun);
     formData.append("judul_adendum", adendumForm.value.judul_adendum);
-    formData.append("keterangan_adendum", adendumForm.value.keterangan_adendum || "");
+    formData.append("nomor_surat_mitra_lama", adendumForm.value.nomor_suratM_lama || "");
+    formData.append("nomor_surat_mitra_baru", adendumForm.value.nomor_suratM_baru || "");
+    formData.append("nomor_surat_pemerintah_lama", adendumForm.value.nomor_suratP_lama || "");
+    formData.append("nomor_surat_pemerintah_baru", adendumForm.value.nomor_suratP_baru || "");
+    formData.append("urusan", adendumForm.value.urusan || "");
+    formData.append("jangka_waktu", adendumForm.value.jangka || "");
+    formData.append("tanggal_mulai", adendumForm.value.mulai || "");
+    formData.append("tanggal_berakhir", adendumForm.value.selesai || "");
+    formData.append("jenis_kerjasama", adendumForm.value.jenis_kerjasama || "");
+    formData.append("pembiayaan", adendumForm.value.pembiayaan || "");
 
     if (adendumForm.value.file) {
         formData.append("file", adendumForm.value.file);
@@ -598,7 +633,38 @@ const submitAdendum = () => {
 
     router.post(route("admin.riwayat-kerjasama.adendum.store"), formData, {
         preserveScroll: true,
-        onSuccess: closeAdendumModal,
+        onSuccess: () => {
+            closeAdendumModal();
+            Swal.fire({
+                icon: "success",
+                title: "Berhasil!",
+                text: "Pembaharuan berhasil diupload",
+                confirmButtonText: "OK",
+                confirmButtonColor: "#0d9488",
+            }).then(() => {
+                router.visit(route("admin.riwayat-kerjasama.pemerintah", { page: currentPage }), { preserveState: true });
+            });
+        },
+        onError: (err) => {
+            console.error("Error submit adendum:", err);
+            let errorHtml = '<div style="text-align: left; font-size: 0.9rem;">';
+            if (typeof err === "object") {
+                Object.entries(err).forEach(([key, value]) => {
+                    const errorMsg = Array.isArray(value) ? value[0] : value;
+                    errorHtml += `<strong>${key}:</strong> ${errorMsg}<br>`;
+                });
+            } else {
+                errorHtml += String(err);
+            }
+            errorHtml += "</div>";
+            Swal.fire({
+                icon: "error",
+                title: "Gagal Upload Pembaharuan",
+                html: errorHtml,
+                confirmButtonText: "OK",
+                confirmButtonColor: "#0d9488",
+            });
+        }
     });
 };
 
@@ -636,11 +702,23 @@ const closeAdendumModal = () => {
     showAdendumModal.value = false;
     selectedKerjasama.value = null;
     adendumForm.value = {
+        mitra: "",
+        tahun: "",
         judul_adendum: "",
-        keterangan_adendum: "",
+        nomor_suratM_baru: "",
+        nomor_suratP_baru: "",
+        nomor_suratM_lama: "",
+        nomor_suratP_lama: "",
+        urusan: "",
+        jangka: "",
+        mulai: "",
+        selesai: "",
+        jenis_kerjasama: "",
+        pembiayaan: "",
         file: null,
     };
     adendumErrors.value = {};
+    if (adendumFileInput.value) adendumFileInput.value.value = "";
 };
 
 const closeAdendumDetailModal = () => {
@@ -651,7 +729,22 @@ const closeAdendumDetailModal = () => {
 // OPEN ADENDUM MODAL
 const openAdendumModal = (item) => {
     selectedKerjasama.value = item;
-    adendumForm.value.judul_adendum = item?.judul || "";
+    adendumForm.value = {
+        mitra: item?.mitra || "",
+        tahun: item?.tahun || "",
+        judul_adendum: item?.judul || "",
+        nomor_suratM_baru: "",
+        nomor_suratP_baru: "",
+        nomor_suratM_lama: item?.nomor_suratM || "",
+        nomor_suratP_lama: item?.nomor_suratP || "",
+        urusan: item?.urusan || "",
+        jangka: item?.jangka_waktu || "",
+        mulai: item?.tanggal_mulai || "",
+        selesai: item?.tanggal_berakhir || "",
+        jenis_kerjasama: item?.jenis_kerjasama || "",
+        pembiayaan: item?.pembiayaan || "",
+        file: null,
+    };
     showAdendumModal.value = true;
 };
 
@@ -1205,10 +1298,10 @@ onBeforeUnmount(() => {
                                     >
                                         <div class="flex flex-wrap items-center gap-2">
                                             <span class="text-sm text-gray-600">
-                                                {{ item.has_adendum ? `${item.adendum_count} adendum` : 'Belum ada pembaharuan' }}
+                                                {{ item.adendum_count ? `${item.adendum_count} adendum` : 'Belum ada pembaharuan' }}
                                             </span>
                                             <button
-                                                v-if="item.has_adendum"
+                                                v-if="item.adendum_count"
                                                 @click="openAdendumDetailModal(item)"
                                                 class="px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 whitespace-nowrap"
                                             >
@@ -1353,6 +1446,7 @@ onBeforeUnmount(() => {
                 </div>
             </div>
         </div>
+
         <!-- MODAL TAMBAH KERJASAMA -->
         <div
             v-if="showModal"
@@ -1729,176 +1823,329 @@ onBeforeUnmount(() => {
                 </div>
             </div>
         </div>
+
         <!-- MODAL UPLOAD ADENDUM -->
-        <div
-            v-if="showAdendumModal"
-            class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4 sm:px-6 py-6"
+<div
+    v-if="showAdendumModal"
+    class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4 sm:px-6 py-6"
+>
+    <div
+        class="bg-white rounded-2xl p-4 sm:p-6 w-full max-w-[760px] max-h-[90dvh] shadow-lg relative flex flex-col"
+    >
+        <!-- CLOSE -->
+        <button
+            @click="closeAdendumModal"
+            class="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
         >
-            <div
-                class="bg-white rounded-2xl p-4 sm:p-6 w-full max-w-[600px] max-h-[90dvh] shadow-lg relative flex flex-col"
-            >
-                <!-- CLOSE -->
-                <button
-                    @click="closeAdendumModal"
-                    class="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
-                >
-                    ✕
-                </button>
+            ✕
+        </button>
 
-                <h2 class="text-lg font-semibold mb-4">Upload Pembaharuan</h2>
+        <h2 class="text-lg font-semibold mb-4">Upload Pembaharuan</h2>
 
-                <!-- FORM - SCROLLABLE -->
-                <div class="overflow-y-auto flex-1 pr-2">
-                    <div class="space-y-4">
-                        <!-- JUDUL ADENDUM -->
-                        <div>
-                            <label class="text-sm font-medium">
-                                Judul Pembaharuan
-                            </label>
-                            <input
-                                v-model="adendumForm.judul_adendum"
-                                type="text"
-                                class="w-full border rounded-lg px-3 py-2 mt-1"
-                                placeholder="Masukkan judul pembaharuan"
-                            />
-                            <p
-                                v-if="adendumErrors.judul_adendum"
-                                class="text-red-500 text-xs mt-1"
-                            >
-                                {{ adendumErrors.judul_adendum }}
-                            </p>
-                        </div>
+        <!-- FORM - SCROLLABLE -->
+        <div class="overflow-y-auto flex-1 pr-2">
+            <div class="space-y-4">
+                <!-- JUDUL ADENDUM -->
+                <div>
+                    <label class="text-sm font-medium">
+                        Judul Pembaharuan <span class="text-red-500">*</span>
+                    </label>
+                    <input
+                        v-model="adendumForm.judul_adendum"
+                        type="text"
+                        class="w-full border rounded-lg px-3 py-2 mt-1"
+                        placeholder="Masukkan judul pembaharuan"
+                    />
+                    <p v-if="adendumErrors.judul_adendum" class="text-red-500 text-xs mt-1">
+                        {{ adendumErrors.judul_adendum }}
+                    </p>
+                </div>
 
-                        <!-- KETERANGAN ADENDUM -->
-                        <div>
-                            <label class="text-sm font-medium">
-                                Keterangan (Opsional)
-                            </label>
-                            <textarea
-                                v-model="adendumForm.keterangan_pembaharuan"
-                                class="w-full border rounded-lg px-3 py-2 mt-1"
-                                placeholder="Masukkan keterangan pembaharuan"
-                                rows="4"
-                            ></textarea>
-                        </div>
-
-                        <!-- FILE UPLOAD -->
-                        <div>
-                            <label class="text-sm font-medium">
-                                File Dokumen Pembaharuan
-                            </label>
-                            <div
-                                @drop.prevent="handleAdendumDrop"
-                                @dragover.prevent
-                                class="border-2 border-dashed rounded-lg p-6 text-center cursor-pointer mt-1 hover:bg-gray-50"
-                            >
-                                <input
-                                    ref="adendumFileInput"
-                                    type="file"
-                                    accept=".pdf"
-                                    @change="handleAdendumFile"
-                                    class="hidden"
-                                />
-                                <button
-                                    type="button"
-                                    @click="adendumFileInput?.click()"
-                                    class="text-teal-600 hover:text-teal-700 font-semibold"
-                                >
-                                    Pilih File atau Drag & Drop
-                                </button>
-                                <p class="text-xs text-gray-500 mt-2">
-                                    Format: PDF
-                                </p>
-                                <p
-                                    v-if="adendumForm.file"
-                                    class="mt-3 text-xs sm:text-sm font-medium text-emerald-600 break-words"
-                                >
-                                    ✓ {{ adendumForm.file.name }}
-                                </p>
-                            </div>
-                            <p
-                                v-if="adendumErrors.file"
-                                class="text-red-500 text-xs mt-2"
-                            >
-                                {{ adendumErrors.file }}
-                            </p>
-                        </div>
+                <!-- NOMOR SURAT BARU -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-sm font-medium">
+                            Nomor Surat Mitra baru <span class="text-red-500">*</span>
+                        </label>
+                        <input
+                            v-model="adendumForm.nomor_suratM_baru"
+                            type="text"
+                            class="w-full border rounded-lg px-3 py-2 mt-1"
+                            placeholder="Masukkan nomor surat mitra baru"
+                        />
+                        <p v-if="adendumErrors.nomor_suratM_baru" class="text-red-500 text-xs mt-1">
+                            {{ adendumErrors.nomor_suratM_baru }}
+                        </p>
+                    </div>
+                    <div>
+                        <label class="text-sm font-medium">
+                            Nomor Surat Pemerintah baru <span class="text-red-500">*</span>
+                        </label>
+                        <input
+                            v-model="adendumForm.nomor_suratP_baru"
+                            type="text"
+                            class="w-full border rounded-lg px-3 py-2 mt-1"
+                            placeholder="Masukkan nomor surat pemerintah baru"
+                        />
+                        <p v-if="adendumErrors.nomor_suratP_baru" class="text-red-500 text-xs mt-1">
+                            {{ adendumErrors.nomor_suratP_baru }}
+                        </p>
                     </div>
                 </div>
 
-                <!-- BUTTONS -->
-                <div
-                    class="flex flex-col-reverse sm:flex-row gap-3 justify-end mt-4 pt-4 border-t border-gray-200"
-                >
-                    <button
-                        @click="closeAdendumModal"
-                        class="px-4 py-2 border rounded-lg text-sm hover:bg-gray-50"
-                    >
-                        Batal
-                    </button>
-                    <button
-                        @click="submitAdendum"
-                        class="px-4 py-2 bg-teal-600 text-white rounded-lg text-sm hover:bg-teal-700"
-                    >
-                        Upload
-                    </button>
+                <!-- NOMOR SURAT LAMA (readonly) -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-sm font-medium">Nomor Surat Mitra lama</label>
+                        <input
+                            v-model="adendumForm.nomor_suratM_lama"
+                            type="text"
+                            class="w-full border rounded-lg px-3 py-2 mt-1 bg-gray-100"
+                            readonly
+                        />
+                    </div>
+                    <div>
+                        <label class="text-sm font-medium">Nomor Surat Pemerintah lama</label>
+                        <input
+                            v-model="adendumForm.nomor_suratP_lama"
+                            type="text"
+                            class="w-full border rounded-lg px-3 py-2 mt-1 bg-gray-100"
+                            readonly
+                        />
+                    </div>
                 </div>
-            </div>
-        </div>
 
-        <div
-            v-if="showAdendumDetailModal"
-            class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4 sm:px-6 py-6"
-        >
-            <div class="bg-white rounded-2xl p-4 sm:p-6 w-full max-w-[680px] max-h-[90dvh] shadow-lg relative flex flex-col">
-                <button
-                    @click="closeAdendumDetailModal"
-                    class="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
-                >
-                    ✕
-                </button>
+                <!-- URUSAN & JENIS KERJASAMA -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-sm font-medium">
+                            Urusan <span class="text-red-500">*</span>
+                        </label>
+                        <select
+                            v-model="adendumForm.urusan"
+                            class="w-full border rounded-lg px-3 py-2 mt-1"
+                        >
+                            <option value="">-- Pilih Urusan --</option>
+                            <option
+                                v-for="urusan in props.urusanOptions"
+                                :key="urusan"
+                                :value="urusan"
+                            >
+                                {{ urusan }}
+                            </option>
+                        </select>
+                        <p v-if="adendumErrors.urusan" class="text-red-500 text-xs mt-1">
+                            {{ adendumErrors.urusan }}
+                        </p>
+                    </div>
+                    <div>
+                        <label class="text-sm font-medium">
+                            Jenis Kerjasama <span class="text-red-500">*</span>
+                        </label>
+                        <select
+                            v-model="adendumForm.jenis_kerjasama"
+                            class="w-full border rounded-lg px-3 py-2 mt-1"
+                        >
+                            <option value="">-- Pilih Jenis Kerjasama --</option>
+                            <option
+                                v-for="option in (props.jenisKerjasamaOptions || [])"
+                                :key="option.value"
+                                :value="option.value"
+                            >
+                                {{ option.label }}
+                            </option>
+                        </select>
+                        <p v-if="adendumErrors.jenis_kerjasama" class="text-red-500 text-xs mt-1">
+                            {{ adendumErrors.jenis_kerjasama }}
+                        </p>
+                    </div>
+                </div>
 
-                <h2 class="text-lg font-semibold mb-1">Data Pembaharuan</h2>
-                <p class="text-sm text-gray-500 mb-4">{{ selectedAdendumKerjasama?.judul }}</p>
+                <!-- TANGGAL MULAI & BERAKHIR -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-sm font-medium">
+                            Tanggal Mulai <span class="text-red-500">*</span>
+                        </label>
+                        <input
+                            type="date"
+                            v-model="adendumForm.mulai"
+                            class="w-full border rounded-lg px-3 py-2 mt-1"
+                        />
+                        <p v-if="adendumErrors.mulai" class="text-red-500 text-xs mt-1">
+                            {{ adendumErrors.mulai }}
+                        </p>
+                    </div>
+                    <div>
+                        <label class="text-sm font-medium">
+                            Tanggal Berakhir <span class="text-red-500">*</span>
+                        </label>
+                        <input
+                            type="date"
+                            v-model="adendumForm.selesai"
+                            class="w-full border rounded-lg px-3 py-2 mt-1"
+                        />
+                        <p v-if="adendumErrors.selesai" class="text-red-500 text-xs mt-1">
+                            {{ adendumErrors.selesai }}
+                        </p>
+                    </div>
+                </div>
 
-                <div class="overflow-y-auto flex-1 space-y-3 pr-1">
+                <!-- JANGKA WAKTU DISPLAY -->
+                <div v-if="adendumForm.jangka" class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <label class="text-sm font-medium text-blue-900 block mb-2">Jangka Waktu</label>
+                    <p class="text-base font-semibold text-blue-900">{{ adendumForm.jangka }}</p>
+                </div>
+
+                <!-- PEMBIAYAAN -->
+                <div>
+                    <label class="text-sm font-medium">
+                        Pembiayaan <span class="text-red-500">*</span>
+                    </label>
+                    <select
+                        v-model="adendumForm.pembiayaan"
+                        class="w-full border rounded-lg px-3 py-2 mt-1"
+                    >
+                        <option value="">-- Pilih Pembiayaan --</option>
+                        <option value="APBN">APBN</option>
+                        <option value="APBD">APBD</option>
+                        <option value="PIHAK KETIGA">PIHAK KETIGA</option>
+                        <option value="PARA PIHAK">PARA PIHAK</option>
+                        <option value="SESUAI DENGAN PERATURAN PERUNDANG-UNDANGAN">SESUAI DENGAN PERATURAN PERUNDANG-UNDANGAN</option>
+                    </select>
+                    <p v-if="adendumErrors.pembiayaan" class="text-red-500 text-xs mt-1">
+                        {{ adendumErrors.pembiayaan }}
+                    </p>
+                </div>
+
+                <!-- FILE UPLOAD -->
+                <div>
+                    <label class="text-sm font-medium">
+                        File Dokumen Pembaharuan <span class="text-red-500">*</span>
+                    </label>
                     <div
-                        v-for="adendum in (selectedAdendumKerjasama?.adendum_items || [])"
-                        :key="adendum.id_adendum"
-                        class="border border-gray-200 rounded-xl p-4 bg-gray-50"
+                        @drop.prevent="handleAdendumDrop"
+                        @dragover.prevent
+                        class="border-2 border-dashed rounded-lg p-6 text-center cursor-pointer mt-1 hover:bg-gray-50"
                     >
-                        <div class="flex items-center justify-between gap-2 mb-3">
-                            <h3 class="font-semibold text-sm text-gray-800">Pembaharuan {{ adendum.urutan }}</h3>
-                            <span v-if="adendum.created_at" class="text-xs text-gray-500">{{ adendum.created_at }}</span>
-                        </div>
-                        <div class="space-y-3 text-sm">
-                            <div><p class="text-gray-500 text-xs">Judul Pembaharuan</p><p class="font-medium">{{ adendum.judul_adendum || '-' }}</p></div>
-                            <div v-if="adendum.keterangan_adendum"><p class="text-gray-500 text-xs">Keterangan</p><p class="font-medium whitespace-pre-line">{{ adendum.keterangan_adendum }}</p></div>
-                            <div v-if="adendum.file_url">
-                                <a
-                                    :href="adendum.file_url"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    class="inline-flex items-center gap-2 text-teal-700 text-sm font-medium hover:underline"
-                                >
-                                    <DocumentTextIcon class="w-4 h-4" />
-                                    {{ adendum.file_name || 'Lihat dokumen adendum' }}
-                                </a>
-                            </div>
-                        </div>
+                        <input
+                            ref="adendumFileInput"
+                            type="file"
+                            accept=".pdf"
+                            @change="handleAdendumFile"
+                            class="hidden"
+                        />
+                        <button
+                            type="button"
+                            @click="adendumFileInput?.click()"
+                            class="text-teal-600 hover:text-teal-700 font-semibold"
+                        >
+                            Pilih File atau Drag & Drop
+                        </button>
+                        <p class="text-xs text-gray-500 mt-2">
+                            Format: PDF | Maksimal: 10 MB
+                        </p>
+                        <p
+                            v-if="adendumForm.file"
+                            class="mt-3 text-xs sm:text-sm font-medium text-emerald-600 break-words"
+                        >
+                            ✓ {{ adendumForm.file.name }}
+                        </p>
                     </div>
-                </div>
-
-                <div class="flex justify-end mt-4 pt-4 border-t border-gray-200">
-                    <button
-                        @click="closeAdendumDetailModal"
-                        class="px-4 py-2 border rounded-lg text-sm hover:bg-gray-50"
-                    >
-                        Tutup
-                    </button>
+                    <p v-if="adendumErrors.file" class="text-red-500 text-xs mt-2">
+                        {{ adendumErrors.file }}
+                    </p>
                 </div>
             </div>
         </div>
+
+        <!-- BUTTONS -->
+        <div
+            class="flex flex-col-reverse sm:flex-row gap-3 justify-end mt-4 pt-4 border-t border-gray-200"
+        >
+            <button
+                @click="closeAdendumModal"
+                class="px-4 py-2 border rounded-lg text-sm hover:bg-gray-50"
+            >
+                Batal
+            </button>
+            <button
+                @click="submitAdendum"
+                class="px-4 py-2 bg-teal-600 text-white rounded-lg text-sm hover:bg-teal-700"
+            >
+                Upload
+            </button>
+        </div>
+    </div>
+</div>
+
+      <div
+    v-if="showAdendumDetailModal"
+    class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4 sm:px-6 py-6"
+>
+    <div class="bg-white rounded-2xl p-4 sm:p-6 w-full max-w-[760px] max-h-[90dvh] shadow-lg relative flex flex-col">
+        <button
+            @click="closeAdendumDetailModal"
+            class="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+        >
+            ✕
+        </button>
+
+        <h2 class="text-lg font-semibold mb-1">Data Pembaharuan</h2>
+        <p class="text-sm text-gray-500 mb-4">{{ selectedAdendumKerjasama?.judul }}</p>
+
+        <div class="overflow-y-auto flex-1 space-y-3 pr-1">
+            <div
+                v-for="adendum in (selectedAdendumKerjasama?.adendum_items || [])"
+                :key="adendum.id_adendum"
+                class="border border-gray-200 rounded-xl p-4 bg-gray-50"
+            >
+                <div class="flex items-center justify-between gap-2 mb-3">
+                    <h3 class="font-semibold text-sm text-gray-800">Pembaharuan {{ adendum.urutan }}</h3>
+                    <span v-if="adendum.created_at" class="text-xs text-gray-500">{{ adendum.created_at }}</span>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                    <div><p class="text-gray-500 text-xs">Judul Pembaharuan</p><p class="font-medium">{{ adendum.judul_adendum || '-' }}</p></div>
+                    <div><p class="text-gray-500 text-xs">Mitra</p><p class="font-medium">{{ adendum.mitra || '-' }}</p></div>
+                    <div><p class="text-gray-500 text-xs">Nomor Surat Mitra Lama</p><p class="font-medium">{{ adendum.nomor_surat_mitra_lama || '-' }}</p></div>
+                    <div><p class="text-gray-500 text-xs">Nomor Surat Mitra Baru</p><p class="font-medium">{{ adendum.nomor_surat_mitra_baru || '-' }}</p></div>
+                    <div><p class="text-gray-500 text-xs">Nomor Surat Pemerintah Lama</p><p class="font-medium">{{ adendum.nomor_surat_pemerintah_lama || '-' }}</p></div>
+                    <div><p class="text-gray-500 text-xs">Nomor Surat Pemerintah Baru</p><p class="font-medium">{{ adendum.nomor_surat_pemerintah_baru || '-' }}</p></div>
+                    <div><p class="text-gray-500 text-xs">Urusan</p><p class="font-medium">{{ adendum.urusan || '-' }}</p></div>
+                    <div><p class="text-gray-500 text-xs">Jenis Kerjasama</p><p class="font-medium">{{ adendum.jenis_kerjasama || '-' }}</p></div>
+                    <div><p class="text-gray-500 text-xs">Tanggal Mulai</p><p class="font-medium">{{ adendum.tanggal_mulai || '-' }}</p></div>
+                    <div><p class="text-gray-500 text-xs">Tanggal Berakhir</p><p class="font-medium">{{ adendum.tanggal_berakhir || '-' }}</p></div>
+                    <div><p class="text-gray-500 text-xs">Jangka Waktu</p><p class="font-medium">{{ adendum.jangka_waktu || '-' }}</p></div>
+                    <div><p class="text-gray-500 text-xs">Pembiayaan</p><p class="font-medium">{{ adendum.pembiayaan || '-' }}</p></div>
+                    <div class="sm:col-span-2" v-if="adendum.keterangan_adendum">
+                        <p class="text-gray-500 text-xs">Keterangan</p>
+                        <p class="font-medium whitespace-pre-line">{{ adendum.keterangan_adendum }}</p>
+                    </div>
+                    <div class="sm:col-span-2" v-if="adendum.file_url">
+                        <a
+                            :href="adendum.file_url"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="inline-flex items-center gap-2 text-teal-700 text-sm font-medium hover:underline"
+                        >
+                            <DocumentTextIcon class="w-4 h-4" />
+                            {{ adendum.file_name || 'Lihat dokumen pembaharuan' }}
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex justify-end mt-4 pt-4 border-t border-gray-200">
+            <button
+                @click="closeAdendumDetailModal"
+                class="px-4 py-2 border rounded-lg text-sm hover:bg-gray-50"
+            >
+                Tutup
+            </button>
+        </div>
+    </div>
+</div>
     </AdminLayout>
 </template>
 

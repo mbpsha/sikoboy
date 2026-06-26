@@ -16,12 +16,12 @@ use Illuminate\Support\Facades\DB;
 class RiwayatKerjasamaSeeder extends Seeder
 {
     private const JENIS_KERJASAMA = [
-        'Kerjasama Daerah Antar Daerah (KSDD)',
-        'Kerjasama Dengan Pihak Ketiga (KSDPK)',
-        'Sinergi Dengan Pemerintah Pusat/Lembaga (NK/RK)',
-        'Perjanjian Teknis (PERTEK)',
-        'Kerjasama Daerah Dengan Pemerintah Daerah Di Luar Negeri (KSDPL)',
-        'Kerjasama Daerah Dengan Lembaga Di Luar Negeri (KSDLL)',
+        'KSDD',
+        'KSDPK',
+        'NK/RK',
+        'PERTEK',
+        'KSDPL',
+        'KSDLL',
     ];
 
     private const JENIS_DOKUMEN = [
