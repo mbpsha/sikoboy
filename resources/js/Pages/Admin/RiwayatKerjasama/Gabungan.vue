@@ -93,6 +93,7 @@ const resetAllFilters = () => {
 };
 
 const buildExportParams = () => ({
+    format: 'xlsx',
     search: search.value || undefined,
     tahun: tahun.value || undefined,
     tahun_column: columnFilters.value.tahun.length ? columnFilters.value.tahun : undefined,

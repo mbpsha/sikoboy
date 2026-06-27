@@ -22,7 +22,7 @@ class ExampleTest extends TestCase
 
     public function test_dokumen_page_shows_empty_state_when_no_templates_exist(): void
     {
-        $response = $this->get('/dokumen');
+        $response = $this->get('/template-dokumen');
 
         $response->assertStatus(200);
         $response->assertSee('&quot;dokumenGroups&quot;:[]', false);

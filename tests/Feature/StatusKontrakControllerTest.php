@@ -105,7 +105,7 @@ class StatusKontrakControllerTest extends TestCase
         ]);
 
         $kategori = KategoriKerjasama::create([
-            'nama_kategori' => 'Kesehatan',
+            'nama_kategori' => 'KSDPK',
             'deskripsi' => 'Kategori test',
             'file_template' => 'template.pdf',
         ]);
@@ -116,9 +116,10 @@ class StatusKontrakControllerTest extends TestCase
             'id_kategori' => $kategori->id_kategori,
             'judul' => 'Kerjasama Testing Status',
             'nomor_suratM' => 'M-TEST-001',
-            'urusan' => 'Kesehatan',
+            'urusan' => 'KESEHATAN',
             'daerah' => 'Boyolali',
             'status_aktif' => 'aktif',
+            'pembiayaan' => 'APBD',
             'pemrakarsa' => 'M',
             'tipe' => 'mitra',
             'jenis_kerjasama' => 'PKS',

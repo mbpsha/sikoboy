@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# SIKOBOY - Production Build Script
+# SIKARSA - Production Build Script
 # This script prepares your Laravel + Vue app for cPanel deployment
 
-echo "🚀 SIKOBOY Production Build Script"
+echo "🚀 SIKARSA Production Build Script"
 echo "==================================="
 echo ""
 
@@ -68,7 +68,7 @@ fi
 echo "📋 Step 7: Creating deployment checklist..."
 cat > DEPLOY_INSTRUCTIONS.txt << 'EOF'
 =====================================
-SIKOBOY DEPLOYMENT INSTRUCTIONS
+SIKARSA DEPLOYMENT INSTRUCTIONS
 =====================================
 
 YOUR PROJECT IS NOW READY FOR DEPLOYMENT!
@@ -124,5 +124,5 @@ echo ""
 echo "Next command suggestions:"
 echo "  - Edit .env.production with your server details"
 echo "  - Generate APP_KEY: php artisan key:generate --show"
-echo "  - Create ZIP: zip -r sikoboy-deploy.zip . -x 'node_modules/*' '.git/*' 'tests/*' '.env'"
+echo "  - Create ZIP: zip -r sikarsa-deploy.zip . -x 'node_modules/*' '.git/*' 'tests/*' '.env'"
 echo ""

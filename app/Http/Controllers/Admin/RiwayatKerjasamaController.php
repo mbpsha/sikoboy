@@ -24,7 +24,6 @@ use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Maatwebsite\Excel\Facades\Excel;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
-use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class RiwayatKerjasamaController extends Controller
 {
@@ -37,6 +36,8 @@ class RiwayatKerjasamaController extends Controller
      */
     public function index(Request $request)
     {
+        Kerjasama::recalculateStatuses();
+
         $query = Kerjasama::finalized()
             ->with(['mitra', 'latestPeriode', 'finalDokumen', 'dokumen', 'kategori', 'adendum']);
 
@@ -98,6 +99,8 @@ class RiwayatKerjasamaController extends Controller
      */
     public function mitra(Request $request)
     {
+        Kerjasama::recalculateStatuses();
+
         $query = Kerjasama::finalized()
             ->mitraTipe()
             ->with(['mitra', 'latestPeriode', 'finalDokumen', 'dokumen', 'kategori', 'adendum']);
@@ -160,6 +163,8 @@ class RiwayatKerjasamaController extends Controller
      */
     public function pemerintah(Request $request)
     {
+        Kerjasama::recalculateStatuses();
+
         Log::info("🔍 PEMERINTAH REQUEST", [
             'per_page' => $request->input('per_page'),
             'search' => $request->input('search'),
@@ -220,17 +225,17 @@ class RiwayatKerjasamaController extends Controller
         ]);
     }
 
-    public function exportGabungan(Request $request): StreamedResponse|BinaryFileResponse
+    public function exportGabungan(Request $request): BinaryFileResponse
     {
         return $this->exportByType($request, 'gabungan');
     }
 
-    public function exportMitra(Request $request): StreamedResponse|BinaryFileResponse
+    public function exportMitra(Request $request): BinaryFileResponse
     {
         return $this->exportByType($request, 'mitra');
     }
 
-    public function exportPemerintah(Request $request): StreamedResponse|BinaryFileResponse
+    public function exportPemerintah(Request $request): BinaryFileResponse
     {
         return $this->exportByType($request, 'pemerintah');
     }
@@ -906,23 +911,30 @@ class RiwayatKerjasamaController extends Controller
      */
     public function updateNomorSurat(int $id, Request $request)
     {
-        $kerjasama = Kerjasama::findOrFail($id);
-
         $validated = $request->validate([
             'nomor_suratM' => ['nullable', 'string', 'max:255'],
             'nomor_suratP' => ['nullable', 'string', 'max:255'],
         ]);
 
-        $kerjasama->update([
-            'nomor_suratM' => $validated['nomor_suratM'] ?? $kerjasama->nomor_suratM,
-            'nomor_suratP' => $validated['nomor_suratP'] ?? $kerjasama->nomor_suratP,
-        ]);
+        $kerjasama = Kerjasama::findOrFail($id);
 
-        return response()->json([
-            'success' => true,
-            'nomor_suratM' => $kerjasama->nomor_suratM,
-            'nomor_suratP' => $kerjasama->nomor_suratP,
-        ]);
+        $updates = [];
+        if (array_key_exists('nomor_suratM', $validated) && $validated['nomor_suratM'] !== null) {
+            $updates['nomor_suratM'] = $validated['nomor_suratM'];
+        }
+        if (array_key_exists('nomor_suratP', $validated) && $validated['nomor_suratP'] !== null) {
+            $updates['nomor_suratP'] = $validated['nomor_suratP'];
+        }
+
+        if ($updates === []) {
+            return back()->withErrors([
+                'nomor_surat' => 'Nomor surat belum diisi.',
+            ]);
+        }
+
+        $kerjasama->update($updates);
+
+        return back()->with('success', 'Nomor surat berhasil diperbarui.');
     }
 
     // =========================================================================
@@ -1009,7 +1021,7 @@ class RiwayatKerjasamaController extends Controller
         }
     }
 
-    private function exportByType(Request $request, string $type): StreamedResponse|BinaryFileResponse
+    private function exportByType(Request $request, string $type): BinaryFileResponse
     {
         $query = match ($type) {
             'mitra' => Kerjasama::finalized()
@@ -1029,63 +1041,9 @@ class RiwayatKerjasamaController extends Controller
             ->values()
             ->map(fn(Kerjasama $k, int $i) => $this->formatRow($k, $i));
 
-        $format = strtolower((string) $request->query('format', 'csv'));
-        $baseFilename = 'riwayat-kerjasama-' . $type . '-' . now()->format('Ymd_His');
+        $filename = 'riwayat-kerjasama-' . $type . '-' . now()->format('Ymd_His') . '.xlsx';
 
-        if ($format === 'xlsx') {
-            return Excel::download(new RiwayatKerjasamaExport($rows), $baseFilename . '.xlsx');
-        }
-
-        $filename = $baseFilename . '.csv';
-
-        return response()->streamDownload(function () use ($rows) {
-            $handle = fopen('php://output', 'w');
-            fwrite($handle, "\xEF\xBB\xBF");
-
-            fputcsv($handle, [
-                'No',
-                'Tahun',
-                'Tipe',
-                'Pemrakarsa',
-                'Mitra/Pihak',
-                'Judul',
-                'Tanggal Mulai',
-                'Tanggal Berakhir',
-                'Jangka Waktu',
-                'Status',
-                'Jenis Kerjasama',
-                'Jenis Dokumen',
-                'Nomor Surat Mitra',
-                'Nomor Surat Pemerintah',
-                'Urusan',
-                'Pembiayaan',
-            ]);
-
-            foreach ($rows as $row) {
-                fputcsv($handle, [
-                    $row['no'] ?? '',
-                    $row['tahun'] ?? '',
-                    $row['tipe'] ?? '',
-                    $row['pemrakarsa'] ?? '',
-                    $row['mitra'] ?? '',
-                    $row['judul'] ?? '',
-                    $row['tanggal_mulai'] ?? '',
-                    $row['tanggal_berakhir'] ?? '',
-                    $row['jangka_waktu'] ?? '',
-                    $row['status'] ?? '',
-                    $row['jenis_kerjasama'] ?? '',
-                    $row['jenis_dokumen'] ?? '',
-                    $row['nomor_suratM'] ?? '',
-                    $row['nomor_suratP'] ?? '',
-                    $row['urusan'] ?? '',
-                    $row['pembiayaan'] ?? '',
-                ]);
-            }
-
-            fclose($handle);
-        }, $filename, [
-            'Content-Type' => 'text/csv; charset=UTF-8',
-        ]);
+        return Excel::download(new RiwayatKerjasamaExport($rows), $filename);
     }
 
     private function applyExportColumnFilters($query, Request $request): void

@@ -208,4 +208,43 @@ class Kerjasama extends Model
             ? ($this->nomor_suratP ?? $this->nomor_suratM)
             : ($this->nomor_suratM ?? $this->nomor_suratP);
     }
+
+    /**
+     * Recalculate and update status_aktif for all kerjasama in the database.
+     */
+    public static function recalculateStatuses(): void
+    {
+        $today = Carbon::today();
+
+        self::with('latestPeriode')->each(function ($kerjasama) use ($today) {
+            $status = $kerjasama->status_aktif;
+            if (strtolower($status ?? '') === 'dibatalkan' || $kerjasama->status_persetujuan === StatusPersetujuan::Dibatalkan) {
+                if ($status !== 'Dibatalkan') {
+                    $kerjasama->update(['status_aktif' => 'Dibatalkan']);
+                }
+                return;
+            }
+
+            $periode = $kerjasama->latestPeriode;
+            if (! $periode || ! $periode->tanggal_berakhir) {
+                if ($status !== 'Aktif') {
+                    $kerjasama->update(['status_aktif' => 'Aktif']);
+                }
+                return;
+            }
+
+            $berakhir = Carbon::parse($periode->tanggal_berakhir);
+            $newStatus = 'Aktif';
+
+            if ($today->gte($berakhir)) {
+                $newStatus = 'Berakhir';
+            } elseif ($today->diffInDays($berakhir, false) <= 90) {
+                $newStatus = 'Segera Berakhir';
+            }
+
+            if ($status !== $newStatus) {
+                $kerjasama->update(['status_aktif' => $newStatus]);
+            }
+        });
+    }
 }

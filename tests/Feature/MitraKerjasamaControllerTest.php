@@ -23,26 +23,26 @@ class MitraKerjasamaControllerTest extends TestCase
 
         $this->createAdminUser();
         KategoriKerjasama::create([
-            'nama_kategori' => 'Kesehatan',
+            'nama_kategori' => 'KSDPK',
             'deskripsi' => 'Kategori default',
             'file_template' => 'template.pdf',
         ]);
         $mitraUser = $this->createMitraUser();
 
         $response = $this->actingAs($mitraUser)->post(route('mitra.kerjasama.store'), [
-            'jenis_kerjasama' => 'Kerjasama Daerah',
+            'jenis_kerjasama' => 'KSDPK',
             'jenis_dokumen' => 'PKS',
             'judul' => 'Pengajuan Kerjasama Tahun 2026',
             'nama_pihak_luar' => 'PT Mitra Kerjasama',
             'nomor_suratM' => 'M-001/2026',
-            'pembiayaan' => 'Mandiri',
-            'urusan' => 'Kesehatan',
+            'pembiayaan' => 'APBN',
+            'urusan' => 'KESEHATAN',
             'tanggal_mulai' => '2026-05-01',
             'tanggal_selesai' => '2027-05-01',
             'dokumen_file' => UploadedFile::fake()->create('pengajuan.pdf', 120, 'application/pdf'),
         ]);
 
-        $response->assertRedirect(route('mitra.kerjasama.index'));
+        $response->assertRedirect(route('mitra.profile.index'));
         $response->assertSessionHas('success');
 
         $this->assertDatabaseHas('kerjasama', [
@@ -55,7 +55,7 @@ class MitraKerjasamaControllerTest extends TestCase
         $this->assertDatabaseHas('periode_kerjasama', [
             'tanggal_mulai' => '2026-05-01',
             'tanggal_berakhir' => '2027-05-01',
-            'keterangan' => 'Mandiri',
+            'keterangan' => 'APBN',
         ]);
         $this->assertDatabaseCount('dokumen', 1);
 

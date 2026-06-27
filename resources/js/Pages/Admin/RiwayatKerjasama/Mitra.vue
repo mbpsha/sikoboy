@@ -213,6 +213,21 @@ const resetAllFilters = () => {
     );
 };
 
+const buildExportParams = () => ({
+    format: 'xlsx',
+    search: search.value || undefined,
+    tahun: tahun.value || undefined,
+    tahun_column: columnFilters.value.tahun.length ? columnFilters.value.tahun : undefined,
+    tipe: columnFilters.value.tipe.length ? columnFilters.value.tipe : undefined,
+    mitra: columnFilters.value.mitra.length ? columnFilters.value.mitra : undefined,
+    jenis_kerjasama: columnFilters.value.jenis_kerjasama.length ? columnFilters.value.jenis_kerjasama : undefined,
+    status: columnFilters.value.status.length ? columnFilters.value.status : undefined,
+});
+
+const exportSpreadsheet = () => {
+    window.location.href = route("admin.riwayat-kerjasama.mitra.export", buildExportParams());
+};
+
 // Watch search dengan debounce
 watch(search, () => {
     clearTimeout(debounceTimer);

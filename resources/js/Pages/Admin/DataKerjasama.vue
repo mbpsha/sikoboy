@@ -340,7 +340,7 @@
           </div>
 
           <div>
-            <label class="block text-xs font-medium text-gray-600 mb-1">Upload Dokumen (PDF)</label>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Upload Dokumen (PDF / DOCX)</label>
 
             <!-- Tampilkan file yang sudah ada jika proses read-only -->
             <div v-if="isProcessReadOnly && activeProcess?.file" class="mb-3 p-3 bg-blue-50 border border-blue-100 rounded-lg">
@@ -352,7 +352,7 @@
 
             <!-- hanya render area upload kalau BUKAN read-only -->
             <template v-if="!isProcessReadOnly">
-              <input ref="processFileInput" type="file" accept="application/pdf" class="hidden" @change="onFileSelect" />
+              <input ref="processFileInput" type="file" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" class="hidden" @change="onFileSelect" />
               <div
                 @click.prevent.stop="triggerProcessFileInput()"
                 @dragover.prevent
@@ -363,8 +363,8 @@
                   <svg class="w-10 h-10 text-teal-700 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
                   </svg>
-                  <p class="font-semibold text-[#17464E] mb-1">Drag & Drop Dokumen Kerjasama (PDF)</p>
-                  <p class="text-xs text-gray-600 mb-3">atau klik untuk memilih file *Max 10 MB</p>
+                  <p class="font-semibold text-[#17464E] mb-1">Drag & Drop Dokumen Kerjasama</p>
+                  <p class="text-xs text-gray-600 mb-3">atau klik untuk memilih file &middot; Maks. 10 MB, format PDF atau DOCX</p>
                   <button type="button" class="px-4 py-2 bg-teal-600 text-white rounded-md text-sm">Pilih File</button>
                   <p v-if="fileName" class="text-sm text-gray-600 mt-3">✓ {{ fileName }}</p>
                 </div>
@@ -857,7 +857,8 @@ async function finishAddProcess(k) {
       },
       onError: (e) => {
         console.error('Gagal:', e)
-        Swal.fire({ icon: 'error', title: 'Gagal', text: 'Terjadi kesalahan saat menyimpan proses.' })
+        const pesan = e?.file || Object.values(e || {}).flat().join('\n') || 'Terjadi kesalahan saat menyimpan proses.'
+        Swal.fire({ icon: 'error', title: 'Gagal', text: pesan })
       },
     }
   )
@@ -935,8 +936,26 @@ function closeDokumenModal() {
   activeDokumenKerjasama.value = null
 }
 
+const ALLOWED_FILE_TYPES = [
+  'application/pdf',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+]
+const ALLOWED_FILE_EXTENSIONS = ['pdf', 'docx']
+
+function isAllowedDokumenFile(file) {
+  const ext = file.name.split('.').pop()?.toLowerCase()
+  return ALLOWED_FILE_TYPES.includes(file.type) || ALLOWED_FILE_EXTENSIONS.includes(ext)
+}
+
 function onFileSelect(e) {
   const f = e.target.files?.[0] ?? null
+  if (f && !isAllowedDokumenFile(f)) {
+    Swal.fire({ icon: 'warning', title: 'Format tidak didukung', text: 'Hanya file PDF atau DOCX yang diperbolehkan.' })
+    e.target.value = ''
+    fileToUpload.value = null
+    fileName.value = ''
+    return
+  }
   fileToUpload.value = f
   fileName.value     = f ? f.name : ''
 }
@@ -945,7 +964,13 @@ function triggerProcessFileInput() { processFileInput.value?.click() }
 
 function handleProcessDrop(e) {
   const file = e.dataTransfer.files?.[0] ?? null
-  if (file?.type === 'application/pdf') { fileToUpload.value = file; fileName.value = file.name }
+  if (!file) return
+  if (!isAllowedDokumenFile(file)) {
+    Swal.fire({ icon: 'warning', title: 'Format tidak didukung', text: 'Hanya file PDF atau DOCX yang diperbolehkan.' })
+    return
+  }
+  fileToUpload.value = file
+  fileName.value = file.name
 }
 
 //  Simpan proses (tanpa selesai)

@@ -49,10 +49,17 @@ const fileInput = ref(null);
 const fileName = ref('');
 const fileError = ref('');
 
+const ALLOWED_FILE_TYPES = [
+  'application/pdf',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+];
+const ALLOWED_FILE_EXTENSIONS = ['pdf', 'docx'];
+
 // Validasi tipe & ukuran file, mengembalikan pesan error (string) atau null jika valid
 const validateFile = (file) => {
-  if (file.type !== 'application/pdf') {
-    return 'Hanya file berformat PDF yang diperbolehkan.';
+  const ext = file.name.split('.').pop()?.toLowerCase();
+  if (!ALLOWED_FILE_TYPES.includes(file.type) && !ALLOWED_FILE_EXTENSIONS.includes(ext)) {
+    return 'Hanya file berformat PDF atau DOCX yang diperbolehkan.';
   }
   if (file.size > MAX_FILE_SIZE_BYTES) {
     return `Ukuran file terlalu besar (${(file.size / (1024 * 1024)).toFixed(2)} MB). Maksimal ${MAX_FILE_SIZE_MB} MB.`;
@@ -297,13 +304,13 @@ const submit = () => {
                 <!-- File Upload -->
                 <div class="space-y-2">
                   <label for="dokumen_file" class="block text-xs sm:text-sm font-bold text-[#17464E]">
-                    Dokumen Kerjasama PDF <span class="text-red-500">*</span>
+                    Dokumen Kerjasama <span class="text-red-500">*</span>
                   </label>
                   <input
                     ref="fileInput"
                     id="dokumen_file"
                     type="file"
-                    accept=".pdf"
+                    accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                     class="hidden"
                     @change="handleFileSelect"
                   />
@@ -320,8 +327,8 @@ const submit = () => {
                       <svg class="w-10 sm:w-14 h-10 sm:h-14 text-[#17464E] mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
                       </svg>
-                      <p class="font-semibold text-[#17464E] mb-1 text-xs sm:text-base">Drag & Drop Dokumen Kerjasama (PDF)</p>
-                      <p class="text-xs text-gray-600 mb-4">atau klik untuk memilih file &middot; Maks. {{ MAX_FILE_SIZE_MB }} MB, format PDF</p>
+                      <p class="font-semibold text-[#17464E] mb-1 text-xs sm:text-base">Drag & Drop Dokumen Kerjasama</p>
+                      <p class="text-xs text-gray-600 mb-4">atau klik untuk memilih file &middot; Maks. {{ MAX_FILE_SIZE_MB }} MB, format PDF atau DOCX</p>
                       <button
                         type="button"
                         class="px-4 sm:px-6 py-2 bg-[#17464E] text-white rounded-lg text-xs sm:text-sm font-semibold hover:bg-[#0f3238] transition"

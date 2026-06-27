@@ -13,11 +13,10 @@ return new class extends Migration
     {
         Schema::create('mitras', function (Blueprint $table) {
             $table->id('id_mitra');
-            $table->unsignedBigInteger('id_user')->unique();
+            $table->unsignedBigInteger('id_user')->nullable()->unique();
             $table->string('nama_perusahaan');
-            $table->string('npwp')->nullable();
-            $table->string('no_handphone');
-            $table->string('pic');
+            $table->string('no_handphone')->nullable();
+            $table->string('pic')->nullable();
             $table->text('alamat');
 
             $table->foreign('id_user')->references('id_user')->on('users')->onDelete('cascade');

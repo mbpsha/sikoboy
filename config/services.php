@@ -35,11 +35,19 @@ return [
         ],
     ],
 
-    'default_admin_email' => env('SIKOBOY_DEFAULT_ADMIN_EMAIL', 'admin@sikoboy.go.id'),
+    'default_admin_email' => env('SIKARSA_DEFAULT_ADMIN_EMAIL', 'admin@sikarsa.go.id'),
 
     'recaptcha' => [
         'key'    => env('RECAPTCHA_SITE_KEY'),
         'secret' => env('RECAPTCHA_SECRET'),
+    ],
+
+    /*
+    | Konversi DOCX ke PDF (PHPWord + DomPDF/TCPDF).
+    | Renderer: dompdf (default) atau tcpdf
+    */
+    'docx_pdf' => [
+        'renderer' => env('DOCX_PDF_RENDERER', 'dompdf'),
     ],
 
 ];

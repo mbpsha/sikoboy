@@ -11,11 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('kategori_kerjasama', function (Blueprint $table) {
-            $table->id('id_kategori');
-            $table->enum('nama_kategori', ['KSDD', 'KSDPK', 'NK/RK', 'PERTEK', 'KSDPL', 'KSDLL']);
-            $table->string('deskripsi');
-            $table->string('file_template');
+        Schema::create('peraturans', function (Blueprint $table) {
+            $table->id();
+            $table->string('judul');
+            $table->string('file');
+            $table->string('nama_file')->nullable();
+            $table->string('thumbnail')->nullable();
+            $table->timestamps();
         });
     }
 
@@ -24,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('kategori_kerjasama');
+        Schema::dropIfExists('peraturans');
     }
 };

@@ -13,6 +13,21 @@ use Illuminate\Support\Facades\Storage;
 class FileUpload
 {
     /**
+     * Aturan validasi upload dokumen kerjasama (PDF/DOCX, max 10 MB).
+     *
+     * Menggunakan `extensions` (bukan `mimes`) karena file DOCX sering terdeteksi
+     * sebagai ZIP oleh guessExtension(), sehingga gagal validasi mimes:docx.
+     *
+     * @return array<int, string>
+     */
+    public static function kerjasamaDokumenRules(bool $required = true): array
+    {
+        $rules = ['file', 'extensions:pdf,docx', 'max:10240'];
+
+        return $required ? array_merge(['required'], $rules) : array_merge(['nullable'], $rules);
+    }
+
+    /**
      * Simpan file dengan nama asli ke disk yang ditentukan.
      *
      * @return array{nama_file: string, lokasi_file: string}

@@ -160,6 +160,65 @@
       </div>
     </main>
 
+    <!-- ================= KERJASAMA DIBATALKAN ================= -->
+    <main
+      v-else-if="notificationType === 'dibatalkan'"
+      class="flex-1"
+    >
+      <div class="p-6 space-y-6">
+
+        <div class="rounded-lg p-4 flex items-start gap-3 bg-slate-50 border border-slate-200">
+          <div class="flex-1">
+            <h3 class="font-semibold text-slate-800">
+              Kerjasama Dibatalkan
+            </h3>
+            <p class="text-sm mt-1 text-slate-700">
+              Pengajuan kerjasama ini telah dibatalkan
+              <span v-if="notification.admin"> oleh {{ notification.admin }}</span>.
+            </p>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-sm p-6">
+          <h2 class="text-2xl font-bold text-gray-800 mb-6">
+            {{ notification.judul }}
+          </h2>
+
+          <div class="grid grid-cols-2 gap-6">
+            <div>
+              <p class="text-sm text-gray-500">Nomor Kerjasama</p>
+              <p class="font-semibold">{{ notification.nomor || '-' }}</p>
+            </div>
+            <div>
+              <p class="text-sm text-gray-500">Mitra</p>
+              <p class="font-semibold">{{ notification.mitra || '-' }}</p>
+            </div>
+            <div>
+              <p class="text-sm text-gray-500">Tanggal Mulai</p>
+              <p class="font-semibold">{{ formatDate(notification.tanggalMulai) }}</p>
+            </div>
+            <div>
+              <p class="text-sm text-gray-500">Tanggal Berakhir</p>
+              <p class="font-semibold">{{ formatDate(notification.tanggalBerakhir) }}</p>
+            </div>
+            <div v-if="notification.catatan" class="col-span-2">
+              <p class="text-sm text-gray-500">Catatan</p>
+              <p class="font-semibold text-slate-700">{{ notification.catatan }}</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex justify-end">
+          <button
+            @click="goBack"
+            class="px-6 py-2 bg-teal-600 text-white rounded-lg"
+          >
+            Tutup
+          </button>
+        </div>
+      </div>
+    </main>
+
     <!-- ================= UPLOAD DOKUMEN ================= -->
     <main
       v-else-if="notificationType === 'upload'"

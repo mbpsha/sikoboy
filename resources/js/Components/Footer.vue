@@ -73,7 +73,7 @@ const user = computed(() => page.props.value?.auth?.user ?? null);
 
         <div class="flex items-center gap-2">
           <span>✉️</span>
-          <a href="mailto:setda@boyolali.go.id" class="underline hover:text-white transition break-all">setda@boyolali.go.id</a>
+          <a href="mailto:tapem.setda.byl@gmail.com" class="underline hover:text-white transition break-all">tapem.setda.byl@gmail.com</a>
         </div>
 
         <div class="flex items-center gap-2">
@@ -95,7 +95,7 @@ const user = computed(() => page.props.value?.auth?.user ?? null);
       <iframe
         width="100%"
         height="280"
-        class="sm:h-350 md:h-96 rounded-lg"
+        class="sm:h-[350px] md:h-96 rounded-lg"
         style="border:0;"
         loading="lazy"
         referrerpolicy="no-referrer-when-downgrade"

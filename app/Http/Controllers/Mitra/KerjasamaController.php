@@ -226,6 +226,7 @@ class KerjasamaController extends Controller
 
             Dokumen::create([
                 'id_kerjasama' => $kerjasama->id_kerjasama,
+                'jenis_dokumen' => $validated['jenis_dokumen'],
                 'nama_file' => $uploaded['nama_file'],
                 'lokasi_file' => $uploaded['lokasi_file'],
                 'versi_dokumen' => 1,
@@ -260,7 +261,7 @@ class KerjasamaController extends Controller
         }
 
         $request->validate([
-            'file'        => ['required', 'file', 'mimes:pdf', 'max:10240'],
+            'file'        => FileUpload::kerjasamaDokumenRules(),
             'id_riwayat'  => ['nullable', 'integer'],
         ]);
 

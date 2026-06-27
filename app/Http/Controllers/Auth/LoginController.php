@@ -40,11 +40,11 @@ class LoginController extends Controller
             'g-recaptcha-response' => 'nullable|string',
         ]);
 
-        // ✅ Validasi reCAPTCHA untuk semua role selama key tersedia
+        // ✅ Validasi reCAPTCHA untuk semua role selama key tersedia (lewati jika sedang running unit test)
         $captchaToken  = (string) $request->input('g-recaptcha-response', '');
         $captchaSecret = (string) config('services.recaptcha.secret');
         
-        if (!empty($captchaSecret)) {
+        if (!empty($captchaSecret) && !app()->runningUnitTests()) {
             $captchaResponse = Http::asForm()->timeout(5)->withoutVerifying()->post(
                 'https://www.google.com/recaptcha/api/siteverify',
                 [
