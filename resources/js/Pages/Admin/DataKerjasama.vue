@@ -166,6 +166,7 @@
                   </div>
                 </th>
                 <th class="py-3 px-4 text-left font-medium border-r border-white/10">No. Surat Mitra</th>
+                <th class="py-3 px-4 text-left font-medium border-r border-white/10">No. Surat Pemerintah</th>
                 <th class="py-3 px-20 text-left font-medium border-r border-white/10">Proses</th>
                 <th class="py-3 px-8 text-left font-medium">Status</th>
               </tr>
@@ -202,7 +203,8 @@
                 </td>
 
                 <td class="py-3 px-4 text-gray-600 whitespace-normal break-words min-w-[180px]">{{ k.pembiayaan ?? '—' }}</td>
-                <td class="py-3 px-4 text-gray-600 whitespace-nowrap">{{ k.nomor_suratM ?? k.nomor_surat ?? k.nomor_suratP ?? '—' }}</td>
+                <td class="py-3 px-4 text-gray-600 whitespace-nowrap">{{ k.nomor_suratM ?? '—' }}</td>
+                <td class="py-3 px-4 text-gray-600 whitespace-nowrap">{{ k.nomor_suratP ?? '—' }}</td>
 
                 <!-- Proses column -->
                 <td class="py-3 px-4">
@@ -407,11 +409,20 @@
                   ? 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100'
                   : 'bg-gray-50 hover:bg-gray-100 text-gray-700 border-gray-200'"
             >
-              <span v-if="activeProsesKerjasama.is_finalized" class="inline-flex items-center gap-1.5">
-                <span class="w-2 h-2 rounded-full bg-orange-400 inline-block"></span>
-                {{ p.label || p.title }} — <span class="font-semibold">Selesai</span>
-              </span>
-              <span v-else>{{ p.label || p.title }}</span>
+              <div class="flex flex-col gap-1">
+                <span v-if="activeProsesKerjasama.is_finalized" class="inline-flex items-center gap-1.5">
+                  <span class="w-2 h-2 rounded-full bg-orange-400 inline-block"></span>
+                  {{ p.label || p.title }} — <span class="font-semibold">Selesai</span>
+                </span>
+                <span v-else>{{ p.label || p.title }}</span>
+                
+                <span v-if="p.tanggal" class="text-[11px] text-gray-500 font-normal flex items-center gap-1">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  Tanggal: {{ formatTanggal(p.tanggal) }}
+                </span>
+              </div>
 
               <span
                 v-if="!activeProsesKerjasama.is_finalized && !isProsesBaru(p)"
@@ -533,6 +544,74 @@ import { DocumentTextIcon, MagnifyingGlassIcon } from '@heroicons/vue/24/outline
 import { Link, router, usePage } from '@inertiajs/vue3'
 import { ref, computed, reactive, watch, onBeforeUnmount } from 'vue'
 import Swal from 'sweetalert2'
+
+const editingNomorSurat = ref({ rowId: null, field: null })
+const editingValue = ref("")
+
+const startEditNomorSurat = (rowId, field, currentValue) => {
+  editingNomorSurat.value = { rowId, field }
+  editingValue.value = currentValue || ""
+}
+
+const cancelEditNomorSurat = () => {
+  editingNomorSurat.value = { rowId: null, field: null }
+  editingValue.value = ""
+}
+
+const saveNomorSurat = (rowId, field) => {
+  const payload = {}
+  payload[field] = editingValue.value
+
+  router.put(
+    route("admin.data-kerjasama.nomor-surat", rowId),
+    payload,
+    {
+      preserveScroll: true,
+      onSuccess: () => {
+        const item = filteredKerjasama.value.find(i => i.id_kerjasama === rowId)
+        if (item) {
+          item[field] = editingValue.value
+        }
+        cancelEditNomorSurat()
+        Swal.fire({
+          icon: "success",
+          title: "Berhasil",
+          text: "Nomor surat pemerintah berhasil disimpan!",
+          timer: 1500,
+          showConfirmButton: false,
+        })
+      },
+      onError: (err) => {
+        console.error("Error updating nomor surat:", err)
+        const msg = err?.nomor_suratP || "Gagal memperbarui nomor surat"
+        Swal.fire({
+          icon: "error",
+          title: "Gagal",
+          text: Array.isArray(msg) ? msg.join("\n") : msg,
+          confirmButtonText: "OK",
+          confirmButtonColor: "#0f766e",
+        })
+      },
+    }
+  )
+}
+
+const formatTanggal = (dateStr) => {
+  if (!dateStr) return '—'
+  try {
+    const date = new Date(dateStr)
+    if (isNaN(date)) return dateStr
+    return date.toLocaleDateString('id-ID', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    })
+  } catch (e) {
+    return dateStr
+  }
+}
 
 const props = defineProps({
   kerjasama: Object,

@@ -105,6 +105,8 @@ const handleDrop = (e) => {
 };
 
 const submit = () => {
+  if (form.processing) return;
+
   // Cegah submit jika masih ada error file yang belum diperbaiki
   if (fileError.value) {
     Swal.fire({ icon: 'warning', title: 'Periksa kembali file', text: fileError.value });
@@ -344,7 +346,10 @@ const submit = () => {
 
                 <div class="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center pt-6 sm:pt-8">
                   <Link :href="route('portal-mitra')" class="px-8 sm:px-14 py-2 sm:py-3 bg-[#D1D5DB] text-[#4B5563] rounded-lg sm:rounded-xl font-bold hover:bg-gray-300 transition-all text-sm sm:text-base">Batal</Link>
-                  <button type="submit" class="px-8 sm:px-14 py-2 sm:py-3 bg-[#336D71] text-white rounded-lg sm:rounded-xl font-bold hover:bg-[#28575a] shadow-lg transition-all text-sm sm:text-base">Simpan Pengajuan</button>
+                  <button :disabled="form.processing" type="submit" class="px-8 sm:px-14 py-2 sm:py-3 bg-[#336D71] text-white rounded-lg sm:rounded-xl font-bold hover:bg-[#28575a] shadow-lg transition-all text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                    <span v-if="form.processing" class="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                    {{ form.processing ? 'Mengirim...' : 'Simpan Pengajuan' }}
+                  </button>
                 </div>
               </form>
 

@@ -44,7 +44,7 @@ class ManajemenDokumenController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'template_file' => ['required', 'file', 'mimes:pdf', 'max:10240'],
+            'template_file' => ['required', 'file', 'extensions:pdf,docx', 'max:10240'],
             'id_kategori' => ['nullable', 'exists:kategori_kerjasama,id_kategori'],
             'judul' => ['nullable', 'string', 'max:255'],
             'deskripsi' => ['nullable', 'string'],
@@ -76,7 +76,7 @@ class ManajemenDokumenController extends Controller
     public function update(int $id, Request $request)
     {
         $validated = $request->validate([
-            'template_file' => ['nullable', 'file', 'mimes:pdf', 'max:10240'],
+            'template_file' => ['nullable', 'file', 'extensions:pdf,docx', 'max:10240'],
             'id_kategori' => ['nullable', 'exists:kategori_kerjasama,id_kategori'],
             'judul' => ['nullable', 'string', 'max:255'],
             'deskripsi' => ['nullable', 'string'],

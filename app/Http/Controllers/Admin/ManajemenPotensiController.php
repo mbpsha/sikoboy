@@ -94,7 +94,7 @@ class ManajemenPotensiController extends Controller
         $request->validate([
             'kategori' => 'required|string',
             'judul' => 'required|string|max:255',
-            'deskripsi' => 'required|string',
+            'deskripsi' => 'required|string|max:1000',
             'gambar' => 'nullable|image|mimes:jpeg,png,jpg|max:5120',
         ]);
 

@@ -321,6 +321,7 @@ class RiwayatKerjasamaController extends Controller
                 'id_kategori' => $idKategori,
                 'judul' => $validated['judul'],
                 'nomor_suratP' => $validated['nomor_suratP'] ?? null,
+                'nomor_suratM' => $validated['nomor_suratM'] ?? null,
                 'urusan' => $validated['urusan'] ?? '-',
                 'daerah' => $validated['daerah'] ?? '-',
                 'jenis_kerjasama' => $validated['jenis_kerjasama'] ?? null,
@@ -377,6 +378,7 @@ class RiwayatKerjasamaController extends Controller
             $kerjasama->update([
                 'judul' => $validated['judul'],
                 'nomor_suratP' => $validated['nomor_suratP'] ?? $kerjasama->nomor_suratP,
+                'nomor_suratM' => $validated['nomor_suratM'] ?? $kerjasama->nomor_suratM,
                 'urusan' => $validated['urusan'] ?? $kerjasama->urusan,
                 'daerah' => $validated['daerah'] ?? $kerjasama->daerah,
                 'jenis_kerjasama' => $validated['jenis_kerjasama'] ?? $kerjasama->jenis_kerjasama,
@@ -702,7 +704,7 @@ class RiwayatKerjasamaController extends Controller
             'nama_pihak_luar' => ['required', 'string'],
             'tanggal_mulai' => ['required', 'date'],
             'tanggal_berakhir' => ['required', 'date'],
-            'file' => ['nullable', 'file', 'mimes:pdf', 'max:10240'],
+            'file' => ['nullable', 'file', 'extensions:pdf,docx', 'max:10240'],
         ]);
 
         $admin = $request->user()->admin;
@@ -830,6 +832,8 @@ class RiwayatKerjasamaController extends Controller
             'tanggal_berakhir' => ['nullable', 'date', 'after_or_equal:tanggal_mulai'],
             'pembiayaan' => ['nullable', 'string'],
             'file' => ['required', 'file', 'mimes:pdf', 'max:10240'],
+        ], [
+            'file.mimes' => 'Format dokumen pembaharuan harus PDF.',
         ]);
 
         $admin = $request->user()->admin;
@@ -923,6 +927,16 @@ class RiwayatKerjasamaController extends Controller
             $updates['nomor_suratM'] = $validated['nomor_suratM'];
         }
         if (array_key_exists('nomor_suratP', $validated) && $validated['nomor_suratP'] !== null) {
+            if (!$kerjasama->is_finalized) {
+                throw ValidationException::withMessages([
+                    'nomor_suratP' => 'Nomor surat pemerintah tidak dapat diisi ketika proses belum selesai.',
+                ]);
+            }
+            if (!empty($kerjasama->nomor_suratP)) {
+                throw ValidationException::withMessages([
+                    'nomor_suratP' => 'Nomor surat pemerintah hanya dapat diisi sekali dan tidak dapat diubah.',
+                ]);
+            }
             $updates['nomor_suratP'] = $validated['nomor_suratP'];
         }
 

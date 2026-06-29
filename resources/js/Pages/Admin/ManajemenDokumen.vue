@@ -83,7 +83,7 @@
                 type="file"
                 class="hidden"
                 @change="handleFile"
-                accept=".pdf"
+                accept=".pdf,.docx"
               />
 
               <div class="text-center">
@@ -107,7 +107,7 @@
                   Drag & drop atau klik untuk upload
                 </p>
                 <p class="text-sm text-gray-400">
-                  PDF (Max. 10MB)
+                  PDF atau DOCX (Max. 10MB)
                 </p>
 
                 <div
@@ -295,7 +295,7 @@
                   type="file"
                   class="hidden"
                   @change="handleEditFile"
-                  accept=".pdf"
+                  accept=".pdf,.docx"
                 />
                 <div class="text-center">
                   <div class="mb-4">
@@ -312,7 +312,7 @@
                     </svg>
                   </div>
                   <p class="font-semibold text-gray-600">Drag & drop atau klik untuk upload</p>
-                  <p class="text-sm text-gray-400">PDF (Max. 10MB)</p>
+                  <p class="text-sm text-gray-400">PDF atau DOCX (Max. 10MB)</p>
                   <div
                     v-if="editFileLabel"
                     class="mt-4 inline-flex max-w-full items-center rounded-full bg-teal-50 px-4 py-2 text-sm font-semibold text-teal-700"

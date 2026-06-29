@@ -25,8 +25,9 @@ class StoreKerjasamaPemerintahRequest extends FormRequest
             'jangka_waktu_bulan' => ['required', 'integer', 'min:1'],
             'tanggal_mulai' => ['required', 'date'],
             'tanggal_selesai' => ['required', 'date', 'after:tanggal_mulai'],
-            'dokumen_file' => [$documentRule, 'file', 'mimes:pdf', 'max:10240'],
+            'dokumen_file' => [$documentRule, 'file', $this->isMethod('post') ? 'extensions:pdf' : 'extensions:pdf,docx', 'max:10240'],
             'nomor_suratP' => ['nullable', 'string', 'max:100'],
+            'nomor_suratM' => ['nullable', 'string', 'max:100'],
             'jenis_kerjasama' => ['nullable', 'string', Rule::in([
                 'KSDD',
                 'KSDPK',

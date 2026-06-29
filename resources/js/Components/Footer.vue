@@ -65,9 +65,10 @@ const user = computed(() => page.props.value?.auth?.user ?? null);
 
         <div class="flex gap-2">
           <p class="leading-relaxed">
-            Biro Kerja Sama Daerah<br>
+            Bagian Tata Pemerintahan<br>
+            Sekretariat Daerah Kabupaten Boyolali<br>
+            Komplek Perkantoran Terpadu<br>
             Kabupaten Boyolali<br>
-            Jl. Merdeka Barat, Kemiri, Boyolali
           </p>
         </div>
 

@@ -37,15 +37,15 @@
 
                 <form @submit.prevent="submit" class="space-y-4 mr-4 ml-4">
 
-                    <!-- EMAIL / USERNAME -->
+                    <!-- EMAIL-->
                     <div>
                         <p class="text-center mb-2 font-semibold text-xl">
-                            Email/Username <span class="text-red-400">*</span>
+                            Email <span class="text-red-400">*</span>
                         </p>
                         <input
                             type="text"
                             v-model="form.login"
-                            placeholder="email/username"
+                            placeholder="email"
                             class="w-full pl-3 pr-3 py-2 rounded bg-white text-black text-center placeholder:text-center border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#0C505C]/40 focus:border-[#0C505C] transition duration-200"
                         />
                         <p v-if="form.errors.login" class="text-red-400 text-sm mt-1 text-center">

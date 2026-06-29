@@ -16,7 +16,7 @@ class UpdatePotensiRequest extends FormRequest
         return [
             'kategori' => ['sometimes', 'required', 'string', 'max:50'],
             'judul' => ['sometimes', 'required', 'string', 'max:255'],
-            'deskripsi' => ['sometimes', 'required', 'string', 'max:5000'],
+            'deskripsi' => ['sometimes', 'required', 'string', 'max:1000'],
             'gambar' => ['nullable', 'image', 'mimes:jpg,jpeg,png', 'max:5120'],
             'remove_gambar' => ['nullable', 'boolean'],
             'status_tampil' => ['nullable', 'boolean'],

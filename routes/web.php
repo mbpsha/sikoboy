@@ -232,6 +232,7 @@ Route::middleware(['auth', 'role:mitra', 'throttle:240,1'])->prefix('mitra')->na
     Route::get('/pengajuan/step2', [MitraKerjasamaController::class, 'createStep2'])
         ->name('pengajuan.step2');
     Route::post('/pengajuan', [MitraKerjasamaController::class, 'store'])
+        ->middleware('throttle:5,1')
         ->name('pengajuan.store');
 
     // Aliases for compatibility and tests

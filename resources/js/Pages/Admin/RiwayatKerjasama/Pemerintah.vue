@@ -439,6 +439,53 @@ watch(
   }
 );
 
+const calculateAdendumJangkaWaktuDisplay = computed(() => {
+  if (!adendumForm.value.mulai || !adendumForm.value.selesai) return '';
+
+  const start = new Date(adendumForm.value.mulai);
+  const end = new Date(adendumForm.value.selesai);
+
+  if (start >= end) return '';
+
+  // Calculate years, months, days accurately
+  let years = end.getFullYear() - start.getFullYear();
+  let months = end.getMonth() - start.getMonth();
+  let days = end.getDate() - start.getDate();
+
+  // Adjust for negative days
+  if (days < 0) {
+    months--;
+    const prevMonth = new Date(end.getFullYear(), end.getMonth(), 0);
+    days += prevMonth.getDate();
+  }
+
+  // Adjust for negative months
+  if (months < 0) {
+    years--;
+    months += 12;
+  }
+
+  // Build display string - only show non-zero values
+  const parts = [];
+  if (years > 0) parts.push(`${years} tahun`);
+  if (months > 0) parts.push(`${months} bulan`);
+  if (days > 0) parts.push(`${days} hari`);
+
+  return parts.join(' ') || '';
+});
+
+watch(
+  [() => adendumForm.value.mulai, () => adendumForm.value.selesai],
+  () => {
+    const calculated = calculateAdendumJangkaWaktuDisplay.value;
+    if (calculated) {
+      adendumForm.value.jangka = calculated;
+    } else {
+      adendumForm.value.jangka = '';
+    }
+  }
+);
+
 // VALIDASI
 const validate = () => {
     errors.value = {};
@@ -481,8 +528,11 @@ const validateAdendum = () => {
         adendumErrors.value.selesai = "Tanggal berakhir wajib diisi";
     if (!adendumForm.value.pembiayaan)
         adendumErrors.value.pembiayaan = "Pembiayaan wajib diisi";
-    if (!adendumForm.value.file)
+    if (!adendumForm.value.file) {
         adendumErrors.value.file = "File pembaharuan wajib diupload";
+    } else if (adendumForm.value.file.type !== 'application/pdf' && !adendumForm.value.file.name.toLowerCase().endsWith('.pdf')) {
+        adendumErrors.value.file = "Format file pembaharuan harus PDF";
+    }
 
     return Object.keys(adendumErrors.value).length === 0;
 };
@@ -1273,60 +1323,14 @@ onBeforeUnmount(() => {
                                         {{ item.judul || "-" }}
                                     </td>
                                     <td
-                                        class="px-4 py-3 whitespace-nowrap border-r border-gray-200"
+                                        class="px-4 py-3 whitespace-nowrap border-r border-gray-200 text-gray-600"
                                     >
-                                        <template v-if="editingNomorSurat.rowId !== item.id_kerjasama || editingNomorSurat.field !== 'nomor_suratM'">
-                                            <span class="text-xs">{{ item.nomor_suratM || '-' }}</span>
-                                            <button
-                                                @click="startEditNomorSurat(item.id_kerjasama, 'nomor_suratM', item.nomor_suratM)"
-                                                class="ml-1 text-gray-400 hover:text-teal-600 transition-colors"
-                                                title="Edit Nomor Surat Mitra"
-                                            >
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 inline" viewBox="0 0 20 20" fill="currentColor">
-                                                    <path d="M2.695 14.763l-1.262 3.154a.5.5 0 00.65.65l3.155-1.262a4 4 0 001.343-.885L17.5 5.5a2.121 2.121 0 00-3-3L3.58 13.42a4 4 0 00-.885 1.343z"/>
-                                                </svg>
-                                            </button>
-                                        </template>
-                                        <template v-else>
-                                            <div class="flex items-center gap-1">
-                                                <input
-                                                    v-model="editingValue"
-                                                    @keyup.enter="saveNomorSurat(item.id_kerjasama, 'nomor_suratM')"
-                                                    @keyup.escape="cancelEditNomorSurat"
-                                                    class="w-36 border border-teal-500 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-teal-500"
-                                                />
-                                                <button @click="saveNomorSurat(item.id_kerjasama, 'nomor_suratM')" class="text-green-600 hover:text-green-800 font-bold text-sm" title="Simpan">✓</button>
-                                                <button @click="cancelEditNomorSurat" class="text-red-500 hover:text-red-700 font-bold text-sm" title="Batal">✕</button>
-                                            </div>
-                                        </template>
+                                        <span class="text-xs">{{ item.nomor_suratM || '-' }}</span>
                                     </td>
                                     <td
-                                        class="px-4 py-3 whitespace-nowrap border-r border-gray-200"
+                                        class="px-4 py-3 whitespace-nowrap border-r border-gray-200 text-gray-600"
                                     >
-                                        <template v-if="editingNomorSurat.rowId !== item.id_kerjasama || editingNomorSurat.field !== 'nomor_suratP'">
-                                            <span class="text-xs">{{ item.nomor_suratP || '-' }}</span>
-                                            <button
-                                                @click="startEditNomorSurat(item.id_kerjasama, 'nomor_suratP', item.nomor_suratP)"
-                                                class="ml-1 text-gray-400 hover:text-teal-600 transition-colors"
-                                                title="Edit Nomor Surat Pemerintah"
-                                            >
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 inline" viewBox="0 0 20 20" fill="currentColor">
-                                                    <path d="M2.695 14.763l-1.262 3.154a.5.5 0 00.65.65l3.155-1.262a4 4 0 001.343-.885L17.5 5.5a2.121 2.121 0 00-3-3L3.58 13.42a4 4 0 00-.885 1.343z"/>
-                                                </svg>
-                                            </button>
-                                        </template>
-                                        <template v-else>
-                                            <div class="flex items-center gap-1">
-                                                <input
-                                                    v-model="editingValue"
-                                                    @keyup.enter="saveNomorSurat(item.id_kerjasama, 'nomor_suratP')"
-                                                    @keyup.escape="cancelEditNomorSurat"
-                                                    class="w-36 border border-teal-500 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-teal-500"
-                                                />
-                                                <button @click="saveNomorSurat(item.id_kerjasama, 'nomor_suratP')" class="text-green-600 hover:text-green-800 font-bold text-sm" title="Simpan">✓</button>
-                                                <button @click="cancelEditNomorSurat" class="text-red-500 hover:text-red-700 font-bold text-sm" title="Batal">✕</button>
-                                            </div>
-                                        </template>
+                                        <span class="text-xs">{{ item.nomor_suratP || '-' }}</span>
                                     </td>
                                     <td
                                         class="px-4 py-3 whitespace-nowrap border-r border-gray-200"
@@ -1631,7 +1635,6 @@ onBeforeUnmount(() => {
                                 class="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700 space-y-1"
                             >
                                 <p><span class="font-semibold">Nama Perusahaan:</span> {{ selectedMitra.nama_perusahaan || '-' }}</p>
-                                <p><span class="font-semibold">NPWP:</span> {{ selectedMitra.npwp || '-' }}</p>
                                 <p><span class="font-semibold">PIC:</span> {{ selectedMitra.pic || '-' }}</p>
                                 <p><span class="font-semibold">No. HP:</span> {{ selectedMitra.no_handphone || '-' }}</p>
                                 <p><span class="font-semibold">Alamat:</span> {{ selectedMitra.alamat || '-' }}</p>

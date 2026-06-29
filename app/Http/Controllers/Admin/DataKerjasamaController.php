@@ -611,6 +611,16 @@ class DataKerjasamaController extends Controller
             $updates['nomor_suratM'] = $validated['nomor_suratM'];
         }
         if (array_key_exists('nomor_suratP', $validated) && $validated['nomor_suratP'] !== null) {
+            if (!$kerjasama->is_finalized) {
+                throw ValidationException::withMessages([
+                    'nomor_suratP' => 'Nomor surat pemerintah tidak dapat diisi ketika proses belum selesai.',
+                ]);
+            }
+            if (!empty($kerjasama->nomor_suratP)) {
+                throw ValidationException::withMessages([
+                    'nomor_suratP' => 'Nomor surat pemerintah hanya dapat diisi sekali dan tidak dapat diubah.',
+                ]);
+            }
             $updates['nomor_suratP'] = $validated['nomor_suratP'];
         }
 

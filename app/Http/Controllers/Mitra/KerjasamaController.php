@@ -257,13 +257,24 @@ class KerjasamaController extends Controller
         $mitra     = $request->user()->mitra;
 
         if (! $mitra || $kerjasama->id_mitra !== $mitra->id_mitra) {
-            return response()->json(['message' => 'Unauthorized'], 403);
+            return response()->json([
+                'success' => false,
+                'message' => 'Pengajuan kerjasama gagal',
+            ], 403);
         }
 
-        $request->validate([
-            'file'        => FileUpload::kerjasamaDokumenRules(),
-            'id_riwayat'  => ['nullable', 'integer'],
-        ]);
+        try {
+            $request->validate([
+                'file'        => FileUpload::kerjasamaDokumenRules(),
+                'id_riwayat'  => ['nullable', 'integer'],
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Pengajuan kerjasama gagal',
+                'errors'  => $e->errors(),
+            ], 422);
+        }
 
         $file        = $request->file('file');
         $uploaded    = FileUpload::storeAsOriginal($file, 'dokumen-kerjasama', 'public');
@@ -271,6 +282,7 @@ class KerjasamaController extends Controller
 
         $dok = Dokumen::create([
             'id_kerjasama'  => $kerjasama->id_kerjasama,
+            'jenis_dokumen' => $kerjasama->jenis_dokumen,
             'nama_file'     => $uploaded['nama_file'],
             'lokasi_file'   => $uploaded['lokasi_file'],
             'versi_dokumen' => $nextVersion,
@@ -282,7 +294,7 @@ class KerjasamaController extends Controller
         // ✅ Return JSON bukan redirect
         return response()->json([
             'success'    => true,
-            'message'    => 'File revisi berhasil diunggah.',
+            'message'    => 'Pengajuan kerjasama berhasil',
             'lokasi_file' => $dok->lokasi_file,
             'nama_file'  => $dok->nama_file,
         ]);
