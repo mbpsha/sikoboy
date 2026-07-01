@@ -66,6 +66,12 @@
               rows="4"
               class="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-600 bg-gray-50"
             ></textarea>
+            <div class="text-xs text-gray-400 mt-1 flex justify-between">
+              <span>Maksimal 1000 karakter</span>
+              <span :class="{'text-red-500 font-semibold': (newPotensi.deskripsi || '').length > 1000}">
+                {{ (newPotensi.deskripsi || '').length }}/1000
+              </span>
+            </div>
           </div>
 
           <!-- GAMBAR -->
@@ -301,6 +307,12 @@
               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 h-24 resize-none"
               placeholder="Masukkan deskripsi potensi"
             ></textarea>
+            <div class="text-xs text-gray-400 mt-1 flex justify-between">
+              <span>Maksimal 1000 karakter</span>
+              <span :class="{'text-red-500 font-semibold': (selectedPotensi.deskripsi || '').length > 1000}">
+                {{ (selectedPotensi.deskripsi || '').length }}/1000
+              </span>
+            </div>
           </div>
 
           <!-- GAMBAR -->
@@ -511,6 +523,11 @@ const submitEditForm = () => {
     return
   }
 
+  if (selectedPotensi.value.deskripsi.length > 1000) {
+    Swal.fire('Error!', 'Deskripsi tidak boleh melebihi 1000 karakter', 'error')
+    return
+  }
+
   const data = new FormData()
   data.append('_method', 'put')
   data.append('kategori', selectedPotensi.value.kategori || activeKategori.value)
@@ -572,6 +589,11 @@ const submitForm = () => {
 
   if (!newPotensi.value.deskripsi.trim()) {
     Swal.fire('Error!', 'Deskripsi harus diisi', 'error')
+    return
+  }
+
+  if (newPotensi.value.deskripsi.length > 1000) {
+    Swal.fire('Error!', 'Deskripsi tidak boleh melebihi 1000 karakter', 'error')
     return
   }
 

@@ -536,13 +536,43 @@ const portalLabel = computed(() => {
             </svg>
           </button>
         </template>
+
+        <!-- 📱 Mobile menu button -->
+        <button 
+          @click.stop="showMobileMenu = !showMobileMenu"
+          class="sm:hidden p-2 rounded-full hover:bg-white/10 transition-colors"
+          title="Menu"
+          aria-label="Menu"
+        >
+          <svg 
+            class="w-6 h-6 text-white" 
+            fill="none" 
+            stroke="currentColor" 
+            viewBox="0 0 24 24"
+          >
+            <path 
+              v-if="!showMobileMenu"
+              stroke-linecap="round" 
+              stroke-linejoin="round" 
+              stroke-width="2" 
+              d="M4 6h16M4 12h16M4 18h16" 
+            />
+            <path 
+              v-else
+              stroke-linecap="round" 
+              stroke-linejoin="round" 
+              stroke-width="2" 
+              d="M6 18L18 6M6 6l12 12" 
+            />
+          </svg>
+        </button>
       </div>
     </div>
 
-    <!-- 📱 Mobile Menu Dropdown (only for authenticated users) -->
+    <!-- 📱 Mobile Menu Dropdown -->
     <div 
-      v-if="showMobileMenu && isAuthenticated"
-      class="sm:hidden mobile-menu-container border-t border-gray-200"
+      v-if="showMobileMenu"
+      class="sm:hidden mobile-menu-container border-t border-white/20"
       style="background: rgba(23,70,78,0.95);"
     >
       <nav class="flex flex-col px-4 py-3 gap-1 max-w-6xl mx-auto">
@@ -592,40 +622,47 @@ const portalLabel = computed(() => {
           Kontak
         </Link>
         
-        <!-- Divider -->
         <div class="border-t border-white/20 my-2"></div>
-        
-        <!-- Portal Link (Mobile) -->
-        <Link 
-          :href="portalHref" 
-          @click="closeMobileMenu"
-          class="flex items-center gap-2 rounded-lg bg-[#0C505C] text-white px-4 py-2 text-sm font-semibold hover:bg-[#0a4a4e] transition-colors"
-        >
-          <div class="bg-[#2f6f73] p-2 rounded-lg shadow-sm flex items-center justify-center w-8 h-8 shrink-0">
-            <svg
-              class="w-4 h-4"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.5"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <rect x="3" y="3" width="18" height="18" rx="2" />
-              <path d="M8 7h8M8 12h8M8 17h8" />
-            </svg>
-          </div>
-          <span>{{ portalLabel }}</span>
-        </Link>
-        
-        <!-- Register Link (Mobile - only if not authenticated, but this is in authenticated block) -->
-        <Link 
-          :href="registerHref" 
-          @click="closeMobileMenu"
-          class="block rounded-lg bg-white text-[#17464E] px-4 py-2 text-sm font-semibold hover:bg-[#BEBDBD] transition-colors text-center"
-        >
-          Daftar
-        </Link>
+
+        <template v-if="isAuthenticated">
+          <Link 
+            :href="portalHref" 
+            @click="closeMobileMenu"
+            class="flex items-center gap-2 rounded-lg bg-[#0C505C] text-white px-4 py-2 text-sm font-semibold hover:bg-[#0a4a4e] transition-colors"
+          >
+            <div class="bg-[#2f6f73] p-2 rounded-lg shadow-sm flex items-center justify-center w-8 h-8 shrink-0">
+              <svg
+                class="w-4 h-4"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <rect x="3" y="3" width="18" height="18" rx="2" />
+                <path d="M8 7h8M8 12h8M8 17h8" />
+              </svg>
+            </div>
+            <span>{{ portalLabel }}</span>
+          </Link>
+        </template>
+        <template v-else>
+          <Link 
+            :href="loginHref" 
+            @click="closeMobileMenu"
+            class="block rounded-lg bg-[#0C505C] text-white px-4 py-2 text-sm font-semibold hover:bg-[#0a4a4e] transition-colors text-center"
+          >
+            Masuk
+          </Link>
+          <Link 
+            :href="registerHref" 
+            @click="closeMobileMenu"
+            class="block rounded-lg bg-white text-[#17464E] px-4 py-2 text-sm font-semibold hover:bg-[#BEBDBD] transition-colors text-center"
+          >
+            Daftar
+          </Link>
+        </template>
       </nav>
     </div>
   </header>

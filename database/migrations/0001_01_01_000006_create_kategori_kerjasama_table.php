@@ -13,14 +13,7 @@ return new class extends Migration
     {
         Schema::create('kategori_kerjasama', function (Blueprint $table) {
             $table->id('id_kategori');
-                        $table->enum('nama_kategori', [
-                'KSDD',
-                'KSDPK',
-                'NK/RK',
-                'PERTEK',
-                'KSDPL',
-                'KSDLL',
-            ]);
+            $table->enum('nama_kategori', ['KSDD', 'KSDPK', 'NK/RK', 'PERTEK', 'KSDPL', 'KSDLL']);
             $table->string('deskripsi');
             $table->string('file_template');
         });

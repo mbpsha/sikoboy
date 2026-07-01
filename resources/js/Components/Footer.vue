@@ -2,6 +2,7 @@
 import logo from '@/images/logo_byl.png';
 import instagram from '@/images/instagram.png';
 import youtube from '@/images/youtube.png';
+import logoD3TI from '@/images/logo d3ti (1).jpeg';
 import { Link, usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
 
@@ -18,7 +19,13 @@ const user = computed(() => page.props.value?.auth?.user ?? null);
 
     <!-- LEFT -->
     <div class="w-full flex flex-col items-start gap-3 sm:gap-4">
-      <img :src="logo" class="w-16 sm:w-20 h-16 sm:h-20 object-contain" />
+      
+      <!-- Logos Side by Side -->
+      <div class="flex items-center gap-4 sm:gap-6">
+        <img :src="logo" class="w-16 sm:w-20 h-16 sm:h-20 object-contain" alt="Logo Boyolali" />
+        <div class="h-12 sm:h-16 w-px bg-white/30"></div>
+        <img :src="logoD3TI" class="h-12 sm:h-16 object-contain" alt="Logo D3TI" />
+      </div>
 
       <p class="font-fahkwang text-lg sm:text-2xl font-semibold tracking-widest text-white mb-0">
         S I K A R S A
@@ -28,6 +35,13 @@ const user = computed(() => page.props.value?.auth?.user ?? null);
         Sistem Kerjasama Boyolali<br>
         Sekretariat Daerah Kabupaten Boyolali
       </p>
+
+      <p class="text-xs text-white/60 leading-relaxed">
+        Bekerjasama dengan<br>
+        Program Studi D3 Teknik Informatika<br>
+        Universitas Sebelas Maret (UNS)
+      </p>
+
     </div>
 
     <!-- MIDDLE -->
@@ -67,8 +81,8 @@ const user = computed(() => page.props.value?.auth?.user ?? null);
           <p class="leading-relaxed">
             Bagian Tata Pemerintahan<br>
             Sekretariat Daerah Kabupaten Boyolali<br>
-            Komplek Perkantoran Terpadu Kabupaten Boyolali<br>
-            Jalan Merdeka Barat, Siswodipuran, Boyolali 57311
+            Komplek Perkantoran Terpadu<br>
+            Kabupaten Boyolali<br>
           </p>
         </div>
 
@@ -96,7 +110,7 @@ const user = computed(() => page.props.value?.auth?.user ?? null);
       <iframe
         width="100%"
         height="280"
-        class="sm:h-350 md:h-96 rounded-lg"
+        class="sm:h-[350px] md:h-96 rounded-lg"
         style="border:0;"
         loading="lazy"
         referrerpolicy="no-referrer-when-downgrade"

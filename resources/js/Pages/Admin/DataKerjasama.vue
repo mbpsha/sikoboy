@@ -166,6 +166,7 @@
                   </div>
                 </th>
                 <th class="py-3 px-4 text-left font-medium border-r border-white/10">No. Surat Mitra</th>
+                <th class="py-3 px-4 text-left font-medium border-r border-white/10">No. Surat Pemerintah</th>
                 <th class="py-3 px-20 text-left font-medium border-r border-white/10">Proses</th>
                 <th class="py-3 px-8 text-left font-medium">Status</th>
               </tr>
@@ -202,7 +203,8 @@
                 </td>
 
                 <td class="py-3 px-4 text-gray-600 whitespace-normal break-words min-w-[180px]">{{ k.pembiayaan ?? '—' }}</td>
-                <td class="py-3 px-4 text-gray-600 whitespace-nowrap">{{ k.nomor_suratM ?? k.nomor_surat ?? k.nomor_suratP ?? '—' }}</td>
+                <td class="py-3 px-4 text-gray-600 whitespace-nowrap">{{ k.nomor_suratM ?? '—' }}</td>
+                <td class="py-3 px-4 text-gray-600 whitespace-nowrap">{{ k.nomor_suratP ?? '—' }}</td>
 
                 <!-- Proses column -->
                 <td class="py-3 px-4">
@@ -340,7 +342,7 @@
           </div>
 
           <div>
-            <label class="block text-xs font-medium text-gray-600 mb-1">Upload Dokumen (PDF)</label>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Upload Dokumen (PDF / DOCX)</label>
 
             <!-- Tampilkan file yang sudah ada jika proses read-only -->
             <div v-if="isProcessReadOnly && activeProcess?.file" class="mb-3 p-3 bg-blue-50 border border-blue-100 rounded-lg">
@@ -352,7 +354,7 @@
 
             <!-- hanya render area upload kalau BUKAN read-only -->
             <template v-if="!isProcessReadOnly">
-              <input ref="processFileInput" type="file" accept="application/pdf" class="hidden" @change="onFileSelect" />
+              <input ref="processFileInput" type="file" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" class="hidden" @change="onFileSelect" />
               <div
                 @click.prevent.stop="triggerProcessFileInput()"
                 @dragover.prevent
@@ -363,8 +365,8 @@
                   <svg class="w-10 h-10 text-teal-700 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
                   </svg>
-                  <p class="font-semibold text-[#17464E] mb-1">Drag & Drop Dokumen Kerjasama (PDF)</p>
-                  <p class="text-xs text-gray-600 mb-3">atau klik untuk memilih file *Max 10 MB</p>
+                  <p class="font-semibold text-[#17464E] mb-1">Drag & Drop Dokumen Kerjasama</p>
+                  <p class="text-xs text-gray-600 mb-3">atau klik untuk memilih file &middot; Maks. 10 MB, format PDF atau DOCX</p>
                   <button type="button" class="px-4 py-2 bg-teal-600 text-white rounded-md text-sm">Pilih File</button>
                   <p v-if="fileName" class="text-sm text-gray-600 mt-3">✓ {{ fileName }}</p>
                 </div>
@@ -407,11 +409,20 @@
                   ? 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100'
                   : 'bg-gray-50 hover:bg-gray-100 text-gray-700 border-gray-200'"
             >
-              <span v-if="activeProsesKerjasama.is_finalized" class="inline-flex items-center gap-1.5">
-                <span class="w-2 h-2 rounded-full bg-orange-400 inline-block"></span>
-                {{ p.label || p.title }} — <span class="font-semibold">Selesai</span>
-              </span>
-              <span v-else>{{ p.label || p.title }}</span>
+              <div class="flex flex-col gap-1">
+                <span v-if="activeProsesKerjasama.is_finalized" class="inline-flex items-center gap-1.5">
+                  <span class="w-2 h-2 rounded-full bg-orange-400 inline-block"></span>
+                  {{ p.label || p.title }} — <span class="font-semibold">Selesai</span>
+                </span>
+                <span v-else>{{ p.label || p.title }}</span>
+                
+                <span v-if="p.tanggal" class="text-[11px] text-gray-500 font-normal flex items-center gap-1">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  Tanggal: {{ formatTanggal(p.tanggal) }}
+                </span>
+              </div>
 
               <span
                 v-if="!activeProsesKerjasama.is_finalized && !isProsesBaru(p)"
@@ -533,6 +544,74 @@ import { DocumentTextIcon, MagnifyingGlassIcon } from '@heroicons/vue/24/outline
 import { Link, router, usePage } from '@inertiajs/vue3'
 import { ref, computed, reactive, watch, onBeforeUnmount } from 'vue'
 import Swal from 'sweetalert2'
+
+const editingNomorSurat = ref({ rowId: null, field: null })
+const editingValue = ref("")
+
+const startEditNomorSurat = (rowId, field, currentValue) => {
+  editingNomorSurat.value = { rowId, field }
+  editingValue.value = currentValue || ""
+}
+
+const cancelEditNomorSurat = () => {
+  editingNomorSurat.value = { rowId: null, field: null }
+  editingValue.value = ""
+}
+
+const saveNomorSurat = (rowId, field) => {
+  const payload = {}
+  payload[field] = editingValue.value
+
+  router.put(
+    route("admin.data-kerjasama.nomor-surat", rowId),
+    payload,
+    {
+      preserveScroll: true,
+      onSuccess: () => {
+        const item = filteredKerjasama.value.find(i => i.id_kerjasama === rowId)
+        if (item) {
+          item[field] = editingValue.value
+        }
+        cancelEditNomorSurat()
+        Swal.fire({
+          icon: "success",
+          title: "Berhasil",
+          text: "Nomor surat pemerintah berhasil disimpan!",
+          timer: 1500,
+          showConfirmButton: false,
+        })
+      },
+      onError: (err) => {
+        console.error("Error updating nomor surat:", err)
+        const msg = err?.nomor_suratP || "Gagal memperbarui nomor surat"
+        Swal.fire({
+          icon: "error",
+          title: "Gagal",
+          text: Array.isArray(msg) ? msg.join("\n") : msg,
+          confirmButtonText: "OK",
+          confirmButtonColor: "#0f766e",
+        })
+      },
+    }
+  )
+}
+
+const formatTanggal = (dateStr) => {
+  if (!dateStr) return '—'
+  try {
+    const date = new Date(dateStr)
+    if (isNaN(date)) return dateStr
+    return date.toLocaleDateString('id-ID', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    })
+  } catch (e) {
+    return dateStr
+  }
+}
 
 const props = defineProps({
   kerjasama: Object,
@@ -857,7 +936,8 @@ async function finishAddProcess(k) {
       },
       onError: (e) => {
         console.error('Gagal:', e)
-        Swal.fire({ icon: 'error', title: 'Gagal', text: 'Terjadi kesalahan saat menyimpan proses.' })
+        const pesan = e?.file || Object.values(e || {}).flat().join('\n') || 'Terjadi kesalahan saat menyimpan proses.'
+        Swal.fire({ icon: 'error', title: 'Gagal', text: pesan })
       },
     }
   )
@@ -935,8 +1015,26 @@ function closeDokumenModal() {
   activeDokumenKerjasama.value = null
 }
 
+const ALLOWED_FILE_TYPES = [
+  'application/pdf',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+]
+const ALLOWED_FILE_EXTENSIONS = ['pdf', 'docx']
+
+function isAllowedDokumenFile(file) {
+  const ext = file.name.split('.').pop()?.toLowerCase()
+  return ALLOWED_FILE_TYPES.includes(file.type) || ALLOWED_FILE_EXTENSIONS.includes(ext)
+}
+
 function onFileSelect(e) {
   const f = e.target.files?.[0] ?? null
+  if (f && !isAllowedDokumenFile(f)) {
+    Swal.fire({ icon: 'warning', title: 'Format tidak didukung', text: 'Hanya file PDF atau DOCX yang diperbolehkan.' })
+    e.target.value = ''
+    fileToUpload.value = null
+    fileName.value = ''
+    return
+  }
   fileToUpload.value = f
   fileName.value     = f ? f.name : ''
 }
@@ -945,7 +1043,13 @@ function triggerProcessFileInput() { processFileInput.value?.click() }
 
 function handleProcessDrop(e) {
   const file = e.dataTransfer.files?.[0] ?? null
-  if (file?.type === 'application/pdf') { fileToUpload.value = file; fileName.value = file.name }
+  if (!file) return
+  if (!isAllowedDokumenFile(file)) {
+    Swal.fire({ icon: 'warning', title: 'Format tidak didukung', text: 'Hanya file PDF atau DOCX yang diperbolehkan.' })
+    return
+  }
+  fileToUpload.value = file
+  fileName.value = file.name
 }
 
 //  Simpan proses (tanpa selesai)

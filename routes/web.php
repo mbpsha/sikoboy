@@ -32,6 +32,16 @@ $loginThrottleAttempts = 6;
 // PUBLIC ROUTES
 // ========================================
 
+Route::get('/link-storage', function () {
+    try {
+        \Illuminate\Support\Facades\Artisan::call('storage:link');
+        return 'Symlink berhasil dibuat!';
+    } catch (\Exception $e) {
+        return 'Gagal: ' . $e->getMessage();
+    }
+});
+
+
 // Home / Welcome
 Route::get('/', function () {
     $potensi = Potensi::query()
@@ -57,7 +67,7 @@ Route::get('/', function () {
             })->values();
         });
 
-// STATISTIK DINAMIS
+    // STATISTIK DINAMIS
     $today = \Carbon\Carbon::today();
     $sixMonthsLater = $today->clone()->addMonths(6);
     $threeMonthsLater = $today->clone()->addMonths(3);
@@ -222,7 +232,14 @@ Route::middleware(['auth', 'role:mitra', 'throttle:240,1'])->prefix('mitra')->na
     Route::get('/pengajuan/step2', [MitraKerjasamaController::class, 'createStep2'])
         ->name('pengajuan.step2');
     Route::post('/pengajuan', [MitraKerjasamaController::class, 'store'])
+        ->middleware('throttle:5,1')
         ->name('pengajuan.store');
+
+    // Aliases for compatibility and tests
+    Route::get('/kerjasama', [MitraKerjasamaController::class, 'index'])
+        ->name('kerjasama.index');
+    Route::post('/kerjasama', [MitraKerjasamaController::class, 'store'])
+        ->name('kerjasama.store');
 
     // Upload revisi dokumen untuk kerjasama (Mitra)
     Route::post('/kerjasama/{id}/revisi', [MitraKerjasamaController::class, 'uploadRevision'])
@@ -238,6 +255,10 @@ Route::middleware(['auth', 'role:admin', 'throttle:240,1'])->prefix('admin')->na
     // 🔹 Dashboard
     Route::get('/dashboard', [AdminDashboardController::class, 'index'])
         ->name('dashboard');
+
+    // Alias for compatibility and tests
+    Route::get('/beranda', [AdminDashboardController::class, 'index'])
+        ->name('beranda.index');
 
     // 🔹 Notifikasi Admin
     Route::get('/notifikasi', [AdminNotificationController::class, 'index'])
@@ -331,6 +352,8 @@ Route::middleware(['auth', 'role:admin', 'throttle:240,1'])->prefix('admin')->na
         ->name('riwayat-kerjasama.pemerintah.update');
     Route::put('/riwayat-kerjasama/{id}/status', [RiwayatKerjasamaController::class, 'updateStatus'])
         ->name('riwayat-kerjasama.update-status');
+    Route::put('/riwayat-kerjasama/{id}/nomor-surat', [RiwayatKerjasamaController::class, 'updateNomorSurat'])
+        ->name('riwayat-kerjasama.nomor-surat');
     Route::post('/riwayat-kerjasama/adendum', [RiwayatKerjasamaController::class, 'storeAdendum'])
         ->name('riwayat-kerjasama.adendum.store');
 
@@ -411,6 +434,8 @@ Route::middleware(['auth', 'role:admin', 'throttle:240,1'])->prefix('admin')->na
         ->name('partners.show');
 
     // Detail Notifikasi
-    Route::get('/notifikasi/{id}',[AdminNotificationController::class, 'show']
-        )->name('notifications.show');
+    Route::get(
+        '/notifikasi/{id}',
+        [AdminNotificationController::class, 'show']
+    )->name('notifications.show');
 });

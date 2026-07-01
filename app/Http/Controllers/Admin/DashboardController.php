@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\StatusPersetujuan;
 use App\Http\Controllers\Controller;
 use App\Models\Dokumen;
 use App\Models\Kerjasama;
@@ -18,8 +19,11 @@ class DashboardController extends Controller
      */
     public function index()
     {
+        // Recalculate status before loading metrics
+        Kerjasama::recalculateStatuses();
+
         $today     = Carbon::today()->toDateString();
-        $threshold = Carbon::today()->addDays(30)->toDateString();
+        $threshold = Carbon::today()->addDays(90)->toDateString();
 
         // ---------------------------------------------------------------
         // Aggregate counters from the database in a single pass
@@ -44,9 +48,9 @@ class DashboardController extends Controller
             ->where('k.is_finalized', true)
             ->selectRaw("
                 COUNT(*) AS total_kerjasama,
-                SUM(CASE WHEN p.tgl_mulai <= ? AND p.tgl_berakhir >= ? THEN 1 ELSE 0 END) AS aktif,
-                SUM(CASE WHEN p.tgl_berakhir > ? AND p.tgl_berakhir <= ?  THEN 1 ELSE 0 END) AS akan_berakhir,
-                SUM(CASE WHEN p.tgl_berakhir < ?                          THEN 1 ELSE 0 END) AS berakhir
+                SUM(CASE WHEN (k.status_aktif <> 'Dibatalkan' AND (k.status_persetujuan IS NULL OR k.status_persetujuan <> 'dibatalkan')) AND p.tgl_mulai <= ? AND p.tgl_berakhir >= ? THEN 1 ELSE 0 END) AS aktif,
+                SUM(CASE WHEN (k.status_aktif <> 'Dibatalkan' AND (k.status_persetujuan IS NULL OR k.status_persetujuan <> 'dibatalkan')) AND p.tgl_berakhir > ? AND p.tgl_berakhir <= ?  THEN 1 ELSE 0 END) AS akan_berakhir,
+                SUM(CASE WHEN (k.status_aktif <> 'Dibatalkan' AND (k.status_persetujuan IS NULL OR k.status_persetujuan <> 'dibatalkan')) AND p.tgl_berakhir < ?                          THEN 1 ELSE 0 END) AS berakhir
             ", [$today, $today, $today, $threshold, $today])
             ->first();
 
@@ -56,7 +60,9 @@ class DashboardController extends Controller
             'akan_berakhir'   => (int) ($row->akan_berakhir   ?? 0),
             'berakhir'        => (int) ($row->berakhir        ?? 0),
             'total_mitra'     => User::where('role', 'mitra')->count(),
-            'total_dokumen'   => Dokumen::count(),
+            'dibatalkan'      => Kerjasama::where('status_persetujuan', StatusPersetujuan::Dibatalkan)
+                                    ->orWhere('status_aktif', 'Dibatalkan')
+                                    ->count(),
         ];
 
         // ---------------------------------------------------------------

@@ -16,10 +16,13 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->string('password');
             $table->enum('role', ['admin', 'mitra'])->default('mitra');
+            $table->boolean('is_active')->default(true);
+            $table->enum('status_verifikasi', ['pending', 'disetujui', 'ditolak'])->default('disetujui');
             $table->timestamps();
 
             $table->index('email');
             $table->index('role');
+            $table->index('status_verifikasi');
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {

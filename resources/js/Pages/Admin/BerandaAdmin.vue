@@ -110,15 +110,14 @@
                 <div class="p-5 md:p-6 rounded-2xl shadow-sm text-white bg-gradient-to-r from-violet-500 to-fuchsia-500">
                     <div class="flex items-center justify-between">
                         <div class="flex flex-col justify-center">
-                            <p class="text-sm md:text-base opacity-90">Total Dokumen</p>
-                            <h2 class="text-3xl md:text-4xl font-bold mt-1 leading-tight">{{ metrics.total_dokumen ?? 0 }}</h2>
+                            <p class="text-sm md:text-base opacity-90">Dibatalkan</p>
+                            <h2 class="text-3xl md:text-4xl font-bold mt-1 leading-tight">{{ metrics.dibatalkan ?? 0 }}</h2>
                         </div>
 
                         <div class="flex items-center">
                             <div class="w-12 h-12 rounded-full bg-white/12 flex items-center justify-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white/90" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M7 7h10v10H7z" />
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 7V5a2 2 0 012-2h2a2 2 0 012 2v2" />
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 text-white/90">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="m9.75 9.75 4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
                                 </svg>
                             </div>
                         </div>

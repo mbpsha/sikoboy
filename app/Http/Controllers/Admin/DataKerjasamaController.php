@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\StatusPersetujuan;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreAdminKerjasamaRequest;
 use App\Models\Dokumen;
@@ -10,18 +11,24 @@ use App\Models\Mitra;
 use App\Models\Admin;
 use App\Models\PeriodeKerjasama;
 use App\Models\RiwayatStatus;
+use App\Support\DocxToPdfConverter;
+use App\Support\FileUpload;
 use Illuminate\Http\UploadedFile;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 class DataKerjasamaController extends Controller
 {
     public function index(Request $request)
     {
+        Kerjasama::recalculateStatuses();
+
         $query = Kerjasama::with(['mitra', 'admin', 'latestPeriode', 'kategori', 'riwayatStatus', 'dokumen', 'finalDokumen']);
 
         if ($request->filled('search')) {
@@ -386,7 +393,7 @@ class DataKerjasamaController extends Controller
 
         $request->validate([
             'title'       => ['required', 'string', 'max:255'],
-            'file'        => ['nullable', 'file', 'mimes:pdf', 'max:10240'],
+            'file'        => FileUpload::kerjasamaDokumenRules(required: false),
             'penanggung'  => ['nullable', 'string'],
             'catatan'     => ['nullable', 'string'],
             'is_finished' => ['nullable'],
@@ -406,12 +413,12 @@ class DataKerjasamaController extends Controller
             // Simpan PDF jika ada
             if ($file instanceof UploadedFile) {
                 $nextVersion = ((int) $kerjasama->dokumen()->max('versi_dokumen')) + 1;
-                $path        = $file->store('dokumen-kerjasama', 'public');
+                $uploaded    = FileUpload::storeAsOriginal($file, 'dokumen-kerjasama', 'public');
 
                 $createdDokumen = Dokumen::create([
                     'id_kerjasama'  => $kerjasama->id_kerjasama,
-                    'nama_file'     => $file->getClientOriginalName(),
-                    'lokasi_file'   => $path,
+                    'nama_file'     => $uploaded['nama_file'],
+                    'lokasi_file'   => $uploaded['lokasi_file'],
                     'versi_dokumen' => $nextVersion,
                     'created_by'    => $admin?->id_user ?? $request->user()->id_user,
                 ]);
@@ -442,14 +449,7 @@ class DataKerjasamaController extends Controller
             ]);
 
             if ($isFinished) {
-                $kerjasama->update([
-                    'status_negosiasi'   => 'Selesai',
-                    'is_finalized'       => true,
-                    'tipe'               => 'mitra',
-                    'pemrakarsa'         => 'M',
-                    'status_aktif'       => 'aktif',
-                    'status_persetujuan' => 'disetujui',
-                ]);
+                $this->finalizeMitraKerjasama($kerjasama);
             }
         });
 
@@ -476,7 +476,7 @@ class DataKerjasamaController extends Controller
 
         $request->validate([
             'title'       => ['nullable', 'string', 'max:255'],
-            'file'        => ['nullable', 'file', 'mimes:pdf', 'max:10240'],
+            'file'        => FileUpload::kerjasamaDokumenRules(required: false),
             'penanggung'  => ['nullable', 'string'],
             'catatan'     => ['nullable', 'string'],
             'is_finished' => ['nullable'],
@@ -496,12 +496,12 @@ class DataKerjasamaController extends Controller
             // Simpan PDF jika ada
             if ($file instanceof UploadedFile) {
                 $nextVersion = ((int) $kerjasama->dokumen()->max('versi_dokumen')) + 1;
-                $path        = $file->store('dokumen-kerjasama', 'public');
+                $uploaded    = FileUpload::storeAsOriginal($file, 'dokumen-kerjasama', 'public');
 
                 $createdDokumen = Dokumen::create([
                     'id_kerjasama'  => $kerjasama->id_kerjasama,
-                    'nama_file'     => $file->getClientOriginalName(),
-                    'lokasi_file'   => $path,
+                    'nama_file'     => $uploaded['nama_file'],
+                    'lokasi_file'   => $uploaded['lokasi_file'],
                     'versi_dokumen' => $nextVersion,
                     'created_by'    => $admin?->id_user ?? $request->user()->id_user,
                 ]);
@@ -532,14 +532,7 @@ class DataKerjasamaController extends Controller
             ]);
 
             if ($isFinished) {
-                // mark negotiation finished and move to riwayat (finalized)
-                $kerjasama->update([
-                    'status_negosiasi' => 'Selesai',
-                    'is_finalized'     => true,
-                    'tipe'             => 'mitra',
-                    'status_aktif'     => 'aktif',
-                    'pemrakarsa'       => 'M',
-                ]);
+                $this->finalizeMitraKerjasama($kerjasama);
             }
         });
 
@@ -584,13 +577,13 @@ class DataKerjasamaController extends Controller
             ]);
 
             $file = $validated['dokumen_file'];
-            $path = $file->store('dokumen-kerjasama', 'public');
+            $uploaded = FileUpload::storeAsOriginal($file, 'dokumen-kerjasama', 'public');
 
             Dokumen::create([
                 'id_kerjasama'  => $kerjasama->id_kerjasama,
                 'jenis_dokumen' => $jenisDokumen,
-                'nama_file'     => $file->getClientOriginalName(),
-                'lokasi_file'   => $path,
+                'nama_file'     => $uploaded['nama_file'],
+                'lokasi_file'   => $uploaded['lokasi_file'],
                 'versi_dokumen' => 1,
                 'created_by'    => $admin->id_user,
             ]);
@@ -618,6 +611,16 @@ class DataKerjasamaController extends Controller
             $updates['nomor_suratM'] = $validated['nomor_suratM'];
         }
         if (array_key_exists('nomor_suratP', $validated) && $validated['nomor_suratP'] !== null) {
+            if (!$kerjasama->is_finalized) {
+                throw ValidationException::withMessages([
+                    'nomor_suratP' => 'Nomor surat pemerintah tidak dapat diisi ketika proses belum selesai.',
+                ]);
+            }
+            if (!empty($kerjasama->nomor_suratP)) {
+                throw ValidationException::withMessages([
+                    'nomor_suratP' => 'Nomor surat pemerintah hanya dapat diisi sekali dan tidak dapat diubah.',
+                ]);
+            }
             $updates['nomor_suratP'] = $validated['nomor_suratP'];
         }
 
@@ -653,9 +656,13 @@ class DataKerjasamaController extends Controller
 
     private function computeStatusKontrak(Kerjasama $kerjasama, ?string $tanggalBerakhir): ?string
     {
+        if (strtolower($kerjasama->status_aktif ?? '') === 'dibatalkan' || $kerjasama->status_persetujuan === StatusPersetujuan::Dibatalkan) {
+            return 'Dibatalkan';
+        }
+
         if (! $tanggalBerakhir) return null;
 
-        if ($kerjasama->pemrakarsa === 'M' && $kerjasama->status_persetujuan?->value !== 'disetujui') {
+        if ($kerjasama->pemrakarsa === 'M' && $kerjasama->status_persetujuan !== StatusPersetujuan::Disetujui) {
             return null;
         }
 
@@ -678,6 +685,86 @@ class DataKerjasamaController extends Controller
         $sortDir = $sortDir === 'asc' ? 'asc' : 'desc';
 
         return [$sortBy, $sortDir];
+    }
+
+    private function finalizeMitraKerjasama(Kerjasama $kerjasama): void
+    {
+        $this->convertLatestMitraDocxToPdf($kerjasama);
+
+        $kerjasama->update([
+            'status_negosiasi'   => 'Selesai',
+            'is_finalized'       => true,
+            'tipe'               => 'mitra',
+            'pemrakarsa'         => 'M',
+            'status_aktif'       => 'aktif',
+            'status_persetujuan' => 'disetujui',
+        ]);
+    }
+
+    private function convertLatestMitraDocxToPdf(Kerjasama $kerjasama): void
+    {
+        $query = $kerjasama->dokumen();
+
+        if (Schema::hasColumn('dokumen', 'tipe_dokumen')) {
+            $query->where('tipe_dokumen', 'mitra');
+        }
+
+        $dokumen = $query
+            ->orderByDesc('versi_dokumen')
+            ->orderByDesc('id_dokumen')
+            ->first();
+
+        if (! $dokumen) {
+            return;
+        }
+
+        $extension = strtolower(pathinfo((string) $dokumen->nama_file, PATHINFO_EXTENSION));
+        if ($extension !== 'docx') {
+            return;
+        }
+
+        $disk = Storage::disk('public');
+        $relativePath = (string) $dokumen->lokasi_file;
+
+        if (! $disk->exists($relativePath)) {
+            throw ValidationException::withMessages([
+                'file' => 'File dokumen mitra (DOCX) tidak ditemukan di server.',
+            ]);
+        }
+
+        $inputAbsolute = $disk->path($relativePath);
+        $outputDirectory = dirname($inputAbsolute);
+
+        try {
+            $pdfAbsolute = DocxToPdfConverter::convert($inputAbsolute, $outputDirectory);
+        } catch (\Throwable $e) {
+            Log::error('DOCX to PDF conversion failed on finalize', [
+                'id_kerjasama' => $kerjasama->id_kerjasama,
+                'id_dokumen' => $dokumen->id_dokumen,
+                'message' => $e->getMessage(),
+            ]);
+
+            throw ValidationException::withMessages([
+                'file' => $e->getMessage(),
+            ]);
+        }
+
+        $pdfBasename = basename($pdfAbsolute);
+        $directory = trim(str_replace('\\', '/', dirname($relativePath)), '/');
+        $pdfRelative = ($directory !== '' ? $directory.'/' : '').$pdfBasename;
+
+        $dokumen->update([
+            'nama_file' => $pdfBasename,
+            'lokasi_file' => $pdfRelative,
+        ]);
+
+        $disk->delete($relativePath);
+
+        Log::info('Mitra DOCX converted to PDF on process finalize', [
+            'id_kerjasama' => $kerjasama->id_kerjasama,
+            'id_dokumen' => $dokumen->id_dokumen,
+            'pdf' => $pdfRelative,
+        ]);
     }
 
     private function resolveFileUrl(?string $path): ?string

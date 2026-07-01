@@ -22,9 +22,26 @@ const uploadedFiles  = ref({}) // lokasi_file returned after successful upload
 
 const setFileRef = (el, idx) => { if (el) fileInputRefs.value[idx] = el }
 
+const ALLOWED_FILE_TYPES = [
+  'application/pdf',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+]
+const ALLOWED_FILE_EXTENSIONS = ['pdf', 'docx']
+
+function isAllowedDokumenFile(file) {
+  const ext = file.name.split('.').pop()?.toLowerCase()
+  return ALLOWED_FILE_TYPES.includes(file.type) || ALLOWED_FILE_EXTENSIONS.includes(ext)
+}
+
 const handleFileSelect = (e, idx) => {
   const file = e.target.files?.[0]
-  if (file) selectedFiles.value = { ...selectedFiles.value, [idx]: file }
+  if (!file) return
+  if (!isAllowedDokumenFile(file)) {
+    Swal.fire({ icon: 'warning', title: 'Format tidak didukung', text: 'Hanya file PDF atau DOCX yang diperbolehkan.' })
+    e.target.value = ''
+    return
+  }
+  selectedFiles.value = { ...selectedFiles.value, [idx]: file }
 }
 
 const doUpload = async (idx) => {
@@ -40,9 +57,20 @@ const doUpload = async (idx) => {
     const token = document.querySelector('meta[name="csrf-token"]')?.content ?? ''
     const res   = await fetch(`/mitra/kerjasama/${props.kerjasamaId}/revisi`, {
       method: 'POST', body: fd, credentials: 'same-origin',
-      headers: token ? { 'X-CSRF-TOKEN': token } : {},
+      headers: {
+        ...(token ? { 'X-CSRF-TOKEN': token } : {}),
+        Accept: 'application/json',
+      },
     })
-    if (!res.ok) throw new Error()
+    if (!res.ok) {
+      let message = 'Gagal upload. Coba lagi.'
+      try {
+        const err = await res.json()
+        if (err.message) message = err.message
+        else if (err.errors?.file?.[0]) message = err.errors.file[0]
+      } catch { /* ignore */ }
+      throw new Error(message)
+    }
     const data = await res.json()
     // Store uploaded file path so the UI updates without a full reload
     uploadedFiles.value = { ...uploadedFiles.value, [idx]: {
@@ -51,8 +79,8 @@ const doUpload = async (idx) => {
     }}
     delete selectedFiles.value[idx]
     await Swal.fire({ icon: 'success', title: 'Berhasil!', text: 'Dokumen revisi berhasil diupload.', timer: 2000, showConfirmButton: false })
-  } catch {
-    Swal.fire({ icon: 'error', title: 'Gagal', text: 'Gagal upload. Coba lagi.' })
+  } catch (err) {
+    Swal.fire({ icon: 'error', title: 'Gagal', text: err?.message || 'Gagal upload. Coba lagi.' })
   } finally {
     isUploading.value = { ...isUploading.value, [idx]: false }
   }
@@ -109,7 +137,9 @@ const getIcon = (item) => {
             <!-- Hidden file input per item -->
             <input
               :ref="el => setFileRef(el, idx)"
-              type="file" accept=".pdf" class="hidden"
+              type="file"
+              accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+              class="hidden"
               @change="(e) => handleFileSelect(e, idx)"
             />
 
@@ -155,7 +185,7 @@ const getIcon = (item) => {
                       <svg class="w-3.5 h-3.5 shrink-0" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/>
                       </svg>
-                      <span class="truncate max-w-[180px]">{{ item.file.split('/').pop() }}</span>
+                      <span class="truncate max-w-[180px]">{{ item.file_name || item.file.split('/').pop() }}</span>
                       <span class="text-blue-400 text-[10px] font-bold shrink-0">Download</span>
                     </a>
                   </div>
@@ -178,7 +208,7 @@ const getIcon = (item) => {
                       <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
                     </svg>
                     <span class="text-xs text-green-700 font-medium flex-1 truncate">
-                      {{ item.file_mitra.split('/').pop() }}
+                      {{ item.file_mitra_name || item.file_mitra.split('/').pop() }}
                     </span>
                     <a :href="'/storage/' + item.file_mitra" target="_blank"
                       class="text-green-600 text-[10px] font-bold hover:underline shrink-0">Lihat</a>
@@ -220,7 +250,7 @@ const getIcon = (item) => {
                       <svg class="w-5 h-5 text-gray-500 shrink-0" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/>
                       </svg>
-                      <span class="text-xs text-gray-500 font-medium">Pilih File (*PDF)</span>
+                      <span class="text-xs text-gray-500 font-medium">Pilih File (PDF / DOCX)</span>
                     </div>
 
                     <div class="flex gap-2">

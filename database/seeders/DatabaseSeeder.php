@@ -27,9 +27,9 @@ class DatabaseSeeder extends Seeder
 
         // Create default admin login requested by team.
         $admin = User::updateOrCreate(
-            ['email' => 'AdminSikoboy123@admin.com'],
+            ['email' => 'AdminSikarsa123@admin.com'],
             [
-                'password' => Hash::make('sikoboybukansikejam'),
+                'password' => Hash::make('sikarsabukansikejam'),
                 'role' => 'admin',
                 'status_verifikasi' => 'disetujui',
             ]
@@ -38,7 +38,7 @@ class DatabaseSeeder extends Seeder
         Admin::updateOrCreate(
             ['id_user' => $admin->id_user],
             [
-                'nama' => 'Admin SIKOBOY',
+                'nama' => 'Admin SIKARSA',
                 'divisi' => 'Administrator',
             ]
         );

@@ -47,7 +47,11 @@
             v-for="notif in filteredNotifications"
             :key="notif.id"
             class="bg-white rounded-lg shadow-sm p-5 border-l-4 transition-all hover:shadow-md"
-            :class="notif.status === 'expired' ? 'border-l-red-500' : (notif.status === 'info' ? 'border-l-blue-400' : 'border-l-orange-400')"
+            :class="notif.status === 'expired'
+              ? 'border-l-red-500'
+              : (notif.status === 'cancelled'
+                ? 'border-l-slate-500'
+                : (notif.status === 'info' ? 'border-l-blue-400' : 'border-l-orange-400'))"
           >
             <div class="flex items-start gap-4">
               <!-- Badge Type -->
@@ -58,7 +62,9 @@
                     ? 'bg-emerald-100 text-emerald-700'
                     : notif.kind === 'revisi_mitra'
                       ? 'bg-amber-100 text-amber-700'
-                      : 'bg-sky-100 text-sky-700'"
+                      : notif.kind === 'dibatalkan'
+                        ? 'bg-slate-200 text-slate-700'
+                        : 'bg-sky-100 text-sky-700'"
                 >
                   {{ getKindLabel(notif.kind) }}
                 </span>
@@ -66,7 +72,11 @@
 
               <!-- Content -->
               <div class="flex-1 min-w-0">
-                  <h3 class="font-semibold" :class="notif.status === 'expired' ? 'text-red-600' : (notif.status === 'info' ? 'text-blue-600' : 'text-orange-600')">
+                  <h3 class="font-semibold" :class="notif.status === 'expired'
+                    ? 'text-red-600'
+                    : (notif.status === 'cancelled'
+                      ? 'text-slate-700'
+                      : (notif.status === 'info' ? 'text-blue-600' : 'text-orange-600'))">
                     {{ notif.title }}
                   </h3>
                 <p class="text-gray-600 text-sm mt-1">{{ notif.description }}</p>
@@ -82,9 +92,15 @@
                       class="px-2 py-0.5 rounded text-xs font-semibold"
                       :class="notif.status === 'expired'
                       ? 'bg-red-100 text-red-700'
-                      : (notif.status === 'info' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700')"
+                      : (notif.status === 'cancelled'
+                        ? 'bg-slate-200 text-slate-700'
+                        : (notif.status === 'info' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'))"
                     >
-                      {{ notif.status === 'expired' ? 'Expired' : (notif.status === 'info' ? 'Info' : 'Aktif') }}
+                      {{ notif.status === 'expired'
+                        ? 'Expired'
+                        : (notif.status === 'cancelled'
+                          ? 'Dibatalkan'
+                          : (notif.status === 'info' ? 'Info' : 'Aktif')) }}
                     </span>
                   </div>
                 </div>
@@ -93,10 +109,14 @@
               <div class="text-right flex-shrink-0 ml-auto">
                 <div
                   class="w-20 h-20 rounded-lg flex flex-col items-center justify-center text-white font-bold"
-                  :class="notif.status === 'expired' ? 'bg-red-500' : (notif.status === 'info' ? 'bg-blue-500' : 'bg-orange-500')"
+                  :class="notif.status === 'expired'
+                    ? 'bg-red-500'
+                    : (notif.status === 'cancelled'
+                      ? 'bg-slate-500'
+                      : (notif.status === 'info' ? 'bg-blue-500' : 'bg-orange-500'))"
                 >
-                  <span class="text-2xl">{{ notif.daysLeft ?? '!' }}</span>
-                  <span class="text-xs">{{ notif.daysLeft === null ? 'Baru' : 'Hari' }}</span>
+                  <span class="text-2xl">{{ notif.status === 'cancelled' ? '✕' : (notif.daysLeft ?? '!') }}</span>
+                  <span class="text-xs">{{ notif.status === 'cancelled' ? 'Batal' : (notif.daysLeft === null ? 'Baru' : 'Hari') }}</span>
                 </div>
                 <button
                   @click="viewDetail(notif.id)"
@@ -148,6 +168,7 @@ const tabs = [
   { label: 'Semua', value: 'semua' },
   { label: 'Pengajuan Kerjasama', value: 'pengajuan_kerjasama' },
   { label: 'Revisi Mitra', value: 'revisi_mitra' },
+  { label: 'Dibatalkan', value: 'dibatalkan' },
   { label: 'Akan Berakhir', value: 'akan_berakhir' },
   { label: 'Sudah Berakhir', value: 'sudah_berakhir' },
 ]
@@ -156,6 +177,7 @@ const getKindLabel = (kind) => {
   switch (kind) {
     case 'pengajuan_kerjasama': return 'Pengajuan'
     case 'revisi_mitra': return 'Revisi Mitra'
+    case 'dibatalkan': return 'Dibatalkan'
     case 'status_admin': return 'Pengingat'
     default: return 'Notifikasi'
   }
@@ -185,6 +207,7 @@ const getCount = (type) => {
   if (type === 'semua') return notifications.value.length
   if (type === 'pengajuan_kerjasama') return notifications.value.filter(n => n.kind === 'pengajuan_kerjasama').length
   if (type === 'revisi_mitra') return notifications.value.filter(n => n.kind === 'revisi_mitra').length
+  if (type === 'dibatalkan') return notifications.value.filter(n => n.kind === 'dibatalkan').length
   if (type === 'akan_berakhir') return notifications.value.filter(n => n.status_group === 'akan_berakhir').length
   if (type === 'sudah_berakhir') return notifications.value.filter(n => n.status_group === 'sudah_berakhir').length
   return 0
@@ -198,6 +221,7 @@ const filteredNotifications = computed(() => {
       switch (activeTab.value) {
         case 'pengajuan_kerjasama': return notif.kind === 'pengajuan_kerjasama'
         case 'revisi_mitra': return notif.kind === 'revisi_mitra'
+        case 'dibatalkan': return notif.kind === 'dibatalkan'
         case 'akan_berakhir': return notif.status_group === 'akan_berakhir'
         case 'sudah_berakhir': return notif.status_group === 'sudah_berakhir'
         default: return true

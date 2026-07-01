@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Models\Dokumen;
 use App\Models\Kerjasama;
+use App\Models\RiwayatStatus;
 use App\Http\Controllers\Controller;
 use App\Support\NotificationFeed;
 use Illuminate\Http\Request;
@@ -126,6 +127,38 @@ class NotificationController extends Controller
                         'alamat' =>
                             $kerjasama->mitra?->alamat,
                     ],
+                ],
+            ]);
+        }
+
+        // ========================================
+        // NOTIF KERJASAMA DIBATALKAN
+        // ========================================
+        if (str_starts_with($id, 'admin-dibatalkan-')) {
+
+            $riwayatId = (int) str_replace('admin-dibatalkan-', '', $id);
+
+            $riwayat = RiwayatStatus::with([
+                'kerjasama.mitra',
+                'kerjasama.latestPeriode',
+                'admin',
+            ])->findOrFail($riwayatId);
+
+            $kerjasama = $riwayat->kerjasama;
+            $periode = $kerjasama?->latestPeriode;
+
+            return Inertia::render('Admin/DetailNotifAdmin', [
+                'notificationType' => 'dibatalkan',
+
+                'notification' => [
+                    'judul' => $kerjasama?->judul,
+                    'nomor' => $kerjasama?->nomor_suratM ?: $kerjasama?->nomor_suratP,
+                    'mitra' => $kerjasama?->mitra?->nama_perusahaan,
+                    'admin' => $riwayat->admin?->nama,
+                    'catatan' => $riwayat->catatan,
+                    'tanggalMulai' => $periode?->tanggal_mulai,
+                    'tanggalBerakhir' => $periode?->tanggal_berakhir,
+                    'created_at' => $riwayat->tanggal,
                 ],
             ]);
         }

@@ -87,7 +87,7 @@ class AdminUserControllerTest extends TestCase
         $actor = $this->createAdminUser('actor@example.com');
         $mitraUser = $this->createMitraUser('mitra@example.com');
 
-        $response = $this->actingAs($actor)->put(route('admin.pengguna.status', $mitraUser->id_user), [
+        $response = $this->actingAs($actor)->put(route('admin.pengguna.update-status', $mitraUser->id_user), [
             'is_active' => false,
         ]);
 
@@ -105,7 +105,7 @@ class AdminUserControllerTest extends TestCase
         $actor = $this->createAdminUser('actor@example.com');
         $target = $this->createAdminUser('target@example.com');
 
-        $response = $this->actingAs($actor)->put(route('admin.pengguna.status', $target->id_user), [
+        $response = $this->actingAs($actor)->put(route('admin.pengguna.update-status', $target->id_user), [
             'is_active' => false,
         ]);
 

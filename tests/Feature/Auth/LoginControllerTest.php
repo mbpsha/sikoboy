@@ -16,20 +16,20 @@ class LoginControllerTest extends TestCase
     public function test_admin_login_redirects_to_admin_dashboard(): void
     {
         $adminUser = User::create([
-            'email' => 'AdminSikoboy123@admin.com',
-            'password' => Hash::make('sikoboybukansikejam'),
+            'email' => 'AdminSikarsa123@admin.com',
+            'password' => Hash::make('sikarsabukansikejam'),
             'role' => 'admin',
         ]);
 
         Admin::create([
             'id_user' => $adminUser->id_user,
-            'nama' => 'Admin SIKOBOY',
+            'nama' => 'Admin SIKARSA',
             'divisi' => 'Administrator',
         ]);
 
         $response = $this->post(route('login.attempt'), [
-            'email' => 'adminsikoboy123@admin.com',
-            'password' => 'sikoboybukansikejam',
+            'login' => 'adminsikarsa123@admin.com',
+            'password' => 'sikarsabukansikejam',
         ]);
 
         $response->assertRedirect(route('admin.dashboard'));
@@ -54,7 +54,7 @@ class LoginControllerTest extends TestCase
         ]);
 
         $response = $this->post(route('login.attempt'), [
-            'email' => 'mitra@example.com',
+            'login' => 'mitra@example.com',
             'password' => 'mitra-password',
         ]);
 
@@ -80,12 +80,12 @@ class LoginControllerTest extends TestCase
         ]);
 
         $response = $this->from(route('login'))->post(route('login.attempt'), [
-            'email' => 'pending@example.com',
+            'login' => 'pending@example.com',
             'password' => 'mitra-password',
         ]);
 
         $response->assertRedirect(route('login'));
-        $response->assertSessionHasErrors('email');
+        $response->assertSessionHasErrors('login');
         $this->assertGuest();
     }
 }

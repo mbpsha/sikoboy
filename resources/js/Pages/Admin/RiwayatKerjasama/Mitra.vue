@@ -123,8 +123,19 @@ const hideMitraSuggestions = () => {
 };
 
 const adendumForm = ref({
+    mitra: "",
+    tahun: "",
     judul_adendum: "",
-    keterangan_adendum: "",
+    nomor_suratM_baru: "",
+    nomor_suratP_baru: "",
+    nomor_suratM_lama: "",
+    nomor_suratP_lama: "",
+    urusan: "",
+    jangka: "",
+    mulai: "",
+    selesai: "",
+    jenis_kerjasama: "",
+    pembiayaan: "",
     file: null,
 });
 
@@ -180,6 +191,53 @@ watch(
   }
 );
 
+const calculateAdendumJangkaWaktuDisplay = computed(() => {
+  if (!adendumForm.value.mulai || !adendumForm.value.selesai) return '';
+
+  const start = new Date(adendumForm.value.mulai);
+  const end = new Date(adendumForm.value.selesai);
+
+  if (start >= end) return '';
+
+  // Calculate years, months, days accurately
+  let years = end.getFullYear() - start.getFullYear();
+  let months = end.getMonth() - start.getMonth();
+  let days = end.getDate() - start.getDate();
+
+  // Adjust for negative days
+  if (days < 0) {
+    months--;
+    const prevMonth = new Date(end.getFullYear(), end.getMonth(), 0);
+    days += prevMonth.getDate();
+  }
+
+  // Adjust for negative months
+  if (months < 0) {
+    years--;
+    months += 12;
+  }
+
+  // Build display string - only show non-zero values
+  const parts = [];
+  if (years > 0) parts.push(`${years} tahun`);
+  if (months > 0) parts.push(`${months} bulan`);
+  if (days > 0) parts.push(`${days} hari`);
+
+  return parts.join(' ') || '';
+});
+
+watch(
+  [() => adendumForm.value.mulai, () => adendumForm.value.selesai],
+  () => {
+    const calculated = calculateAdendumJangkaWaktuDisplay.value;
+    if (calculated) {
+      adendumForm.value.jangka = calculated;
+    } else {
+      adendumForm.value.jangka = '';
+    }
+  }
+);
+
 const applyFilters = () => {
     console.log("✅ MITRA APPLY FILTERS - search:", search.value, "tahun:", tahun.value);
     // Auto-detect: jika ada filter, show all; jika tidak ada filter, paginasi normal
@@ -211,6 +269,21 @@ const resetAllFilters = () => {
         },
         { preserveState: true },
     );
+};
+
+const buildExportParams = () => ({
+    format: 'xlsx',
+    search: search.value || undefined,
+    tahun: tahun.value || undefined,
+    tahun_column: columnFilters.value.tahun.length ? columnFilters.value.tahun : undefined,
+    tipe: columnFilters.value.tipe.length ? columnFilters.value.tipe : undefined,
+    mitra: columnFilters.value.mitra.length ? columnFilters.value.mitra : undefined,
+    jenis_kerjasama: columnFilters.value.jenis_kerjasama.length ? columnFilters.value.jenis_kerjasama : undefined,
+    status: columnFilters.value.status.length ? columnFilters.value.status : undefined,
+});
+
+const exportSpreadsheet = () => {
+    window.location.href = route("admin.riwayat-kerjasama.mitra.export", buildExportParams());
 };
 
 // Watch search dengan debounce
@@ -357,6 +430,7 @@ const statusBadgeClasses = (status) => {
     if (!s) return 'bg-gray-100 text-gray-600';
     if (s === 'aktif' || s === 'active') return 'bg-green-100 text-green-700';
     if (s === 'berakhir' || s === 'expired' || s === 'selesai') return 'bg-red-100 text-red-600';
+    if (s === 'dibatalkan' || s === 'canceled' || s === 'cancelled') return 'bg-slate-200 text-slate-700';
     if (s.includes('segera') || s.includes('soon') || s.includes('akan')) return 'bg-yellow-100 text-yellow-700';
     return 'bg-gray-100 text-gray-600';
 };
@@ -443,8 +517,11 @@ const validateAdendum = () => {
         adendumErrors.value.selesai = "Tanggal berakhir wajib diisi";
     if (!adendumForm.value.pembiayaan)
         adendumErrors.value.pembiayaan = "Pembiayaan wajib diisi";
-    if (!adendumForm.value.file)
+    if (!adendumForm.value.file) {
         adendumErrors.value.file = "File pembaharuan wajib diupload";
+    } else if (adendumForm.value.file.type !== 'application/pdf' && !adendumForm.value.file.name.toLowerCase().endsWith('.pdf')) {
+        adendumErrors.value.file = "Format file pembaharuan harus PDF";
+    }
 
     return Object.keys(adendumErrors.value).length === 0;
 };
@@ -784,6 +861,53 @@ const handleStatusUpdate = (idKerjasama, newStatus) => {
             );
         }
     });
+};
+
+// =========================================================================
+// INLINE EDIT NOMOR SURAT
+// =========================================================================
+const editingNomorSurat = ref({ rowId: null, field: null });
+const editingValue = ref("");
+
+const startEditNomorSurat = (rowId, field, currentValue) => {
+    editingNomorSurat.value = { rowId, field };
+    editingValue.value = currentValue || "";
+};
+
+const cancelEditNomorSurat = () => {
+    editingNomorSurat.value = { rowId: null, field: null };
+    editingValue.value = "";
+};
+
+const saveNomorSurat = (rowId, field) => {
+    const payload = {};
+    payload[field] = editingValue.value;
+
+    router.put(
+        route("admin.riwayat-kerjasama.nomor-surat", rowId),
+        payload,
+        {
+            preserveScroll: true,
+            onSuccess: () => {
+                const items = props.data?.data || [];
+                const item = items.find(i => i.id_kerjasama === rowId);
+                if (item) {
+                    item[field] = editingValue.value;
+                }
+                cancelEditNomorSurat();
+            },
+            onError: (err) => {
+                console.error("Error updating nomor surat:", err);
+                Swal.fire({
+                    icon: "error",
+                    title: "Gagal",
+                    text: "Gagal memperbarui nomor surat",
+                    confirmButtonText: "OK",
+                    confirmButtonColor: "#0d9488",
+                });
+            },
+        }
+    );
 };
 
 onBeforeUnmount(() => {
@@ -1179,14 +1303,38 @@ onBeforeUnmount(() => {
                                         {{ item.judul || "-" }}
                                     </td>
                                     <td
-                                        class="px-4 py-3 whitespace-nowrap border-r border-gray-200"
+                                        class="px-4 py-3 whitespace-nowrap border-r border-gray-200 text-gray-600"
                                     >
-                                        {{ item.nomor_suratM }}
+                                        <span class="text-xs">{{ item.nomor_suratM || '-' }}</span>
                                     </td>
                                     <td
                                         class="px-4 py-3 whitespace-nowrap border-r border-gray-200"
                                     >
-                                        {{ item.nomor_suratP }}
+                                        <template v-if="editingNomorSurat.rowId !== item.id_kerjasama || editingNomorSurat.field !== 'nomor_suratP'">
+                                            <span class="text-xs">{{ item.nomor_suratP || '-' }}</span>
+                                            <button
+                                                v-if="!item.nomor_suratP"
+                                                @click="startEditNomorSurat(item.id_kerjasama, 'nomor_suratP', item.nomor_suratP)"
+                                                class="ml-1 text-gray-400 hover:text-teal-600 transition-colors"
+                                                title="Edit Nomor Surat Pemerintah"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 inline" viewBox="0 0 20 20" fill="currentColor">
+                                                    <path d="M2.695 14.763l-1.262 3.154a.5.5 0 00.65.65l3.155-1.262a4 4 0 001.343-.885L17.5 5.5a2.121 2.121 0 00-3-3L3.58 13.42a4 4 0 00-.885 1.343z"/>
+                                                </svg>
+                                            </button>
+                                        </template>
+                                        <template v-else>
+                                            <div class="flex items-center gap-1">
+                                                <input
+                                                    v-model="editingValue"
+                                                    @keyup.enter="saveNomorSurat(item.id_kerjasama, 'nomor_suratP')"
+                                                    @keyup.escape="cancelEditNomorSurat"
+                                                    class="w-36 border border-teal-500 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-teal-500"
+                                                />
+                                                <button @click="saveNomorSurat(item.id_kerjasama, 'nomor_suratP')" class="text-green-600 hover:text-green-800 font-bold text-sm" title="Simpan">✓</button>
+                                                <button @click="cancelEditNomorSurat" class="text-red-500 hover:text-red-700 font-bold text-sm" title="Batal">✕</button>
+                                            </div>
+                                        </template>
                                     </td>
                                     <td
                                         class="px-4 py-3 whitespace-nowrap border-r border-gray-200"
@@ -1324,9 +1472,16 @@ onBeforeUnmount(() => {
                                                     <button
                                                         @click.stop="handleStatusUpdate(item.id_kerjasama, 'Berakhir')"
                                                         :disabled="item.status === 'Berakhir'"
-                                                        class="block w-full text-left px-4 py-2 hover:bg-gray-100 transition last:rounded-b-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                                                        class="block w-full text-left px-4 py-2 hover:bg-gray-100 transition disabled:opacity-50 disabled:cursor-not-allowed"
                                                     >
                                                         Berakhir
+                                                    </button>
+                                                    <button
+                                                        @click.stop="handleStatusUpdate(item.id_kerjasama, 'Dibatalkan')"
+                                                        :disabled="item.status === 'Dibatalkan'"
+                                                        class="block w-full text-left px-4 py-2 hover:bg-gray-100 transition last:rounded-b-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                                                    >
+                                                        Dibatalkan
                                                     </button>
                                                 </div>
                                             </div>
@@ -1615,24 +1770,8 @@ onBeforeUnmount(() => {
                         </p>
                     </div>
 
-                    <!-- TIPE PENGAJUAN -->
-                    <div>
-                        <label class="text-sm font-medium">
-                            Tipe Pengajuan <span class="text-red-500">*</span>
-                        </label>
-                        <select
-                            v-model="form.tipe_pengajuan"
-                            class="w-full border rounded-lg px-3 py-2 mt-1"
-                        >
-                            <option value="mitra">Mitra</option>
-                        </select>
-                        <p
-                            v-if="errors.tipe_pengajuan"
-                            class="text-red-500 text-xs mt-1"
-                        >
-                            {{ errors.tipe_pengajuan }}
-                        </p>
-                    </div>
+                    <!-- TIPE PENGAJUAN (hidden, auto-set to mitra) -->
+                    <input type="hidden" v-model="form.tipe_pengajuan" value="mitra" />
 
                     <!-- TANGGAL -->
                     <div class="grid grid-cols-2 gap-4">

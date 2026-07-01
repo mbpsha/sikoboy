@@ -55,9 +55,11 @@ class NotificationFeed
             });
 
         $statusNotifications = self::adminStatusNotifications();
+        $cancelledNotifications = self::adminCancelledNotifications();
 
         return $uploadNotifications
             ->concat($statusNotifications)
+            ->concat($cancelledNotifications)
             ->sortByDesc('created_at')
             ->take($limit)
             ->values();
@@ -168,6 +170,52 @@ class NotificationFeed
                 ];
             })
             ->filter()
+            ->values();
+    }
+
+    private static function adminCancelledNotifications()
+    {
+        return DB::table('riwayat_status as rs')
+            ->join('kerjasama as k', 'k.id_kerjasama', '=', 'rs.id_kerjasama')
+            ->join('status as s', 's.id_status', '=', 'rs.id_status')
+            ->leftJoin('mitras as m', 'm.id_mitra', '=', 'k.id_mitra')
+            ->leftJoin('admins as a', 'a.id_admin', '=', 'rs.id_admin')
+            ->whereRaw('LOWER(s.jenis_status) = ?', ['dibatalkan'])
+            ->orderByDesc('rs.tanggal')
+            ->limit(50)
+            ->get([
+                'rs.id_riwayat',
+                'rs.tanggal',
+                'rs.catatan',
+                'k.id_kerjasama',
+                'k.judul',
+                'k.pemrakarsa',
+                'k.nomor_suratM',
+                'k.nomor_suratP',
+                'm.nama_perusahaan',
+                'a.nama as admin_nama',
+            ])
+            ->map(function ($row) {
+                $nomor = $row->nomor_suratM ?: $row->nomor_suratP;
+                $namaMitra = $row->nama_perusahaan ?: 'Mitra';
+                $catatan = trim((string) ($row->catatan ?? ''));
+
+                return [
+                    'id' => 'admin-dibatalkan-'.$row->id_riwayat,
+                    'type' => $row->pemrakarsa === 'M' ? 'MITRA' : 'SETDA',
+                    'kind' => 'dibatalkan',
+                    'title' => 'Kerjasama dibatalkan',
+                    'description' => 'Pengajuan kerjasama '.$row->judul.' dari '.$namaMitra.' telah dibatalkan'
+                        .($catatan !== '' ? '. Catatan: '.$catatan : '.'),
+                    'nomor' => $nomor,
+                    'tanggalBerakhir' => null,
+                    'status' => 'cancelled',
+                    'status_group' => null,
+                    'daysLeft' => null,
+                    'countdown' => 'Baru',
+                    'created_at' => Carbon::parse($row->tanggal)->toISOString(),
+                ];
+            })
             ->values();
     }
 

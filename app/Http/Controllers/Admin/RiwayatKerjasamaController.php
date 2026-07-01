@@ -12,6 +12,7 @@ use App\Models\Kerjasama;
 use App\Models\Mitra;
 use App\Models\PeriodeKerjasama;
 use App\Models\RiwayatStatus;
+use App\Support\FileUpload;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -23,7 +24,6 @@ use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Maatwebsite\Excel\Facades\Excel;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
-use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class RiwayatKerjasamaController extends Controller
 {
@@ -36,6 +36,8 @@ class RiwayatKerjasamaController extends Controller
      */
     public function index(Request $request)
     {
+        Kerjasama::recalculateStatuses();
+
         $query = Kerjasama::finalized()
             ->with(['mitra', 'latestPeriode', 'finalDokumen', 'dokumen', 'kategori', 'adendum']);
 
@@ -97,6 +99,8 @@ class RiwayatKerjasamaController extends Controller
      */
     public function mitra(Request $request)
     {
+        Kerjasama::recalculateStatuses();
+
         $query = Kerjasama::finalized()
             ->mitraTipe()
             ->with(['mitra', 'latestPeriode', 'finalDokumen', 'dokumen', 'kategori', 'adendum']);
@@ -159,6 +163,8 @@ class RiwayatKerjasamaController extends Controller
      */
     public function pemerintah(Request $request)
     {
+        Kerjasama::recalculateStatuses();
+
         Log::info("🔍 PEMERINTAH REQUEST", [
             'per_page' => $request->input('per_page'),
             'search' => $request->input('search'),
@@ -219,17 +225,17 @@ class RiwayatKerjasamaController extends Controller
         ]);
     }
 
-    public function exportGabungan(Request $request): StreamedResponse|BinaryFileResponse
+    public function exportGabungan(Request $request): BinaryFileResponse
     {
         return $this->exportByType($request, 'gabungan');
     }
 
-    public function exportMitra(Request $request): StreamedResponse|BinaryFileResponse
+    public function exportMitra(Request $request): BinaryFileResponse
     {
         return $this->exportByType($request, 'mitra');
     }
 
-    public function exportPemerintah(Request $request): StreamedResponse|BinaryFileResponse
+    public function exportPemerintah(Request $request): BinaryFileResponse
     {
         return $this->exportByType($request, 'pemerintah');
     }
@@ -304,8 +310,9 @@ class RiwayatKerjasamaController extends Controller
         }
 
         $file = $validated['dokumen_file'];
-        $originalFileName = $file->getClientOriginalName();
-        $path = $file->store('cooperation_docs', 'public');
+        $uploaded = FileUpload::storeAsOriginal($file, 'cooperation_docs', 'public');
+        $originalFileName = $uploaded['nama_file'];
+        $path = $uploaded['lokasi_file'];
 
         DB::transaction(function () use ($validated, $admin, $path, $idKategori, $originalFileName) {
             $kerjasama = Kerjasama::create([
@@ -314,6 +321,7 @@ class RiwayatKerjasamaController extends Controller
                 'id_kategori' => $idKategori,
                 'judul' => $validated['judul'],
                 'nomor_suratP' => $validated['nomor_suratP'] ?? null,
+                'nomor_suratM' => $validated['nomor_suratM'] ?? null,
                 'urusan' => $validated['urusan'] ?? '-',
                 'daerah' => $validated['daerah'] ?? '-',
                 'jenis_kerjasama' => $validated['jenis_kerjasama'] ?? null,
@@ -370,6 +378,7 @@ class RiwayatKerjasamaController extends Controller
             $kerjasama->update([
                 'judul' => $validated['judul'],
                 'nomor_suratP' => $validated['nomor_suratP'] ?? $kerjasama->nomor_suratP,
+                'nomor_suratM' => $validated['nomor_suratM'] ?? $kerjasama->nomor_suratM,
                 'urusan' => $validated['urusan'] ?? $kerjasama->urusan,
                 'daerah' => $validated['daerah'] ?? $kerjasama->daerah,
                 'jenis_kerjasama' => $validated['jenis_kerjasama'] ?? $kerjasama->jenis_kerjasama,
@@ -449,8 +458,9 @@ class RiwayatKerjasamaController extends Controller
         $originalFileName = null;
 
         if ($request->hasFile('file')) {
-            $originalFileName = $request->file('file')->getClientOriginalName();
-            $path = $request->file('file')->store('cooperation_docs', 'public');
+            $uploaded = FileUpload::storeAsOriginal($request->file('file'), 'cooperation_docs', 'public');
+            $originalFileName = $uploaded['nama_file'];
+            $path = $uploaded['lokasi_file'];
         }
 
         DB::transaction(function () use ($validated, $admin, $mitra, $path, $idKategori, $originalFileName) {
@@ -554,8 +564,9 @@ class RiwayatKerjasamaController extends Controller
         $originalFileName = null;
 
         if ($request->hasFile('file')) {
-            $originalFileName = $request->file('file')->getClientOriginalName();
-            $path = $request->file('file')->store('cooperation_docs', 'public');
+            $uploaded = FileUpload::storeAsOriginal($request->file('file'), 'cooperation_docs', 'public');
+            $originalFileName = $uploaded['nama_file'];
+            $path = $uploaded['lokasi_file'];
         }
 
         $isMitra = $validated['tipe_pengajuan'] === 'mitra';
@@ -693,7 +704,7 @@ class RiwayatKerjasamaController extends Controller
             'nama_pihak_luar' => ['required', 'string'],
             'tanggal_mulai' => ['required', 'date'],
             'tanggal_berakhir' => ['required', 'date'],
-            'file' => ['nullable', 'file', 'mimes:pdf', 'max:10240'],
+            'file' => ['nullable', 'file', 'extensions:pdf,docx', 'max:10240'],
         ]);
 
         $admin = $request->user()->admin;
@@ -703,8 +714,9 @@ class RiwayatKerjasamaController extends Controller
             $originalFileName = null;
 
             if ($request->hasFile('file')) {
-                $originalFileName = $request->file('file')->getClientOriginalName();
-                $path = $request->file('file')->store('cooperation_docs', 'public');
+                $uploaded = FileUpload::storeAsOriginal($request->file('file'), 'cooperation_docs', 'public');
+                $originalFileName = $uploaded['nama_file'];
+                $path = $uploaded['lokasi_file'];
             }
 
             // Update kerjasama
@@ -820,6 +832,8 @@ class RiwayatKerjasamaController extends Controller
             'tanggal_berakhir' => ['nullable', 'date', 'after_or_equal:tanggal_mulai'],
             'pembiayaan' => ['nullable', 'string'],
             'file' => ['required', 'file', 'mimes:pdf', 'max:10240'],
+        ], [
+            'file.mimes' => 'Format dokumen pembaharuan harus PDF.',
         ]);
 
         $admin = $request->user()->admin;
@@ -829,8 +843,9 @@ class RiwayatKerjasamaController extends Controller
         $originalFileName = null;
 
         if ($request->hasFile('file')) {
-            $originalFileName = $request->file('file')->getClientOriginalName();
-            $path = $request->file('file')->store('adendum_docs', 'public');
+            $uploaded = FileUpload::storeAsOriginal($request->file('file'), 'adendum_docs', 'public');
+            $originalFileName = $uploaded['nama_file'];
+            $path = $uploaded['lokasi_file'];
         }
 
         \App\Models\Adendum::create([
@@ -865,7 +880,7 @@ class RiwayatKerjasamaController extends Controller
     public function updateStatus(int $id, Request $request)
     {
         $validated = $request->validate([
-            'status' => ['required', 'string', 'in:Aktif,Segera Berakhir,Berakhir'],
+            'status' => ['required', 'string', 'in:Aktif,Segera Berakhir,Berakhir,Dibatalkan'],
         ]);
 
         $kerjasama = Kerjasama::findOrFail($id);
@@ -895,6 +910,47 @@ class RiwayatKerjasamaController extends Controller
         return back();
     }
 
+    /**
+     * Update nomor surat mitra and/or pemerintah for a kerjasama (inline edit).
+     */
+    public function updateNomorSurat(int $id, Request $request)
+    {
+        $validated = $request->validate([
+            'nomor_suratM' => ['nullable', 'string', 'max:255'],
+            'nomor_suratP' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $kerjasama = Kerjasama::findOrFail($id);
+
+        $updates = [];
+        if (array_key_exists('nomor_suratM', $validated) && $validated['nomor_suratM'] !== null) {
+            $updates['nomor_suratM'] = $validated['nomor_suratM'];
+        }
+        if (array_key_exists('nomor_suratP', $validated) && $validated['nomor_suratP'] !== null) {
+            if (!$kerjasama->is_finalized) {
+                throw ValidationException::withMessages([
+                    'nomor_suratP' => 'Nomor surat pemerintah tidak dapat diisi ketika proses belum selesai.',
+                ]);
+            }
+            if (!empty($kerjasama->nomor_suratP)) {
+                throw ValidationException::withMessages([
+                    'nomor_suratP' => 'Nomor surat pemerintah hanya dapat diisi sekali dan tidak dapat diubah.',
+                ]);
+            }
+            $updates['nomor_suratP'] = $validated['nomor_suratP'];
+        }
+
+        if ($updates === []) {
+            return back()->withErrors([
+                'nomor_surat' => 'Nomor surat belum diisi.',
+            ]);
+        }
+
+        $kerjasama->update($updates);
+
+        return back()->with('success', 'Nomor surat berhasil diperbarui.');
+    }
+
     // =========================================================================
     // Helpers
     // =========================================================================
@@ -902,14 +958,14 @@ class RiwayatKerjasamaController extends Controller
     private function storeDokumenVersion(Kerjasama $kerjasama, UploadedFile $file, int $createdBy): void
     {
         $nextVersion = ((int) $kerjasama->dokumen()->max('versi_dokumen')) + 1;
-        $path = $file->store('dokumen-kerjasama', 'public');
+        $uploaded = FileUpload::storeAsOriginal($file, 'dokumen-kerjasama', 'public');
         $jenisDokumen = $kerjasama->jenis_dokumen ?: ($kerjasama->finalDokumen?->jenis_dokumen ?: 'KSB');
 
         $this->createDokumen([
             'id_kerjasama' => $kerjasama->id_kerjasama,
             'jenis_dokumen' => $jenisDokumen,
-            'nama_file' => $file->getClientOriginalName(),
-            'lokasi_file' => $path,
+            'nama_file' => $uploaded['nama_file'],
+            'lokasi_file' => $uploaded['lokasi_file'],
             'versi_dokumen' => $nextVersion,
             'created_by' => $createdBy,
         ]);
@@ -920,7 +976,7 @@ class RiwayatKerjasamaController extends Controller
             jenisStatus: 'revisi',
             idAdmin: $adminId ? (int) $adminId : null,
             catatan: 'Dokumen versi baru diunggah oleh admin',
-            file: $path,
+            file: $uploaded['lokasi_file'],
         );
     }
 
@@ -979,7 +1035,7 @@ class RiwayatKerjasamaController extends Controller
         }
     }
 
-    private function exportByType(Request $request, string $type): StreamedResponse|BinaryFileResponse
+    private function exportByType(Request $request, string $type): BinaryFileResponse
     {
         $query = match ($type) {
             'mitra' => Kerjasama::finalized()
@@ -999,63 +1055,9 @@ class RiwayatKerjasamaController extends Controller
             ->values()
             ->map(fn(Kerjasama $k, int $i) => $this->formatRow($k, $i));
 
-        $format = strtolower((string) $request->query('format', 'csv'));
-        $baseFilename = 'riwayat-kerjasama-' . $type . '-' . now()->format('Ymd_His');
+        $filename = 'riwayat-kerjasama-' . $type . '-' . now()->format('Ymd_His') . '.xlsx';
 
-        if ($format === 'xlsx') {
-            return Excel::download(new RiwayatKerjasamaExport($rows), $baseFilename . '.xlsx');
-        }
-
-        $filename = $baseFilename . '.csv';
-
-        return response()->streamDownload(function () use ($rows) {
-            $handle = fopen('php://output', 'w');
-            fwrite($handle, "\xEF\xBB\xBF");
-
-            fputcsv($handle, [
-                'No',
-                'Tahun',
-                'Tipe',
-                'Pemrakarsa',
-                'Mitra/Pihak',
-                'Judul',
-                'Tanggal Mulai',
-                'Tanggal Berakhir',
-                'Jangka Waktu',
-                'Status',
-                'Jenis Kerjasama',
-                'Jenis Dokumen',
-                'Nomor Surat Mitra',
-                'Nomor Surat Pemerintah',
-                'Urusan',
-                'Pembiayaan',
-            ]);
-
-            foreach ($rows as $row) {
-                fputcsv($handle, [
-                    $row['no'] ?? '',
-                    $row['tahun'] ?? '',
-                    $row['tipe'] ?? '',
-                    $row['pemrakarsa'] ?? '',
-                    $row['mitra'] ?? '',
-                    $row['judul'] ?? '',
-                    $row['tanggal_mulai'] ?? '',
-                    $row['tanggal_berakhir'] ?? '',
-                    $row['jangka_waktu'] ?? '',
-                    $row['status'] ?? '',
-                    $row['jenis_kerjasama'] ?? '',
-                    $row['jenis_dokumen'] ?? '',
-                    $row['nomor_suratM'] ?? '',
-                    $row['nomor_suratP'] ?? '',
-                    $row['urusan'] ?? '',
-                    $row['pembiayaan'] ?? '',
-                ]);
-            }
-
-            fclose($handle);
-        }, $filename, [
-            'Content-Type' => 'text/csv; charset=UTF-8',
-        ]);
+        return Excel::download(new RiwayatKerjasamaExport($rows), $filename);
     }
 
     private function applyExportColumnFilters($query, Request $request): void

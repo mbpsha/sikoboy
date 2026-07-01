@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StorePotensiRequest;
 use App\Http\Requests\Admin\UpdatePotensiRequest;
 use App\Models\Potensi;
+use App\Support\FileUpload;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -93,7 +94,7 @@ class ManajemenPotensiController extends Controller
         $request->validate([
             'kategori' => 'required|string',
             'judul' => 'required|string|max:255',
-            'deskripsi' => 'required|string',
+            'deskripsi' => 'required|string|max:1000',
             'gambar' => 'nullable|image|mimes:jpeg,png,jpg|max:5120',
         ]);
 
@@ -106,8 +107,8 @@ class ManajemenPotensiController extends Controller
 
         // Save image if provided
         if ($request->hasFile('gambar')) {
-            $path = $request->file('gambar')->store('potensi', 'public');
-            $potensi->update(['gambar_path' => $path]);
+            $uploaded = FileUpload::storeAsOriginal($request->file('gambar'), 'potensi', 'public');
+            $potensi->update(['gambar_path' => $uploaded['lokasi_file']]);
         }
 
         return back()->with('success', 'Potensi berhasil ditambahkan.');
@@ -199,10 +200,10 @@ class ManajemenPotensiController extends Controller
     {
         $oldPath = $potensi->gambar_path;
 
-        $path = $file->store('potensi', 'public');
+        $uploaded = FileUpload::storeAsOriginal($file, 'potensi', 'public');
 
         $potensi->update([
-            'gambar_path' => $path,
+            'gambar_path' => $uploaded['lokasi_file'],
             'updated_at' => now(),
         ]);
 

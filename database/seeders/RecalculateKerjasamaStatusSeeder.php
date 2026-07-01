@@ -20,6 +20,12 @@ class RecalculateKerjasamaStatusSeeder extends Seeder
         $today = Carbon::today();
 
         Kerjasama::with('latestPeriode')->each(function ($kerjasama) use ($today) {
+            $status = $kerjasama->status_aktif;
+            if (strtolower($status ?? '') === 'dibatalkan' || $kerjasama->status_persetujuan === \App\Enums\StatusPersetujuan::Dibatalkan) {
+                $kerjasama->update(['status_aktif' => 'Dibatalkan']);
+                return;
+            }
+
             $periode = $kerjasama->latestPeriode;
 
             if (! $periode || ! $periode->tanggal_berakhir) {
@@ -33,8 +39,8 @@ class RecalculateKerjasamaStatusSeeder extends Seeder
             if ($today->gte($berakhir)) {
                 // Sudah lewat tanggal berakhir
                 $status = 'Berakhir';
-            } elseif ($today->diffInDays($berakhir, false) <= 30) {
-                // Kurang dari atau sama dengan 30 hari
+            } elseif ($today->diffInDays($berakhir, false) <= 90) {
+                // Kurang dari atau sama dengan 90 hari
                 $status = 'Segera Berakhir';
             } else {
                 // Masih lama
